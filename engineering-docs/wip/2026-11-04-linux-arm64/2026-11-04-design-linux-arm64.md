@@ -25,6 +25,9 @@ the base recipe, on top of `macos-launcher`'s platform split. File references ar
 
 1. Every component at once, not a first slice.
 2. The arm64 base is built locally and approved per checkout; the owner publishes later.
+   Settled the same day: the human pushed this Mac's image, at the digest the matrix pins,
+   as `mycodespaceai/devcapsule-base:linux-arm64-recipe-11-20261104`, so an arm64 checkout
+   pulls its base like an amd64 one, and the unpublished-base report and refusal are gone.
 3. On Apple Silicon, a project runs as `linux-arm64` when it has a `linux-arm64` lock, and
    otherwise as `linux-amd64` under emulation. Amended the same day, after the human's
    first init of a new project: on a host that runs several platforms, init asks which a
@@ -56,7 +59,8 @@ the base recipe, on top of `macos-launcher`'s platform split. File references ar
    both record one.
 3. **The base.** Built natively on this Mac by `devcapsule images build --type base`, and
    approved per checkout by the documented local-base path. Whether the `linux-arm64` matrix
-   can resolve without a published base pin is slice 2's first question.
+   can resolve without a published base pin is slice 2's first question. Since its push
+   (section 2), the pin is a published base like every other.
 4. **Pins.** The same versions as the amd64 matrix, each with its arm64 archive's URL and a
    sha256 computed from the downloaded bytes, never copied from a page alone. Eclipse's
    native closure comes from `ports.ubuntu.com`. Playwright's Chromium has no

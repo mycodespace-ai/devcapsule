@@ -112,16 +112,6 @@ def realize_environment(
             selection.local_image_identity if local_authorization else locked.base_identity
         )
 
-    if not local_authorization and base_override is None:
-        from devcapsule.resolution_matrix import MATRICES
-
-        if MATRICES[capsule_platform].base_unpublished(base_reference):
-            raise CliError(
-                f"The lock's base {base_reference} is not published yet, so it cannot be pulled. Build the "
-                f"{capsule_platform} base locally ('devcapsule images build --type base --recipe ubuntu-24.04 "
-                f"--platform {capsule_platform} --tag IMAGE --source-revision REVISION') and select it "
-                "for this checkout ('devcapsule project config authorize base-image IMAGE')."
-            )
     if obtain_image is not None:
         obtain = obtain_image
     elif local_authorization:

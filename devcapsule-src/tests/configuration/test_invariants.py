@@ -42,9 +42,6 @@ from devcapsule.configuration.operations import (
     ProvidedAnswer,
     initialize_project,
 )
-from devcapsule.launch.pycharm import DockerMode, PycharmRunOptions, build_run_config
-from devcapsule.platforms import Platform
-from tests.test_pycharm import base_env
 from tests.test_upgrade_recovery import checkout, invoke, install_external_fakes
 
 pytestmark = pytest.mark.legacy
@@ -220,37 +217,6 @@ def test_a_removed_binding_never_reaches_the_launch(checkout, monkeypatch):
     # The plan the launch derived carries neither either.
     derived = load_toml(resolution)
     assert 'bindings' not in derived.get('state', {}) and 'secret' not in derived
-
-
-def test_project_launch_cannot_inherit_unbound_paths_or_credentials(checkout, tmp_path):
-    project, _, _ = checkout
-    env = base_env(tmp_path)
-    unbound = tmp_path / 'unbound'
-    env.update({
-        'DEVCAPSULE_HOME_DIR': str(unbound), 'PYCHARM_IDE_CONFIG_DIR': str(unbound),
-        'PYCHARM_PLUGIN_DIR': str(unbound), 'GITHUB_TOKEN_FILE': str(unbound / 'secret'),
-        'PYCHARM_GIT_TOKEN_ENV': 'UNBOUND_TOKEN', 'PYCHARM_ENABLE_SUDO': 'invalid',
-        'DOCKER_MODE': 'invalid',
-    })
-    config = build_run_config(PycharmRunOptions(
-        project=project, capsule_platform=Platform.LINUX_AMD64, inherit_legacy_configuration=False,
-        docker_mode=DockerMode.none, enable_sudo=False, network_mode='bridge',
-    ), env)
-    assert config.persistent_home != unbound and config.ide_config != unbound and config.plugins != unbound
-    assert config.git_token_file is None and config.git_token_env == ''
-    assert config.enable_sudo is False and config.docker_mode == 'none' and config.network_mode == 'bridge'
-    assert not unbound.exists()
-
-
-@pytest.mark.parametrize('value', [False, True, None])
-def test_explicit_sudo_decision_overrides_legacy_environment(value, tmp_path):
-    project = tmp_path / 'project'
-    project.mkdir()
-    env = base_env(tmp_path)
-    env['PYCHARM_ENABLE_SUDO'] = '1'
-    config = build_run_config(PycharmRunOptions(project=project, capsule_platform=Platform.LINUX_AMD64, docker_mode=DockerMode.none,
-                                               enable_sudo=value), env)
-    assert config.enable_sudo is (True if value is None else value)
 
 
 @pytest.mark.parametrize('field,value', [('memory-limit-bytes', '8GiB'), ('memory-limit-bytes', True),

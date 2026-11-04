@@ -12,7 +12,6 @@ import pytest
 from devcapsule.images.base import (
     NVIDIA_CUDA_ROOT_IMAGE,
     BaseImageBuildOptions,
-    build_base_image,
     build_base_image_spec,
     verify_public_github_revision,
 )
@@ -20,7 +19,6 @@ from devcapsule.build_info import BuildInfo
 from devcapsule.compat import CliError
 from devcapsule.images.build import render_build_context
 from devcapsule.images.tooling import MAVEN_VERSION, TEMURIN_VERSION
-from devcapsule.platforms import Platform
 
 pytestmark = pytest.mark.legacy
 
@@ -172,33 +170,6 @@ def test_recipe_root_image_can_be_overridden(tmp_path: Path) -> None:
     assert ("devcapsule.base.recipe", "nvidia-cuda-devel") in plan.labels
 
 
-def test_base_image_build_forwards_host_network_to_buildx(tmp_path: Path) -> None:
-    pex = pex_fixture(tmp_path / "devcapsule.pex")
-    options = BaseImageBuildOptions(pex, "test-base:latest", source_revision="a" * 40)
-    builder = Mock()
-    source_verifier = Mock()
-
-    build_base_image(options, builder=builder, platform=Platform.LINUX_AMD64, network="host",
-                     source_verifier=source_verifier)
-
-    source_verifier.assert_called_once()
-    builder.build.assert_called_once()
-    assert builder.build.call_args.args[0].image == "test-base:latest"
-    assert builder.build.call_args.kwargs == {"network": "host", "platform": Platform.LINUX_AMD64}
-
-
-def test_base_image_rejects_unreachable_revision_before_buildx(tmp_path: Path) -> None:
-    pex = pex_fixture(tmp_path / "devcapsule.pex")
-    options = BaseImageBuildOptions(pex, "test-base:latest", source_revision="a" * 40)
-    builder = Mock()
-    source_verifier = Mock(side_effect=CliError("source revision is not publicly reachable"))
-
-    with pytest.raises(CliError, match="not publicly reachable"):
-        build_base_image(options, builder=builder, platform=Platform.LINUX_AMD64, source_verifier=source_verifier)
-
-    builder.build.assert_not_called()
-
-
 def test_base_image_rejects_revision_that_disagrees_with_pex(tmp_path: Path) -> None:
     pex = pex_fixture(tmp_path / "devcapsule.pex")
     options = BaseImageBuildOptions(pex, source_revision="b" * 40)
@@ -235,31 +206,6 @@ def test_base_without_baseline_allows_explicit_local_source_escape_hatch(tmp_pat
     assert ("org.opencontainers.image.version", "local-v026") in plan.labels
     assert not any(stage.name == "webconsole" for stage in plan.stages)
     assert not any(key == "devcapsule.base.webconsole" for key, _ in plan.labels)
-
-
-def test_console_base_rejects_missing_source_before_starting_the_builder(tmp_path: Path) -> None:
-    pex = pex_fixture(tmp_path / "devcapsule.pex", revision="unknown", public=False)
-    builder = Mock()
-    with pytest.raises(CliError, match="--allow-local-source cannot supply the console source"):
-        build_base_image(BaseImageBuildOptions(pex, allow_local_source=True), builder=builder,
-                         platform=Platform.LINUX_AMD64)
-    builder.build.assert_not_called()
-
-
-def test_base_image_local_source_escape_hatch_skips_public_verification(tmp_path: Path) -> None:
-    pex = pex_fixture(tmp_path / "devcapsule.pex")
-    builder = Mock()
-    source_verifier = Mock()
-
-    build_base_image(
-        BaseImageBuildOptions(pex, allow_local_source=True),
-        builder=builder,
-        platform=Platform.LINUX_AMD64,
-        source_verifier=source_verifier,
-    )
-
-    source_verifier.assert_not_called()
-    builder.build.assert_called_once()
 
 
 def test_public_revision_verification_checks_exact_commit_url(monkeypatch: pytest.MonkeyPatch) -> None:

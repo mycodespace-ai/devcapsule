@@ -42,7 +42,7 @@ from .authorization import (
 )
 from .capabilities import CapabilityPolicy, LocalCapabilities, requirement
 from .capability_commands import check_documents, pin_selection
-from .capability_selection import compose_lock, effective_lock, generate_lock, local_pins, matrix_for
+from .capability_selection import compose_lock, effective_lock, generate_lock, local_pins
 from .file_formats import (
     AuthorizationScalar,
     ConfigurationFileKind,
@@ -315,8 +315,6 @@ class InitializeReport:
     checkout_record: Path
     # None when the owner's checkout has no IDE yet: nothing to resolve.
     resolve: ResolveReport | None
-    # The lock pins a base its registry does not hold yet (see ResolutionMatrix.base_unpublished).
-    base_unpublished: bool
 
     def render(self) -> str:
         required = " ".join(self.required) or "none"
@@ -330,9 +328,6 @@ class InitializeReport:
         if self.offered:
             lines.append(f"Offers: {' '.join(self.offered)}")
         lines.append(f"{self.lock_action} {self.lock_path} (base {self.base_display})")
-        if self.base_unpublished:
-            lines.append("Its base is not published yet: a checkout runs this lock only on a locally built base of "
-                         "the same recipe, selected with 'devcapsule project config authorize base-image IMAGE'.")
         for name, value, justification in self.recommendations:
             line = f"Recommended {name} = {value} for every checkout"
             lines.append(f"{line} ({justification})." if justification else f"{line}.")
@@ -551,7 +546,6 @@ def initialize_project(
             base_display=_base_display(shared_lock), recommendations=recommendations,
             selection=selection, answered=(), carried=(), recommended=(),
             checkout_record=record.input_path, resolve=None,
-            base_unpublished=_pins_unpublished_base(shared_lock),
         )
     lock = effective_lock(manifest, compose_lock(manifest, shared_lock, record.document), record.document, warn=False)
     declarations = authorization_declarations(manifest, lock)
@@ -579,7 +573,6 @@ def initialize_project(
         answered=tuple(settled.answered), carried=tuple(settled.carried),
         recommended=accepted_recommendations, checkout_record=record.input_path,
         resolve=resolve_report,
-        base_unpublished=_pins_unpublished_base(shared_lock),
     )
 
 
@@ -596,9 +589,7 @@ def _elicit_platform(elicitor: Elicitor, root: Path) -> Platform:
     native = runnable[0]
     locked = next((platform for platform in runnable if platform_lock_path(root, platform).is_file()), None)
     choices = " or ".join(
-        f"{platform} ({'native' if platform is native else 'emulated'}"
-        + ("; its base is built locally" if _base_unpublished(MATRICES[platform]) else "") + ")"
-        for platform in runnable
+        f"{platform} ({'native' if platform is native else 'emulated'})" for platform in runnable
     )
     answer = elicitor.seek(
         "platform",
@@ -638,16 +629,11 @@ def _platform_validator(runnable: tuple[Platform, ...]) -> Any:
     return validate
 
 
-def _base_unpublished(matrix: ResolutionMatrix) -> bool:
-    """Whether every base ``matrix`` pins is still unpublished."""
-    return all(matrix.base_unpublished(base.reference) for base in matrix.base_images())
-
-
 def _initialize_report(
     manifest_path: Path, manifest_action: str, identity: _ProjectIdentity, lock_path: Path, lock_action: str,
     *, base_display: str, recommendations: list[tuple[str, str]], selection: _OwnerSelection,
     answered: tuple[str, ...], carried: tuple[str, ...], recommended: tuple[str, ...],
-    checkout_record: Path, resolve: ResolveReport | None, base_unpublished: bool,
+    checkout_record: Path, resolve: ResolveReport | None,
 ) -> InitializeReport:
     return InitializeReport(
         manifest_path=manifest_path,
@@ -672,13 +658,7 @@ def _initialize_report(
         recommended=recommended,
         checkout_record=checkout_record,
         resolve=resolve,
-        base_unpublished=base_unpublished,
     )
-
-
-def _pins_unpublished_base(lock: Mapping[str, Any]) -> bool:
-    """Whether ``lock`` pins a base its registry does not hold yet."""
-    return matrix_for(lock).base_unpublished(str(lock.get("base", {}).get("reference")))
 
 
 def _base_display(lock: Mapping[str, Any]) -> str:
@@ -1656,7 +1636,6 @@ def _apply_answers_to_standing_checkout(
         base_display=base_display, recommendations=[], selection=_existing_selection(root, manifest),
         answered=tuple(settled.answered), carried=tuple(settled.carried), recommended=(),
         checkout_record=record.input_path, resolve=resolve_report,
-        base_unpublished=_pins_unpublished_base(lock),
     )
 
 

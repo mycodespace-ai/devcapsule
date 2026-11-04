@@ -22,7 +22,7 @@ from devcapsule.platforms import HostOs
 from devcapsule.runtime_artifact import RUNTIME_PEX_ENV, executable_platform
 from tests.e2e.ide_session import SURFACES, IdeSurface, capture_desktop, command, desktop_page_answers, ide_session, launched_ide, stop_session, wait_for_console_url, wait_for_ide_window
 
-pytestmark = pytest.mark.legacy
+pytestmark = pytest.mark.e2e
 
 EVIDENCE_ROOT = Path(__file__).resolve().parents[2] / "dist" / "e2e-evidence" / "ide-smoke"
 
@@ -39,10 +39,12 @@ def evidence_run() -> Path:
     return run
 
 
-@pytest.mark.e2e
 @pytest.mark.ide_smoke
 @pytest.mark.parametrize("surface", SURFACES, ids=[surface.name for surface in SURFACES])
 def test_ide_comes_alive(surface: IdeSurface, built_pex: Path, tmp_path: Path, evidence_run: Path) -> None:
+    """Each IDE, launched in a fresh project by the executable under test, opens its window on the
+    capsule's desktop, the desktop and the token-gated web console answer, and the capsule runs the
+    runtime that executable delivers."""
     evidence = evidence_run / surface.name
     (evidence_run / "run.json").write_text(json.dumps({
         "executable": str(built_pex),

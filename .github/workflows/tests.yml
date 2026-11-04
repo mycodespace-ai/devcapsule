@@ -175,8 +175,10 @@ jobs:
 
       # Both figures go into the PR description between marker comments, so
       # a merge that takes the description as its message carries them too.
+      # A pull request from a fork gets a read-only token that cannot edit its
+      # description; the job summary and the uploaded reports still have them.
       - name: Publish coverage numbers to the pull request
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}

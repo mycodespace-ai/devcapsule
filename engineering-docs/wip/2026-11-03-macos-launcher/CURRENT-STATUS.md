@@ -4,7 +4,7 @@ Mnemonic: `macos-launcher`
 
 Start date: 2026-11-03
 
-State: active; slices 1 to 4 done 2026-11-03; waits on the SSH key to publish, and on the owner's rulings
+State: active; on `main` since #338, 2026-11-04, with `linux-arm64`; waits on the owner's rulings
 
 Branch association: `ws-macos-launcher/host-port`, forked from local `main` at b3f10b7d
 
@@ -107,16 +107,15 @@ with development sudo: the policy `0 0 0440` in the capsule, `sudo -n id -u` as 
 prints 0, the volume gone afterwards. Unit suite on this Mac: 2,729 passed, 19 skipped. The
 fixed pair is installed in the human's `~/.local`.
 
+**2026-11-04, merged.** This branch reached `main` inside `linux-arm64`'s pull request,
+which the owner merged as #338.
+
 ## Next Resumable Task
 
-None in the plan; the slices are done. Publish the workstream and push the branch once the
-SSH key is loaded, give the human the compare link, and wait for the owner's rulings below.
+None in the plan; the slices are done and on `main`. The owner's rulings below remain.
 
 ## Open Threads
 
-- The SSH agent on this Mac holds no identity, so `git fetch`, `workflow claim` and
-  `workflow publish` fail with `Permission denied (publickey)`. The human loads the key;
-  until then the registration is local only and `main` could not be re-verified.
 - No `python3.12` exists on this Mac. `.venv` was created with `uv venv --python 3.12`
   (CPython 3.12.12) instead of `python3.12 -m venv`; the executable still embeds 3.12.14.
 - Adding a supported host platform is a product commitment. The repository owner has not

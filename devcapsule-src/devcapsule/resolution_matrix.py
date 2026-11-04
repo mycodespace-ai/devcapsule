@@ -101,7 +101,7 @@ class Capability:
 
 @dataclass(frozen=True)
 class _BasePin:
-    """One base image and the capabilities it ships."""
+    """One published base image and the capabilities it ships."""
 
     mnemonic: str
     # The family of base releases this pin belongs to — see _VerifiedEdge:
@@ -123,9 +123,6 @@ class _BasePin:
     runtime: str = LAUNCHER_SUPPLIED_RUNTIME
     source_revision: str | None = None
     # A clean public-source builder need not have a release tag.
-    # False while the reference names an image its registry does not hold
-    # yet: only a locally built base of the same recipe stands in for it.
-    published: bool = True
 
     @property
     def contract(self) -> BaseContract:
@@ -249,10 +246,6 @@ class ResolutionMatrix:
         reference = lock.get("base", {}).get("reference")
         return next((base.base_family for base in self._bases
                      if base.lock_table.get("reference") == reference), None)
-
-    def base_unpublished(self, reference: str) -> bool:
-        """Whether the pinned base at ``reference`` is not in its registry yet."""
-        return any(base.lock_table.get("reference") == reference and not base.published for base in self._bases)
 
     def base_image(self, reference: str) -> BaseImage | None:
         """The pinned base at ``reference``, described by its contract."""
@@ -1724,11 +1717,11 @@ _LINUX_AMD64_MATRIX = ResolutionMatrix(
 # the public main commit b3f10b7d, whose devcapsule-webconsole the image
 # installed. Inspected: linux/arm64, recipe 11 ready, display=contained,
 # runtime=launcher-supplied, all six services, the web console root.
-# Not published yet. The reference is the digest of the OCI image index in
-# the builder's containerd store, which a push of this exact image to
-# mycodespaceai/devcapsule-base keeps; a rebuild gets another digest and
-# must be pinned again. Until the owner pushes it, a checkout selects the
-# local image: `project config authorize base-image IMAGE`.
+# This exact image was pushed as
+# mycodespaceai/devcapsule-base:linux-arm64-recipe-11-20261104 at 15:29 UTC
+# the same day; the digest below, its OCI image index, was read from the
+# registry after the push. A rebuild gets another digest and must be
+# pinned again.
 _LINUX_ARM64_RECIPE_11_BASE = _BasePin(
     mnemonic="v0.3.1.dev0-local-macos-aarch64",
     source_revision="b3f10b7d95aec659f268afecc03d0912a2e89d2f",
@@ -1740,7 +1733,6 @@ _LINUX_ARM64_RECIPE_11_BASE = _BasePin(
     recipe=11,
     display=CONTAINED_DISPLAY,
     runtime=LAUNCHER_SUPPLIED_RUNTIME,
-    published=False,
     lock_table={
         "reference": (
             "docker.io/mycodespaceai/devcapsule-base"
@@ -1782,8 +1774,9 @@ _LINUX_ARM64_MATRIX = ResolutionMatrix(
     },
     edges=(
         # Native IDE smokes on Apple Silicon (Docker Desktop 29.3.1) against
-        # the local, unpublished arm64 recipe-11 base above. They establish
-        # the IDE only: Playwright and the .NET SDK rode along unexercised.
+        # the arm64 recipe-11 base above, run on the local image before its
+        # push. They establish the IDE only: Playwright and the .NET SDK rode
+        # along unexercised.
         _VerifiedEdge(
             "codium", "1.143.17232", _BASE_FAMILY_UBUNTU_24_04,
             "noVNC HTTP/window startup passed natively on the local arm64 recipe-11 base, "

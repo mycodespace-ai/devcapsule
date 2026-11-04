@@ -70,8 +70,9 @@ dependency cycle and keeps runtime-plan production and execution in one build.
 
 Existing coverage for the default, delivered with v0.2.11:
 
-- `tests/test_runtime_artifact.py` checks executable selection, explicit
-  source-runtime selection, and formation identity changing with runtime bytes.
+- `tests/unit/devcapsule/test_runtime_artifact.py` checks executable selection
+  and explicit source-runtime selection; `tests/test_runtime_artifact.py`,
+  formation identity changing with runtime bytes.
 - `tests/e2e/test_component_cache.py` checks the installed executable's SHA-256,
   image label, runtime invocation, and inside/outside version metadata for both
   fixture surface families.
@@ -86,7 +87,7 @@ Future changes must preserve these properties. Any additional override
 interface needs its own explicit-selection and default-regression coverage;
 this record does not claim that interface has been validated.
 
-The macOS delivery path is covered by `tests/test_runtime_artifact.py`: the
+The macOS delivery path is covered by `tests/unit/devcapsule/test_runtime_artifact.py`: the
 named runtime and the directory form, refusal of a foreign or missing runtime,
 of a plain PEX on a non-Linux host, and of a runtime from another build. The
 IDE smoke compares the capsule's runtime digest with the runtime the workspace's

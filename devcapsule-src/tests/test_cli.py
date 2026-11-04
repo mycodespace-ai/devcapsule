@@ -16,7 +16,6 @@ from devcapsule.launch.pycharm._launcher import AttachedResult
 from devcapsule.launch.pycharm._image_build import PycharmImageBuildOptions
 from devcapsule.environment_realization import RealizedEnvironment
 from devcapsule.images.metadata import LocalImageRecord
-from devcapsule.platforms import Platform
 from devcapsule.materialization import ImageDetails, parse_locked_environment
 from devcapsule.configuration.file_formats import (
     canonical_digest,
@@ -323,59 +322,6 @@ def test_images_list_prints_managed_local_inventory(capsys) -> None:
     assert "devcapsule-base:debug-v019" in output
     assert "devcapsule-base:test" in output
     assert "1234567890ab" in output
-
-
-def test_images_build_base_maps_cli_options(tmp_path: Path, capsys) -> None:
-    pex = tmp_path / "devcapsule.pex"
-    pex.write_bytes(b"pex")
-    inspected = SimpleNamespace(
-        id="sha256:abc123",
-        config=SimpleNamespace(
-            labels={
-                "devcapsule.base.recipe-version": "1",
-                "devcapsule.pex.build-mnemonic": "v026",
-                "devcapsule.pex.sha256": "a" * 64,
-                "devcapsule.source.revision": "revision-1",
-            }
-        ),
-    )
-
-    with (
-        patch("devcapsule.commands.images.build_base_image") as build,
-        patch("devcapsule.commands.images.inspect_local_image", return_value=inspected),
-    ):
-        result = cli.main(
-            [
-                "images",
-                "build",
-                "--type",
-                "base",
-                "--tag",
-                "devcapsule-base:debug-v019",
-                "--from",
-                "local-root:test",
-                "--pex",
-                str(pex),
-                "--source-revision",
-                "revision-1",
-                "--network",
-                "host",
-            ]
-        )
-
-    assert result == 0
-    options = build.call_args.args[0]
-    assert options.pex == pex.resolve()
-    assert options.image == "devcapsule-base:debug-v019"
-    assert options.root_image == "local-root:test"
-    assert options.source_revision == "revision-1"
-    assert options.allow_local_source is False
-    assert options.recipe == "ubuntu-24.04"
-    assert build.call_args.kwargs == {"network": "host", "platform": Platform.LINUX_AMD64}
-    output = capsys.readouterr().out
-    assert "Image ID: sha256:abc123" in output
-    assert "Runtime: supplied by the launcher" in output
-    assert "Source verification: public GitHub commit reachable" in output
 
 
 def test_images_build_base_selects_wip_nvidia_cuda_recipe(tmp_path: Path, capsys) -> None:

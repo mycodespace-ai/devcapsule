@@ -34,7 +34,9 @@ changed lines covered and the whole package, into the pull request's
 description between two marker comments, through
 `scripts/publish_coverage_numbers_to_pr.py`; a merge that takes the
 description as its message carries them into `main`'s history. The block is
-replaced on every run and the author's text around it is never touched.
+replaced on every run and the author's text around it is never touched. A pull
+request from a fork gets a read-only token, so its description is left alone;
+the job summary and the uploaded coverage reports still carry the figures.
 
 The hosted `tests.yml` workflow selects the existing serial unit suite when
 runtime, test, build or unclassified inputs change. It runs no Docker.

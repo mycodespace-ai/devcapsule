@@ -194,19 +194,6 @@ def test_physical_host_bridge_owns_and_cleans_broker(tmp_path: Path) -> None:
     assert not root.exists()
 
 
-def test_macos_host_bridge_is_unavailable_with_a_warning(tmp_path: Path, capsys) -> None:
-    # Docker Desktop refuses a host Unix socket as a bind source, so the
-    # optional integration degrades instead of failing the launch.
-    with (
-        patch("devcapsule.host_open.in_container", return_value=False),
-        patch("devcapsule.host_open.HostOs.current", return_value=HostOs.DARWIN),
-        host_open_bridge({"XDG_RUNTIME_DIR": str(tmp_path)}, enabled=True) as path,
-    ):
-        assert path is None
-    assert "host-browser is unavailable on macOS" in capsys.readouterr().err
-    assert list(tmp_path.iterdir()) == []
-
-
 @pytest.mark.skipif(sys.platform != "linux", reason="the broker reads SO_PEERCRED, which only Linux has")
 def test_hidden_host_open_command_uses_authorized_environment(tmp_path: Path, capsys) -> None:
     assert "host-open" not in cli.command_names()

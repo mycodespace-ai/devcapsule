@@ -4,12 +4,14 @@ Mnemonic: `linux-arm64`
 
 Start date: 2026-11-04
 
-State: active; slices 1 to 4 done 2026-11-04, six IDEs running natively; waits on publication and the owner
+State: active; on `main` since #338, 2026-11-04, its arm64 base published; the follow-up pull request turns
+`main`'s CI green again
 
 Branch association: `ws-linux-arm64/capsules`, forked from local `main` at b3f10b7d, with
-`ws-macos-launcher/host-port` merged in as its foundation
+`ws-macos-launcher/host-port` merged in as its foundation; merged to `main` as #338 from dcc2a7db.
+Follow-up: `ws-linux-arm64/mirror-and-published-base`, from `main` at bf7e5d66
 
-Integration target: `main`, after `macos-launcher`'s pull request
+Integration target: `main`
 
 Delivery method: pull request, merge commit; the human opens and merges it
 
@@ -112,27 +114,42 @@ arm64 on arm"). `Platform.current()` is now the native platform, and init asks t
 elicitor before the identity questions: Enter, or a run without a terminal, takes it. A
 project with a lock the host runs is not asked, and a Linux host never is.
 
+**2026-11-04, on today's `main`.** Rebased onto `main` at 7ab3adcd, which brought the
+unit-test conventions of WORKFLOW-LOCAL.md: a legacy test file only loses tests. Every test
+this branch added or changed now lives in the `tests/unit` mirror with a contract docstring;
+the two end-to-end files it changed are marked `e2e` at module level; the Linux-only skips
+it had added to three legacy files are gone, so on a Mac those tests fail as they do on
+`main`. The gate: 108 legacy files holding 1,461 tests, 22 conforming files, no breach.
+In a `linux/amd64` container, 2,821 passed and 5 failed, the five that fail on `main` there.
+
+**2026-11-04, merged, and the base published.** The owner merged the pull request as #338
+from dcc2a7db, before the three commits above it were pushed, so `main`'s CI fails at the
+conventions gate: 115 breaches in legacy files. `ws-linux-arm64/mirror-and-published-base`
+carries those three commits, applied unchanged onto `main` at bf7e5d66. `main` now has the
+Linux-only skips the move had taken out of three legacy files, so they stay: taking them out
+again would change legacy tests. The gate against bf7e5d66: 108 legacy files holding 1,461
+tests, 22 conforming files, no breach. The human pushed
+this Mac's arm64 base as `mycodespaceai/devcapsule-base:linux-arm64-recipe-11-20261104`
+at 15:29 UTC; the registry returns the pinned index digest, `sha256:7d32268065b6…`, for
+`linux/arm64`, so the pin and its six verified edges stand. The pin's `published` flag,
+init's note and report line, and the launch's refusal served only the unpublished base and
+are removed; the macOS page no longer builds or selects a local base.
+
 ## Next Resumable Task
 
-Publish this workstream and `macos-launcher` once the SSH agent holds a key, and hand both
-pull requests to the human, the macOS one first. The owner's rulings and the arm64 base's
-publication follow.
+The human pushes `ws-linux-arm64/mirror-and-published-base` and opens its pull request;
+once it is merged and `main`'s CI is green, the owner's rulings remain.
 
 ## Open Threads
 
-- The SSH agent on this Mac holds no identity, so the workstream cannot be published or
-  pushed; registration is local, as is `macos-launcher`'s.
-- This branch builds on `ws-macos-launcher/host-port`, which is not yet on `main`. The
-  registration commit is forked from `main` as topic 7.5 requires, and the macOS branch is
-  merged after it; this pull request follows that one.
-- An arm64 base on `docker.io/mycodespaceai`, and its digest in the matrix, need the owner.
-  The pin holds the digest a push of this Mac's exact image keeps; a rebuild must re-pin.
+- `main` at bf7e5d66 fails CI at the conventions gate until the follow-up branch is merged.
+- A rebuilt arm64 base gets another digest: it must be pushed, pinned and smoked again.
 - The libsoup 404 on amd64 goes to `maintenance` by intake mail once the coordination branch
   can be pushed.
 - Docker access from an arm64 capsule reaches an arm64 daemon either way; on amd64 capsules
   under emulation it also defaults to arm64 images (`docs/platforms/macos.md`).
-- A checkout keeps one base-image answer. Deleting the arm64 lock to return to emulation
-  needs the base answered again, as the macOS page says.
+- A checkout that selected a locally built arm64 base before the push keeps it until its
+  base is answered `default` again, as the macOS page says.
 
 ## Document Index
 

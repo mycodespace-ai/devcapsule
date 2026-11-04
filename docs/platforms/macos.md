@@ -14,10 +14,10 @@ experimental and not a supported platform in {{tag}}. Intel Macs are untested.
 
 A project runs as one of two capsule platforms:
 
-- **`linux-arm64`, natively, the default.** Faster, but its base image is not
-  published yet: you build it on your Mac once and select it for each checkout.
+- **`linux-arm64`, natively, the default.** Faster, with a base image of its
+  own for ARM.
 - **`linux-amd64`, under emulation.** The same environments Linux users get,
-  with the published base, run by Docker Desktop under x86-64 emulation.
+  with the same base, run by Docker Desktop under x86-64 emulation.
 
 `devcapsule project init` asks which one a new project is for; Enter takes
 `linux-arm64`, and `--platform PLATFORM` answers without the question. A
@@ -93,40 +93,32 @@ export DEVCAPSULE_RUNTIME_PEX="$HOME/.local/lib/devcapsule"
 ```
 
 Add the `export` line, and `$HOME/.local/bin` on your `PATH`, to your shell
-profile. Then build the arm64 base below, or continue with
-[your first session](../getting-started/first-session.md) and answer
-`linux-amd64` when init asks for the platform.
+profile. Then continue with
+[your first session](../getting-started/first-session.md); init asks for the
+platform, and Enter takes `linux-arm64`.
 
 ## Run a project natively as `linux-arm64`
 
-Build the arm64 base once, natively, with the launcher you installed and the
-revision it was built from (`devcapsule version` shows it):
+A new project is `linux-arm64` unless you answer otherwise. To run a project
+locked for `linux-amd64` natively, add the arm64 lock beside the other:
 
 ```bash
-devcapsule images build --type base --recipe ubuntu-24.04 --platform linux-arm64 \
-  --tag devcapsule-base-local:arm64 --source-revision "$revision"
-```
-
-Then, in each project, create the arm64 lock, or add it beside an existing
-`linux-amd64` one, and select your local base for the checkout:
-
-```bash
-devcapsule project init --platform linux-arm64 --authorize base-image default
-devcapsule project config authorize base-image devcapsule-base-local:arm64
+devcapsule project init --platform linux-arm64
 devcapsule project run
 ```
 
-VSCodium, VS Code, Eclipse, PyCharm, IntelliJ IDEA and Rider have each started
-natively on this base. A component no arm64 run has validated yet, such as the
-.NET SDK or Playwright, needs `--unverified` on `init` or on the `config`
-command that adds it; the command says so. The arm64 lock names a base that is
-not published yet, so do not commit it to a shared repository: anyone without
-a local arm64 base cannot run it. A change to the project's requirements made
-on your Mac updates both locks.
+The first launch pulls the arm64 base. VSCodium, VS Code, Eclipse, PyCharm,
+IntelliJ IDEA and Rider have each started natively on it. A component no arm64
+run has validated yet, such as the .NET SDK or Playwright, needs `--unverified`
+on `init` or on the `config` command that adds it; the command says so. A
+change to the project's requirements made on your Mac updates both locks.
+
+A checkout that selected a locally built arm64 base before this one was
+published keeps it until you select the project's base again with
+`devcapsule project config authorize base-image default`.
 
 To run the project under emulation again, delete
-`.devcapsule/devcapsule.linux-arm64.lock` and select the project's base for
-your checkout again with `devcapsule project config authorize base-image default`.
+`.devcapsule/devcapsule.linux-arm64.lock`.
 
 If something fails on your Mac, please [open an issue](https://github.com/ccozianu/devcapsule/issues/new)
 with your macOS and Docker Desktop versions and the error output, omitting

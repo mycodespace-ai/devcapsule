@@ -43,9 +43,6 @@ from tests.test_upgrade_recovery import (
     invoke,
     replace_answers,
 )
-from devcapsule.launch.pycharm import DockerMode, PycharmRunOptions, build_run_config
-from devcapsule.platforms import Platform
-from tests.test_pycharm import base_env
 
 pytestmark = pytest.mark.legacy
 
@@ -291,18 +288,6 @@ type = "integer"
     assert run_until_prepared(project) == 2
     message = capsys.readouterr().err
     assert 'editor.theme' in message and 'service.port' in message
-
-
-def test_launcher_environment_cannot_override_explicit_sudo_denial(checkout, tmp_path):
-    project, _, _ = checkout
-    env = base_env(tmp_path)
-    env['PYCHARM_ENABLE_SUDO'] = '1'
-    # ProjectRunCommand passes enable_sudo=False for the persisted denial.
-    # Check the NEXT boundary, rather than replacing it with a launch mock.
-    config = build_run_config(
-        PycharmRunOptions(project=project, capsule_platform=Platform.LINUX_AMD64, docker_mode=DockerMode.none, enable_sudo=False), env,
-    )
-    assert config.enable_sudo is False
 
 
 def test_shipped_cli_recommendation_override_and_omission(checkout, capsys):
