@@ -16,12 +16,14 @@ import sys
 import tempfile
 from threading import Event
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Callable, Mapping, Sequence
 
 from ...docker_arguments import inline_environment_names, redact_environment
+from ...platforms import HostOs, Platform
 from ...container_runtime.contract import (
     CONTAINED_DISPLAY_TRANSPORT,
     INFRASTRUCTURE_FAILURE_EXIT_CODE,
@@ -59,6 +61,7 @@ from ...display_client import (
 )
 from ...host_daemon import (
     current_container,
+    daemon_architecture,
     docker_socket,
     is_host_backed,
     requires_translation,
@@ -127,10 +130,17 @@ class TempRuntimeFiles:
     # The console's configuration channel: a directory the capsule writes
     # requests into and reads the launch-time listing from; CHANNEL_PATH inside.
     configuration_directory: Path | None = None
+    # On macOS, the Docker volume that holds the root-owned sudo policy.
+    sudoers_volume: str | None = None
 
 
 SUDOERS_POLICY_PATH = "/etc/sudoers.d/devcapsule-development-sudo"
 SUDOERS_POLICY = "%ide-sudo ALL=(ALL:ALL) NOPASSWD: ALL\n"
+SUDOERS_VOLUME_FILE = "policy"
+"""The policy's name inside its macOS volume."""
+SUDOERS_VOLUME_LABEL = "devcapsule.purpose=development-sudo-policy"
+ABANDONED_SUDOERS_VOLUME_AGE = timedelta(days=1)
+"""How old a policy volume no container uses must be to count as a killed launch's."""
 
 
 
@@ -167,6 +177,8 @@ def web_console_notice(availability: WebConsoleAvailability) -> str:
 @dataclass
 class PycharmRunOptions:
     project: Path
+    # The lock's platform: what the capsule runs as.
+    capsule_platform: Platform
     # Project configuration is complete; only the legacy command inherits
     # ambient launcher options. Host observations and explicit secret sources
     # remain available in either mode.
@@ -267,6 +279,9 @@ class PycharmRunConfig:
     memory_limit_bytes: int | None
     runtime_plan: RuntimePlan | None
     use_image_process: bool
+    capsule_platform: Platform
+    # The Docker daemon's, asked once per launch: it decides emulation.
+    daemon_architecture: str
     cpus: int | None = None
     launch_configuration: LaunchConfiguration | None = None
     host_browser_socket: Path | None = None
@@ -297,6 +312,13 @@ class PycharmRunConfig:
     libgl_always_software: str = "1"
     mesa_loader_driver_override: str = "llvmpipe"
     libgl_dri3_disable: str = "1"
+
+
+HOST_NETWORK_UNAVAILABLE_ON_MACOS = (
+    "Warning: host networking is unavailable on macOS: Docker Desktop's host network "
+    "is its virtual machine's, out of the Mac's reach. This launch uses bridge networking; "
+    "services on the Mac are reachable from the capsule as host.docker.internal."
+)
 
 
 def run_pycharm(options: PycharmRunOptions, env: Mapping[str, str] | None = None) -> int:
@@ -403,6 +425,7 @@ def run_pycharm(options: PycharmRunOptions, env: Mapping[str, str] | None = None
                 print(session_result_text(config, result), file=sys.stderr, flush=True)
                 return exit_code
             finally:
+                remove_sudoers_policy_volume(files.sudoers_volume, runtime_env)
                 cleanup_temp_runtime_files(files)
     except HostOpenError as exc:
         raise PycharmRunError(str(exc)) from exc
@@ -816,6 +839,12 @@ def build_run_config(options: PycharmRunOptions, env: Mapping[str, str]) -> Pych
         )
     if options.network_mode not in {"bridge", "host", "none"}:
         raise PycharmRunError("The Docker network mode must be bridge, host, or none.")
+    if options.network_mode == "host" and not HostOs.current().host_network_reachable:
+        # Docker Desktop's host network is its VM's: a listener on loopback
+        # there is unreachable from the Mac (observed on 29.3.1), so the
+        # desktop and console would never answer. Bridge is the narrower grant.
+        print(HOST_NETWORK_UNAVAILABLE_ON_MACOS, file=sys.stderr)
+        options = replace(options, network_mode="bridge")
     if options.use_image_process and options.runtime_plan is None:
         raise PycharmRunError("Using the image process requires an external runtime plan.")
     contained_display = options.display_transport == CONTAINED_DISPLAY_TRANSPORT
@@ -957,7 +986,12 @@ def build_run_config(options: PycharmRunOptions, env: Mapping[str, str]) -> Pych
                 "Start Docker on the host, set HOST_DOCKER_SOCKET, or launch with --docker-in-docker / --no-docker."
             )
         host_docker_socket = host_docker_socket.resolve()
-        host_docker_gid = host_docker_socket.stat().st_gid
+        # Where the host decides the socket's group inside containers (Docker
+        # Desktop: root), the capsule user joins it; a capsule granted the
+        # daemon already holds root on its virtual machine, so the group adds
+        # no authority. Elsewhere the host socket file's group applies.
+        socket_gid = HostOs.current().docker_socket_gid
+        host_docker_gid = socket_gid if socket_gid is not None else host_docker_socket.stat().st_gid
 
     if enable_sudo:
         while ide_sudo_gid in {0, host_user.gid, host_docker_gid}:
@@ -1164,6 +1198,8 @@ def build_run_config(options: PycharmRunOptions, env: Mapping[str, str]) -> Pych
         console_token=console_token,
         open_console_url=options.open_console_url,
         web_console=options.web_console,
+        capsule_platform=options.capsule_platform,
+        daemon_architecture=daemon_architecture(),
         interactive_state_mounts=tuple(interactive_state_mounts),
         additional_state_mounts=tuple(additional_state_mounts),
         additional_environment=tuple(additional_environment),
@@ -1293,6 +1329,7 @@ def build_docker_args(
     args = [
         "--rm",
         "-i",
+        *config.capsule_platform.docker_platform_args(config.daemon_architecture),
         "--name",
         config.name,
         "--workdir",
@@ -1394,12 +1431,12 @@ def build_docker_args(
                 "Development sudo requires generated shadow and sudoers files."
             )
         args.extend(["--mount", f"type=bind,src={files.shadow_file},dst=/etc/shadow,ro"])
-        args.extend(
-            [
-                "--mount",
-                f"type=bind,src={files.sudoers_file},dst={SUDOERS_POLICY_PATH},ro",
-            ]
+        policy_source = (
+            f"type=volume,src={files.sudoers_volume},volume-subpath={SUDOERS_VOLUME_FILE}"
+            if files.sudoers_volume
+            else f"type=bind,src={files.sudoers_file}"
         )
+        args.extend(["--mount", f"{policy_source},dst={SUDOERS_POLICY_PATH},ro"])
     if files.runtime_plan_file is not None:
         args.extend(
             [
@@ -1816,7 +1853,7 @@ def write_user_files(config: PycharmRunConfig, files: TempRuntimeFiles) -> None:
         "root:x:0:",
         f"{host_user.group_name}:x:{host_user.gid}:",
     ]
-    if config.host_docker_gid is not None and config.host_docker_gid != host_user.gid:
+    if config.host_docker_gid not in (None, 0, host_user.gid):
         group_lines.append(f"host-docker:x:{config.host_docker_gid}:")
     if config.enable_sudo:
         group_lines.append(f"ide-sudo:x:{config.ide_sudo_gid}:{host_user.name}")
@@ -1845,6 +1882,9 @@ def ensure_sudoers_policy_ownership(
     policy = files.sudoers_file
     if not config.enable_sudo or policy is None:
         raise PycharmRunError("Development sudo requires a generated sudoers policy.")
+    if not HostOs.current().chown_reaches_bind_mounts:
+        files.sudoers_volume = prepare_sudoers_policy_volume(config, policy, env)
+        return
     try:
         os.chown(policy, 0, 0)
     except PermissionError:
@@ -1854,6 +1894,7 @@ def ensure_sudoers_policy_ownership(
             "run",
             "--rm",
             "--pull=never",
+            *config.capsule_platform.docker_platform_args(config.daemon_architecture),
             "--network",
             "none",
             "--read-only",
@@ -1892,6 +1933,121 @@ def ensure_sudoers_policy_ownership(
     if file_owner_uid(policy) != 0:
         raise PycharmRunError(
             "Development-sudo policy ownership is not root after preparation."
+        )
+
+
+def prepare_sudoers_policy_volume(config: PycharmRunConfig, policy: Path, env: Mapping[str, str]) -> str:
+    """Write the sudo policy into a Docker volume as root; return the volume's name.
+
+    sudo ignores a policy root does not own. Docker Desktop shares Mac files
+    with its virtual machine as the Mac user: a bind-mounted file is owned by
+    that user inside every container, and not even root there can chown it.
+    A volume lives on the virtual machine's own disk, where root's ownership
+    holds. The session removes it at its end; the next launch removes one a
+    killed launch left behind (``remove_abandoned_sudoers_volumes``).
+    """
+
+    volume = f"{config.name}-sudoers"
+    remove_abandoned_sudoers_volumes(env)
+    created = subprocess.run(
+        ["docker", "volume", "create", "--label", SUDOERS_VOLUME_LABEL, volume],
+        check=False, env=dict(env), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
+    )
+    if created.returncode != 0:
+        detail = created.stderr.strip()
+        raise PycharmRunError(
+            "Could not create the volume for the development-sudo policy" + (f": {detail}" if detail else ".")
+        )
+    staged = f"/policy/{SUDOERS_VOLUME_FILE}.new"
+    command = [
+        "docker",
+        "run",
+        "--rm",
+        "-i",
+        "--pull=never",
+        *config.capsule_platform.docker_platform_args(config.daemon_architecture),
+        "--network",
+        "none",
+        "--read-only",
+        "--pids-limit",
+        "64",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--user",
+        "0:0",
+        "--mount",
+        f"type=volume,src={volume},dst=/policy",
+        "--entrypoint",
+        "/bin/sh",
+        config.image,
+        "-ec",
+        # 0440 root:root, as sudo requires. A policy left by an earlier
+        # launch is read-only even to root without capabilities: replace it.
+        f"umask 0337; rm -f {staged}; cat > {staged}; mv -f {staged} /policy/{SUDOERS_VOLUME_FILE}",
+    ]
+    completed = subprocess.run(
+        command,
+        check=False,
+        env=dict(env),
+        input=policy.read_text(encoding="utf-8"),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if completed.returncode != 0:
+        remove_sudoers_policy_volume(volume, env)
+        detail = completed.stderr.strip()
+        raise PycharmRunError(
+            "Could not prepare the root-owned development-sudo policy" + (f": {detail}" if detail else ".")
+        )
+    return volume
+
+
+def remove_abandoned_sudoers_volumes(env: Mapping[str, str]) -> None:
+    """Remove the policy volumes of launches that ended without removing their own.
+
+    A concurrent launch's volume is in no container's use between its
+    creation and its capsule's start, so only a volume older than
+    ``ABANDONED_SUDOERS_VOLUME_AGE`` is taken for abandoned; Docker refuses
+    to remove one a container still uses.
+    """
+
+    listed = subprocess.run(
+        ["docker", "volume", "ls", "--quiet", "--filter", f"label={SUDOERS_VOLUME_LABEL}"],
+        check=False, env=dict(env), capture_output=True, text=True,
+    )
+    volumes = listed.stdout.split() if listed.returncode == 0 else []
+    if not volumes:
+        return
+    inspected = subprocess.run(
+        ["docker", "volume", "inspect", "--format", "{{.Name}} {{.CreatedAt}}", *volumes],
+        check=False, env=dict(env), capture_output=True, text=True,
+    )
+    cutoff = datetime.now(timezone.utc) - ABANDONED_SUDOERS_VOLUME_AGE
+    abandoned = []
+    for line in inspected.stdout.splitlines():
+        volume, _, created = line.partition(" ")
+        try:
+            if datetime.fromisoformat(created) < cutoff:
+                abandoned.append(volume)
+        except ValueError:
+            continue  # A creation time Docker did not report is no evidence of age.
+    if abandoned:
+        subprocess.run(
+            ["docker", "volume", "rm", *abandoned],
+            check=False, env=dict(env), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+
+
+def remove_sudoers_policy_volume(volume: str | None, env: Mapping[str, str]) -> None:
+    """Remove the policy volume; one a capsule still uses is left for a later launch to find abandoned."""
+
+    if volume:
+        subprocess.run(
+            ["docker", "volume", "rm", "--force", volume],
+            check=False, env=dict(env), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
 
 

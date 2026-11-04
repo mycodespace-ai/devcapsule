@@ -16,6 +16,7 @@ from devcapsule.launch.pycharm._launcher import AttachedResult
 from devcapsule.launch.pycharm._image_build import PycharmImageBuildOptions
 from devcapsule.environment_realization import RealizedEnvironment
 from devcapsule.images.metadata import LocalImageRecord
+from devcapsule.platforms import Platform
 from devcapsule.materialization import ImageDetails, parse_locked_environment
 from devcapsule.configuration.file_formats import (
     canonical_digest,
@@ -370,7 +371,7 @@ def test_images_build_base_maps_cli_options(tmp_path: Path, capsys) -> None:
     assert options.source_revision == "revision-1"
     assert options.allow_local_source is False
     assert options.recipe == "ubuntu-24.04"
-    assert build.call_args.kwargs == {"network": "host"}
+    assert build.call_args.kwargs == {"network": "host", "platform": Platform.LINUX_AMD64}
     output = capsys.readouterr().out
     assert "Image ID: sha256:abc123" in output
     assert "Runtime: supplied by the launcher" in output

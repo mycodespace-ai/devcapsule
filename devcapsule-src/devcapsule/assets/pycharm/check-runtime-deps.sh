@@ -2,7 +2,11 @@
 set -euo pipefail
 
 IDE_HOME="${IDE_HOME:-${PYCHARM_HOME:-/opt/pycharm}}"
-SKIKO_LIB="$IDE_HOME/lib/skiko-awt-runtime-all/libskiko-linux-x64.so"
+case "$(uname -m)" in
+  aarch64 | arm64) SKIKO_ARCH=arm64 ;;
+  *) SKIKO_ARCH=x64 ;;
+esac
+SKIKO_LIB="$IDE_HOME/lib/skiko-awt-runtime-all/libskiko-linux-$SKIKO_ARCH.so"
 FAILURES=0
 
 pass() {

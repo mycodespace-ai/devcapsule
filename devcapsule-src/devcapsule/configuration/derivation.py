@@ -26,7 +26,6 @@ from typing import Any, Mapping
 
 from devcapsule.compat import DecisionPending
 from devcapsule.materialization import validate_base_image
-from devcapsule.platforms import Platform
 from devcapsule.project import sanitize_name
 from devcapsule.resolution_matrix import MATRICES, ResolutionMatrix, known_base_image
 
@@ -41,6 +40,7 @@ from .model import Configuration
 from .manifest_document import Recommendations
 from .trust import HomeTrust
 from .storage import (
+    project_platform,
     ResolvedProject,
     atomic_write,
     checkout_record_paths,
@@ -108,7 +108,8 @@ class CheckoutState:
     def __init__(self, root: Path, manifest: dict[str, Any]) -> None:
         self.root = root
         self.manifest = manifest
-        self.matrix = MATRICES[Platform.current()]
+        self.platform = project_platform(root)
+        self.matrix = MATRICES[self.platform]
         self.surfaces = {name: self.matrix.resolve_provider(name) or name for name in self.matrix.ide_capabilities()}
         self.lock_path, self.shared_lock = recommendation_lock_for(root, manifest)
         self.home = load_settings()
@@ -158,7 +159,7 @@ class CheckoutState:
         """The shared lock, or the checkout's version set, with the checkout's pins laid over it."""
         document = self.checkout if checkout is None else checkout
         selected = selected_version_lock(document)
-        if selected is not None and selected.get("platform") != str(Platform.current()):
+        if selected is not None and selected.get("platform") != str(self.platform):
             raise ProjectConfigurationError("Local version set is for another platform; follow the project explicitly.")
         return compose_lock(self.manifest, selected if selected is not None else self.shared_lock, document, policy=self.policy)
 

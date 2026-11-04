@@ -19,6 +19,8 @@ from python_on_whales import docker
 from python_on_whales.exceptions import DockerException
 
 from devcapsule.compat import CliError, copy_resource_tree
+from devcapsule.host_daemon import daemon_architecture
+from devcapsule.platforms import Platform
 
 
 @dataclass(frozen=True)
@@ -256,8 +258,10 @@ class BuildxImageBuilder:
     def __init__(self, context_root: Path | None = None) -> None:
         self.context_root = context_root
 
-    def build(self, spec: ImageBuildSpec, *, network: str = "default") -> None:
+    def build(self, spec: ImageBuildSpec, *, platform: Platform, network: str = "default") -> None:
+        """Build ``spec`` for the capsule ``platform``."""
         plan = spec.build_plan()
+        emulated = platform.emulated_docker_platform(daemon_architecture())
         try:
             with self._context_directory() as context_root:
                 rendered = render_build_context(plan, context_root)
@@ -266,6 +270,7 @@ class BuildxImageBuilder:
                     file=rendered.dockerfile,
                     tags=[plan.image],
                     load=True,
+                    platforms=[emulated] if emulated is not None else None,
                     network=network,
                     build_contexts={name: str(path) for name, path in rendered.named_contexts.items()},
                     allow=["network.host"] if network == "host" else [],

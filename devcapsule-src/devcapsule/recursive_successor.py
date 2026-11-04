@@ -25,6 +25,7 @@ from devcapsule.container_runtime.contract import CONTAINED_DISPLAY_TRANSPORT, R
 from devcapsule.display_client import display_url, select_display_transport
 from devcapsule.environment_realization import realize_environment
 from devcapsule.materialization import RUNTIME_PLAN_PATH as SUCCESSOR_RUNTIME_PLAN_PATH
+from devcapsule.configuration.capability_selection import lock_platform
 from devcapsule.configuration.storage import (
     atomic_write,
 )
@@ -505,6 +506,7 @@ def _resolved_run_options(
     )
     return PycharmRunOptions(
         project=selected.root,
+        capsule_platform=lock_platform(selected.lock),
         project_mount=str(runtime["project-mount"]),
         image=image,
         name=name,

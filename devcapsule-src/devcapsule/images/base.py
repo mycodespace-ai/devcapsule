@@ -22,6 +22,7 @@ from devcapsule.images.contract import (
 from devcapsule.build_info import BuildInfo, BuildInfoError, current_build_info, read_pex_build_info
 from devcapsule.compat import CliError
 from devcapsule.launch.pycharm._image_build import BASE_APT_PACKAGES
+from devcapsule.platforms import Platform
 from devcapsule.images.build import (
     AptPackagesComponent,
     BaseImageComponent,
@@ -315,10 +316,11 @@ def build_base_image(
     options: BaseImageBuildOptions,
     builder: BuildxImageBuilder | None = None,
     *,
+    platform: Platform,
     network: str = "default",
     source_verifier: Callable[[BuildInfo], None] = verify_public_github_revision,
 ) -> None:
     spec = build_base_image_spec(options)
     if not options.allow_local_source:
         source_verifier(pex_build_info(options))
-    (builder or BuildxImageBuilder()).build(spec, network=network)
+    (builder or BuildxImageBuilder()).build(spec, network=network, platform=platform)

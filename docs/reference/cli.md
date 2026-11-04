@@ -1,7 +1,7 @@
 ---
 description: The command tree of the devcapsule launcher, with one line of intent per command and usage for init, run and config.
 weight: 1
-updated: 2026-10-30
+updated: 2026-11-04
 ---
 # Command reference
 
@@ -55,7 +55,8 @@ home instead and disables this fallback to launcher settings.
 ```text
 devcapsule project init [--require NAME[>=VERSION]]... [--offer CAPABILITY]... [--ide IDE] [--with CAPABILITY]...
                         [--name NAME] [--slug SLUG] [--creator CREATOR] [--project-mount PATH]
-                        [--regenerate] [--unverified] [--set NAME VALUE]... [--authorize NAME VALUE]... [--bind NAME VALUE]...
+                        [--platform PLATFORM] [--regenerate] [--unverified]
+                        [--set NAME VALUE]... [--authorize NAME VALUE]... [--bind NAME VALUE]...
 ```
 
 `--require` and `--offer` write shared project capabilities into
@@ -71,6 +72,15 @@ Schema-2 manifests cannot be read by candidate 3 or older launchers. When an
 IDE is selected, `init` can ask for base or vendor consent; non-interactive
 scripts can pass `--authorize NAME VALUE`. `--set`, `--bind`, and `--authorize`
 also accept one optional justification argument after the value.
+
+A project has one lock per capsule platform it runs as, such as
+`devcapsule.linux-amd64.lock`. A project runs as the first platform this host
+runs that it has a lock for; an Apple Silicon Mac runs `linux-arm64` before
+`linux-amd64`. On a host that runs more than one, init asks which platform a
+new project is for, the native one by default. `--platform PLATFORM` answers
+without the question, and adds that platform's lock to a project locked for
+another, so on the Mac `devcapsule project init --platform linux-arm64` lets an
+emulated project run natively.
 
 ### `wrap`
 
@@ -194,7 +204,7 @@ Shared project contract (for repository owners; writes schema 2):
 
 Every shared-contract command accepts `--preview` to validate and print the
 resulting change without writing files. Capability changes and provider
-recommendations update the manifest and platform lock together. Capability
+recommendations update the manifest and every platform lock together. Capability
 commands accept `--unverified`; `recommend` does not. Environment declarations
 and non-provider recommendations update only `.devcapsule/devcapsule.toml`.
 
@@ -248,7 +258,7 @@ Each command below follows `devcapsule`:
 | Command | Intent |
 |---|---|
 | `version [--json]` | Print the launcher version, package version, and source revision provenance. |
-| `images build --type {base,environment} ...` | Build a curated base image or materialize a project environment image. |
+| `images build --type {base,environment} ...` | Build a curated base image, for the capsule platform `--platform` names, or materialize a project environment image. |
 | `images list [--include-legacy]` | List DevCapsule base and environment images in the local Docker store. |
 | `bootstrap [--refresh-workflow-definition] project` | Install or refresh DevCapsule workflow files and initialize project status records. |
 | `workflow brief` | Print the active workstream summary, live claims, waiting mail, sync distance, and validation commands. |

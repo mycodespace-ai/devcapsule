@@ -50,10 +50,21 @@ dependency cycle and keeps runtime-plan production and execution in one build.
 - Source-form launchers can explicitly select a built PEX using
   `DEVCAPSULE_RUNTIME_PEX`; running that PEX directly gives the ordinary
   identical-executable path. Source Python files are not themselves a PEX.
-- The packaged launcher currently takes precedence over
-  `DEVCAPSULE_RUNTIME_PEX`. That variable is a source-development selection,
-  not a general packaged-launcher runtime override. No new override interface
-  is implemented by recording this decision.
+- A packaged launcher that runs on the capsule platform takes precedence
+  over `DEVCAPSULE_RUNTIME_PEX`. That variable is otherwise a source-development
+  selection, not a general packaged-launcher runtime override.
+- Since the `linux-arm64` workstream (2026-11-04, unreleased): a packaged
+  launcher that cannot run inside the capsule, a macOS executable launching
+  Linux capsules, delivers the runtime `DEVCAPSULE_RUNTIME_PEX` names instead,
+  and stops with that remedy when it is unset. The variable may name a
+  directory holding one runtime per capsule platform as
+  `devcapsule-<platform>`; the lock's platform selects. This is the explicit
+  user choice D-0009 admits, not a new default: the outside and inside bytes
+  differ, so the delivered runtime must be the launcher's build, the same
+  version, and the same source revision wherever both record one. A local
+  build without a recorded revision can be matched by version only. A
+  release shipping macOS launchers would reopen D-0009, whose *Reopen If*
+  names this case.
 
 ## Verification
 
@@ -74,3 +85,9 @@ These fixture-image checks do not stand in for actual IDE-terminal acceptance.
 Future changes must preserve these properties. Any additional override
 interface needs its own explicit-selection and default-regression coverage;
 this record does not claim that interface has been validated.
+
+The macOS delivery path is covered by `tests/test_runtime_artifact.py`: the
+named runtime and the directory form, refusal of a foreign or missing runtime,
+of a plain PEX on a non-Linux host, and of a runtime from another build. The
+IDE smoke compares the capsule's runtime digest with the runtime the workspace's
+lock selects. Neither is a release validation of macOS launchers.

@@ -178,6 +178,8 @@ status file; internal WIP/archive documents use the local index in that status.
 - [Maintenance current status](engineering-docs/wip/2026-09-18-maintenance/CURRENT-STATUS.md)
 - [Capsule web console current status](engineering-docs/wip/2026-10-09-capsule-webconsole/CURRENT-STATUS.md)
 - [Wrapped projects current status](engineering-docs/wip/2026-11-02-wrapped-projects/CURRENT-STATUS.md)
+- [macOS launcher current status](engineering-docs/wip/2026-11-03-macos-launcher/CURRENT-STATUS.md)
+- [linux-arm64 capsules current status](engineering-docs/wip/2026-11-04-linux-arm64/CURRENT-STATUS.md)
 - [Sample demo projects current status](engineering-docs/wip/2026-08-14-sample-projects/CURRENT-STATUS.md)
 - [Contained display current status](engineering-docs/wip/2026-08-19-contained-display/CURRENT-STATUS.md)
 

@@ -60,9 +60,17 @@ SURFACES: tuple[IdeSurface, ...] = (
 )
 
 CREATOR = "e2e@devcapsule.test"
-DESKTOP_READY = re.compile(r"Contained display is ready; open it in a browser: (http://127\.0\.0\.1:\d+/vnc\.html\?\S+)")
+DESKTOP_READY = re.compile(
+    r"Contained display is ready; (?:open it in a browser: (http://127\.0\.0\.1:\d+/vnc\.html\?\S+)"
+    r"|opened in your browser\.|opened through the host-browser bridge\.)"
+)
 """The launcher's readiness line. It also announces the URL earlier, before the
-bridge listens; only the ready line means the page answers."""
+bridge listens; only the ready line means the page answers. Inside a capsule
+without a bridge the ready line names the URL. Elsewhere the launcher opens it,
+which the smoke's ``BROWSER=true`` makes a no-op, and the URL is the earlier
+announcement's."""
+DESKTOP_ANNOUNCED = re.compile(r"Contained display: (http://127\.0\.0\.1:\d+/vnc\.html\?\S+)")
+"""The launcher's first mention of the desktop URL, printed before it answers."""
 CONSOLE_READY = re.compile(r"Web console is ready; open it in a browser: (http://127\.0\.0\.1:\d+/\?token=\S+)")
 """The launcher's console readiness line; printed once the console answered its port."""
 LAUNCH_TIMEOUT = 600.0
@@ -171,8 +179,11 @@ def initialize_project(executable: Path, surface: IdeSurface, workspace: Path, e
     """
     environment = dict(os.environ, BROWSER="true")  # webbrowser runs `true URL`: no tab opens
     built_base = os.environ.get("DEVCAPSULE_E2E_BASE_IMAGE")
+    # DEVCAPSULE_SMOKE_PLATFORM creates the project for that capsule platform,
+    # such as linux-arm64 on Apple Silicon, whose new projects are linux-amd64.
+    platform = os.environ.get("DEVCAPSULE_SMOKE_PLATFORM")
     init = subprocess.run(
-        [str(executable), "project", "init",
+        [str(executable), "project", "init", *(["--platform", platform] if platform else []),
          *(flag for need in surface.needs for flag in ("--ide" if need.endswith("-ide") else "--require", need)),
          "--creator", CREATOR, "--slug", slug,
          "--authorize", "base-image", "default",
@@ -241,7 +252,7 @@ def launched_ide(executable: Path, surface: IdeSurface, workspace: Path,
 
 def wait_for_desktop_url(launcher: subprocess.Popen[bytes], launcher_log: Path) -> str:
     """Return the desktop URL once the launcher prints it; fail if it exits first."""
-    return _wait_for_ready_url(launcher, launcher_log, DESKTOP_READY, "desktop")
+    return _wait_for_ready_url(launcher, launcher_log, DESKTOP_READY, "desktop", announced=DESKTOP_ANNOUNCED)
 
 
 def wait_for_console_url(launcher: subprocess.Popen[bytes], launcher_log: Path) -> str:
@@ -250,13 +261,18 @@ def wait_for_console_url(launcher: subprocess.Popen[bytes], launcher_log: Path) 
 
 
 def _wait_for_ready_url(launcher: subprocess.Popen[bytes], launcher_log: Path, pattern: re.Pattern[str],
-                        what: str, timeout: float = LAUNCH_TIMEOUT) -> str:
+                        what: str, timeout: float = LAUNCH_TIMEOUT,
+                        announced: re.Pattern[str] | None = None) -> str:
     deadline = time.monotonic() + timeout
     while True:
         text = launcher_log.read_text(encoding="utf-8", errors="replace")
         found = pattern.search(text)
-        if found:
+        if found and found.group(1):
             return found.group(1)
+        if found and announced and (earlier := announced.search(text, 0, found.start())):
+            return earlier.group(1)
+        if found:
+            raise AssertionError(f"the {what} became ready without a URL announced before it:\n{text[-4000:]}")
         if launcher.poll() is not None:
             raise AssertionError(f"launcher exited {launcher.returncode} before publishing a {what} URL:\n{text}")
         if time.monotonic() > deadline:

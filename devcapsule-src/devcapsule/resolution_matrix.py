@@ -59,6 +59,7 @@ from devcapsule.platforms import Platform
 from devcapsule.components.catalog import COMPONENTS
 from devcapsule.components.playwright_pin import PIN as PLAYWRIGHT_PIN
 from devcapsule.components.eclipse_native_pin import PACKAGES as ECLIPSE_NATIVE_PACKAGES
+from devcapsule.components.linux_arm64_pins import COMPONENT_LOCK_TABLES as LINUX_ARM64_LOCK_TABLES
 from devcapsule.configuration.file_formats import (
     ProjectConfigurationError,
     canonical_digest,
@@ -100,7 +101,7 @@ class Capability:
 
 @dataclass(frozen=True)
 class _BasePin:
-    """One published base image and the capabilities it ships."""
+    """One base image and the capabilities it ships."""
 
     mnemonic: str
     # The family of base releases this pin belongs to — see _VerifiedEdge:
@@ -122,6 +123,9 @@ class _BasePin:
     runtime: str = LAUNCHER_SUPPLIED_RUNTIME
     source_revision: str | None = None
     # A clean public-source builder need not have a release tag.
+    # False while the reference names an image its registry does not hold
+    # yet: only a locally built base of the same recipe stands in for it.
+    published: bool = True
 
     @property
     def contract(self) -> BaseContract:
@@ -245,6 +249,10 @@ class ResolutionMatrix:
         reference = lock.get("base", {}).get("reference")
         return next((base.base_family for base in self._bases
                      if base.lock_table.get("reference") == reference), None)
+
+    def base_unpublished(self, reference: str) -> bool:
+        """Whether the pinned base at ``reference`` is not in its registry yet."""
+        return any(base.lock_table.get("reference") == reference and not base.published for base in self._bases)
 
     def base_image(self, reference: str) -> BaseImage | None:
         """The pinned base at ``reference``, described by its contract."""
@@ -393,6 +401,14 @@ class ResolutionMatrix:
     def component_pins(self) -> dict[str, Mapping[str, Any]]:
         """The latest embedded table for each component on this platform."""
         return {name: pins[-1].lock_table for name, pins in self._components.items() if pins}
+
+    @property
+    def platform(self) -> Platform:
+        return self._platform
+
+    def component_pin(self, component: str, version: object) -> Mapping[str, Any] | None:
+        """This platform's embedded table for one component version, or None."""
+        return next((pin.lock_table for pin in self._components.get(component, ()) if pin.version == version), None)
 
     def component_closure(self, capability: str, minimum: str | None = None,
                           lock: Mapping[str, Any] | None = None, *,
@@ -1702,12 +1718,121 @@ _LINUX_AMD64_MATRIX = ResolutionMatrix(
     },
 )
 
+# The linux-arm64 base, recipe 11: the amd64 recipe-11 recipe built natively
+# on an Apple Silicon Mac (Docker Desktop 29.3.1) on 2026-11-04 by
+# `images build --type base --recipe ubuntu-24.04` from a launcher built at
+# the public main commit b3f10b7d, whose devcapsule-webconsole the image
+# installed. Inspected: linux/arm64, recipe 11 ready, display=contained,
+# runtime=launcher-supplied, all six services, the web console root.
+# Not published yet. The reference is the digest of the OCI image index in
+# the builder's containerd store, which a push of this exact image to
+# mycodespaceai/devcapsule-base keeps; a rebuild gets another digest and
+# must be pinned again. Until the owner pushes it, a checkout selects the
+# local image: `project config authorize base-image IMAGE`.
+_LINUX_ARM64_RECIPE_11_BASE = _BasePin(
+    mnemonic="v0.3.1.dev0-local-macos-aarch64",
+    source_revision="b3f10b7d95aec659f268afecc03d0912a2e89d2f",
+    base_family=_BASE_FAMILY_UBUNTU_24_04,
+    satisfies={
+        "python": "3.12", "docker-cli": None, "node": NODE_VERSION,
+        "java": TEMURIN_VERSION, "maven": MAVEN_VERSION, "postgresql-client": None,
+    },
+    recipe=11,
+    display=CONTAINED_DISPLAY,
+    runtime=LAUNCHER_SUPPLIED_RUNTIME,
+    published=False,
+    lock_table={
+        "reference": (
+            "docker.io/mycodespaceai/devcapsule-base"
+            "@sha256:7d32268065b60b6ad75139d23c1e6fbb2daa43b3f2c53d2856c5e2e39891652b"
+        ),
+        "build-mnemonic": "v0.3.1.dev0-local-macos-aarch64",
+        "contract": "ubuntu-24.04@11",
+        "recipe-source": RECIPE_SOURCE_PATH,
+    },
+)
+
+
+def _on_linux_arm64(pin: _ComponentPin) -> _ComponentPin:
+    """The arm64 build of a linux-amd64 pin: same version, its own artifacts.
+
+    A base-delivered component carries no artifact and is the same pin on
+    both platforms; every other pin must have its arm64 table, so an amd64
+    version added without one fails here rather than at a user's launch.
+    """
+
+    table = LINUX_ARM64_LOCK_TABLES.get((pin.component_id, pin.version))
+    if table is None and pin.lock_table.get("delivery-policy") == "base-image":
+        return pin
+    if table is None:
+        raise AssertionError(f"{pin.component_id} {pin.version} has no linux-arm64 pin in components/linux_arm64_pins.py")
+    return _ComponentPin(pin.component_id, pin.version, table)
+
+
+# linux-arm64 offers the same vocabulary, versions and materialization
+# recipes as linux-amd64; its bases, artifacts and verified edges are its
+# own, because a validation on one architecture establishes nothing on another.
+_LINUX_ARM64_MATRIX = ResolutionMatrix(
+    platform=Platform.LINUX_ARM64,
+    matrix_version=_MATRIX_VERSION,
+    bases=(_LINUX_ARM64_RECIPE_11_BASE,),
+    components={
+        component: tuple(_on_linux_arm64(pin) for pin in pins)
+        for component, pins in _LINUX_AMD64_MATRIX._components.items()
+    },
+    edges=(
+        # Native IDE smokes on Apple Silicon (Docker Desktop 29.3.1) against
+        # the local, unpublished arm64 recipe-11 base above. They establish
+        # the IDE only: Playwright and the .NET SDK rode along unexercised.
+        _VerifiedEdge(
+            "codium", "1.143.17232", _BASE_FAMILY_UBUNTU_24_04,
+            "noVNC HTTP/window startup passed natively on the local arm64 recipe-11 base, "
+            "2026-11-04 run 20261104T120158Z-e8f78f; VSCodium window; no pixel, saved-edit "
+            "or persistence check",
+        ),
+        _VerifiedEdge(
+            "vscode", "1.144.0", _BASE_FAMILY_UBUNTU_24_04,
+            "noVNC HTTP/window startup passed natively on the local arm64 recipe-11 base, "
+            "2026-11-04 run 20261104T120217Z-ee18ce; Visual Studio Code window; no pixel, "
+            "saved-edit or persistence check",
+        ),
+        _VerifiedEdge(
+            "eclipse", "2026-09-R", _BASE_FAMILY_UBUNTU_24_04,
+            "noVNC HTTP/window startup passed natively on the local arm64 recipe-11 base, "
+            "2026-11-04 run 20261104T120256Z-aa127a; workspace window; no pixel, saved-edit "
+            "or persistence check",
+        ),
+        _VerifiedEdge(
+            "pycharm", "2026.2.4", _BASE_FAMILY_UBUNTU_24_04,
+            "noVNC HTTP/window startup passed natively on the local arm64 recipe-11 base, "
+            "2026-11-04 run 20261104T120351Z-38cdd0; splash window; first-use agreement and "
+            "editor acceptance remain",
+        ),
+        _VerifiedEdge(
+            "rider", "2026.2.4", _BASE_FAMILY_UBUNTU_24_04,
+            "noVNC HTTP/window startup passed natively on the local arm64 recipe-11 base, "
+            "2026-11-04 run 20261104T120546Z-c9c1b3; splash window; first-use agreement and "
+            "editor acceptance remain",
+        ),
+        _VerifiedEdge(
+            "intellij", "2026.2.4", _BASE_FAMILY_UBUNTU_24_04,
+            "noVNC HTTP/window startup passed natively on the local arm64 recipe-11 base, "
+            "2026-11-04 run 20261104T121007Z-289109; splash window; first-use agreement and "
+            "editor acceptance remain",
+        ),
+    ),
+    couplings=(),
+    capability_table=_LINUX_AMD64_MATRIX._capability_table,
+    materialization=_LINUX_AMD64_MATRIX._materialization,
+)
+
 # The map is the platform authority: its keys are the supported platforms,
-# total over the Platform enum (D-0006/D-0007). Clients index it with a key
-# from Platform.current() or Platform.parse(), never one built from parts.
+# total over the Platform enum (D-0006/D-0007). Clients index it with a
+# Platform member, from host detection or a lock, never a key built from parts.
 MATRICES: Mapping[Platform, ResolutionMatrix] = MappingProxyType(
     {
         Platform.LINUX_AMD64: _LINUX_AMD64_MATRIX,
+        Platform.LINUX_ARM64: _LINUX_ARM64_MATRIX,
     }
 )
 

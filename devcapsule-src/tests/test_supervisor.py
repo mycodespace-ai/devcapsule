@@ -30,6 +30,10 @@ from devcapsule.container_runtime.supervisor import (
 
 pytestmark = pytest.mark.legacy
 
+# The supervisor is the capsule's entry process: it runs only inside Linux
+# capsules and relies on Linux signal primitives (sigwaitinfo).
+pytestmark = pytest.mark.skipif(sys.platform != "linux", reason="container-side code; capsules are Linux")
+
 DRIVER = Path(__file__).parent / "resources" / "supervisor_driver.py"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 

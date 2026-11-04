@@ -1,7 +1,7 @@
 ---
 description: Check prerequisites, download the DevCapsule executable for this release, verify its SHA-256 checksum, and install it under ~/.local/bin.
 weight: 1
-updated: 2026-10-30
+updated: 2026-11-03
 ---
 # Install DevCapsule
 
@@ -9,7 +9,9 @@ DevCapsule ships as a single executable for **Linux (`x86_64` / Intel-AMD
 64-bit)**. It requires a web browser and a working Docker daemon on the same
 machine. It does not run natively on macOS, Windows, or ARM. **On Windows, read
 [Windows via WSL2](../platforms/windows-wsl2.md) first** and run every command
-below inside your WSL2 Linux terminal.
+below inside your WSL2 Linux terminal. On an Apple Silicon Mac, read
+[macOS](../platforms/macos.md) for the experimental launcher you build from
+source; the steps below do not apply.
 
 ## Check your computer
 

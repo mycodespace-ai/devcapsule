@@ -12,6 +12,7 @@ import socket
 import stat
 import struct
 import subprocess
+import sys
 import tempfile
 from threading import Event, Thread
 import time
@@ -19,6 +20,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from devcapsule.host_daemon import in_container
+from devcapsule.platforms import HostOs
 
 
 HOST_OPEN_SOCKET_ENV = "DEVCAPSULE_HOST_OPEN_SOCKET"
@@ -32,6 +34,10 @@ DEFAULT_TIMEOUT_SECONDS = 10.0
 RATE_LIMIT_REQUESTS = 30
 RATE_LIMIT_WINDOW_SECONDS = 60.0
 _UNIX_PATH_LIMIT = 100
+HOST_OPEN_UNAVAILABLE_ON_MACOS = (
+    "Warning: host-browser is unavailable on macOS: Docker Desktop does not carry the "
+    "host's Unix sockets into a capsule. Links open in the capsule's own browser instead."
+)
 
 
 class HostOpenError(Exception):
@@ -242,6 +248,13 @@ def host_open_bridge(
     if containerized:
         # A container cannot manufacture access to its physical host desktop.
         # It may only propagate a bridge explicitly inherited from its owner.
+        yield None
+        return
+    if not HostOs.current().binds_unix_sockets:
+        # The broker is a host Unix socket bound into the capsule. Docker
+        # Desktop refuses that bind source, so the optional integration is
+        # unavailable rather than fatal.
+        print(HOST_OPEN_UNAVAILABLE_ON_MACOS, file=sys.stderr)
         yield None
         return
 

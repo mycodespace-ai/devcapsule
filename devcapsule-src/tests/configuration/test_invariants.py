@@ -43,6 +43,7 @@ from devcapsule.configuration.operations import (
     initialize_project,
 )
 from devcapsule.launch.pycharm import DockerMode, PycharmRunOptions, build_run_config
+from devcapsule.platforms import Platform
 from tests.test_pycharm import base_env
 from tests.test_upgrade_recovery import checkout, invoke, install_external_fakes
 
@@ -232,7 +233,7 @@ def test_project_launch_cannot_inherit_unbound_paths_or_credentials(checkout, tm
         'DOCKER_MODE': 'invalid',
     })
     config = build_run_config(PycharmRunOptions(
-        project=project, inherit_legacy_configuration=False,
+        project=project, capsule_platform=Platform.LINUX_AMD64, inherit_legacy_configuration=False,
         docker_mode=DockerMode.none, enable_sudo=False, network_mode='bridge',
     ), env)
     assert config.persistent_home != unbound and config.ide_config != unbound and config.plugins != unbound
@@ -247,7 +248,7 @@ def test_explicit_sudo_decision_overrides_legacy_environment(value, tmp_path):
     project.mkdir()
     env = base_env(tmp_path)
     env['PYCHARM_ENABLE_SUDO'] = '1'
-    config = build_run_config(PycharmRunOptions(project=project, docker_mode=DockerMode.none,
+    config = build_run_config(PycharmRunOptions(project=project, capsule_platform=Platform.LINUX_AMD64, docker_mode=DockerMode.none,
                                                enable_sudo=value), env)
     assert config.enable_sudo is (True if value is None else value)
 

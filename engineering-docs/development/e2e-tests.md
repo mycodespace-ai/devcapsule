@@ -76,6 +76,8 @@ to installing `xprop` in every image.
 | `DEVCAPSULE_EARLY_EXIT_E2E_IMAGE`, `DEVCAPSULE_CONTRIBUTOR_E2E_IMAGE`, `DEVCAPSULE_PEX_CLEAN_MACHINE_IMAGE` | the sessions | Disposable images the tests build or reuse |
 | `DEVCAPSULE_E2E_BUILD_NETWORK` | `-- --build-network` | The network mode of image builds |
 | `DEVCAPSULE_SMOKE_SCENARIO` | `-- --scenario` | Catalog ID or JSON path of a recorded IDE scenario to replay |
+| `DEVCAPSULE_SMOKE_PLATFORM` | `-- --platform` | The capsule platform the IDE smoke creates each project for, such as `linux-arm64` |
+| `DEVCAPSULE_RUNTIME_PEX` | you, for a macOS launcher | The Linux runtime it delivers, or a directory of `devcapsule-<platform>` runtimes |
 | `PLAYWRIGHT_BROWSERS_PATH` | you, optionally | Where `ide-smoke -- --display` finds or installs Chromium |
 
 ## Evidence

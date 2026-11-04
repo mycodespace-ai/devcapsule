@@ -95,6 +95,7 @@ markers = [
   "ide_smoke: launches a real IDE session per surface with the executable under test; opt-in through nox -s ide-smoke",
   "flaky: executes for visibility but has a temporarily non-blocking result",
   "legacy: predates the unit-test conventions of WORKFLOW-LOCAL.md; the file only loses tests, see scripts/validate_unittests_follow_conventions.py",
+  "own_host_patches: the test sets up its host itself; the suite's amd64 Linux host defaults stay off",
 ]
 
 [tool.coverage.run]

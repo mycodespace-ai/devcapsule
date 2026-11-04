@@ -5,12 +5,14 @@ import os
 from pathlib import Path
 import socket
 import subprocess
+import sys
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import pytest
 
 from devcapsule import cli
+from devcapsule.platforms import HostOs
 from devcapsule.host_open import (
     HOST_OPEN_SOCKET_ENV,
     MAX_URL_BYTES,
@@ -24,6 +26,7 @@ from devcapsule.host_open import (
 pytestmark = pytest.mark.legacy
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="the broker reads SO_PEERCRED, which only Linux has")
 def test_broker_forwards_one_exact_url_without_shell_parsing(tmp_path: Path) -> None:
     path = tmp_path / "host-open.sock"
     run = Mock(return_value=SimpleNamespace(returncode=0))
@@ -89,6 +92,7 @@ def test_broker_rejects_malformed_protocol_without_invoking_opener(tmp_path: Pat
     run.assert_not_called()
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="the broker reads SO_PEERCRED, which only Linux has")
 def test_broker_applies_a_bounded_request_rate(tmp_path: Path) -> None:
     path = tmp_path / "host-open.sock"
     run = Mock(return_value=SimpleNamespace(returncode=0))
@@ -120,6 +124,7 @@ def test_broker_rejects_a_different_peer_uid(tmp_path: Path) -> None:
     run.assert_not_called()
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="the broker reads SO_PEERCRED, which only Linux has")
 def test_broker_reports_host_opener_timeout(tmp_path: Path) -> None:
     path = tmp_path / "host-open.sock"
     run = Mock(side_effect=subprocess.TimeoutExpired(["xdg-open"], 0.1))
@@ -132,6 +137,7 @@ def test_broker_reports_host_opener_timeout(tmp_path: Path) -> None:
         open_host_url("https://example.test", socket_path=path)
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="the broker reads SO_PEERCRED, which only Linux has")
 def test_client_reports_missing_and_failed_brokers_without_exposing_url(tmp_path: Path) -> None:
     url = "https://example.test/path?secret=do-not-report"
     with pytest.raises(HostOpenError, match="absent") as missing:
@@ -169,12 +175,14 @@ def test_bridge_reuses_only_an_explicit_inherited_socket(tmp_path: Path) -> None
                 assert disabled is None
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="the broker reads SO_PEERCRED, which only Linux has")
 def test_physical_host_bridge_owns_and_cleans_broker(tmp_path: Path) -> None:
     run = Mock(return_value=SimpleNamespace(returncode=0))
     env = {"XDG_RUNTIME_DIR": str(tmp_path), "DISPLAY": ":1"}
 
     with (
         patch("devcapsule.host_open.in_container", return_value=False),
+        patch("devcapsule.host_open.HostOs.current", return_value=HostOs.LINUX),
         patch("devcapsule.host_open.subprocess.run", run),
         host_open_bridge(env, enabled=True, opener=("test-opener",)) as path,
     ):
@@ -186,6 +194,20 @@ def test_physical_host_bridge_owns_and_cleans_broker(tmp_path: Path) -> None:
     assert not root.exists()
 
 
+def test_macos_host_bridge_is_unavailable_with_a_warning(tmp_path: Path, capsys) -> None:
+    # Docker Desktop refuses a host Unix socket as a bind source, so the
+    # optional integration degrades instead of failing the launch.
+    with (
+        patch("devcapsule.host_open.in_container", return_value=False),
+        patch("devcapsule.host_open.HostOs.current", return_value=HostOs.DARWIN),
+        host_open_bridge({"XDG_RUNTIME_DIR": str(tmp_path)}, enabled=True) as path,
+    ):
+        assert path is None
+    assert "host-browser is unavailable on macOS" in capsys.readouterr().err
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="the broker reads SO_PEERCRED, which only Linux has")
 def test_hidden_host_open_command_uses_authorized_environment(tmp_path: Path, capsys) -> None:
     assert "host-open" not in cli.command_names()
     assert "host-open" in cli.command_names(include_hidden=True)

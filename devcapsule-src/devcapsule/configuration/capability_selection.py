@@ -15,10 +15,21 @@ import tomllib
 from typing import Any, Mapping
 
 from devcapsule.components.catalog import COMPONENTS, INTERACTIVE_SURFACES
-from devcapsule.platforms import Platform
+from devcapsule.platforms import Platform, UnsupportedPlatformError
 from devcapsule.resolution_matrix import MATRICES, ResolutionMatrix
 from .capabilities import CapabilityPolicy, LocalCapabilities, names, meets_minimum, resolution_recommendations
 from .file_formats import ProjectConfigurationError, legacy_lock, table
+
+
+def lock_platform(lock: Mapping[str, Any]) -> Platform:
+    """Return the lock's declared platform.
+
+    Raise ProjectConfigurationError if that platform is absent or unsupported.
+    """
+    try:
+        return Platform.parse(str(lock.get("platform")))
+    except UnsupportedPlatformError:
+        raise ProjectConfigurationError(f"Unsupported lock platform {lock.get('platform')!r}.") from None
 
 
 def matrix_for(lock: Mapping[str, Any]) -> ResolutionMatrix:
@@ -26,10 +37,7 @@ def matrix_for(lock: Mapping[str, Any]) -> ResolutionMatrix:
 
     Raise ProjectConfigurationError if that platform is absent or unsupported.
     """
-    try:
-        return MATRICES[Platform(str(lock.get("platform")))]
-    except (ValueError, KeyError):
-        raise ProjectConfigurationError(f"Unsupported lock platform {lock.get('platform')!r}.") from None
+    return MATRICES[lock_platform(lock)]
 
 
 def known_policy_names(policy: CapabilityPolicy, matrix: ResolutionMatrix) -> dict[str, str]:
@@ -111,6 +119,56 @@ def local_pins(checkout: Mapping[str, Any]) -> dict[str, Any]:
         raise ProjectConfigurationError(f"Invalid local capability pins: {exc}") from exc
 
 
+def pins_for_platform(pins: Mapping[str, Any], matrix: ResolutionMatrix) -> dict[str, Any]:
+    """Return personal pins with every component's artifacts for ``matrix``'s platform.
+
+    A checkout keeps one set of personal pins, and a project may run as two
+    platforms: Apple Silicon runs linux-arm64 and linux-amd64. A component
+    table that is exactly another platform's embedded table for its version
+    is that platform's pin, whatever the pins' label says, and takes this
+    platform's table for the version; one that matches no embedded table is a
+    record this launcher did not write, kept as it stands on the platform its
+    pins name. Everything else is returned unchanged. A component written for
+    another platform at a version this platform does not pin raises
+    ProjectConfigurationError naming how to choose again. The input is unchanged.
+    """
+    if not pins:
+        return {}
+    platform = str(matrix.platform)
+    labelled = str(pins.get("platform"))
+    repinned = deepcopy(dict(pins))
+    components = repinned.get("components")
+    surface = components.get("interactive-surface") if isinstance(components, dict) else None
+    if isinstance(components, dict):
+        for component, metadata in components.items():
+            if not isinstance(metadata, dict):
+                continue
+            written_for = _embedded_platform_of(component, metadata) or labelled
+            if written_for == platform:
+                continue
+            matrix_table = matrix.component_pin(component, metadata.get("version"))
+            if matrix_table is None:
+                remedy = (f"'devcapsule project config ide {component}'" if component == surface
+                          else f"'devcapsule project config use CAPABILITY {component}'")
+                raise ProjectConfigurationError(
+                    f"This checkout's {component} {metadata.get('version')} is pinned for {written_for}, "
+                    f"and {platform} has no pin for that version; choose it again with {remedy}."
+                )
+            components[component] = deepcopy(dict(matrix_table))
+    if "platform" in repinned:
+        repinned["platform"] = platform
+    return repinned
+
+
+def _embedded_platform_of(component: str, table: Mapping[str, Any]) -> str | None:
+    """The platform whose embedded table for this component version ``table`` is, if any."""
+    for platform, embedded in MATRICES.items():
+        candidate = embedded.component_pin(component, table.get("version"))
+        if candidate is not None and dict(candidate) == dict(table):
+            return str(platform)
+    return None
+
+
 def pin_selection(matrix: ResolutionMatrix, policy: CapabilityPolicy, selection: LocalCapabilities,
                   source: Mapping[str, Any], previous: LocalCapabilities, previous_pins: Mapping[str, Any], *,
                   allow_unverified: bool, recommendations: Mapping[str, str] | None = None) -> dict[str, Any]:
@@ -123,6 +181,7 @@ def pin_selection(matrix: ResolutionMatrix, policy: CapabilityPolicy, selection:
     selector and materialization follow the IDE component's document. Catalog
     resolution failures raise ProjectConfigurationError. Inputs are unchanged.
     """
+    previous_pins = pins_for_platform(previous_pins, matrix)
     active_names = set(known_policy_names(policy, matrix).values()) | {matrix.canonical_name(name) for name in selection.selected}
     reset = (set(previous.providers) - set(selection.providers)) & active_names
     capabilities = tuple(dict.fromkeys((*selection.selected, *selection.providers, *sorted(reset))))
@@ -191,6 +250,7 @@ def compose_lock(manifest: Mapping[str, Any], shared: Mapping[str, Any],
     if not pins:
         raise ProjectConfigurationError("Local capability pins are missing; choose it again with 'project config ide IDE'.")
     matrix = matrix_for(lock)
+    pins = pins_for_platform(pins, matrix)
     if policy is None:
         policy = CapabilityPolicy.read(manifest)
     canonical = {**known_policy_names(policy, matrix), **{name: matrix.canonical_name(name) for name in local.selected}}

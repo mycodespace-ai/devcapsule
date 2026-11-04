@@ -42,7 +42,7 @@ from .authorization import (
 )
 from .capabilities import CapabilityPolicy, LocalCapabilities, requirement
 from .capability_commands import check_documents, pin_selection
-from .capability_selection import compose_lock, effective_lock, generate_lock, local_pins
+from .capability_selection import compose_lock, effective_lock, generate_lock, local_pins, matrix_for
 from .file_formats import (
     AuthorizationScalar,
     ConfigurationFileKind,
@@ -66,6 +66,8 @@ from .nodes import (
     build_node_registry,
 )
 from .storage import (
+    platform_lock_path,
+    project_platform,
     atomic_write,
     checkout_record_paths,
     load_checkout,
@@ -80,13 +82,10 @@ from .storage import (
 from .values import checkout_omitted_values, normalize_configuration_value
 
 
-def _current_matrix() -> ResolutionMatrix:
-    """This host's resolution matrix, with platform failures as user errors."""
+def _project_matrix(root: Path) -> ResolutionMatrix:
+    """The resolution matrix of the platform this host runs the project at ``root`` as."""
 
-    try:
-        return MATRICES[Platform.current()]
-    except UnsupportedPlatformError as exc:
-        raise ProjectConfigurationError(str(exc)) from exc
+    return MATRICES[project_platform(root)]
 
 __all__ = [
     "CheckoutRecord",
@@ -279,6 +278,9 @@ class InitializeRequest:
     allow_unverified: bool = False
     # None: decide from whether stdin is a terminal.
     interactive: bool | None = None
+    # The platform whose lock to write; None: the one the project runs as
+    # here, or, for a new project on a host of several platforms, asked.
+    platform: Platform | None = None
 
 
 @dataclass(frozen=True)
@@ -313,6 +315,8 @@ class InitializeReport:
     checkout_record: Path
     # None when the owner's checkout has no IDE yet: nothing to resolve.
     resolve: ResolveReport | None
+    # The lock pins a base its registry does not hold yet (see ResolutionMatrix.base_unpublished).
+    base_unpublished: bool
 
     def render(self) -> str:
         required = " ".join(self.required) or "none"
@@ -326,6 +330,9 @@ class InitializeReport:
         if self.offered:
             lines.append(f"Offers: {' '.join(self.offered)}")
         lines.append(f"{self.lock_action} {self.lock_path} (base {self.base_display})")
+        if self.base_unpublished:
+            lines.append("Its base is not published yet: a checkout runs this lock only on a locally built base of "
+                         "the same recipe, selected with 'devcapsule project config authorize base-image IMAGE'.")
         for name, value, justification in self.recommendations:
             line = f"Recommended {name} = {value} for every checkout"
             lines.append(f"{line} ({justification})." if justification else f"{line}.")
@@ -402,12 +409,16 @@ def initialize_project(
         raise ProjectConfigurationError(f"Project directory does not exist: {root}")
     require_settled(root)
     manifest_path = root / ".devcapsule" / "devcapsule.toml"
-    try:
-        platform = Platform.current()
-    except UnsupportedPlatformError as exc:
-        raise ProjectConfigurationError(str(exc)) from exc
-    lock_path = root / ".devcapsule" / f"devcapsule.{platform}.lock"
-    matrix = _current_matrix()
+    elicitor = Elicitor(
+        _init_command_line(request),
+        interactive=request.interactive,
+        input_stream=input_stream,
+        output_stream=output_stream,
+    )
+    # The platform comes first: its matrix answers every later question.
+    platform = _elicit_platform(elicitor, root)
+    lock_path = platform_lock_path(root, platform)
+    matrix = MATRICES[platform]
 
     existing_manifest: dict[str, Any] | None = None
     existing_lock: dict[str, Any] | None = None
@@ -450,12 +461,6 @@ def initialize_project(
                 "the 'config' family changes individual answers."
             )
 
-    elicitor = Elicitor(
-        _init_command_line(request),
-        interactive=request.interactive,
-        input_stream=input_stream,
-        output_stream=output_stream,
-    )
     identity = _elicit_identity(elicitor, root, existing_manifest, matrix)
     authored = frozenset(answer.name for answer in request.answers if answer.justification is not None)
     # Fail now if identity or requirements are unanswered: the lock cannot be
@@ -546,6 +551,7 @@ def initialize_project(
             base_display=_base_display(shared_lock), recommendations=recommendations,
             selection=selection, answered=(), carried=(), recommended=(),
             checkout_record=record.input_path, resolve=None,
+            base_unpublished=_pins_unpublished_base(shared_lock),
         )
     lock = effective_lock(manifest, compose_lock(manifest, shared_lock, record.document), record.document, warn=False)
     declarations = authorization_declarations(manifest, lock)
@@ -573,14 +579,75 @@ def initialize_project(
         answered=tuple(settled.answered), carried=tuple(settled.carried),
         recommended=accepted_recommendations, checkout_record=record.input_path,
         resolve=resolve_report,
+        base_unpublished=_pins_unpublished_base(shared_lock),
     )
+
+
+def _elicit_platform(elicitor: Elicitor, root: Path) -> Platform:
+    """The platform whose lock init writes, asked when this host runs several.
+
+    A project with a lock this host runs keeps that platform unless
+    ``--platform`` names another; otherwise a host of one platform takes it,
+    and a host of several asks, its native platform the default and the
+    unattended answer. Init completes the checkout for the lock it writes, so
+    the platform must be the one the project runs as once that lock exists.
+    """
+    runnable = Platform.runnable()
+    native = runnable[0]
+    locked = next((platform for platform in runnable if platform_lock_path(root, platform).is_file()), None)
+    choices = " or ".join(
+        f"{platform} ({'native' if platform is native else 'emulated'}"
+        + ("; its base is built locally" if _base_unpublished(MATRICES[platform]) else "") + ")"
+        for platform in runnable
+    )
+    answer = elicitor.seek(
+        "platform",
+        description=f"Capsule platform for this project: {choices}",
+        remedy="--platform PLATFORM",
+        existing=str(locked) if locked is not None else None,
+        default=str(native) if len(runnable) == 1 else None,
+        empty_answer=str(native),
+        omitted_answer=str(native),
+        validate=_platform_validator(runnable),
+    )
+    if answer is None:  # Input ended at the question.
+        elicitor.finish(require_all_consumed=False)
+        raise AssertionError("an unanswered platform question must fail the elicitation")
+    platform = Platform.parse(answer.value)
+    runs_as = next(candidate for candidate in runnable
+                   if candidate is platform or platform_lock_path(root, candidate).is_file())
+    if runs_as is not platform:
+        raise ProjectConfigurationError(
+            f"On this host the project runs as {runs_as}, which it has a lock for, "
+            f"so init cannot add a {platform} lock here."
+        )
+    return platform
+
+
+def _platform_validator(runnable: tuple[Platform, ...]) -> Any:
+    def validate(value: str) -> str:
+        try:
+            candidate = Platform.parse(value.strip())
+        except UnsupportedPlatformError as exc:
+            raise ProjectConfigurationError(str(exc)) from exc
+        if candidate not in runnable:
+            names = ", ".join(str(platform) for platform in runnable)
+            raise ProjectConfigurationError(f"This host runs {names} capsules, not {candidate}.")
+        return str(candidate)
+
+    return validate
+
+
+def _base_unpublished(matrix: ResolutionMatrix) -> bool:
+    """Whether every base ``matrix`` pins is still unpublished."""
+    return all(matrix.base_unpublished(base.reference) for base in matrix.base_images())
 
 
 def _initialize_report(
     manifest_path: Path, manifest_action: str, identity: _ProjectIdentity, lock_path: Path, lock_action: str,
     *, base_display: str, recommendations: list[tuple[str, str]], selection: _OwnerSelection,
     answered: tuple[str, ...], carried: tuple[str, ...], recommended: tuple[str, ...],
-    checkout_record: Path, resolve: ResolveReport | None,
+    checkout_record: Path, resolve: ResolveReport | None, base_unpublished: bool,
 ) -> InitializeReport:
     return InitializeReport(
         manifest_path=manifest_path,
@@ -605,7 +672,13 @@ def _initialize_report(
         recommended=recommended,
         checkout_record=checkout_record,
         resolve=resolve,
+        base_unpublished=base_unpublished,
     )
+
+
+def _pins_unpublished_base(lock: Mapping[str, Any]) -> bool:
+    """Whether ``lock`` pins a base its registry does not hold yet."""
+    return matrix_for(lock).base_unpublished(str(lock.get("base", {}).get("reference")))
 
 
 def _base_display(lock: Mapping[str, Any]) -> str:
@@ -653,7 +726,7 @@ def _existing_selection(root: Path, manifest: Mapping[str, Any] | None) -> _Owne
     if not input_path.is_file():
         return _OwnerSelection(None, ())
     local = LocalCapabilities.read(load_toml(input_path))
-    matrix = _current_matrix()
+    matrix = _project_matrix(root)
     surfaces = set(matrix.ide_capabilities())
     ide = next((name for name in local.selected if name in surfaces), None)
     return _OwnerSelection(ide, tuple(name for name in local.selected if name not in surfaces))
@@ -776,6 +849,8 @@ def _init_command_line(request: InitializeRequest) -> dict[AnswerKey, str]:
         command_line[("offer", "value")] = " ".join(request.offer)
     if request.ide is not None:
         command_line[("ide", "value")] = request.ide
+    if request.platform is not None:
+        command_line[("platform", "value")] = str(request.platform)
     for key, value in (
         ("name", request.project_name),
         ("slug", request.slug),
@@ -1581,6 +1656,7 @@ def _apply_answers_to_standing_checkout(
         base_display=base_display, recommendations=[], selection=_existing_selection(root, manifest),
         answered=tuple(settled.answered), carried=tuple(settled.carried), recommended=(),
         checkout_record=record.input_path, resolve=resolve_report,
+        base_unpublished=_pins_unpublished_base(lock),
     )
 
 

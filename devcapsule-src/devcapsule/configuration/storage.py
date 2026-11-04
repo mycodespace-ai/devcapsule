@@ -382,8 +382,35 @@ def manifest_source_digest(root: Path) -> str | None:
         return None
 
 
+def platform_lock_path(root: Path, platform: Platform) -> Path:
+    """The path of the project's lock for ``platform``."""
+    return root / ".devcapsule" / f"devcapsule.{platform}.lock"
+
+
+def project_platform(root: Path) -> Platform:
+    """The capsule platform this host runs the project at ``root`` as.
+
+    The first platform this host runs that the project has a lock for, so
+    Apple Silicon runs a project locked for linux-arm64 natively and one
+    locked only for linux-amd64 under emulation; for a project with no such
+    lock, the platform this host creates projects for. Reads only.
+    """
+    try:
+        for platform in Platform.runnable():
+            if platform_lock_path(root, platform).is_file():
+                return platform
+        return Platform.current()
+    except UnsupportedPlatformError as exc:
+        raise ProjectConfigurationError(str(exc)) from exc
+
+
+def locked_platforms(root: Path) -> tuple[Platform, ...]:
+    """Every platform the project at ``root`` has a lock for, on any host."""
+    return tuple(platform for platform in Platform if platform_lock_path(root, platform).is_file())
+
+
 def recommendation_lock_for(root: Path, manifest: Mapping[str, Any]) -> tuple[Path, dict[str, Any]]:
-    """Load the committed platform lock for this host's platform.
+    """Load the committed lock of the platform this host runs the project as.
 
     The lock is the project-side record of one resolution: the version set and
     property defaults selected for one platform. It is a record, not a
@@ -404,15 +431,13 @@ def recommendation_lock_for(root: Path, manifest: Mapping[str, Any]) -> tuple[Pa
     to keep existing committed locks working.
     """
 
-    try:
-        current = Platform.current()
-    except UnsupportedPlatformError as exc:
-        raise ProjectConfigurationError(str(exc)) from exc
-    path = root / ".devcapsule" / f"devcapsule.{current}.lock"
+    platform = project_platform(root)
+    path = platform_lock_path(root, platform)
     if not path.is_file():
         raise ProjectConfigurationError(
-            f"Missing {path}: this project carries no platform lock for {current}. "
-            "The platform lock is authored on the project side and committed with the project."
+            f"Missing {path}: this project carries no platform lock for {platform}. "
+            "The platform lock is authored on the project side and committed with the project; "
+            "'devcapsule project init' adds it."
         )
     value = load_toml(path)
     validate_file_format(value, ConfigurationFileKind.lock, path)
@@ -429,7 +454,7 @@ def recommendation_lock_for(root: Path, manifest: Mapping[str, Any]) -> tuple[Pa
 def composition_for(root: Path, manifest: Mapping[str, Any]) -> tuple[Path, dict[str, Any], dict[str, Any]]:
     """The checkout's persistent software selection, before execution filtering.
 
-    Return the current platform's shared lock path, the composed selection (the
+    Return the project platform's shared lock path, the composed selection (the
     explicit version set, or the shared lock with personal pins laid over it)
     and the loaded checkout record, empty when the checkout is unregistered.
     A version set for another platform raises ProjectConfigurationError.
@@ -439,9 +464,10 @@ def composition_for(root: Path, manifest: Mapping[str, Any]) -> tuple[Path, dict
     checkout = load_checkout(record, manifest, root) if record is not None else {}
     selected = selected_version_lock(checkout)
     if selected is not None:
-        if selected.get("platform") != str(Platform.current()):
+        platform = project_platform(root)
+        if selected.get("platform") != str(platform):
             raise ProjectConfigurationError("Local version set is for another platform; follow the project explicitly.")
-        path, shared = root / ".devcapsule" / f"devcapsule.{Platform.current()}.lock", selected
+        path, shared = platform_lock_path(root, platform), selected
     else:
         path, shared = recommendation_lock_for(root, manifest)
     return path, compose_lock(manifest, shared, checkout), checkout

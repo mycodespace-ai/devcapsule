@@ -32,6 +32,7 @@ from devcapsule.commands.framework import (
     Command,
     Group,
     add_carrier_options,
+    capsule_platform_argument,
     carrier_answers,
 )
 from devcapsule.components.catalog import COMPONENTS
@@ -54,6 +55,7 @@ from devcapsule import runtime_configuration
 from devcapsule.runtime_configuration import CapsuleAccess
 from devcapsule.compat import CliError, DecisionPending
 import difflib
+from devcapsule.configuration.capability_selection import lock_platform
 from devcapsule.configuration.capabilities import CapabilityPolicy, LocalCapabilities
 from devcapsule.configuration.console_requests import deferred_rows
 from devcapsule.configuration.listing import Listing, assess_checkout
@@ -310,6 +312,11 @@ class ProjectInitCommand(Command):
             help="A capability the project offers and a developer may leave out, such as browser-automation. Repeatable.",
         )
         _add_owner_options(parser)
+        parser.add_argument(
+            "--platform", type=capsule_platform_argument, metavar="PLATFORM",
+            help="Add the lock for this capsule platform, such as linux-arm64; the project then runs as it here. "
+                 "Default: the platform this host runs the project as.",
+        )
         _retired_option(parser, "--agent", "devcapsule project init --with CAPABILITY")
         parser.add_argument(
             "--regenerate",
@@ -351,6 +358,7 @@ class ProjectInitCommand(Command):
                 answers=answers,
                 regenerate=arguments.regenerate,
                 allow_unverified=arguments.allow_unverified,
+                platform=arguments.platform,
             )
         )
         print(report.render())
@@ -755,9 +763,9 @@ def _load_checkout_documents(context: object | None) -> CheckoutDocuments | runt
 def _assess(documents: CheckoutDocuments) -> Listing:
     from devcapsule.configuration.authorization import authorized_base_selection
     from devcapsule.configuration.trust import HomeTrust
-    from devcapsule.platforms import Platform
+    from devcapsule.configuration.storage import project_platform
     from devcapsule.resolution_matrix import MATRICES, known_base_image
-    matrix = MATRICES[Platform.current()]
+    matrix = MATRICES[project_platform(documents.root)]
     answers = documents.checkout.get("authorization", {})
     base_answer = answers.get("base-image", {}) if isinstance(answers, dict) else {}
     base_reference = base_answer.get("reference") if isinstance(base_answer, dict) else None
@@ -1702,12 +1710,12 @@ class ConfigCheckCommand(Command):
 
 def _local_selection(context: object | None) -> tuple[Path, dict[str, Any], LocalCapabilities, dict[str, str]]:
     """The checkout's current selection and the catalog's IDE names, for the selection verbs."""
-    from devcapsule.platforms import Platform
+    from devcapsule.configuration.storage import project_platform
     from devcapsule.resolution_matrix import MATRICES
     root, manifest = manifest_for(_project_context(context).start_path())
     record = find_checkout_record(manifest, root)
     current = LocalCapabilities.read(load_checkout(record, manifest, root)) if record is not None else LocalCapabilities()
-    matrix = MATRICES[Platform.current()]
+    matrix = MATRICES[project_platform(root)]
     surfaces = {name: matrix.resolve_provider(name) or name for name in matrix.ide_capabilities()}
     return root, manifest, current, surfaces
 
@@ -2436,6 +2444,7 @@ class ProjectRunCommand(Command):
                 enable_host_browser=selected_host_browser,
                 display_transport=display_transport,
                 web_console=web_console,
+                capsule_platform=lock_platform(lock),
             )
         )
         if command_report is not None:

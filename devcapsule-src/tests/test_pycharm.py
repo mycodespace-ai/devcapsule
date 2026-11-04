@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import socket
 import time
@@ -19,6 +20,7 @@ from devcapsule.launch.pycharm import (
     build_run_config,
 )
 from devcapsule.container_runtime.contract import INFRASTRUCTURE_FAILURE_EXIT_CODE
+from devcapsule.platforms import HostOs, Platform
 from devcapsule.launch.pycharm._launcher import (
     AttachedResult,
     display_disclosure,
@@ -36,6 +38,7 @@ from devcapsule.launch.pycharm._launcher import (
     ensure_sudoers_policy_ownership,
     prepare_temp_runtime_files,
     print_storage_summary,
+    remove_abandoned_sudoers_volumes,
     run_pycharm,
     write_user_files,
 )
@@ -81,6 +84,7 @@ def test_external_runtime_plan_is_readable_and_mounted_read_only(tmp_path: Path)
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             project_mount="/workspace/project",
             docker_mode=DockerMode.none,
             network_mode="bridge",
@@ -145,6 +149,7 @@ def test_plan_driven_surface_mounts_declared_slots_instead_of_pycharm_paths(
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             project_mount="/workspace/project",
             docker_mode=DockerMode.none,
             network_mode="bridge",
@@ -195,6 +200,7 @@ def test_interactive_state_mounts_require_a_runtime_plan(tmp_path: Path) -> None
         build_run_config(
             PycharmRunOptions(
                 project=project,
+                capsule_platform=Platform.LINUX_AMD64,
                 project_mount="/workspace/project",
                 docker_mode=DockerMode.none,
                 network_mode="bridge",
@@ -211,6 +217,7 @@ def test_interactive_state_mounts_must_belong_to_the_plan_component(tmp_path: Pa
         build_run_config(
             PycharmRunOptions(
                 project=project,
+                capsule_platform=Platform.LINUX_AMD64,
                 project_mount="/workspace/project",
                 docker_mode=DockerMode.none,
                 network_mode="bridge",
@@ -234,6 +241,7 @@ def test_no_sudo_launches_keep_full_hardening_on_every_surface(
         config = build_run_config(
             PycharmRunOptions(
                 project=project,
+                capsule_platform=Platform.LINUX_AMD64,
                 project_mount="/workspace/project",
                 docker_mode=DockerMode.none,
                 network_mode="bridge",
@@ -275,6 +283,7 @@ def test_sudo_launches_grant_no_capabilities_beyond_dockers_default(
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             project_mount="/workspace/project",
             docker_mode=DockerMode.none,
             network_mode="bridge",
@@ -311,6 +320,7 @@ def test_plan_driven_storage_summary_names_the_surface_and_its_slots(
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             project_mount="/workspace/project",
             docker_mode=DockerMode.none,
             network_mode="bridge",
@@ -340,6 +350,7 @@ def test_detached_lifecycle_changes_only_the_docker_process_flags(tmp_path: Path
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             project_mount="/workspace/project",
             docker_mode=DockerMode.none,
             network_mode="bridge",
@@ -371,6 +382,7 @@ def test_jcef_disclosure_is_printed_for_component_policy(
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             project_mount="/workspace/project",
             docker_mode=DockerMode.none,
             network_mode="bridge",
@@ -402,6 +414,7 @@ def test_host_browser_bridge_is_explicit_in_plan_mount_environment_and_summary(
         config = build_run_config(
             PycharmRunOptions(
                 project=project,
+                capsule_platform=Platform.LINUX_AMD64,
                 project_mount="/workspace/project",
                 docker_mode=DockerMode.none,
                 network_mode="bridge",
@@ -447,6 +460,7 @@ def test_host_browser_bridge_can_be_disabled_despite_inherited_environment(
         config = build_run_config(
             PycharmRunOptions(
                 project=project,
+                capsule_platform=Platform.LINUX_AMD64,
                 docker_mode=DockerMode.none,
                 enable_host_browser=False,
             ),
@@ -466,6 +480,7 @@ def test_physical_host_launcher_owns_browser_broker_for_docker_lifetime(
 
     with (
         patch("devcapsule.host_open.in_container", return_value=False),
+        patch("devcapsule.host_open.HostOs.current", return_value=HostOs.LINUX),
         patch("devcapsule.launch.pycharm._launcher.shutil.which", return_value=None),
         patch("devcapsule.launch.pycharm._launcher.run_attached") as run,
     ):
@@ -473,6 +488,7 @@ def test_physical_host_launcher_owns_browser_broker_for_docker_lifetime(
         assert run_pycharm(
             PycharmRunOptions(
                 project=project,
+                capsule_platform=Platform.LINUX_AMD64,
                 docker_mode=DockerMode.none,
                 enable_host_browser=True,
             ),
@@ -513,6 +529,7 @@ def test_selected_codex_state_and_explicit_secret_are_delivered(tmp_path: Path) 
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             project_mount="/workspace/project",
             docker_mode=DockerMode.none,
             network_mode="bridge",
@@ -561,6 +578,7 @@ def test_authorized_runtime_effects_build_the_complete_docker_plan(tmp_path: Pat
         config = build_run_config(
             PycharmRunOptions(
                 project=project,
+                capsule_platform=Platform.LINUX_AMD64,
                 project_mount="/workspace/project",
                 persistent_home=home,
                 ide_config=config_dir,
@@ -589,6 +607,9 @@ def test_authorized_runtime_effects_build_the_complete_docker_plan(tmp_path: Pat
             assert sudoers_file.read_text(encoding="utf-8") == SUDOERS_POLICY
             assert sudoers_file.stat().st_mode & 0o777 == 0o440
             args = build_docker_args(config, files, env)
+            files.sudoers_volume = "capsule-sudoers"
+            volume_args = build_docker_args(config, files, env)
+            files.sudoers_volume = None
             files.sudoers_file = None
             with pytest.raises(PycharmRunError, match="shadow and sudoers files"):
                 build_docker_args(config, files, env)
@@ -601,6 +622,9 @@ def test_authorized_runtime_effects_build_the_complete_docker_plan(tmp_path: Pat
     assert ["--user", "1000:1000"] == args[args.index("--user") : args.index("--user") + 2]
     assert "ENABLE_SUDO=1" in args
     assert f"type=bind,src={sudoers_file},dst={SUDOERS_POLICY_PATH},ro" in args
+    # On macOS the policy comes from its volume, not the Mac's file.
+    assert f"type=volume,src=capsule-sudoers,volume-subpath=policy,dst={SUDOERS_POLICY_PATH},ro" in volume_args
+    assert f"type=bind,src={sudoers_file},dst={SUDOERS_POLICY_PATH},ro" not in volume_args
     assert not sudoers_file.exists()
     assert not sudoers_directory.exists()
     assert "DOCKER_HOST=unix:///run/host-docker.sock" in args
@@ -621,6 +645,72 @@ def test_authorized_runtime_effects_build_the_complete_docker_plan(tmp_path: Pat
     assert "SYS_ADMIN" not in args
 
 
+@pytest.mark.parametrize("host_os,expected_gid", [(HostOs.LINUX, "file"), (HostOs.DARWIN, 0)])
+def test_host_docker_group_follows_where_the_socket_is_owned(tmp_path: Path, host_os, expected_gid) -> None:
+    # On Linux the capsule joins the socket file's group. Docker Desktop shows
+    # its socket inside the VM as root:root 0660, so a Mac host joins group 0
+    # and writes no second group for it.
+    project = tmp_path / "project"
+    project.mkdir()
+    env = base_env(tmp_path)
+    docker_socket = tmp_path / "docker.sock"
+    docker_socket.touch()
+    gid = docker_socket.stat().st_gid if expected_gid == "file" else expected_gid
+    host_user = HostUser(uid=501, gid=20, name="developer", group_name="staff")
+    with (
+        patch("devcapsule.launch.pycharm._launcher.current_host_user", return_value=host_user),
+        patch("devcapsule.launch.pycharm._launcher.is_socket", return_value=True),
+        patch("devcapsule.launch.pycharm._launcher.HostOs.current", return_value=host_os),
+    ):
+        config = build_run_config(
+            PycharmRunOptions(
+                project=project,
+                capsule_platform=Platform.LINUX_AMD64,
+                project_mount="/workspace/project",
+                docker_mode=DockerMode.host,
+                host_docker_socket=docker_socket,
+                network_mode="bridge",
+                runtime_plan=external_runtime_plan(),
+                use_image_process=True,
+            ),
+            env,
+        )
+        with patch("devcapsule.launch.pycharm._launcher.write_xauthority"):
+            files = prepare_temp_runtime_files(config, env)
+        try:
+            args = build_docker_args(config, files, env)
+            groups = files.group_file.read_text(encoding="utf-8")
+        finally:
+            cleanup_temp_runtime_files(files)
+
+    assert config.host_docker_gid == gid
+    assert ["--group-add", str(gid)] == args[args.index("--group-add") : args.index("--group-add") + 2]
+    assert ("host-docker:x:" in groups) is (gid not in (0, host_user.gid))
+
+
+@pytest.mark.parametrize("host_os,effective", [(HostOs.LINUX, "host"), (HostOs.DARWIN, "bridge")])
+def test_host_networking_falls_back_to_bridge_on_macos(tmp_path: Path, capsys, host_os, effective) -> None:
+    # Docker Desktop's host network is its VM's; the contained desktop would
+    # listen where the Mac cannot reach it.
+    project = tmp_path / "project"
+    project.mkdir()
+    with patch("devcapsule.launch.pycharm._launcher.HostOs.current", return_value=host_os):
+        config = build_run_config(
+            PycharmRunOptions(
+                project=project,
+                capsule_platform=Platform.LINUX_AMD64,
+                project_mount="/workspace/project",
+                docker_mode=DockerMode.none,
+                network_mode="host",
+                runtime_plan=external_runtime_plan(),
+                use_image_process=True,
+            ),
+            base_env(tmp_path),
+        )
+    assert config.network_mode == effective
+    assert ("host networking is unavailable on macOS" in capsys.readouterr().err) is (effective == "bridge")
+
+
 def test_unauthorized_runtime_effects_keep_safe_docker_defaults(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
@@ -635,6 +725,7 @@ def test_unauthorized_runtime_effects_keep_safe_docker_defaults(tmp_path: Path) 
         config = build_run_config(
             PycharmRunOptions(
                 project=project,
+                capsule_platform=Platform.LINUX_AMD64,
                 project_mount="/workspace/project",
                 docker_mode=DockerMode.none,
                 network_mode="bridge",
@@ -675,7 +766,8 @@ def test_sudoers_ownership_helper_is_constrained(tmp_path: Path) -> None:
     )
     config = cast(
         PycharmRunConfig,
-        SimpleNamespace(enable_sudo=True, image="devcapsule-local-pycharm:canonical"),
+        SimpleNamespace(enable_sudo=True, image="devcapsule-local-pycharm:canonical",
+                        capsule_platform=Platform.LINUX_AMD64, daemon_architecture="amd64"),
     )
 
     with (
@@ -709,7 +801,8 @@ def test_sudoers_ownership_helper_failure_is_actionable(tmp_path: Path) -> None:
     )
     config = cast(
         PycharmRunConfig,
-        SimpleNamespace(enable_sudo=True, image="devcapsule-local-pycharm:canonical"),
+        SimpleNamespace(enable_sudo=True, image="devcapsule-local-pycharm:canonical",
+                        capsule_platform=Platform.LINUX_AMD64, daemon_architecture="amd64"),
     )
 
     with (
@@ -719,6 +812,93 @@ def test_sudoers_ownership_helper_failure_is_actionable(tmp_path: Path) -> None:
         run.return_value = SimpleNamespace(returncode=1, stderr="daemon denied helper")
         with pytest.raises(PycharmRunError, match="daemon denied helper"):
             ensure_sudoers_policy_ownership(config, files, {})
+
+
+def _macos_sudo_files(tmp_path: Path) -> tuple[PycharmRunConfig, TempRuntimeFiles]:
+    policy = tmp_path / "sudoers"
+    policy.write_text(SUDOERS_POLICY, encoding="utf-8")
+    files = TempRuntimeFiles(
+        xauth_file=tmp_path / "xauth",
+        passwd_file=tmp_path / "passwd",
+        group_file=tmp_path / "group",
+        sudoers_file=policy,
+    )
+    config = cast(
+        PycharmRunConfig,
+        SimpleNamespace(enable_sudo=True, image="devcapsule-local-pycharm:canonical", name="capsule",
+                        capsule_platform=Platform.LINUX_AMD64, daemon_architecture="arm64"),
+    )
+    return config, files
+
+
+def test_macos_sudo_policy_is_written_into_a_volume_by_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Docker Desktop shares Mac files as the Mac user: no chown makes a
+    # bind-mounted policy root's, so the policy lives in a volume.
+    monkeypatch.setattr(HostOs, "current", classmethod(lambda cls: HostOs.DARWIN))
+    config, files = _macos_sudo_files(tmp_path)
+
+    with (
+        patch("devcapsule.launch.pycharm._launcher.os.chown") as chown,
+        patch("devcapsule.launch.pycharm._launcher.subprocess.run") as run,
+    ):
+        run.return_value = SimpleNamespace(returncode=0, stderr="", stdout="")
+        ensure_sudoers_policy_ownership(config, files, {"PATH": "/usr/bin"})
+
+    chown.assert_not_called()
+    assert files.sudoers_volume == "capsule-sudoers"
+    listed, create, write = (call.args[0] for call in run.call_args_list)
+    assert listed == ["docker", "volume", "ls", "--quiet", "--filter",
+                      "label=devcapsule.purpose=development-sudo-policy"]
+    assert create == ["docker", "volume", "create", "--label", "devcapsule.purpose=development-sudo-policy",
+                      "capsule-sudoers"]
+    assert write[:4] == ["docker", "run", "--rm", "-i"]
+    assert "--platform=linux/amd64" in write
+    assert ["--network", "none"] == write[write.index("--network") : write.index("--network") + 2]
+    assert ["--cap-drop", "ALL"] == write[write.index("--cap-drop") : write.index("--cap-drop") + 2]
+    assert "--cap-add" not in write
+    assert ["--user", "0:0"] == write[write.index("--user") : write.index("--user") + 2]
+    assert {"--read-only", "--pull=never", "no-new-privileges"} <= set(write)
+    assert "type=volume,src=capsule-sudoers,dst=/policy" in write
+    assert write[-1].startswith("umask 0337;")
+    assert write[-1].endswith("/policy/policy")
+    assert run.call_args_list[2].kwargs["input"] == SUDOERS_POLICY
+
+
+def test_macos_sudo_policy_failure_removes_its_volume(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(HostOs, "current", classmethod(lambda cls: HostOs.DARWIN))
+    config, files = _macos_sudo_files(tmp_path)
+
+    with patch("devcapsule.launch.pycharm._launcher.subprocess.run") as run:
+        run.side_effect = [
+            SimpleNamespace(returncode=0, stderr="", stdout=""),
+            SimpleNamespace(returncode=0, stderr=""),
+            SimpleNamespace(returncode=125, stderr="no such image"),
+            SimpleNamespace(returncode=0, stderr=""),
+        ]
+        with pytest.raises(PycharmRunError, match="no such image"):
+            ensure_sudoers_policy_ownership(config, files, {})
+
+    assert run.call_args_list[-1].args[0] == ["docker", "volume", "rm", "--force", "capsule-sudoers"]
+    assert files.sudoers_volume is None
+
+
+def test_only_an_old_policy_volume_counts_as_abandoned() -> None:
+    # A concurrent launch's fresh volume is unused until its capsule starts.
+    old = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
+    fresh = datetime.now(timezone.utc).isoformat()
+    with patch("devcapsule.launch.pycharm._launcher.subprocess.run") as run:
+        run.side_effect = [
+            SimpleNamespace(returncode=0, stdout="killed-sudoers\nconcurrent-sudoers\n"),
+            SimpleNamespace(returncode=0, stdout=f"killed-sudoers {old}\nconcurrent-sudoers {fresh}\n"),
+            SimpleNamespace(returncode=0),
+        ]
+        remove_abandoned_sudoers_volumes({})
+
+    assert run.call_args_list[-1].args[0] == ["docker", "volume", "rm", "killed-sudoers"]
 
 
 def test_sudo_banner_is_printed_after_complete_policy_preparation(
@@ -733,8 +913,10 @@ def test_sudo_banner_is_printed_after_complete_policy_preparation(
     with (
         patch("devcapsule.launch.pycharm._launcher.shutil.which", return_value=None),
         patch(
-            "devcapsule.launch.pycharm._launcher.ensure_sudoers_policy_ownership"
+            "devcapsule.launch.pycharm._launcher.ensure_sudoers_policy_ownership",
+            side_effect=lambda _config, files, _env: setattr(files, "sudoers_volume", "capsule-sudoers"),
         ) as ensure,
+        patch("devcapsule.launch.pycharm._launcher.remove_sudoers_policy_volume") as remove,
         patch("devcapsule.launch.pycharm._launcher.run_attached") as run,
     ):
         run.return_value = AttachedResult(0, interrupted=False, stopped=True)
@@ -742,6 +924,7 @@ def test_sudo_banner_is_printed_after_complete_policy_preparation(
             run_pycharm(
                 PycharmRunOptions(
                     project=project,
+                    capsule_platform=Platform.LINUX_AMD64,
                     image="devcapsule-local-pycharm:canonical",
                     docker_mode=DockerMode.none,
                     network_mode="bridge",
@@ -755,7 +938,9 @@ def test_sudo_banner_is_printed_after_complete_policy_preparation(
     ensure.assert_called_once()
     assert "DEVELOPMENT SUDO IS ENABLED" in capsys.readouterr().err
     command = run.call_args.args[0]
-    assert any(SUDOERS_POLICY_PATH in argument for argument in command)
+    assert any(SUDOERS_POLICY_PATH in argument and "src=capsule-sudoers" in argument for argument in command)
+    # The policy volume outlives nothing but the session.
+    assert remove.call_args.args[0] == "capsule-sudoers"
 
 
 def test_sudo_policy_preparation_failure_cleans_files_without_enabled_banner(
@@ -782,6 +967,7 @@ def test_sudo_policy_preparation_failure_cleans_files_without_enabled_banner(
             run_pycharm(
                 PycharmRunOptions(
                     project=project,
+                    capsule_platform=Platform.LINUX_AMD64,
                     image="devcapsule-local-pycharm:canonical",
                     docker_mode=DockerMode.none,
                     network_mode="bridge",
@@ -814,6 +1000,7 @@ def test_bound_secret_must_exist_on_host(tmp_path: Path) -> None:
         build_run_config(
             PycharmRunOptions(
                 project=project,
+                capsule_platform=Platform.LINUX_AMD64,
                 docker_mode=DockerMode.none,
                 secret_environment=("OPENAI_API_KEY",),
             ),
@@ -836,6 +1023,7 @@ def test_image_process_uses_oci_command_and_cleans_all_temporary_files(tmp_path:
             run_pycharm(
                 PycharmRunOptions(
                     project=project,
+                    capsule_platform=Platform.LINUX_AMD64,
                     project_mount="/workspace/project",
                     image=image,
                     docker_mode=DockerMode.none,
@@ -885,6 +1073,7 @@ def test_launch_preparation_failure_cleans_runtime_and_identity_files(tmp_path: 
             run_pycharm(
                 PycharmRunOptions(
                     project=project,
+                    capsule_platform=Platform.LINUX_AMD64,
                     project_mount="/workspace/project",
                     image="devcapsule-local-pycharm:canonical",
                     docker_mode=DockerMode.none,
@@ -958,6 +1147,7 @@ def test_ide_config_option_implies_custom_config_mode(tmp_path: Path) -> None:
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             ide_config=custom_config,
             docker_mode=DockerMode.none,
         ),
@@ -977,6 +1167,7 @@ def test_explicit_shared_config_mode_ignores_env_ide_config_dir(tmp_path: Path) 
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             config_mode=IdeConfigMode.shared,
             docker_mode=DockerMode.none,
         ),
@@ -996,7 +1187,7 @@ def test_env_ide_config_dir_implies_custom_when_mode_is_unset(tmp_path: Path) ->
     env = base_env(tmp_path)
     env["PYCHARM_IDE_CONFIG_DIR"] = str(tmp_path / "env-config")
 
-    config = build_run_config(PycharmRunOptions(project=project, docker_mode=DockerMode.none), env)
+    config = build_run_config(PycharmRunOptions(project=project, capsule_platform=Platform.LINUX_AMD64, docker_mode=DockerMode.none), env)
 
     assert config.ide_config_mode == "custom"
     assert config.ide_config == (tmp_path / "env-config").resolve()
@@ -1011,6 +1202,7 @@ def test_profile_sets_global_settings_and_plugins_defaults(tmp_path: Path) -> No
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             profile="codex",
             docker_mode=DockerMode.none,
         ),
@@ -1030,6 +1222,7 @@ def test_project_state_root_mirrors_project_path_under_root_parent(tmp_path: Pat
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             project_state_root=workspace / ".state",
             docker_mode=DockerMode.none,
         ),
@@ -1046,6 +1239,7 @@ def test_explicit_project_state_overrides_project_state_root(tmp_path: Path) -> 
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             project_state=tmp_path / "explicit-state",
             project_state_root=tmp_path / ".state",
             docker_mode=DockerMode.none,
@@ -1066,6 +1260,7 @@ def test_dogfood_legacy_roots_map_to_persistent_home_and_component_slots(tmp_pat
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             global_settings=global_settings,
             plugins=plugins,
             project_state=project_state,
@@ -1089,6 +1284,7 @@ def test_persistent_home_defaults_to_checkout_scoped_xdg_data(tmp_path: Path) ->
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             docker_mode=DockerMode.none,
         ),
         base_env(tmp_path),
@@ -1136,6 +1332,7 @@ def contained_config(tmp_path: Path, network_mode: str = "bridge", **overrides: 
     env.pop("DISPLAY")  # the contained display needs no host X session at all
     options: dict[str, object] = dict(
         project=project,
+        capsule_platform=Platform.LINUX_AMD64,
         project_mount="/workspace/project",
         docker_mode=DockerMode.none,
         network_mode=network_mode,
@@ -1223,11 +1420,12 @@ def test_host_x11_passthrough_still_needs_a_host_display_and_binds_it(tmp_path: 
     env = base_env(tmp_path)
     env.pop("DISPLAY")
     with pytest.raises(PycharmRunError, match="DISPLAY is not set"):
-        build_run_config(PycharmRunOptions(project=project, project_mount="/workspace/project"), env)
+        build_run_config(PycharmRunOptions(project=project, capsule_platform=Platform.LINUX_AMD64, project_mount="/workspace/project"), env)
     env = base_env(tmp_path)
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             project_mount="/workspace/project",
             docker_mode=DockerMode.none,
             network_mode="bridge",
@@ -1266,6 +1464,7 @@ def test_display_disclosure_states_the_transport(tmp_path: Path) -> None:
         build_run_config(
             PycharmRunOptions(
                 project=tmp_path / "project",
+                capsule_platform=Platform.LINUX_AMD64,
                 project_mount="/workspace/project",
                 docker_mode=DockerMode.none,
                 network_mode="bridge",
@@ -1307,6 +1506,7 @@ def test_run_pycharm_announces_the_display_url_and_opens_it_when_ready(
             exit_code = run_pycharm(
                 PycharmRunOptions(
                     project=project,
+                    capsule_platform=Platform.LINUX_AMD64,
                     project_mount="/workspace/project",
                     docker_mode=DockerMode.none,
                     network_mode="bridge",
@@ -1343,7 +1543,7 @@ def test_launcher_mounts_live_configuration_directory_and_private_snapshot_read_
     env = base_env(tmp_path)
     env["XDG_RUNTIME_DIR"] = str(tmp_path / "runtime")
     config = build_run_config(PycharmRunOptions(
-        project=project, project_mount="/workspace/project", docker_mode=DockerMode.none,
+        project=project, capsule_platform=Platform.LINUX_AMD64, project_mount="/workspace/project", docker_mode=DockerMode.none,
         runtime_plan=external_runtime_plan(), use_image_process=True,
         launch_configuration=LaunchConfiguration(records, document),
     ), env)
@@ -1371,7 +1571,7 @@ def test_launcher_mounts_live_configuration_directory_and_private_snapshot_read_
     assert not files.launch_context_file.exists() and not files.configuration_directory.exists()
     listing = {"schema-version": 2, "rows": [], "pending": [], "notes": []}
     config = build_run_config(PycharmRunOptions(
-        project=project, project_mount="/workspace/project", docker_mode=DockerMode.none,
+        project=project, capsule_platform=Platform.LINUX_AMD64, project_mount="/workspace/project", docker_mode=DockerMode.none,
         runtime_plan=external_runtime_plan(), use_image_process=True,
         launch_configuration=LaunchConfiguration(records, document, listing),
     ), env)
@@ -1580,7 +1780,7 @@ def test_console_launcher_cleans_up_after_command_reporting_or_docker_failure(
     runtime = tmp_path / "runtime"
     env = {**base_env(tmp_path), "XDG_RUNTIME_DIR": str(runtime)}
     report = Mock()
-    options = PycharmRunOptions(project=config.project, command_report=report if report_only else None)
+    options = PycharmRunOptions(project=config.project, capsule_platform=Platform.LINUX_AMD64, command_report=report if report_only else None)
     with (
         patch("devcapsule.launch.pycharm._launcher.build_run_config", return_value=config),
         patch("devcapsule.launch.pycharm._launcher.write_user_files"),
@@ -1616,7 +1816,7 @@ def test_web_console_is_absent_without_a_runtime_plan(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
     config = build_run_config(
-        PycharmRunOptions(project=project, project_mount="/workspace/project", docker_mode=DockerMode.none),
+        PycharmRunOptions(project=project, capsule_platform=Platform.LINUX_AMD64, project_mount="/workspace/project", docker_mode=DockerMode.none),
         base_env(tmp_path),
     )
     assert config.console_host_port is None and config.console_token == ""
@@ -1677,7 +1877,7 @@ def test_run_pycharm_announces_the_console_url_and_opens_it_only_without_a_deskt
         patch("devcapsule.launch.pycharm._launcher.default_opener", return_value=default_console_opener) as default,
     ):
         assert run_pycharm(PycharmRunOptions(
-            project=project, project_mount="/workspace/project", docker_mode=DockerMode.none,
+            project=project, capsule_platform=Platform.LINUX_AMD64, project_mount="/workspace/project", docker_mode=DockerMode.none,
             network_mode="bridge", runtime_plan=external_runtime_plan(), use_image_process=True,
             display_transport=display_transport, open_display_url=display_opener,
             open_console_url=console_opener if custom_console_opener else None,
@@ -1732,6 +1932,7 @@ def session_config(tmp_path: Path, **environment: str) -> tuple[PycharmRunConfig
     config = build_run_config(
         PycharmRunOptions(
             project=project,
+            capsule_platform=Platform.LINUX_AMD64,
             project_mount="/workspace/project",
             docker_mode=DockerMode.none,
             network_mode="bridge",
@@ -1841,7 +2042,7 @@ def test_unusable_session_directory_does_not_add_a_mount_or_stop_launch(tmp_path
             patch.object(launcher, "watch_display_ready"),
             patch.object(launcher, "run_attached", return_value=AttachedResult(7, interrupted=False, stopped=True)) as docker,
         ):
-            assert run_pycharm(PycharmRunOptions(project=config.project), env) == 7
+            assert run_pycharm(PycharmRunOptions(project=config.project, capsule_platform=Platform.LINUX_AMD64), env) == 7
         command = docker.call_args.args[0]
         assert not any(SESSION_LOG_DESTINATION in arg for arg in command)
         assert "cannot use session logs" in capsys.readouterr().err
@@ -1923,7 +2124,7 @@ def test_session_log_masks_inline_environment_values_of_extra_arguments(tmp_path
             patch.object(launcher, "watch_display_ready"),
             patch.object(launcher.subprocess, "Popen", Client),
         ):
-            assert run_pycharm(PycharmRunOptions(project=config.project), env) == 0
+            assert run_pycharm(PycharmRunOptions(project=config.project, capsule_platform=Platform.LINUX_AMD64), env) == 0
         # Docker receives the literal arguments, in order, before the image.
         [command] = commands
         image = command.index(config.image)
@@ -1968,7 +2169,7 @@ def test_interrupted_launch_ends_with_a_result_and_the_log_paths(tmp_path, capsy
             patch.object(launcher, "watch_display_ready", side_effect=lambda port, url, opener, stop, **kw: stops.append(stop)),
             patch.object(launcher.subprocess, "Popen", return_value=Client()),
         ):
-            assert run_pycharm(PycharmRunOptions(project=config.project), env) == launcher.INTERRUPTED_EXIT_CODE
+            assert run_pycharm(PycharmRunOptions(project=config.project, capsule_platform=Platform.LINUX_AMD64), env) == launcher.INTERRUPTED_EXIT_CODE
         assert stopped_before_return
         assert stops and all(stop.is_set() for stop in stops)
         assert list((tmp_path / "runtime").iterdir()) == []
@@ -2252,7 +2453,7 @@ def test_the_launcher_records_the_sessions_end_in_its_manifest(tmp_path: Path) -
             patch.object(launcher, "watch_display_ready"),
             patch.object(launcher, "run_attached", return_value=AttachedResult(7, interrupted=False, stopped=True)),
         ):
-            assert run_pycharm(PycharmRunOptions(project=config.project), env) == 7
+            assert run_pycharm(PycharmRunOptions(project=config.project, capsule_platform=Platform.LINUX_AMD64), env) == 7
         manifest = json.loads((config.session_log_directory / "session.json").read_text(encoding="utf-8"))
         assert manifest["session"] == config.session_id and manifest["exit-code"] == 7
         assert manifest["ended-at"].endswith("Z") and logs.session_ended(config.session_log_directory)
@@ -2263,7 +2464,7 @@ def test_the_launcher_records_the_sessions_end_in_its_manifest(tmp_path: Path) -
             patch.object(launcher, "watch_display_ready"),
             patch.object(launcher, "run_attached", return_value=AttachedResult(143, interrupted=True, stopped=True)),
         ):
-            assert run_pycharm(PycharmRunOptions(project=config.project), env) == launcher.INTERRUPTED_EXIT_CODE
+            assert run_pycharm(PycharmRunOptions(project=config.project, capsule_platform=Platform.LINUX_AMD64), env) == launcher.INTERRUPTED_EXIT_CODE
         manifest = json.loads((config.session_log_directory / "session.json").read_text(encoding="utf-8"))
         assert manifest["exit-code"] == launcher.INTERRUPTED_EXIT_CODE and manifest["ended-at"]
     finally:
@@ -2290,7 +2491,7 @@ def test_interrupted_launch_with_unstopped_capsule_leaves_session_manifest_unend
                 return_value=AttachedResult(launcher.INTERRUPTED_EXIT_CODE, interrupted=True, stopped=False),
             ),
         ):
-            assert run_pycharm(PycharmRunOptions(project=config.project), env) == launcher.INTERRUPTED_EXIT_CODE
+            assert run_pycharm(PycharmRunOptions(project=config.project, capsule_platform=Platform.LINUX_AMD64), env) == launcher.INTERRUPTED_EXIT_CODE
         manifest = json.loads((config.session_log_directory / "session.json").read_text(encoding="utf-8"))
         assert "ended-at" not in manifest and "exit-code" not in manifest
         assert not logs.session_ended(config.session_log_directory)

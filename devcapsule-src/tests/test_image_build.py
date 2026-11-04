@@ -12,6 +12,7 @@ from devcapsule.launch.pycharm._image_build import (
     parse_pycharm_build_options,
 )
 from devcapsule.images.build import BuildxImageBuilder, ImageBuildSpec, normalize_pycharm_source, render_build_context
+from devcapsule.platforms import Platform
 
 pytestmark = pytest.mark.legacy
 
@@ -137,9 +138,9 @@ def test_buildx_builder_reuses_one_context_root_and_attaches_named_contexts(tmp_
     spec = ImageBuildSpec(image="result:test", base_image="sha256:base",
                           components=(DirectoryComponent(tree, "/opt/tree"),))
     with patch("devcapsule.images.build.docker.build") as build:
-        BuildxImageBuilder(context_root=context_root).build(spec, network="none")
+        BuildxImageBuilder(context_root=context_root).build(spec, platform=Platform.LINUX_AMD64, network="none")
         (context_root / "stale-from-last-build").write_text("x")
-        BuildxImageBuilder(context_root=context_root).build(spec, network="host")
+        BuildxImageBuilder(context_root=context_root).build(spec, platform=Platform.LINUX_AMD64, network="host")
     first, second = build.call_args_list
     assert first.args[0] == context_root and second.args[0] == context_root
     assert first.kwargs["build_contexts"] == {"copy-dir-0": str(tree)}
@@ -152,7 +153,8 @@ def test_buildx_builder_reuses_one_context_root_and_attaches_named_contexts(tmp_
 
 def test_buildx_builder_without_a_root_uses_a_temporary_context(tmp_path: Path) -> None:
     with patch("devcapsule.images.build.docker.build") as build:
-        BuildxImageBuilder().build(ImageBuildSpec(image="result:test", base_image="sha256:base"), network="none")
+        BuildxImageBuilder().build(ImageBuildSpec(image="result:test", base_image="sha256:base"),
+                                    platform=Platform.LINUX_AMD64, network="none")
     used_context = build.call_args.args[0]
     assert used_context.name.startswith("devcapsule-buildx-context-") and not used_context.exists()
     assert build.call_args.kwargs["build_contexts"] == {}
@@ -195,9 +197,9 @@ def test_reused_context_preserves_sources_and_recovers_after_build_failure(tmp_p
     spec = ImageBuildSpec("result:test", "base:test", (DirectoryComponent(source, "/opt/tool"),))
     with patch("devcapsule.images.build.docker.build", side_effect=OSError("build failed")):
         with pytest.raises(CliError, match="build failed"):
-            BuildxImageBuilder(context).build(spec)
+            BuildxImageBuilder(context).build(spec, platform=Platform.LINUX_AMD64)
     with patch("devcapsule.images.build.docker.build") as build:
-        BuildxImageBuilder(context).build(spec)
+        BuildxImageBuilder(context).build(spec, platform=Platform.LINUX_AMD64)
     assert build.call_count == 1
     assert (source / "payload").read_text() == "keep"
     assert sorted(path.name for path in context.iterdir()) == ["Dockerfile"]

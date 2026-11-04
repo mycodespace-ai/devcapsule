@@ -10,6 +10,8 @@ from python_on_whales import docker
 from python_on_whales.exceptions import DockerException
 
 from devcapsule.compat import CliError
+from devcapsule.host_daemon import daemon_architecture
+from devcapsule.platforms import Platform
 from devcapsule.images.build import BuildxImageBuilder, ImageBuildSpec
 from devcapsule.images.metadata import inspect_local_image
 from devcapsule.materialization import (
@@ -73,6 +75,7 @@ def realize_environment(
         if base_override != selected.lock.get("base", {}).get("reference"):
             raise CliError("A base override cannot establish the project's minimum-version guarantee; use its pinned compatible base.")
     locked = parse_locked_environment(selected.lock)
+    capsule_platform = Platform.parse(locked.platform)
     from devcapsule.configuration.storage import load_settings
     if trust is None:
         trust = HomeTrust.read(load_settings())
@@ -109,12 +112,22 @@ def realize_environment(
             selection.local_image_identity if local_authorization else locked.base_identity
         )
 
+    if not local_authorization and base_override is None:
+        from devcapsule.resolution_matrix import MATRICES
+
+        if MATRICES[capsule_platform].base_unpublished(base_reference):
+            raise CliError(
+                f"The lock's base {base_reference} is not published yet, so it cannot be pulled. Build the "
+                f"{capsule_platform} base locally ('devcapsule images build --type base --recipe ubuntu-24.04 "
+                f"--platform {capsule_platform} --tag IMAGE --source-revision REVISION') and select it "
+                "for this checkout ('devcapsule project config authorize base-image IMAGE')."
+            )
     if obtain_image is not None:
         obtain = obtain_image
     elif local_authorization:
         obtain = required_local_image
     else:
-        obtain = ensure_local_image
+        obtain = lambda reference: ensure_local_image(reference, capsule_platform)
     inspect = inspect_image or optional_local_image
     require = require_image or required_local_image
     base = obtain(base_reference)
@@ -138,7 +151,7 @@ def realize_environment(
         # One context root for every build: BuildKit's incremental transfer of
         # the IDE trees is keyed on this path, see BuildxImageBuilder.
         builder = BuildxImageBuilder(context_root=selected_cache / "build-contexts" / "context")
-        build = lambda spec: builder.build(spec, network="none")
+        build = lambda spec: builder.build(spec, network="none", platform=capsule_platform)
     materialize_environment = materialize or ensure_materialized_surface
     # Explanation/reporting hooks ride only the real materializer; injected
     # test materializers keep their narrower signature.
@@ -146,7 +159,7 @@ def realize_environment(
         {}
         if materialize is not None
         else {
-            "runtime_pex": runtime_artifact(),
+            "runtime_pex": runtime_artifact(capsule_platform),
             "runtime_command": RuntimeCommand(runtime.get("devcapsule-command", RuntimeCommand.STANDARD)),
             "report": report,
             "list_formations": lambda: component_formations(locked.component_id),
@@ -178,10 +191,11 @@ def realize_environment(
     )
 
 
-def ensure_local_image(reference: str) -> ImageDetails:
+def ensure_local_image(reference: str, platform: Platform) -> ImageDetails:
+    """The local image at ``reference``, pulled for the lock's ``platform`` when absent."""
     try:
         if not docker.image.exists(reference):
-            docker.image.pull(reference)
+            docker.image.pull(reference, platform=platform.emulated_docker_platform(daemon_architecture()))
     except DockerException as exc:
         raise CliError(f"Cannot obtain Docker image {reference!r}: {exc}") from exc
     return required_local_image(reference)

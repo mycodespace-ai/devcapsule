@@ -152,8 +152,8 @@ def journey(tmp_path, monkeypatch, request):
     selected = ExecutionConfiguration.load(root).project
     runtime = tmp_path / "runtime.pex"
     runtime.write_bytes(b"fixture-runtime")
-    monkeypatch.setattr("devcapsule.environment_realization.runtime_artifact", lambda: runtime)
-    monkeypatch.setattr("devcapsule.runtime_artifact.runtime_artifact", lambda: runtime)
+    monkeypatch.setattr("devcapsule.environment_realization.runtime_artifact", lambda _platform: runtime)
+    monkeypatch.setattr("devcapsule.runtime_artifact.runtime_artifact", lambda _platform: runtime)
     monkeypatch.setattr("devcapsule.materialization.read_pex_build_info", lambda _: SimpleNamespace(
         build_mnemonic="fixture", source_repository="fixture", source_revision="fixture", source_url="fixture"))
     base = ImageDetails(lock["base"]["reference"], "sha256:" + "a" * 64, {
@@ -163,7 +163,7 @@ def journey(tmp_path, monkeypatch, request):
     state = SimpleNamespace(fail_build=False, exit_code=0, during_run=None, launched=[], built=[], images=images,
                             root=root, record=selected.checkout_path, resolution=selected.resolution_path, component=component,
                             lock=path, original=path.read_bytes(), metadata=metadata, base=base)
-    def require(reference):
+    def require(reference, platform=None):
         if reference not in images:
             raise CliError("local image missing")
         return images[reference]

@@ -59,8 +59,8 @@ class EclipseComponent(ComponentDefinition):
         # dependencies use the same acquisition/hash verification before an
         # offline dpkg installation. The set is specific to the Ubuntu 24.04 base.
         packages = metadata.get("native-packages")
-        if platform != "linux-amd64" or not isinstance(packages, dict) or not packages:
-            raise CliError("Eclipse requires pinned native-packages for linux-amd64.")
+        if platform not in ("linux-amd64", "linux-arm64") or not isinstance(packages, dict) or not packages:
+            raise CliError(f"Eclipse requires pinned native-packages for {platform}.")
         artifacts = []
         for package, entry in packages.items():
             if not isinstance(entry, dict) or any(not isinstance(entry.get(key), str) or not entry[key]

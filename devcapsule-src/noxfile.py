@@ -457,6 +457,7 @@ def ide_smoke(session: nox.Session) -> None:
     parser.add_argument("--max-actions", type=int, default=30)
     parser.add_argument("--agent-timeout", type=int, default=900)
     parser.add_argument("--surface", action="append", default=[], help="limit to a surface name; repeatable")
+    parser.add_argument("--platform", help="create each project for this capsule platform, such as linux-arm64")
     parser.add_argument("--required-ide", action="store_true",
                         help="instead of the surfaces: a project requiring PyCharm launches Codium once with "
                              "'run --ide codium --force', then PyCharm again plainly (work order of 2026-10-28)")
@@ -472,6 +473,8 @@ def ide_smoke(session: nox.Session) -> None:
             session.error("--scenario cannot be combined with --agent: the scenario leaves the IDE in its final state")
         if len(options.surface) != 1:
             session.error("--scenario requires exactly one --surface, the scenario's own")
+    if options.platform:
+        session.env["DEVCAPSULE_SMOKE_PLATFORM"] = options.platform
     if options.relaunch:
         if not options.agent or options.surface not in (["intellij"], ["rider"]):
             session.error("--relaunch requires --agent --surface intellij or rider")

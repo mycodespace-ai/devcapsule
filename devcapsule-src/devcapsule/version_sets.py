@@ -23,7 +23,7 @@ from devcapsule.configuration.authorization import AuthorizationReview, authoriz
 from devcapsule.configuration.file_formats import canonical_digest, render_toml, selected_version_lock
 from devcapsule.configuration.model import Configuration
 from devcapsule.configuration.capabilities import CapabilityPolicy, LocalCapabilities
-from devcapsule.configuration.capability_selection import usable_lock
+from devcapsule.configuration.capability_selection import matrix_for, usable_lock
 from devcapsule.configuration.trust import HomeTrust
 from devcapsule.configuration.storage import (
     load_settings,
@@ -33,7 +33,6 @@ from devcapsule.configuration.storage import (
 from devcapsule.environment_realization import RealizedEnvironment, realize_environment
 from devcapsule.materialization import ArtifactSpec, acquire_artifact, cache_root, parse_locked_environment, sha256_file
 from devcapsule.platforms import Platform, XdgHomes
-from devcapsule.resolution_matrix import MATRICES
 from devcapsule import runtime_configuration
 from devcapsule.build_info import current_build_info
 from devcapsule.component_status import CompatibilityLookup
@@ -137,7 +136,7 @@ def _validation(lock: Mapping[str, Any], checkout: Mapping[str, Any]) -> tuple[t
         missing = tuple(f"{name} {metadata.get('version')} on local base {local_base}"
                         for name, metadata in lock["components"].items() if isinstance(metadata, dict))
         return (), missing
-    return MATRICES[Platform.current()].validation_evidence(lock)
+    return matrix_for(lock).validation_evidence(lock)
 
 
 INSPECTION_SCHEMA_VERSION = 1
@@ -410,7 +409,7 @@ def preview(start: Path, component: str, version: str, *, report: Callable[[str]
     if channel is None:
         raise CliError(f"{component}: {definition.channel_omission_reason() or 'no distribution channel declared'}")
     selection = channel.select(version, str(workspace.lock["platform"]))
-    matrix = MATRICES[Platform.current()]
+    matrix = matrix_for(workspace.lock)
     if workspace.lock["platform"] not in selection.platforms:
         raise CliError("Candidate does not support the selected platform.")
     if selection.base_families and matrix.base_family(workspace.lock) not in selection.base_families:
@@ -634,6 +633,9 @@ def _known(workspace: Workspace) -> list[tuple[str, dict[str, Any], dict[str, An
             raise CliError(f"Cannot interpret known-good record {path}: {exc}. Inspect the record; current selection is unchanged.") from exc
         if set_id(lock, document.get("base", {}).get("image-id")) != path.stem:
             raise CliError(f"Known-good record was modified: {path}. Inspect it before recovery.")
+        # A checkout may run as two platforms; only this platform's sets are its history.
+        if lock.get("platform") != workspace.lock.get("platform"):
+            continue
         result.append((path.stem, lock, document))
     return sorted(result, key=lambda entry: entry[2]["last-success"], reverse=True)
 
@@ -673,7 +675,8 @@ def rollback(start: Path, identity: str | None = None, *, reacquire: bool = Fals
             descriptor = formation_descriptor(platform=parsed.platform, base_identity=details.identity,
                 artifact=parsed.artifact, ancillary_artifacts=parsed.ancillary_artifacts,
                 recipe_id=parsed.recipe_id, recipe_version=parsed.recipe_version,
-                component_id=parsed.component_id, runtime_sha256=sha256_file(runtime_artifact()))
+                component_id=parsed.component_id,
+                runtime_sha256=sha256_file(runtime_artifact(Platform.parse(parsed.platform))))
             if missing:
                 name = canonical_image_name(descriptor, parsed.component_id)
                 verify_materialized_image(required_local_image(name), descriptor=descriptor, canonical_name=name)

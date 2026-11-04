@@ -26,7 +26,8 @@ with a terminal report of missing lines, and the default selection
 `-m "not integration and not e2e"`. So a bare `pytest` under `tests/` is the
 unit suite; the heavier suites are chosen by marker, never by accident. The
 `flaky` marker runs a test for visibility with a temporarily non-blocking
-result; the other markers belong to the heavier suites.
+result; `own_host_patches` marks a unit test that patches the host itself
+(see Fixtures); the other markers belong to the heavier suites.
 
 On a pull request the hosted workflow also writes both coverage figures,
 changed lines covered and the whole package, into the pull request's
@@ -122,11 +123,16 @@ so prefer the existing laws and an acceptance step for what the user sees.
 
 ## Fixtures
 
-`tests/conftest.py` holds three fixtures and nothing else:
+`tests/conftest.py` holds the suite's shared fixtures and hooks:
 
 - `host_launch_by_default`, autouse: makes launcher tests behave as if they
   run on the host, since the launcher translates bind sources when it finds
   itself inside a capsule and the suite is often run from one.
+- `amd64_linux_host_by_default`, autouse: makes the host an amd64 Linux
+  machine with an amd64 Docker daemon, as on the CI, since the launcher takes
+  other paths on macOS and Apple Silicon runs linux-arm64 capsules. A test of
+  another host patches the host itself and carries `own_host_patches`;
+  Docker-marked tests keep the real host.
 - `private_user_directories`, autouse: moves `HOME` and every XDG directory
   under the test's `tmp_path` for non-Docker tests. Inside a capsule this is
   not yet a private home: a home with no settings of its own reads the
@@ -136,6 +142,10 @@ so prefer the existing laws and an acceptance step for what the user sees.
   set, otherwise `dist/devcapsule-local.pex`; it fails with the Nox session
   to run when the file is missing. The integration and end-to-end suites use
   it; the unit suite does not need an artifact.
+- `pytest_configure` and `pytest_sessionfinish`: on macOS, a short temporary
+  root under `/tmp`, because a Unix socket path there is limited to 104
+  bytes. A session whose tests all passed removes it; a failed one keeps it
+  and prints its path.
 
 Everything else is local to its module: fakes for Docker and vendor
 services, temporary XDG roots, and the `tmp_path` pytest provides.
