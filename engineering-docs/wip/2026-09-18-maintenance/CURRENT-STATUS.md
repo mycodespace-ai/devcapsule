@@ -39,10 +39,19 @@ sample repositories were transferred to the organization on 2026-11-05,
 keeping their settings, with GitHub redirecting the old names. The
 production domain was set on `mycodespace-ai/devcapsule-website`, the last
 promoted candidate was redeployed there, and the site answers again. The
-branch `ws-maintenance/submodules-in-organization` points `.gitmodules`
-and the two workflows that name the website submodule at the new owners.
-The DNS record of the production domain still names the personal
-account's Pages host and is the owner's to change.
+owner then changed both DNS records to the organization's Pages host.
+
+The owner ruled the same day that the sample projects are no longer
+submodules of this repository: which samples users get to try DevCapsule
+with, and in what form, is decided later, and probably not as submodules.
+The branch `ws-maintenance/submodules-in-organization` therefore removes
+the four sample gitlinks and their `.gitmodules` entries, with the pytest,
+mypy and unit-test-gate exclusions that existed only for them, and points
+the one remaining submodule, the website, and the two workflows that fetch
+it at the organization. The promotion script in the website repository
+still downloads candidates from the old repository name, which GitHub
+redirects; that and the website repository's own records are a separate
+change in that repository.
 
 ## The repository moves to the `mycodespace-ai` organization — 2026-11-05
 
