@@ -54,7 +54,7 @@ jobs:
       - name: Fetch the exact website submodule commit
         shell: bash
         run: |
-          git config submodule.website.url https://github.com/ccozianu/devcapsule-website.git
+          git config submodule.website.url https://github.com/mycodespace-ai/devcapsule-website.git
           git submodule update --init website
       - uses: actions/setup-node@v4
         with:
@@ -102,7 +102,7 @@ jobs:
           persist-credentials: false
       - name: Fetch the pinned website implementation
         run: |
-          git config submodule.website.url https://github.com/ccozianu/devcapsule-website.git
+          git config submodule.website.url https://github.com/mycodespace-ai/devcapsule-website.git
           git submodule update --init website
       - uses: actions/setup-node@v4
         with:

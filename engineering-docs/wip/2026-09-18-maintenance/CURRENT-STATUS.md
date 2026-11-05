@@ -67,6 +67,41 @@ the release workflow keeps running them against the release executable.
 `WORKFLOW-LOCAL.md`, the developer brief and the integration-test document
 say so.
 
+## The website and sample repositories move too — 2026-11-05
+
+The production site went dark with a 404 from GitHub: the custom domain
+had disappeared from the website repository's Pages settings while its
+DNS and its last deployment were sound, and putting it back on a
+repository under the personal account was refused, which is what the
+organization's verification of `mycodespace.ai` does to any repository
+outside it. At the owner's direction, the website repository and the five
+sample repositories were transferred to the organization on 2026-11-05,
+keeping their settings, with GitHub redirecting the old names. The
+production domain was set on `mycodespace-ai/devcapsule-website`, the last
+promoted candidate was redeployed there, and the site answers again. The
+owner then changed both DNS records to the organization's Pages host.
+
+The owner ruled the same day that the sample projects are no longer
+submodules of this repository: which samples users get to try DevCapsule
+with, and in what form, is decided later, and probably not as submodules.
+The branch `ws-maintenance/submodules-in-organization` therefore removes
+the four sample gitlinks and their `.gitmodules` entries, with the pytest,
+mypy and unit-test-gate exclusions that existed only for them, and points
+the one remaining submodule, the website, and the two workflows that fetch
+it at the organization.
+
+One link in the publishing chain is broken by the move and is not yet
+fixed: the promotion script of the website repository,
+`scripts/candidate.mjs`, downloads candidates from
+`ccozianu/devcapsule`. That is not a redirect: the personal repository
+still exists, since this one was migrated branch by branch rather than
+transferred, and a candidate built by the organization's repository
+never appears there. The next promotion needs the script pointed at
+`mycodespace-ai/devcapsule` first, a change in the website repository
+together with its records that name the old owner. For the same reason
+a checkout whose `origin` still names the personal repository pushes
+there, silently; remotes are repointed by hand.
+
 ## The repository moves to the `mycodespace-ai` organization — 2026-11-05
 
 The owner created the free organization `mycodespace-ai` and the empty

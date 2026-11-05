@@ -1,15 +1,3 @@
-[submodule "devcapsule-src/tests/resources/sample_projects/fastapi-webapp"]
-	path = devcapsule-src/tests/resources/sample_projects/fastapi-webapp
-	url = git@github.com:ccozianu/devcapsule-sample-fastapi-webbapp.git
-[submodule "devcapsule-src/tests/resources/sample_projects/devcapsule-sample-trading-research"]
-	path = devcapsule-src/tests/resources/sample_projects/devcapsule-sample-trading-research
-	url = git@github.com:ccozianu/devcapsule-sample-trading-research.git
-[submodule "devcapsule-src/tests/resources/sample_projects/typescript_tictactoe_5inrow"]
-	path = devcapsule-src/tests/resources/sample_projects/typescript_tictactoe_5inrow
-	url = git@github.com:ccozianu/devcapsule-sample-typescript-tictactoe.git
 [submodule "website"]
 	path = website
-	url = git@github.com:ccozianu/devcapsule-website.git
-[submodule "devcapsule-src/tests/resources/sample_projects/ai-learning"]
-	path = devcapsule-src/tests/resources/sample_projects/ai-learning
-	url = git@github.com:ccozianu/ai-learning-bootstrap.git
+	url = git@github.com:mycodespace-ai/devcapsule-website.git

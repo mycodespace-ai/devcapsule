@@ -78,9 +78,6 @@ include = ["devcapsule*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-# Sample projects are independent submodules with their own dependencies and
-# their own test suites. They are fixtures for DevCapsule, not part of its gate.
-norecursedirs = ["sample_projects"]
 addopts = [
   "--cov=devcapsule",
   "--cov-report=term-missing",
@@ -110,9 +107,6 @@ skip_covered = true
 [tool.mypy]
 python_version = "3.12"
 files = ["devcapsule", "tests", "noxfile.py", "scripts/bump-version.py", "scripts/release-manifest.py", "scripts/ci_gate.py", "scripts/diff_coverage_annotations.py", "scripts/validate_unittests_follow_conventions.py", "scripts/publish_coverage_numbers_to_pr.py"]
-# Sample projects are independent submodules with their own dependencies. They
-# are checked by their own tooling, not by DevCapsule's gate.
-exclude = "(^|/)tests/resources/sample_projects/"
 warn_unused_configs = true
 show_error_codes = true
 pretty = true
