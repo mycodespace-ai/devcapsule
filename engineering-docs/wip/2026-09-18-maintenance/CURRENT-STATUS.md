@@ -27,6 +27,23 @@ the release workflow keeps running them against the release executable.
 `WORKFLOW-LOCAL.md`, the developer brief and the integration-test document
 say so.
 
+## The website and sample repositories move too — 2026-11-05
+
+The production site went dark with a 404 from GitHub: the custom domain
+had disappeared from the website repository's Pages settings while its
+DNS and its last deployment were sound, and putting it back on a
+repository under the personal account was refused, which is what the
+organization's verification of `mycodespace.ai` does to any repository
+outside it. At the owner's direction, the website repository and the five
+sample repositories were transferred to the organization on 2026-11-05,
+keeping their settings, with GitHub redirecting the old names. The
+production domain was set on `mycodespace-ai/devcapsule-website`, the last
+promoted candidate was redeployed there, and the site answers again. The
+branch `ws-maintenance/submodules-in-organization` points `.gitmodules`
+and the two workflows that name the website submodule at the new owners.
+The DNS record of the production domain still names the personal
+account's Pages host and is the owner's to change.
+
 ## The repository moves to the `mycodespace-ai` organization — 2026-11-05
 
 The owner created the free organization `mycodespace-ai` and the empty
