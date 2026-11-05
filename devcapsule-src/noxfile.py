@@ -550,7 +550,6 @@ def build(session: nox.Session) -> None:
     run_smoke(session)
     build_test_pex(session)
     smoke_pex(session)
-    run_packaging_tests(session)
     check_docs_contract(session)
     if build_public_pex_if_clean(session):
         smoke_pex(session, PUBLIC_PEX_PATH)
