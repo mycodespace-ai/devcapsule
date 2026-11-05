@@ -56,6 +56,16 @@ that repository's publish workflow redeploys production on such a push,
 daily; or a subdomain, `status.devcapsule.mycodespace.ai`, served by a small
 Pages repository the workflow pushes to. Until one exists, a 0.3.1 launcher
 falls back to its cache, then its snapshot, on every check.
+## Integration tests leave the gate — 2026-11-05
+
+Owner ruling: the integration tests run on demand, as the end-to-end
+suites do, never inside `nox -s build`, `nox -s tests` or a plain
+`pytest`. The unit selection already deselected them through the
+`integration` marker; `build` ran them through its packaging step. That
+step is removed; `nox -s integration` stays as the on-demand session and
+the release workflow keeps running them against the release executable.
+`WORKFLOW-LOCAL.md`, the developer brief and the integration-test document
+say so.
 
 ## The repository moves to the `mycodespace-ai` organization — 2026-11-05
 
