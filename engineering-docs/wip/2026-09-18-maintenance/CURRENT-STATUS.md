@@ -16,6 +16,47 @@ Branch association: `ws-maintenance/move-to-organization` from main 0cfaae64; `w
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
+## The compatibility feed: website address, override, cache, built-in snapshot — 2026-11-05
+
+Owner ruling: from 0.3.1 and its candidates the feed is read from the
+website's domain, not from a repository; the address is overridable from
+the command line for a check against the test site; the last successful
+fetch is cached; a snapshot is built into the launcher; and under no
+circumstances does a launcher fail to start because the feed cannot be
+fetched. Checked first: the last point already held, the fetch being
+bounded, caught and off the ordinary start path, and the cache existed per
+project. The override and the snapshot did not exist.
+
+Delivered on `ws-maintenance/status-feed-fallbacks`:
+
+- `component_status.FEED_URL` is
+  `https://devcapsule.mycodespace.ai/status/compatibility-v1.json`;
+  `DEVCAPSULE_STATUS_URL` overrides it for every check and
+  `project versions check --status-url` for one.
+- The cache moved from each project's state to the cache home,
+  `~/.cache/devcapsule/compatibility-v1.json`, so a new project starts from
+  the newest feed the machine has seen. Lookup order: fetched, cached,
+  built in; the report names the source.
+- `scripts/build-pex.sh` generates the snapshot from
+  `component-status/policy-v1.json` with the publisher's new
+  `--without-probes`, asking no vendor, and packages it as
+  `devcapsule/_compatibility-v1.json`. A snapshot is not a publication: its
+  advisories apply within their own review windows, while a fetched or
+  cached feed stays bound to its three-day validity.
+- Unit tests in the `component_status`, `component_status_publisher` and
+  `commands/versions` mirrors, against constructed feeds, no network.
+
+Blocked, and the owner's ruling is needed before the first 0.3.1 candidate:
+the website path does not exist yet. The production site is a promoted
+candidate deployed whole by `deploy-pages`, so a file refreshed daily
+cannot ride on it without changing how the site is published. Two ways
+keep the ruling that the feed lives on the website's domain: the
+component-status workflow pushes the feed into the website repository and
+that repository's publish workflow redeploys production on such a push,
+daily; or a subdomain, `status.devcapsule.mycodespace.ai`, served by a small
+Pages repository the workflow pushes to. Until one exists, a 0.3.1 launcher
+falls back to its cache, then its snapshot, on every check.
+
 ## The repository moves to the `mycodespace-ai` organization — 2026-11-05
 
 The owner created the free organization `mycodespace-ai` and the empty

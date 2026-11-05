@@ -36,6 +36,9 @@ class VersionsCommand(Command):
     def configure(cls, parser: argparse.ArgumentParser) -> None:
         if cls.name == "show":
             parser.add_argument("--json", dest="as_json", action="store_true", help=STABLE_JSON_HELP)
+        if cls.name == "check":
+            parser.add_argument("--status-url", metavar="URL",
+                                help="Read the DevCapsule compatibility feed from URL for this check, as DEVCAPSULE_STATUS_URL does for every check.")
         if cls.name in {"select", "rollback", "follow-project"}:
             parser.add_argument("--authorize", action="append", nargs=2, default=[], metavar=("NAME", "VALUE"),
                                 help="Answer a vendor acquisition question for the target set; never changes host permissions.")
@@ -59,7 +62,7 @@ class VersionsCommand(Command):
         if cls.name == "show":
             print(version_sets.inspection_json(start) if arguments.as_json else version_sets.inspect(start))
         elif cls.name == "check":
-            print(version_sets.check(start))
+            print(version_sets.check(start, status_url=arguments.status_url))
         elif cls.name == "preview":
             version_sets.preview(start, arguments.component, arguments.version)
         elif cls.name == "select":

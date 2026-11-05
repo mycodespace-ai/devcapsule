@@ -21,6 +21,13 @@ fast-forward commit on the project-owned `component-status` branch:
   GitHub renders that branch's generated `README.md`.
 - [Compatibility feed v1](https://raw.githubusercontent.com/mycodespace-ai/devcapsule/component-status/compatibility-v1.json).
 
+Launchers from 0.3.1 on read the feed from the website, at
+`https://devcapsule.mycodespace.ai/status/compatibility-v1.json`; earlier
+launchers read the branch of the repository they were built from. A launcher
+that cannot fetch the feed uses the copy it last fetched, then the snapshot
+`scripts/build-pex.sh` built into it from `policy-v1.json`, and reports
+which one answered; see [component freshness](../docs/updates/component-freshness.md).
+
 These addresses become live after the first successful mainline workflow run.
 Publication needs the repository's automatically issued `GITHUB_TOKEN` with
 `contents: write`; repository rules must allow that workflow to create/advance

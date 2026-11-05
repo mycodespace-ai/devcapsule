@@ -49,6 +49,7 @@ include = ["devcapsule*"]
 [tool.setuptools.package-data]
 "devcapsule" = [
   "_build_info.json",
+  "_compatibility-v1.json",
 ]
 "devcapsule.container_runtime" = [
   "openbox-rc.xml",

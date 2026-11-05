@@ -8,17 +8,49 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from importlib.resources import files
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
+import os
 
 from devcapsule.components.discovery import read_metadata
+from devcapsule.platforms import XdgHomes
 
 
 REPOSITORY = "https://github.com/mycodespace-ai/devcapsule"
 STATUS_PAGE = REPOSITORY + "/tree/component-status"
-FEED_URL = "https://raw.githubusercontent.com/mycodespace-ai/devcapsule/component-status/compatibility-v1.json"
+FEED_URL = "https://devcapsule.mycodespace.ai/status/compatibility-v1.json"
+FEED_URL_VARIABLE = "DEVCAPSULE_STATUS_URL"
+EMBEDDED_FEED_NAME = "_compatibility-v1.json"
+CACHE_NAME = "compatibility-v1.json"
 MAX_AGE = timedelta(days=3)
+FEED_LIMIT = 1024 * 1024
+
+
+def feed_url(env: Mapping[str, str] | None = None) -> str:
+    """The feed to fetch: ``DEVCAPSULE_STATUS_URL`` when set and nonempty, else the website's."""
+    values = os.environ if env is None else env
+    return values.get(FEED_URL_VARIABLE) or FEED_URL
+
+
+def cache_path(env: Mapping[str, str] | None = None) -> Path:
+    """Where the last successfully fetched feed is kept: the user's cache home, shared by every project."""
+    return XdgHomes.from_environment(env).cache / CACHE_NAME
+
+
+def embedded_feed() -> bytes | None:
+    """The feed ``scripts/build-pex.sh`` packaged into this distribution, or ``None`` in a source run.
+
+    The resource is looked up the way ``build_info`` looks up its record: through the package's
+    resources, then beside this module for editable installs that expose the project root.
+    """
+    for candidate in (files("devcapsule").joinpath(EMBEDDED_FEED_NAME), Path(__file__).with_name(EMBEDDED_FEED_NAME)):
+        try:
+            return candidate.read_bytes()
+        except OSError:
+            continue
+    return None
 
 
 def text_field(value: Any) -> str:
@@ -106,8 +138,15 @@ class StatusFeed:
             raise ValueError("duplicate advisory IDs")
         return cls(generated, expires, advisories)
 
-    def guidance(self, component: str, adapter: str, cli_version: str, platform: str, *, now: datetime) -> str:
-        if self.generated_at > now + timedelta(minutes=5) or now >= self.expires_at:
+    def guidance(self, component: str, adapter: str, cli_version: str, platform: str, *, now: datetime,
+                 published: bool = True) -> str:
+        """The advice for one failed check.
+
+        A published feed, fetched or cached, is advice only within its own validity window. The feed
+        built into a launcher is not published: it is a snapshot, so only each advisory's own review
+        window decides whether it still applies.
+        """
+        if self.generated_at > now + timedelta(minutes=5) or (published and now >= self.expires_at):
             return "DevCapsule status feed is stale or has a future timestamp; no current diagnosis is available."
         applicable = [item for item in self.advisories if item.matches(component, adapter, cli_version, platform)]
         current = [item for item in applicable if item.reviewed_at <= now < item.expires_at]
@@ -126,33 +165,34 @@ class StatusFeed:
 
 
 class CompatibilityLookup:
-    """At most one bounded metadata request per check, and cached offline guidance."""
+    """At most one bounded metadata request per check; then the cached feed; then the one built in.
 
-    def __init__(self, cache: Path, cli_version: str):
+    Nothing here raises into a launch: a feed that cannot be fetched, read or parsed leaves the
+    lookup without a feed and ``explain`` says so.
+    """
+
+    def __init__(self, cache: Path, cli_version: str, url: str | None = None):
         self.cache = cache
         self.cli_version = cli_version
+        self.url = feed_url() if url is None else url
         self.feed: StatusFeed | None = None
+        self.published = True
         self.loaded = False
         self.note = ""
 
     def _load(self) -> None:
         self.loaded = True
         try:
-            payload = read_metadata(FEED_URL, limit=1024 * 1024)
+            payload = read_metadata(self.url, limit=FEED_LIMIT)
             self.feed = StatusFeed.parse(json.loads(payload))
         except Exception as exc:
             # The fallback itself is optional: transport/protocol/parser failure
             # (including truncated HTTP bodies) must not escape into launch.
             self.note = f"DevCapsule status service unavailable ({type(exc).__name__})."
-            try:
-                with self.cache.open("rb") as stream:
-                    payload = stream.read(1024 * 1024 + 1)
-                if len(payload) > 1024 * 1024:
-                    raise ValueError("oversized cache")
-                self.feed = StatusFeed.parse(json.loads(payload))
+            if self._load_cached():
                 self.note += " Using cached status metadata."
-            except Exception:
-                return
+            elif self._load_embedded():
+                self.note += " Using the status metadata built into this launcher."
         else:
             # Cache failure must not invalidate a successful metadata request.
             try:
@@ -163,12 +203,35 @@ class CompatibilityLookup:
             except OSError:
                 self.note = "Could not cache DevCapsule status metadata."
 
+    def _load_cached(self) -> bool:
+        try:
+            with self.cache.open("rb") as stream:
+                payload = stream.read(FEED_LIMIT + 1)
+            if len(payload) > FEED_LIMIT:
+                raise ValueError("oversized cache")
+            self.feed = StatusFeed.parse(json.loads(payload))
+        except Exception:
+            return False
+        return True
+
+    def _load_embedded(self) -> bool:
+        try:
+            payload = embedded_feed()
+            if payload is None or len(payload) > FEED_LIMIT:
+                return False
+            self.feed = StatusFeed.parse(json.loads(payload))
+        except Exception:
+            return False
+        self.published = False
+        return True
+
     def explain(self, component: str, adapter: str, platform: str) -> str:
         if not self.loaded:
             self._load()
         lines = [self.note] if self.note else []
         if self.feed:
-            lines.append(self.feed.guidance(component, adapter, self.cli_version, platform, now=datetime.now(timezone.utc)))
+            lines.append(self.feed.guidance(component, adapter, self.cli_version, platform,
+                                            now=datetime.now(timezone.utc), published=self.published))
             lines.append(f"Status metadata generated: {self.feed.generated_at.isoformat()}.")
         else:
             lines.append("No maintained diagnosis is available; component update status remains unknown.")
