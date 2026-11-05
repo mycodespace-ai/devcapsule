@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   publish:
-    if: github.repository == 'ccozianu/devcapsule' && github.ref == 'refs/heads/main'
+    if: github.repository == 'mycodespace-ai/devcapsule' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:

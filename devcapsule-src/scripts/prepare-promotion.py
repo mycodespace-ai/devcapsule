@@ -15,7 +15,7 @@ def main() -> None:
     parser.add_argument("--baseline", required=True)
     parser.add_argument("--accepted-by", required=True)
     parser.add_argument("--evidence", action="append", required=True)
-    parser.add_argument("--repository", default="ccozianu/devcapsule")
+    parser.add_argument("--repository", default="mycodespace-ai/devcapsule")
     args = parser.parse_args()
     match = re.fullmatch(r"(v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))-rc(?:0|[1-9][0-9]*)", args.candidate)
     if not match or not re.fullmatch(r"[0-9a-f]{40}", args.baseline):

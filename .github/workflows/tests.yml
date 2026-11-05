@@ -229,7 +229,7 @@ jobs:
   publish-coverage-badge:
     name: Publish coverage badge
     needs: pytest
-    if: github.event_name == 'push' && github.repository == 'ccozianu/devcapsule'
+    if: github.event_name == 'push' && github.repository == 'mycodespace-ai/devcapsule'
     runs-on: ubuntu-24.04
     permissions:
       contents: write

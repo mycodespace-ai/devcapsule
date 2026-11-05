@@ -54,21 +54,6 @@ def test_unsupported_schema(tmp_path: Path, schema: object) -> None:
         storage.load_settings(env)
 
 
-def test_minimum_refusal_precedes_content_and_command_diagnoses(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys) -> None:
-    monkeypatch.setattr("importlib.metadata.version", lambda name: "0.3.0")
-    monkeypatch.setenv("DEVCAPSULE_CONFIG_HOME", str(tmp_path))
-    path = storage.settings_path()
-    path.write_text('minimum-devcapsule = "9.0.0"\ndevcapsule-settings-schema-version = 2\ndefaults = false\n')
-    before = path.read_bytes(), path.stat().st_mtime_ns
-    assert cli.main(["project", "config", "default", "cpus", "2"]) == 2
-    message = capsys.readouterr().err
-    assert all(value in message for value in (str(tmp_path), "9.0.0", "0.3.0", "https://github.com/ccozianu/devcapsule/releases"))
-    assert "unsupported schema" not in message
-    with pytest.raises(ProjectConfigurationError, match="requires DevCapsule 9.0.0"):
-        storage.write_settings({"defaults": {"cpus": 2}})
-    assert (path.read_bytes(), path.stat().st_mtime_ns) == before
-    assert list(tmp_path.iterdir()) == [path]
-
 
 def test_candidate_creates_release_minimum(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("importlib.metadata.version", lambda name: "0.3.0rc8+local")

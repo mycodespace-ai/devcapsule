@@ -352,7 +352,7 @@ stands until the GitHub CLI is a DevCapsule component.
    the branch over SSH, and give the human the compare link:
 
    ```text
-   https://github.com/ccozianu/devcapsule/compare/<base>...<head>?expand=1
+   https://github.com/mycodespace-ai/devcapsule/compare/<base>...<head>?expand=1
    ```
 
    `<base>` is the branch the pull request targets. `<head>` is the pushed
