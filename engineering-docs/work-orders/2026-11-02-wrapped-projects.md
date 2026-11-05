@@ -34,8 +34,8 @@ FRC team 6328 Mechanical-Advantage's public robot code, Java built with Gradle a
 GradleRIO plugin, MIT licensed. A team that keeps its own code private can use that wrapper to
 learn from the best team's code in an afternoon instead of following installation instructions.
 
-The showcase wrapper has its own repository, created by the owner on 2026-11-02 and moved
-with the others on 2026-11-05: `git@github.com:mycodespace-ai/devcapsule-sample-frc-learning.git`.
+The showcase wrapper has its own repository, created by the owner on 2026-11-02 and kept
+under the personal account: `git@github.com:ccozianu/devcapsule-sample-frc-learning.git`.
 The wrapper produced by the three commands is pushed there. It does not join this repository
 as a submodule: the owner ruled on 2026-11-05 that the sample projects leave the repository,
 and that which samples users get to try, and in what form, is decided later.
