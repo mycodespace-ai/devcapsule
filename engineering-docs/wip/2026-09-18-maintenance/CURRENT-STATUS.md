@@ -48,10 +48,19 @@ The branch `ws-maintenance/submodules-in-organization` therefore removes
 the four sample gitlinks and their `.gitmodules` entries, with the pytest,
 mypy and unit-test-gate exclusions that existed only for them, and points
 the one remaining submodule, the website, and the two workflows that fetch
-it at the organization. The promotion script in the website repository
-still downloads candidates from the old repository name, which GitHub
-redirects; that and the website repository's own records are a separate
-change in that repository.
+it at the organization.
+
+One link in the publishing chain is broken by the move and is not yet
+fixed: the promotion script of the website repository,
+`scripts/candidate.mjs`, downloads candidates from
+`ccozianu/devcapsule`. That is not a redirect: the personal repository
+still exists, since this one was migrated branch by branch rather than
+transferred, and a candidate built by the organization's repository
+never appears there. The next promotion needs the script pointed at
+`mycodespace-ai/devcapsule` first, a change in the website repository
+together with its records that name the old owner. For the same reason
+a checkout whose `origin` still names the personal repository pushes
+there, silently; remotes are repointed by hand.
 
 ## The repository moves to the `mycodespace-ai` organization — 2026-11-05
 
