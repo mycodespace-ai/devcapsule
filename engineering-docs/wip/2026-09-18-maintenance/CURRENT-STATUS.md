@@ -16,6 +16,17 @@ Branch association: `ws-maintenance/move-to-organization` from main 0cfaae64; `w
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
+## Integration tests leave the gate — 2026-11-05
+
+Owner ruling: the integration tests run on demand, as the end-to-end
+suites do, never inside `nox -s build`, `nox -s tests` or a plain
+`pytest`. The unit selection already deselected them through the
+`integration` marker; `build` ran them through its packaging step. That
+step is removed; `nox -s integration` stays as the on-demand session and
+the release workflow keeps running them against the release executable.
+`WORKFLOW-LOCAL.md`, the developer brief and the integration-test document
+say so.
+
 ## The repository moves to the `mycodespace-ai` organization — 2026-11-05
 
 The owner created the free organization `mycodespace-ai` and the empty

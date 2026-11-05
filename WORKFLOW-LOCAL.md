@@ -124,8 +124,10 @@ in [`INFORMATION-MODEL.md`](devcapsule-src/devcapsule/assets/project_workflow/de
   Fetch and name the actual target branch. Keep execution serial. Do not
   apply a failing coverage percentage. See [unit tests](engineering-docs/development/unit-tests.md).
 - **Integration tests**: `.venv/bin/python -m nox -s integration`. It runs
-  the built executable and subprocesses without Docker. `nox -s typecheck`
-  and `nox -s docs-contract` are integration checks too. See
+  the built executable and subprocesses without Docker. Run it on demand,
+  as the end-to-end suites are run; the gate and the unit selection do not
+  run it. `nox -s typecheck` and `nox -s docs-contract` are integration
+  checks too. See
   [integration tests](engineering-docs/development/integration-tests.md).
 - **End-to-end tests**: `.venv/bin/python -m nox -s e2e`, plus
   `pex_clean_machine`, `recursive_dogfood_e2e`, and `ide-smoke`. Each needs
@@ -150,10 +152,10 @@ in [`INFORMATION-MODEL.md`](devcapsule-src/devcapsule/assets/project_workflow/de
   shares the runtime's environment. See its [README](devcapsule-webconsole/README.md).
 - **Gate**: `.venv/bin/python -m nox -s build`, before a checkpoint and
   before integration: distribution version, Python and shell syntax, type
-  check, unit tests, CLI smoke, the executable built and smoked, packaging
-  tests, the documentation contract, then the web console session. The
-  end-to-end suites are not in it. The [developer brief](DEVELOPING.md) says
-  when they run.
+  check, unit tests, CLI smoke, the executable built and smoked, the
+  documentation contract, then the web console session. The integration
+  and end-to-end suites are not in it. The [developer brief](DEVELOPING.md)
+  says when they run.
 
 ## Unit Tests
 
