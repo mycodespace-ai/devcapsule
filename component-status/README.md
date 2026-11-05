@@ -17,9 +17,9 @@ The **Component update status** GitHub Action runs daily, on relevant mainline
 changes, and on manual dispatch from `main`. It publishes two files in one
 fast-forward commit on the project-owned `component-status` branch:
 
-- [Human status page](https://github.com/ccozianu/devcapsule/tree/component-status):
+- [Human status page](https://github.com/mycodespace-ai/devcapsule/tree/component-status):
   GitHub renders that branch's generated `README.md`.
-- [Compatibility feed v1](https://raw.githubusercontent.com/ccozianu/devcapsule/component-status/compatibility-v1.json).
+- [Compatibility feed v1](https://raw.githubusercontent.com/mycodespace-ai/devcapsule/component-status/compatibility-v1.json).
 
 These addresses become live after the first successful mainline workflow run.
 Publication needs the repository's automatically issued `GITHUB_TOKEN` with
@@ -109,7 +109,7 @@ Each advisory has this shape (illustrative only; issue 123 is a placeholder):
   "platforms": ["linux-amd64"],
   "status": "known-issue",
   "message": "The upstream version feed changed; see the issue for workarounds.",
-  "issue_url": "https://github.com/ccozianu/devcapsule/issues/123",
+  "issue_url": "https://github.com/mycodespace-ai/devcapsule/issues/123",
   "reviewed_at": "2026-09-21T00:00:00Z",
   "expires_at": "2026-10-21T00:00:00Z"
 }

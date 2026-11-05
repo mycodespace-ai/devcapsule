@@ -5,7 +5,7 @@ updated: 2026-10-30
 ---
 # Launcher updates
 
-Check the [DevCapsule releases page](https://github.com/ccozianu/devcapsule/releases)
+Check the [DevCapsule releases page](https://github.com/mycodespace-ai/devcapsule/releases)
 for launcher updates. Install a newer release with the steps in
 [Install DevCapsule](../getting-started/install.md), using that release's
 download URL. This replaces the single-file executable.

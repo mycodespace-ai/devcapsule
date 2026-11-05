@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-04; #335, #336 and #337 merged; seventeen capsule-reading tests marked expected to fail at the owner's direction, their fix queued here; 0.3.1 queue preserved
+State: active 2026-11-05; the repository moved to `mycodespace-ai/devcapsule` with the merge queue as the gate of `main`; the rename of the repository in code, workflows and docs is in review; 0.3.1 queue preserved
 
 Definition read: WORKFLOW.md@d2ccbbe43dfa, WORKFLOW-LOCAL.md@65501b3407db
 
@@ -12,9 +12,68 @@ Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `ws-maintenance/move-to-organization` from main 0cfaae64; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## The repository moves to the `mycodespace-ai` organization — 2026-11-05
+
+The owner created the free organization `mycodespace-ai` and the empty
+repository `mycodespace-ai/devcapsule`, and ruled the move branch by
+branch: what git holds is preserved, nothing else. The reason is the
+merge queue, which GitHub grants only to repositories an organization
+owns; a personal repository can require a check on the pull request's
+head but cannot run that check on the merged result before landing it.
+`PR #338` merged with a red check and the seventeen tests of the section
+above reached `main` the same way.
+
+What moved on 2026-11-05: 26 branches, every one the old repository had
+except the two stray `upstream/*` refs, and 44 tags, every one except the
+`website-candidate-*` build tags. `main` is the default branch; merge
+commits are the only merge method, deleted branches on merge and
+auto-merge are on. Ruleset 26585527 guards `main`: no deletion, no force
+push, changes through a pull request only, the `ci-gate` check required,
+and the merge queue required, so a pull request enters the queue when
+`ci-gate` is green on its head and lands only when `ci-gate` is green on
+the merge commit the queue builds. `tests.yml` already runs on
+`merge_group` and confines coverage publication to the pull request run,
+so the workflow needed no change for the gate. The old repository had no
+Actions secrets or variables to carry.
+
+What did not move: the issues, the closed pull requests and the stars stay
+at `ccozianu/devcapsule`, and the records keep linking to them. There is
+no redirect. The website and the sample-project submodules are separate
+repositories still under `ccozianu`, so `.gitmodules` is unchanged.
+
+This branch renames the repository everywhere the live code and
+documentation name it: the coverage and component-status workflow
+conditions, the launcher's release page in `images/contract.py` and in
+the settings-admission message, the component-status feed and page, the
+trust note, the promotion script's default, the READMEs, the platform and
+update docs, the compare link in `WORKFLOW-LOCAL.md` and the canonical
+URL in the root status. The one legacy test asserting the release URL,
+`test_minimum_refusal_precedes_content_and_command_diagnoses`, moved into
+the `storage` mirror with the new URL and a docstring; the legacy test
+data naming the old repository in `test_pycharm.py` and `test_wrap.py`
+is left as data.
+
+Open for the owner's ruling:
+
+1. Launchers already shipped, 0.3.0 included, check for updates against
+   `ccozianu/devcapsule` releases and read the compatibility feed from its
+   `component-status` branch. Without a redirect they keep doing so. Either
+   0.3.1 is also published there, with the feed branch kept current on both
+   repositories for a while, or 0.3.0 users update once by hand. The old
+   repository cannot be archived before this is ruled.
+2. The Pages site `test-devcapsule.mycodespace.ai` is served by the old
+   repository. The new one has no Pages site yet; the domain's DNS record
+   must point at `mycodespace-ai.github.io`, then the domain is removed
+   from the old repository and set on the new.
+3. Whether `devcapsule-website` and the sample-project repositories move
+   too. If they do, `.gitmodules`, the submodule URLs in the workflows and
+   the website's own records follow in a second slice.
+4. Every checkout renames its remotes; the owner's wrap checkout had the
+   organization as `upstream` already.
 
 ## Seventeen tests expected to fail for reading the capsule — 2026-11-04
 

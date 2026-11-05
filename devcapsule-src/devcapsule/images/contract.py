@@ -23,7 +23,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping
 
-REPOSITORY = "https://github.com/ccozianu/devcapsule"
+REPOSITORY = "https://github.com/mycodespace-ai/devcapsule"
 # Where the recipe lives now, written into new images as a label, and where
 # it lived for every image built before the move of 2026-09-26.
 RECIPE_SOURCE_PATH = "devcapsule-src/devcapsule/images/base.py"

@@ -25,7 +25,7 @@ interactive `project run` asks:
 
 ```text
 Trust DevCapsule to supply the base images from docker.io/mycodespaceai/devcapsule-base, https://devcapsule.mycodespace.ai, verified by the SHA-256 digest the launcher pins. This covers every version and every project launched from this DevCapsule home, `<path>`. Anyone who uses this home uses this acceptance. Changed terms or a different channel require another decision.
-  A launcher you downloaded already carries these digests; this makes the trust explicit. You trust the ccozianu/devcapsule GitHub account and the mycodespaceai Docker Hub account.
+  A launcher you downloaded already carries these digests; this makes the trust explicit. You trust the mycodespace-ai/devcapsule GitHub account and the mycodespaceai Docker Hub account.
 Accept for this DevCapsule home? [y/N]:
 ```
 

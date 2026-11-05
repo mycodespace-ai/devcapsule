@@ -90,7 +90,7 @@ tools behind your back.
 Vendor release endpoints change from time to time without warning. When an
 adapter hits an HTTP error, timeout, or unexpected payload shape, the launcher
 fetches DevCapsule's versioned fallback feed and links to the
-[maintained component status page](https://github.com/ccozianu/devcapsule/tree/component-status):
+[maintained component status page](https://github.com/mycodespace-ai/devcapsule/tree/component-status):
 
 - Matching happens locally against the adapter ID, launcher version, and
   platform. DevCapsule sends no project metadata or installed component list.

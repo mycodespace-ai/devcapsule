@@ -15,9 +15,9 @@ from typing import Any
 from devcapsule.components.discovery import read_metadata
 
 
-REPOSITORY = "https://github.com/ccozianu/devcapsule"
+REPOSITORY = "https://github.com/mycodespace-ai/devcapsule"
 STATUS_PAGE = REPOSITORY + "/tree/component-status"
-FEED_URL = "https://raw.githubusercontent.com/ccozianu/devcapsule/component-status/compatibility-v1.json"
+FEED_URL = "https://raw.githubusercontent.com/mycodespace-ai/devcapsule/component-status/compatibility-v1.json"
 MAX_AGE = timedelta(days=3)
 
 

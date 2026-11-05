@@ -23,6 +23,6 @@ DevCapsule is developed and tested on Ubuntu-family desktops using Docker
 Engine from [Docker's official repository](https://docs.docker.com/engine/install/).
 Other current `x86_64` Linux distributions with a standard Docker Engine and
 Buildx setup are expected to work without special flags; if yours hits a
-platform-specific failure, please [open an issue](https://github.com/ccozianu/devcapsule/issues/new)
+platform-specific failure, please [open an issue](https://github.com/mycodespace-ai/devcapsule/issues/new)
 with your distribution, Docker version, and error output (omitting private
 session URLs and tokens).

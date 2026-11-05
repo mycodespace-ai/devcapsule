@@ -59,7 +59,7 @@ Resources → Disk usage limit**, and about as much free on the Mac itself, plus
 Git and Python 3.12. From a clean checkout of a published commit:
 
 ```bash
-git clone https://github.com/ccozianu/devcapsule.git
+git clone https://github.com/mycodespace-ai/devcapsule.git
 cd devcapsule/devcapsule-src
 python3.12 -m venv .venv
 .venv/bin/pip install -r dev-requirements.txt
@@ -120,6 +120,6 @@ published keeps it until you select the project's base again with
 To run the project under emulation again, delete
 `.devcapsule/devcapsule.linux-arm64.lock`.
 
-If something fails on your Mac, please [open an issue](https://github.com/ccozianu/devcapsule/issues/new)
+If something fails on your Mac, please [open an issue](https://github.com/mycodespace-ai/devcapsule/issues/new)
 with your macOS and Docker Desktop versions and the error output, omitting
 private session URLs and tokens.
