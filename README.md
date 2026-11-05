@@ -1,10 +1,10 @@
 # DevCapsule component update status
 
-Generated: 2026-11-04T15:08:47.465508+00:00. Valid until: 2026-11-07T15:08:47.465508+00:00.
+Generated: 2026-11-05T04:14:13.467493+00:00. Valid until: 2026-11-08T04:14:13.467493+00:00.
 
 If that deadline has passed, this page is stale. Probe success only establishes that the named adapter could read metadata from this runner. It does not certify installed software, security coverage, installation, or every released CLI.
 
-Source revision: `bf7e5d66a284e1d0519d9929f489f34f83d97948`. Probe CLI: `0.3.1.dev0`.
+Source revision: `f65bd85531df26ba67be9dc31b148d765f9217d6`. Probe CLI: `0.3.1.dev0`.
 
 [Machine-readable compatibility contract v1](compatibility-v1.json)
 
@@ -12,18 +12,18 @@ Source revision: `bf7e5d66a284e1d0519d9929f489f34f83d97948`. Probe CLI: `0.3.1.d
 
 | Component / adapter | Platform / baseline | Result | Candidates | Last successful probe | Consecutive failures | Detail |
 |---|---|---|---|---|---|---|
-| eclipse / eclipse-v1 | linux-amd64 / 2026-09-R | ok | &#8212; | 2026-11-04T15:08:47.465508&#43;00:00 | 0 | Package availability does not assess installed-version support. |
-| intellij / intellij-v1 | linux-amd64 / 2026.2.3 | ok | 2026.2.4 | 2026-11-04T15:08:47.465508&#43;00:00 | 0 | This release feed does not assess installed-version support. |
-| playwright / playwright-v1 | linux-amd64 / 1.63.0 | ok | 1.64.1 | 2026-11-04T15:08:47.465508&#43;00:00 | 0 | This release feed does not assess installed-version support. |
-| pycharm / pycharm-v1 | linux-amd64 / 2026.2.0.1 | ok | 2026.2.4 | 2026-11-04T15:08:47.465508&#43;00:00 | 0 | This release feed does not assess installed-version support. |
-| codium / codium-v1 | linux-amd64 / 1.126.04524 | ok | 1.143.17232 | 2026-11-04T15:08:47.465508&#43;00:00 | 0 | This release feed does not assess installed-version support. |
-| vscode / vscode-v1 | linux-amd64 / 1.143.1 | ok | 1.145.0 | 2026-11-04T15:08:47.465508&#43;00:00 | 0 | This release feed does not assess installed-version support. |
-| codex / codex-v1 | linux-amd64 / 0.153.4 | inconclusive | &#8212; | 2026-10-01T06:52:01.142796&#43;00:00 | 39 | Distribution check unavailable at https://registry.npmjs.org/@openai&#37;2Fcodex: metadata exceeds 16 MiB. Retry &#39;project versions check&#39;&#59; saved choices are unchanged. |
-| claude-code / claude-code-v1 | linux-amd64 / 2.1.261 | ok | 2.1.318 | 2026-11-04T15:08:47.465508&#43;00:00 | 0 | This release feed does not assess installed-version support. |
-| antigravity-cli / antigravity-cli-v1 | linux-amd64 / 1.1.24 | ok | 1.5.0 | 2026-11-04T15:08:47.465508&#43;00:00 | 0 | This release feed does not assess installed-version support. |
-| postgresql-client / postgresql-client-v1 | linux-amd64 / 16 | ok | &#8212; | 2026-11-04T15:08:47.465508&#43;00:00 | 0 | Upstream major 16 support ends 2028-11-09&#59; distribution backports are not assessed. Latest upstream minor: 16.15&#59; installed minor is not recorded in this base lock. |
-| dotnet-sdk / dotnet-sdk-v1 | linux-amd64 / 10.0.401 | ok | 10.0.403 | 2026-11-04T15:08:47.465508&#43;00:00 | 0 | This release feed does not assess installed-version support. |
-| rider / rider-v1 | linux-amd64 / 2026.2.3.1 | ok | 2026.2.4.1 | 2026-11-04T15:08:47.465508&#43;00:00 | 0 | This release feed does not assess installed-version support. |
+| eclipse / eclipse-v1 | linux-amd64 / 2026-09-R | ok | &#8212; | 2026-11-05T04:14:13.467493&#43;00:00 | 0 | Package availability does not assess installed-version support. |
+| intellij / intellij-v1 | linux-amd64 / 2026.2.3 | ok | 2026.2.4 | 2026-11-05T04:14:13.467493&#43;00:00 | 0 | This release feed does not assess installed-version support. |
+| playwright / playwright-v1 | linux-amd64 / 1.63.0 | ok | 1.64.1 | 2026-11-05T04:14:13.467493&#43;00:00 | 0 | This release feed does not assess installed-version support. |
+| pycharm / pycharm-v1 | linux-amd64 / 2026.2.0.1 | ok | 2026.2.4 | 2026-11-05T04:14:13.467493&#43;00:00 | 0 | This release feed does not assess installed-version support. |
+| codium / codium-v1 | linux-amd64 / 1.126.04524 | ok | 1.143.17232 | 2026-11-05T04:14:13.467493&#43;00:00 | 0 | This release feed does not assess installed-version support. |
+| vscode / vscode-v1 | linux-amd64 / 1.143.1 | ok | 1.145.0 | 2026-11-05T04:14:13.467493&#43;00:00 | 0 | This release feed does not assess installed-version support. |
+| codex / codex-v1 | linux-amd64 / 0.153.4 | inconclusive | &#8212; | 2026-10-01T06:52:01.142796&#43;00:00 | 40 | Distribution check unavailable at https://registry.npmjs.org/@openai&#37;2Fcodex: metadata exceeds 16 MiB. Retry &#39;project versions check&#39;&#59; saved choices are unchanged. |
+| claude-code / claude-code-v1 | linux-amd64 / 2.1.261 | ok | 2.1.318 | 2026-11-05T04:14:13.467493&#43;00:00 | 0 | This release feed does not assess installed-version support. |
+| antigravity-cli / antigravity-cli-v1 | linux-amd64 / 1.1.24 | ok | 1.5.0 | 2026-11-05T04:14:13.467493&#43;00:00 | 0 | This release feed does not assess installed-version support. |
+| postgresql-client / postgresql-client-v1 | linux-amd64 / 16 | ok | &#8212; | 2026-11-05T04:14:13.467493&#43;00:00 | 0 | Upstream major 16 support ends 2028-11-09&#59; distribution backports are not assessed. Latest upstream minor: 16.15&#59; installed minor is not recorded in this base lock. |
+| dotnet-sdk / dotnet-sdk-v1 | linux-amd64 / 10.0.401 | ok | 10.0.403 | 2026-11-05T04:14:13.467493&#43;00:00 | 0 | This release feed does not assess installed-version support. |
+| rider / rider-v1 | linux-amd64 / 2026.2.3.1 | ok | 2026.2.4.1 | 2026-11-05T04:14:13.467493&#43;00:00 | 0 | This release feed does not assess installed-version support. |
 
 ## Maintained diagnoses
 
