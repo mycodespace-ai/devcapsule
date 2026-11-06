@@ -77,7 +77,7 @@ of the `devcapsule` package. See its [README](devcapsule-webconsole/README.md).
 | Suite | Command | Document |
 |---|---|---|
 | Unit tests, with coverage; what the hosted runner runs | `nox -s tests` | [Unit tests](engineering-docs/development/unit-tests.md) |
-| Integration: the built executable, the CLI smoke, types, the docs contract | `nox -s integration`, on demand; the smoke, types and contract inside `build` | [Integration tests](engineering-docs/development/integration-tests.md) |
+| Integration: a subsystem with the real executable, subprocess, git or Docker daemon it uses, the rest faked | `nox -s integration`, on demand, and before a candidate; the CLI smoke, types and docs contract are gate checks inside `build` | [Integration tests](engineering-docs/development/integration-tests.md) |
 | End-to-end, with Docker: images, capsules, the IDE smoke | `nox -s e2e`, `nox -s ide-smoke`, … | [End-to-end tests](engineering-docs/development/e2e-tests.md) |
 | The capsule web console, `devcapsule-webconsole/`: types and tests in its own environment | `nox -s webconsole`, queued by `build` | [Web console README](devcapsule-webconsole/README.md) |
 

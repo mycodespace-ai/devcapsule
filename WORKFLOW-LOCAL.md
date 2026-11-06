@@ -58,6 +58,15 @@ source of the packaged one, not an installed copy. See *Exceptions*.
    one pull request. NNN counts from 1 within the release. Commit nothing to
    the copy. Point no tag into it. The candidate workflow checks tags against
    `release-X.Y.Z` alone. Owner decision, 2026-10-18.
+9. The integration tests run before a candidate is produced. The
+   candidate workflow runs the ones that need no Docker against the
+   release executable. The ones marked `docker` run where a daemon is
+   known, and their run is recorded in the tagged revision at
+   `engineering-docs/releases/vX.Y.Z/integration-runs.json`: the source
+   revision, the selection, the environment, the operator, the date and
+   the result. The candidate workflow refuses a candidate when that
+   record is missing, names another revision or reports a failure. Owner
+   direction, 2026-11-06.
 
 ## Documentation Refs
 
@@ -123,11 +132,14 @@ in [`INFORMATION-MODEL.md`](devcapsule-src/devcapsule/assets/project_workflow/de
   `.venv/bin/diff-cover coverage.xml --compare-branch=origin/main`.
   Fetch and name the actual target branch. Keep execution serial. Do not
   apply a failing coverage percentage. See [unit tests](engineering-docs/development/unit-tests.md).
-- **Integration tests**: `.venv/bin/python -m nox -s integration`. It runs
-  the built executable and subprocesses without Docker. Run it on demand,
-  as the end-to-end suites are run; the gate and the unit selection do not
-  run it. `nox -s typecheck` and `nox -s docs-contract` are integration
-  checks too. See
+- **Integration tests**: `.venv/bin/python -m nox -s integration`. An
+  integration test runs a subsystem with the real external things it
+  uses, the built executable, a subprocess, git or the Docker daemon, and
+  fakes the services it does not test. Run it on demand, as the
+  end-to-end suites are run; the gate and the unit selection do not run
+  it. A test that needs the Docker daemon carries the `docker` marker.
+  `nox -s typecheck` and `nox -s docs-contract` are checks of the gate,
+  not tests. See
   [integration tests](engineering-docs/development/integration-tests.md).
 - **End-to-end tests**: `.venv/bin/python -m nox -s e2e`, plus
   `pex_clean_machine`, `recursive_dogfood_e2e`, and `ide-smoke`. Each needs

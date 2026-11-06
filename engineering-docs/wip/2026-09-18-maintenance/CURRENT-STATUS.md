@@ -35,6 +35,22 @@ gained those sentences, the humane companion its paragraph, and the
 unit-tests guide its summary, on the branch
 `ws-maintenance/unit-test-isolation-rule`.
 
+The same conversation settled the integration tests. The owner preferred
+the ordinary meaning to the local one: a subsystem tested together with
+the real external things it uses, the services it does not test faked;
+Docker commands are allowed, and the guide's "without Docker" was the
+hosted runner's limit written into a definition. The type check and the
+documentation contract are gate checks, not tests. A `docker` marker names
+the need, and the candidate workflow's selection became `integration and
+not docker`. The owner then ruled that the integration tests run before a
+candidate is produced: in the workflow where they can, and otherwise with
+a run record in the tagged revision that the workflow can find and check,
+*Release Policy* rule 9. The agent proposed the record's place and
+fields, `engineering-docs/releases/vX.Y.Z/integration-runs.json` with the
+source revision, the selection, the environment, the operator, the date
+and the result; the workflow's check of it is the next slice, after the
+owner confirms the shape.
+
 The seventeen stand as follows on 2026-11-06, after the sample
 submodules left the tree: sixteen of the moved tests fail inside a capsule
 as expected, thirteen for the mounted settings and three for the live

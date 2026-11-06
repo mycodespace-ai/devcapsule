@@ -42,7 +42,11 @@ reported as a defect by the tooling.
 **Rule.** The operator guide is the policy; default ref spelling; GitHub
 Actions builds candidates; a resolved main disposition gates each candidate;
 downloaded-artifact smoke evidence is required; a release includes its
-documentation. Promote the manifest on the release branch before the final
+documentation. The integration tests run before a candidate exists: the
+workflow runs those it can, and for those that need a Docker daemon it
+looks in the tagged revision for the record of a run, and refuses the
+candidate when the record is missing, is about another revision or says
+the run failed. Promote the manifest on the release branch before the final
 tag and merge it to `main`. Fork `docs-<version>` at the promotion commit
 with `git push origin HEAD:refs/heads/docs-X.Y.Z`. Its `docs/` tree must
 match the final tag, which the final-tag job checks. These branches carry
@@ -85,6 +89,19 @@ the order was fixed. The copy is an integration ref, never a release ref,
 which is why nothing is committed to it and why the candidate workflow looks
 only at `release-X.Y.Z` when it checks a tag.
 
+Rule 9 is from 2026-11-06. Until then the Docker-backed proofs ran only
+at the final acceptance, against the downloaded final candidate, so every
+candidate before it was published with integration tests nobody had run,
+and a candidate is what testers download. The owner's rule is that a
+candidate is not produced without them, and since the hosted runner may
+not run Docker, the proof of a run elsewhere must be something the
+workflow can find in the source it is building. A record in the tagged
+revision, naming that revision, is the simplest such thing: commit the
+record, then tag; change anything after, and the record names the wrong
+revision and the workflow says so. The workflow's own run of the
+Docker-free tests stays, since a run on the hosted runner is the stronger
+evidence of the two.
+
 ## Blog Entries
 
 **Rule.** On request, write a dated entry under `engineering-docs/blog/` with
@@ -109,7 +126,11 @@ checks. Parallel execution is deliberately deferred beyond 0.3.0.
 
 **Rule.** Every command runs from `devcapsule-src` in its `.venv`; the kinds
 are the definition's; each has a command runnable as written; the gate is
-`nox -s build`.
+`nox -s build`. An integration test runs a subsystem with the real things
+it uses, the executable, a subprocess, git, the Docker daemon, and fakes
+what it is not testing; it runs on demand, and a test that needs the
+daemon says so with a marker; the type check and the documentation
+contract are checks of the gate, not tests.
 
 **Intended effect.** Any agent on any machine can build and test the project
 without guessing, and "the tool is missing" is a finding only after following
@@ -121,6 +142,20 @@ live so that a check never depends on what else is installed. The `/tmp`
 remark exists because a capsule's `/tmp` is a 2 GB tmpfs that the gate's
 scratch overflows, which cost a resumed session a failed gate before the cause
 was found.
+
+The integration sentences are from 2026-11-06. Until then the guide said an
+integration test crosses a packaging or process boundary without Docker,
+and counted the type check and the documentation contract among them.
+The owner found the ordinary meaning better: a subsystem tested together
+with the real services it uses, some of them faked when they are not what
+is being tested. Docker had got into the definition because the hosted
+runner has no daemon the project trusts, which is a fact about where the
+gate runs, not about what an integration test is. A test of the image
+build against the real daemon with a Dockerfile the test wrote, or of a
+container start from an image named by digest, is an integration test;
+building a real base is not, because it is slow, reaches the network and
+does not give the same answer twice. The marker exists so the candidate
+workflow can leave the daemon tests out without anyone editing a list.
 
 ## Unit Tests
 

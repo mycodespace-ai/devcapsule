@@ -125,7 +125,7 @@ jobs:
         env:
           DEVCAPSULE_PEX_UNDER_TEST: ${{ github.workspace }}/devcapsule-src/dist/devcapsule.pex
           DEVCAPSULE_EXPECTED_BUILD_MNEMONIC: ${{ env.RELEASE_TAG }}
-        run: python -m pytest --no-cov -m integration tests/integration
+        run: python -m pytest --no-cov -m "integration and not docker" tests/integration
 
       # No step here runs Docker. A hosted runner is an environment nobody
       # controls, and a proof that depends on it gates the candidate on the
@@ -133,7 +133,11 @@ jobs:
       # v0.2.14-rc2 failed on a Docker build the rc1 run had passed hours
       # earlier). The clean-machine proof, component-cache reuse and
       # runtime-session checks run in the local acceptance campaign against
-      # the downloaded assets; see the operator guide.
+      # the downloaded assets; see the operator guide. Integration tests
+      # marked docker run where a daemon is known, before the tag, and
+      # Release Policy rule 9 in WORKFLOW-LOCAL.md requires their run
+      # record in the tagged revision; the check of that record is the
+      # next slice of the maintenance workstream.
 
       - name: Retain the backend build
         uses: actions/upload-artifact@v4

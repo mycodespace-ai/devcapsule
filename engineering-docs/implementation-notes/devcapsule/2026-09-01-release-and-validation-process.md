@@ -325,7 +325,12 @@ The tag workflow:
 2. Recovers exact existing assets, or builds the self-contained PEX.
 3. Records source identity, base digests, checksum, build-input hashes, dependency
    distribution fingerprints and the embedded Python fingerprint in the manifest.
-4. Runs the packaging integration tests against the built PEX. Nothing in
+4. Runs the integration tests that need no Docker against the built PEX,
+   and, since 2026-11-06, requires in the tagged revision the record of a
+   run of the integration tests marked `docker`, under
+   `engineering-docs/releases/vX.Y.Z/integration-runs.json` (*Release
+   Policy* rule 9 in `WORKFLOW-LOCAL.md`; the workflow's check of the
+   record is the maintenance workstream's next slice). Nothing in
    the workflow runs Docker: a hosted runner is an environment nobody
    controls, and a proof that depends on it gates the candidate on the runner
    (owner ruling 2026-09-24, after rc2 of 0.2.14 failed on a Docker build

@@ -86,7 +86,8 @@ addopts = [
 ]
 markers = [
   "base_build_e2e: validates the full base built by the selected published executable",
-  "integration: crosses packaging or process boundaries without Docker",
+  "integration: a subsystem with the real external things it uses, the services it does not test faked",
+  "docker: an integration test that needs the Docker daemon; the candidate workflow leaves it out",
   "e2e: builds or runs real Docker images and containers",
   "recursive_e2e: requires an authorized DevCapsule container with host-Docker access",
   "contributor_e2e: launches a clean contributor container from a host or recursive capsule",
