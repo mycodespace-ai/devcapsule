@@ -46,7 +46,10 @@ documentation. The integration tests run before a candidate exists: the
 workflow runs those it can, and for those that need a Docker daemon it
 looks in the tagged revision for the record of a run, and refuses the
 candidate when the record is missing, is about another revision or says
-the run failed. Promote the manifest on the release branch before the final
+the run failed. At least one end-to-end test runs for every release, on
+the accepted candidate's own bytes; the same record holds that run, the
+release notes say which tests ran and, when not all of them, why those,
+and the final-tag job refuses a release whose notes and record disagree. Promote the manifest on the release branch before the final
 tag and merge it to `main`. Fork `docs-<version>` at the promotion commit
 with `git push origin HEAD:refs/heads/docs-X.Y.Z`. Its `docs/` tree must
 match the final tag, which the final-tag job checks. These branches carry
@@ -102,6 +105,21 @@ revision and the workflow says so. The workflow's own run of the
 Docker-free tests stays, since a run on the hosted runner is the stronger
 evidence of the two.
 
+Rule 10 is from the same day. The acceptance record already required
+smoke evidence from the downloaded candidate, and the 0.3.0 record lists
+eight end-to-end tests in prose. What was missing was the obligation in
+a form a reader of the release notes sees and a machine can check: which
+end-to-end tests ran on the bytes being released, and when it was not
+all of them, the reason for the choice. The owner asked for a forcing
+function, because a convention that only a reviewer remembers is skipped
+the first time nobody remembers. Hence one test-run record per release,
+with the candidate's checksum on every end-to-end entry, a notes section
+rendered from it so the two cannot drift, and a check at the final tag.
+The subset argument is required rather than the full suite, since the
+full suite takes hours and some of it, the IDE smoke under an agent for
+instance, proves things a given release did not touch; the argument is
+what makes that judgement visible instead of silent.
+
 ## Blog Entries
 
 **Rule.** On request, write a dated entry under `engineering-docs/blog/` with
@@ -130,7 +148,9 @@ are the definition's; each has a command runnable as written; the gate is
 it uses, the executable, a subprocess, git, the Docker daemon, and fakes
 what it is not testing; it runs on demand, and a test that needs the
 daemon says so with a marker; the type check and the documentation
-contract are checks of the gate, not tests.
+contract are checks of the gate, not tests. An end-to-end test drives the
+product as a user does, fakes nothing, and reads the result from outside;
+it runs on demand, and at least one runs for every release.
 
 **Intended effect.** Any agent on any machine can build and test the project
 without guessing, and "the tool is missing" is a finding only after following
@@ -156,6 +176,16 @@ container start from an image named by digest, is an integration test;
 building a real base is not, because it is slow, reaches the network and
 does not give the same answer twice. The marker exists so the candidate
 workflow can leave the daemon tests out without anyone editing a list.
+
+The end-to-end sentence is from the same day. The local guide had defined
+these tests by their need, real Docker, which is true here and says
+nothing about what makes a test end-to-end anywhere: that the product is
+driven through the door a user uses, with nothing faked, and that the
+test looks at what happened from outside rather than asking the product.
+The guide now states that, with the practices the repository already had,
+the shipped bytes, the fresh workspace, the evidence directory, and two
+it did not have in words: an explicit deadline is the only kind of wait,
+and a second run that passes is a finding, never a pass.
 
 ## Unit Tests
 

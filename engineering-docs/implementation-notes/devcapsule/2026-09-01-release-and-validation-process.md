@@ -328,7 +328,7 @@ The tag workflow:
 4. Runs the integration tests that need no Docker against the built PEX,
    and, since 2026-11-06, requires in the tagged revision the record of a
    run of the integration tests marked `docker`, under
-   `engineering-docs/releases/vX.Y.Z/integration-runs.json` (*Release
+   `engineering-docs/releases/vX.Y.Z/test-runs.json` (*Release
    Policy* rule 9 in `WORKFLOW-LOCAL.md`; the workflow's check of the
    record is the maintenance workstream's next slice). Nothing in
    the workflow runs Docker: a hosted runner is an environment nobody
@@ -353,6 +353,16 @@ uploads from the retained Actions artifact. Reruns verify and test the existing
 bytes; they never replace published candidate assets or move tags.
 
 ## Acceptance And Final Promotion
+
+Since 2026-11-06, *Release Policy* rule 10 in `WORKFLOW-LOCAL.md`: at
+least one end-to-end test runs against the downloaded candidate, the run
+goes into `engineering-docs/releases/vX.Y.Z/test-runs.json` with the
+candidate's checksum, the release notes carry the section *End-to-end
+tests run* rendered from that record, with the argument for a subset when
+fewer than all ran, and the final-tag job checks record against notes and
+revision. The record's schema, the renderer and the check are the
+maintenance workstream's next slice; until they land the reviewer holds
+the rule.
 
 Accept an exact candidate's checksum and source commit with smoke/E2E evidence.
 Generate the reviewable record on the release branch after candidate acceptance:

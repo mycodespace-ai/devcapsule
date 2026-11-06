@@ -51,6 +51,18 @@ source revision, the selection, the environment, the operator, the date
 and the result; the workflow's check of it is the next slice, after the
 owner confirms the shape.
 
+For the end-to-end tests the owner asked for a synthesis of the general
+practice with the local rules, so that nothing general is left out, and
+ruled: on demand, at least one for every release, the release notes
+naming the tests run and arguing a subset, with an executable forcing
+function. The guide gained the nine rules, two of them new in words, the
+deadline as the only wait and the rerun as a finding; *Release Policy*
+rule 10 states the release obligation; the record of rule 9 became the
+test-run record of both kinds, `test-runs.json`, with the candidate's
+checksum on end-to-end entries, a notes section rendered from it, and a
+check at the final tag. Schema, renderer and check are one implementation
+slice with the rule 9 check.
+
 The seventeen stand as follows on 2026-11-06, after the sample
 submodules left the tree: sixteen of the moved tests fail inside a capsule
 as expected, thirteen for the mounted settings and three for the live

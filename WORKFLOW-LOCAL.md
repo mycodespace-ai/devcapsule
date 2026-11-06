@@ -61,12 +61,22 @@ source of the packaged one, not an installed copy. See *Exceptions*.
 9. The integration tests run before a candidate is produced. The
    candidate workflow runs the ones that need no Docker against the
    release executable. The ones marked `docker` run where a daemon is
-   known, and their run is recorded in the tagged revision at
-   `engineering-docs/releases/vX.Y.Z/integration-runs.json`: the source
-   revision, the selection, the environment, the operator, the date and
-   the result. The candidate workflow refuses a candidate when that
-   record is missing, names another revision or reports a failure. Owner
-   direction, 2026-11-06.
+   known, and their run is recorded in the tagged revision in the test-run
+   record, `engineering-docs/releases/vX.Y.Z/test-runs.json`: the kind,
+   the source revision, the tests, the environment, the operator, the
+   date, the result and the evidence. The candidate workflow refuses a
+   candidate when that record is missing, names another revision or
+   reports a failure. Owner direction, 2026-11-06.
+10. At least one end-to-end test runs for every release, against the
+   accepted candidate's bytes, and its run is recorded in the test-run
+   record with the candidate's checksum. The release notes carry a section
+   *End-to-end tests run*, rendered from the record, naming each test
+   that ran; when fewer than all end-to-end tests ran, the record and the
+   section give the argument for the selection. The final-tag job
+   refuses the release when the record has no end-to-end run on the
+   accepted candidate, names a test the revision does not have, omits the
+   argument for a subset, or when the notes' section differs from the
+   rendering. Owner direction, 2026-11-06.
 
 ## Documentation Refs
 
@@ -142,8 +152,10 @@ in [`INFORMATION-MODEL.md`](devcapsule-src/devcapsule/assets/project_workflow/de
   not tests. See
   [integration tests](engineering-docs/development/integration-tests.md).
 - **End-to-end tests**: `.venv/bin/python -m nox -s e2e`, plus
-  `pex_clean_machine`, `recursive_dogfood_e2e`, and `ide-smoke`. Each needs
-  Docker and is opt-in. Evidence lands under
+  `pex_clean_machine`, `recursive_dogfood_e2e`, and `ide-smoke`. An
+  end-to-end test drives the product through its user entry point, fakes
+  nothing, and reads the result from outside. Each needs Docker and is
+  opt-in. At least one runs for every release. Evidence lands under
   `devcapsule-src/dist/e2e-evidence/`. See
   [end-to-end tests](engineering-docs/development/e2e-tests.md).
 - **Smoke test**: `.venv/bin/python -m nox -s smoke` starts the built
