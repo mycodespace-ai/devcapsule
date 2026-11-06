@@ -80,7 +80,9 @@ def amd64_linux_host_by_default(request: pytest.FixtureRequest, monkeypatch: pyt
         monkeypatch.setattr(f"devcapsule.{module}.daemon_architecture", lambda: "amd64")
 
 
-DOCKER_MARKERS = ("e2e", "base_build_e2e", "recursive_e2e", "contributor_e2e", "ide_smoke")
+DOCKER_MARKERS = ("e2e", "base_build_e2e", "recursive_e2e", "contributor_e2e", "ide_smoke", "docker")
+"""The markers of tests that need the Docker daemon: the end-to-end suites and the integration tests marked
+``docker``. They keep the real host and the inherited directories, so builds reuse the real artifact cache."""
 
 
 def inherited_cache_home() -> Path:

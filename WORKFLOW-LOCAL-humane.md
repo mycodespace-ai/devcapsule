@@ -42,7 +42,14 @@ reported as a defect by the tooling.
 **Rule.** The operator guide is the policy; default ref spelling; GitHub
 Actions builds candidates; a resolved main disposition gates each candidate;
 downloaded-artifact smoke evidence is required; a release includes its
-documentation. Promote the manifest on the release branch before the final
+documentation. The integration tests run before a candidate exists: the
+workflow runs those it can, and for those that need a Docker daemon it
+looks on `main`, where the acceptance record also lives, for the record
+of a run on the candidate's source, and refuses the candidate when there
+is none or it says the run failed. At least one end-to-end test runs for every release, on
+the accepted candidate's own bytes; the same record holds that run, the
+release notes say which tests ran and, when not all of them, why those,
+and the final-tag job refuses a release whose notes and record disagree. Promote the manifest on the release branch before the final
 tag and merge it to `main`. Fork `docs-<version>` at the promotion commit
 with `git push origin HEAD:refs/heads/docs-X.Y.Z`. Its `docs/` tree must
 match the final tag, which the final-tag job checks. These branches carry
@@ -85,6 +92,36 @@ the order was fixed. The copy is an integration ref, never a release ref,
 which is why nothing is committed to it and why the candidate workflow looks
 only at `release-X.Y.Z` when it checks a tag.
 
+Rule 9 is from 2026-11-06. Until then the Docker-backed proofs ran only
+at the final acceptance, against the downloaded final candidate, so every
+candidate before it was published with integration tests nobody had run,
+and a candidate is what testers download. The owner's rule is that a
+candidate is not produced without them, and since the hosted runner may
+not run Docker, the proof of a run elsewhere must be something the
+workflow can find and check. The record goes where the acceptance record
+already goes, on `main`, read by the gate at tag time, and names the
+source revision it tested; a record in the tagged revision itself would
+force a commit after the tested one, and the final tag must point at the
+accepted candidate's own commit. Change the source after the run, and the
+record names the wrong revision and the workflow says so. The workflow's own run of the
+Docker-free tests stays, since a run on the hosted runner is the stronger
+evidence of the two.
+
+Rule 10 is from the same day. The acceptance record already required
+smoke evidence from the downloaded candidate, and the 0.3.0 record lists
+eight end-to-end tests in prose. What was missing was the obligation in
+a form a reader of the release notes sees and a machine can check: which
+end-to-end tests ran on the bytes being released, and when it was not
+all of them, the reason for the choice. The owner asked for a forcing
+function, because a convention that only a reviewer remembers is skipped
+the first time nobody remembers. Hence one test-run record per release,
+with the candidate's checksum on every end-to-end entry, a notes section
+rendered from it so the two cannot drift, and a check at the final tag.
+The subset argument is required rather than the full suite, since the
+full suite takes hours and some of it, the IDE smoke under an agent for
+instance, proves things a given release did not touch; the argument is
+what makes that judgement visible instead of silent.
+
 ## Blog Entries
 
 **Rule.** On request, write a dated entry under `engineering-docs/blog/` with
@@ -109,7 +146,13 @@ checks. Parallel execution is deliberately deferred beyond 0.3.0.
 
 **Rule.** Every command runs from `devcapsule-src` in its `.venv`; the kinds
 are the definition's; each has a command runnable as written; the gate is
-`nox -s build`.
+`nox -s build`. An integration test runs a subsystem with the real things
+it uses, the executable, a subprocess, git, the Docker daemon, and fakes
+what it is not testing; it runs on demand, and a test that needs the
+daemon says so with a marker; the type check and the documentation
+contract are checks of the gate, not tests. An end-to-end test drives the
+product as a user does, fakes nothing, and reads the result from outside;
+it runs on demand, and at least one runs for every release.
 
 **Intended effect.** Any agent on any machine can build and test the project
 without guessing, and "the tool is missing" is a finding only after following
@@ -122,6 +165,30 @@ remark exists because a capsule's `/tmp` is a 2 GB tmpfs that the gate's
 scratch overflows, which cost a resumed session a failed gate before the cause
 was found.
 
+The integration sentences are from 2026-11-06. Until then the guide said an
+integration test crosses a packaging or process boundary without Docker,
+and counted the type check and the documentation contract among them.
+The owner found the ordinary meaning better: a subsystem tested together
+with the real services it uses, some of them faked when they are not what
+is being tested. Docker had got into the definition because the hosted
+runner has no daemon the project trusts, which is a fact about where the
+gate runs, not about what an integration test is. A test of the image
+build against the real daemon with a Dockerfile the test wrote, or of a
+container start from an image named by digest, is an integration test;
+building a real base is not, because it is slow, reaches the network and
+does not give the same answer twice. The marker exists so the candidate
+workflow can leave the daemon tests out without anyone editing a list.
+
+The end-to-end sentence is from the same day. The local guide had defined
+these tests by their need, real Docker, which is true here and says
+nothing about what makes a test end-to-end anywhere: that the product is
+driven through the door a user uses, with nothing faked, and that the
+test looks at what happened from outside rather than asking the product.
+The guide now states that, with the practices the repository already had,
+the shipped bytes, the fresh workspace, the evidence directory, and two
+it did not have in words: an explicit deadline is the only kind of wait,
+and a second run that passes is a finding, never a pass.
+
 ## Unit Tests
 
 **Rule.** A unit test file is named after its module and mirrors the
@@ -129,12 +196,23 @@ package tree; a test is a precondition it establishes, one call to a public
 operation, and a postcondition the unit promises; every test says in a
 docstring what contract it tests; existing files are marked legacy and only
 shrink, a touched test is fixed and moved; the gate checks what a machine
-can check and the reviewer checks the rest.
+can check and the reviewer checks the rest. A unit test's result depends
+on nothing the test did not build: not the clock, not another process,
+not a service, local or remote, not the host it runs on. A unit that needs
+the time is handed the time. A test starts another program only when
+running that program is the unit's job, and then with inputs the test
+chose. What the test can work out in its own process, a digest of a file
+it just wrote for instance, it works out there. A test that needs a
+program for what the program does is an integration test and runs on
+demand.
 
 **Intended effect.** A reader sees which unit a test tests from its path
 and what it tests from its first line. A test fails only when the unit
 breaks its contract, never because a release moved, a lock was regenerated,
-or the capsule that runs it has already accepted a vendor's terms.
+or the capsule that runs it has already accepted a vendor's terms. The
+same test gives the same answer on a laptop, on the hosted runner and
+inside a capsule, at noon and at midnight, with Docker and without. When
+it fails, the unit broke its promise, and the reader knows which unit.
 
 **Motivation.** On 2026-11-03 the gate failed eighteen tests in the owner's
 own capsule. None was a bug. Thirteen read the owner's accepted trust
@@ -153,6 +231,26 @@ the first line is read. The legacy marker turns 1525 existing tests into a
 debt that is paid at the moment someone is already in the file, rather than
 a rewrite nobody will order. The gate carries the mechanical part because a
 rule an agent must read is a rule an agent can skim.
+
+The isolation sentences were added on 2026-11-06, when the owner and the
+agent compared notes before repairing those tests. The oldest example
+is from 2026-09-22: a test of the coordination claim failed on the hosted
+runner and passed on the rerun, at the same revision. It called the claim
+operation twice and expected the second call to change nothing. That is
+true when both calls fall within the same second and false when they
+straddle one, and a git subprocess runs between them. The operation
+already took the time as a parameter; the test had not used it. The owner
+declined a quick fix and kept the test as a sample of how not to test.
+The thirteen of 2026-11-03 are the same mistake with a different hidden
+input, the trust record of the capsule that ran them. Hence the general
+form: anything that can change the answer is an input, and a unit test
+either sets it or the unit never reads it. The line on other programs
+is drawn by two questions, does the test control every input of that
+program, and is running it what the unit is for. A digest of a file the
+test wrote passes the first and fails the second, so it is computed in
+process. Git on a scratch repository can pass both, and even then its
+commit dates come from the clock unless the test sets them. A Docker
+build passes neither.
 
 ## Reasoning And Code Navigation
 
@@ -255,7 +353,10 @@ is logged in, and then opens, updates and consults pull requests and posts
 reviews as comments; a failed login check stops the agent and asks the human
 to log in. If the CLI is absent, the human does GitHub, and the agent hands
 over the compare link from which one click opens the pull request. Merging
-stays the human's either way.
+stays the human's either way. No pull request is opened or updated before
+the unit session has run on the branch as pushed and the agent has good
+reason to expect the gate to pass; a change that touches only records is
+not excused from it.
 
 **Intended effect.** Pull-request work happens from the capsule when the
 tool is there, without the agent probing for credentials, and degrades to
@@ -280,6 +381,20 @@ detection is a file test, not a search. It is a local arrangement, a hack of
 this project's own, until the GitHub CLI is a proper DevCapsule component.
 
 <a id="review-partners-in-this-checkout"></a>
+
+The sentence about running the unit session first is from 2026-11-06.
+That day the agent opened three pull requests on records and a submodule
+pointer without running the suite, on the reasoning that prose cannot
+break a test. The reasoning is usually right and sometimes wrong: a
+pytest marker, a workflow selection or a file the suite reads as a
+fixture, the release notes among them, live beside the prose. The pull
+request that carries this sentence proved it the same hour: it added a
+pytest marker, and a unit test that holds the isolation fixture's marker
+list to the registered set failed on the hosted gate, for something a
+three-minute local run would have caught before the queue and the human
+saw it. The
+rule asks for reasonable confidence, not certainty: the unit session,
+and the gate's other steps when the change touches what they check.
 
 ## Pair Review Loop In This Checkout
 

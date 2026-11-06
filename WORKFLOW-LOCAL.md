@@ -58,6 +58,29 @@ source of the packaged one, not an installed copy. See *Exceptions*.
    one pull request. NNN counts from 1 within the release. Commit nothing to
    the copy. Point no tag into it. The candidate workflow checks tags against
    `release-X.Y.Z` alone. Owner decision, 2026-10-18.
+9. The integration tests run before a candidate is produced. The
+   candidate workflow runs the ones that need no Docker against the
+   release executable. The ones marked `docker` run where a daemon is
+   known, and their run is recorded in the test-run record,
+   `engineering-docs/releases/vX.Y.Z/test-runs.json` on `main`, which the
+   gate reads as it reads the acceptance record: the kind, the source
+   revision, the tests, the environment, the operator, the date, the
+   result and the evidence. The candidate workflow refuses a candidate
+   when the record has no run on the candidate's source revision or that
+   run reports a failure. Owner direction, 2026-11-06.
+10. At least one end-to-end test runs for every release, against the
+   accepted candidate's bytes, and its run is recorded in the test-run
+   record with the candidate's checksum. The final tag points at the
+   accepted candidate's commit, so the final is the candidate's source
+   and frozen inputs rebuilt under the final version, and the candidate's
+   bytes are the ones the end-to-end tests saw. The release notes carry a section
+   *End-to-end tests run*, rendered from the record, naming each test
+   that ran; when fewer than all end-to-end tests ran, the record and the
+   section give the argument for the selection. The final-tag job
+   refuses the release when the record has no end-to-end run on the
+   accepted candidate, names a test the revision does not have, omits the
+   argument for a subset, or when the notes' section differs from the
+   rendering. Owner direction, 2026-11-06.
 
 ## Documentation Refs
 
@@ -123,15 +146,20 @@ in [`INFORMATION-MODEL.md`](devcapsule-src/devcapsule/assets/project_workflow/de
   `.venv/bin/diff-cover coverage.xml --compare-branch=origin/main`.
   Fetch and name the actual target branch. Keep execution serial. Do not
   apply a failing coverage percentage. See [unit tests](engineering-docs/development/unit-tests.md).
-- **Integration tests**: `.venv/bin/python -m nox -s integration`. It runs
-  the built executable and subprocesses without Docker. Run it on demand,
-  as the end-to-end suites are run; the gate and the unit selection do not
-  run it. `nox -s typecheck` and `nox -s docs-contract` are integration
-  checks too. See
+- **Integration tests**: `.venv/bin/python -m nox -s integration`. An
+  integration test runs a subsystem with the real external things it
+  uses, the built executable, a subprocess, git or the Docker daemon, and
+  fakes the services it does not test. Run it on demand, as the
+  end-to-end suites are run; the gate and the unit selection do not run
+  it. A test that needs the Docker daemon carries the `docker` marker.
+  `nox -s typecheck` and `nox -s docs-contract` are checks of the gate,
+  not tests. See
   [integration tests](engineering-docs/development/integration-tests.md).
 - **End-to-end tests**: `.venv/bin/python -m nox -s e2e`, plus
-  `pex_clean_machine`, `recursive_dogfood_e2e`, and `ide-smoke`. Each needs
-  Docker and is opt-in. Evidence lands under
+  `pex_clean_machine`, `recursive_dogfood_e2e`, and `ide-smoke`. An
+  end-to-end test drives the product through its user entry point, fakes
+  nothing, and reads the result from outside. Each needs Docker and is
+  opt-in. At least one runs for every release. Evidence lands under
   `devcapsule-src/dist/e2e-evidence/`. See
   [end-to-end tests](engineering-docs/development/e2e-tests.md).
 - **Smoke test**: `.venv/bin/python -m nox -s smoke` starts the built
@@ -174,6 +202,15 @@ capsule for reasons that were not bugs.
    of the unit, or the raise it expects. It verifies a postcondition the
    unit promises, never a value copied from a run. Release identifiers,
    version strings and digests are not assertions of the unit suite.
+   The outcome of a unit test is a function of the inputs the test
+   constructs. The clock, another process, a service on any host, the
+   network, the environment and the state of the host are inputs: the
+   test sets them, or the unit does not read them. A unit that needs the
+   time takes it as a parameter, and the test passes the instant. A unit
+   test starts another program only when running that program is the
+   unit's contract, and then with inputs the test controls. A test
+   computes in its own process what it can compute there. A test that
+   needs a program for what the program does is an integration test.
 3. Every test function has a docstring stating, in plain English, the
    contract or the part of it under test. One line is enough when the body
    is already plain; the reviewer decides that, not the author.
@@ -347,7 +384,10 @@ stands until the GitHub CLI is a DevCapsule component.
 4. After the check passes, the agent may create, update and consult pull
    requests and post reviews on this repository with the CLI. Post a review
    as a comment, `gh pr review --comment`. The human merges into `main` and
-   into a release branch.
+   into a release branch. Before opening or updating a pull request, run
+   the unit session on the branch as it will be pushed, and open or update
+   none whose gate is likely to fail. A change to records alone is not an
+   exception. Owner direction, 2026-11-06.
 5. When the file is absent, the human does GitHub: opening, updating and
    merging pull requests; dispatching workflows; changing repository or
    publication settings. Prepare and validate the change, commit and push

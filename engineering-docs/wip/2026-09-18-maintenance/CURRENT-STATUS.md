@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-05; the repository moved to `mycodespace-ai/devcapsule` with the merge queue as the gate of `main`; the rename of the repository in code, workflows and docs is in review; 0.3.1 queue preserved
+State: active 2026-11-06; the repository moved to `mycodespace-ai/devcapsule` with the merge queue as the gate of `main`; *Unit Tests* rule 2 names the isolation criterion; the seventeen tests expected to fail are next; 0.3.1 queue preserved
 
 Definition read: WORKFLOW.md@d2ccbbe43dfa, WORKFLOW-LOCAL.md@65501b3407db
 
@@ -15,6 +15,73 @@ Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-on
 Branch association: `ws-maintenance/move-to-organization` from main 0cfaae64; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## Rule 2 names the isolation criterion — 2026-11-06
+
+Before the repair of the seventeen tests expected to fail, the owner asked
+for a shared understanding of unit, integration and end-to-end tests, in
+general and as the repository defines them, and then reaffirmed the
+general criterion that *Unit Tests* rule 2 had left implicit: a unit is
+tested in isolation, from no service even a local one, from no clock,
+from no other process whose work the test does not fully control; a
+digest of a file the test wrote is fine, a Docker build never is. The
+agent's refinement, taken: the criterion is that the outcome is a
+function of inputs the test constructs; a unit that needs the time takes
+it as a parameter; another program runs in a unit test only when running
+it is the unit's contract and the test controls its inputs; what can be
+computed in process, a digest among them, is computed there; a test that
+needs a program for what the program does is an integration test. Rule 2
+gained those sentences, the humane companion its paragraph, and the
+unit-tests guide its summary, on the branch
+`ws-maintenance/unit-test-isolation-rule`.
+
+The same conversation settled the integration tests. The owner preferred
+the ordinary meaning to the local one: a subsystem tested together with
+the real external things it uses, the services it does not test faked;
+Docker commands are allowed, and the guide's "without Docker" was the
+hosted runner's limit written into a definition. The type check and the
+documentation contract are gate checks, not tests. A `docker` marker names
+the need, and the candidate workflow's selection became `integration and
+not docker`. The owner then ruled that the integration tests run before a
+candidate is produced: in the workflow where they can, and otherwise with
+a run record the workflow can find and check,
+*Release Policy* rule 9. The agent proposed the record's place and
+fields, `engineering-docs/releases/vX.Y.Z/integration-runs.json` with the
+source revision, the selection, the environment, the operator, the date
+and the result; the workflow's check of it is the next slice, after the
+owner confirms the shape.
+
+For the end-to-end tests the owner asked for a synthesis of the general
+practice with the local rules, so that nothing general is left out, and
+ruled: on demand, at least one for every release, the release notes
+naming the tests run and arguing a subset, with an executable forcing
+function. The guide gained the nine rules, two of them new in words, the
+deadline as the only wait and the rerun as a finding; *Release Policy*
+rule 10 states the release obligation; the record of rule 9 became the
+test-run record of both kinds, `test-runs.json`, with the candidate's
+checksum on end-to-end entries, a notes section rendered from it, and a
+check at the final tag. Schema, renderer and check are one implementation
+slice with the rule 9 check. The owner then asked whether the last
+candidate and the final are identical; checked on 0.3.0: `v0.3.0-rc9` and
+`v0.3.0` point at the same commit, `475427da`, the workflow rebuilds the
+final under its own version and proves the same source, frozen inputs
+and base references against the accepted candidate's manifest, so the
+bytes differ, `413b1d45` against `f59e05cd`, while everything that went
+into them is the same. Hence the record lives on `main`, read as the
+acceptance record is, keyed by source revision for integration runs and
+by the candidate's checksum for end-to-end runs; a record in the tagged
+revision would force a commit after the one the candidate was built from.
+
+The seventeen stand as follows on 2026-11-06, after the sample
+submodules left the tree: sixteen of the moved tests fail inside a capsule
+as expected, thirteen for the mounted settings and three for the live
+repository configuration; the three scope-word tests pass now that no
+virtualenv sits under the resources; the workflow-parity test of
+`tests/test_workflow_bootstrap.py`, marked non-blocking since 2026-08-22,
+fails because the root and the packaged `WORKFLOW.md` differ; the
+coordination claim test of 2026-09-22 passes when its two calls fall in
+the same second. The repair is planned against the criterion above and
+waits for the owner's rulings on its slices.
 
 ## The compatibility feed: website address, override, cache, built-in snapshot — 2026-11-05
 

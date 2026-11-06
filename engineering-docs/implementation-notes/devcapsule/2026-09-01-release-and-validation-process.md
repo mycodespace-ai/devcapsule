@@ -325,7 +325,13 @@ The tag workflow:
 2. Recovers exact existing assets, or builds the self-contained PEX.
 3. Records source identity, base digests, checksum, build-input hashes, dependency
    distribution fingerprints and the embedded Python fingerprint in the manifest.
-4. Runs the packaging integration tests against the built PEX. Nothing in
+4. Runs the integration tests that need no Docker against the built PEX,
+   and, since 2026-11-06, requires on `main`, read as the acceptance record
+   is read, the record of a run of the integration tests marked `docker`
+   on the candidate's source revision, under
+   `engineering-docs/releases/vX.Y.Z/test-runs.json` (*Release
+   Policy* rule 9 in `WORKFLOW-LOCAL.md`; the workflow's check of the
+   record is the maintenance workstream's next slice). Nothing in
    the workflow runs Docker: a hosted runner is an environment nobody
    controls, and a proof that depends on it gates the candidate on the runner
    (owner ruling 2026-09-24, after rc2 of 0.2.14 failed on a Docker build
@@ -348,6 +354,16 @@ uploads from the retained Actions artifact. Reruns verify and test the existing
 bytes; they never replace published candidate assets or move tags.
 
 ## Acceptance And Final Promotion
+
+Since 2026-11-06, *Release Policy* rule 10 in `WORKFLOW-LOCAL.md`: at
+least one end-to-end test runs against the downloaded candidate, the run
+goes into `engineering-docs/releases/vX.Y.Z/test-runs.json` on `main` with
+the candidate's checksum, the release notes carry the section *End-to-end
+tests run* rendered from that record, with the argument for a subset when
+fewer than all ran, and the final-tag job checks record against notes and
+revision. The record's schema, the renderer and the check are the
+maintenance workstream's next slice; until they land the reviewer holds
+the rule.
 
 Accept an exact candidate's checksum and source commit with smoke/E2E evidence.
 Generate the reviewable record on the release branch after candidate acceptance:
