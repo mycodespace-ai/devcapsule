@@ -46,7 +46,7 @@ HEAVIER_SUITE_MARKERS = frozenset({
 UNIT_MIRROR = Path("tests") / "unit"
 """The directory that mirrors ``devcapsule-src`` for unit tests."""
 
-_EXCLUDED_PARTS = frozenset({"resources", "sample_projects"})
+_EXCLUDED_PARTS = frozenset({"resources"})
 
 
 @dataclass(frozen=True)

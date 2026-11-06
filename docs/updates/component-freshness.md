@@ -90,7 +90,7 @@ tools behind your back.
 Vendor release endpoints change from time to time without warning. When an
 adapter hits an HTTP error, timeout, or unexpected payload shape, the launcher
 fetches DevCapsule's versioned fallback feed and links to the
-[maintained component status page](https://github.com/ccozianu/devcapsule/tree/component-status):
+[maintained component status page](https://github.com/mycodespace-ai/devcapsule/tree/component-status):
 
 - Matching happens locally against the adapter ID, launcher version, and
   platform. DevCapsule sends no project metadata or installed component list.
@@ -100,6 +100,25 @@ fetches DevCapsule's versioned fallback feed and links to the
   project lock or upgrades components on its own.
 - If no current diagnosis matches, status stays `unknown` with the timestamp of
   the last good check. Transient network errors never block an offline launch.
+
+The feed is read from the DevCapsule website,
+`https://devcapsule.mycodespace.ai/status/compatibility-v1.json`. Three sources
+answer in turn, and the report says which one did:
+
+1. The published feed, fetched once per check with an eight-second timeout
+   and a one-megabyte bound. A successful fetch is kept in your cache home,
+   `~/.cache/devcapsule/compatibility-v1.json` by default, and shared by every
+   project on the machine.
+2. The cached feed, when the fetch fails. Like the published one it is valid
+   for three days from its generation.
+3. The feed built into the launcher at release time, when nothing is cached.
+   It is a snapshot of the maintainers' diagnoses as of the build; each applies
+   within its own review window, and the report names it as built in.
+
+The launcher starts and the check completes whichever of the three answers,
+or none. To read a different publication, for example a test site, set
+`DEVCAPSULE_STATUS_URL` for every check, or pass `--status-url` to one
+`devcapsule project versions check`.
 
 ## Current service limits before V1
 

@@ -96,7 +96,7 @@ jobs:
       - name: Fetch documentation refs and the pinned website implementation
         run: |
           git fetch origin '+refs/heads/docs-*:refs/heads/docs-*'
-          git config submodule.website.url https://github.com/ccozianu/devcapsule-website.git
+          git config submodule.website.url https://github.com/mycodespace-ai/devcapsule-website.git
           git submodule update --init website
       - uses: actions/setup-node@v4
         with:
@@ -229,7 +229,7 @@ jobs:
   publish-coverage-badge:
     name: Publish coverage badge
     needs: pytest
-    if: github.event_name == 'push' && github.repository == 'ccozianu/devcapsule'
+    if: github.event_name == 'push' && github.repository == 'mycodespace-ai/devcapsule'
     runs-on: ubuntu-24.04
     permissions:
       contents: write

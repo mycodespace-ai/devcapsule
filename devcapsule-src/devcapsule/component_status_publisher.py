@@ -13,7 +13,12 @@ from devcapsule.component_status import Advisory, StatusFeed, text_field
 
 
 def generate(policy: dict[str, Any], previous: dict[str, Any], *, revision: str,
-             now: datetime | None = None) -> dict[str, Any]:
+             now: datetime | None = None, probe: bool = True) -> dict[str, Any]:
+    """The feed for ``policy``: its authored advisories, and the vendors' answers when ``probe`` holds.
+
+    Without probing, nothing leaves the machine and the feed carries no observations; that is the
+    snapshot ``scripts/build-pex.sh`` packages into a launcher as its last fallback.
+    """
     now = now or datetime.now(timezone.utc)
     if policy.get("format") != 1 or not isinstance(policy.get("advisories"), list):
         raise ValueError("expected format-1 authored compatibility policy")
@@ -22,10 +27,10 @@ def generate(policy: dict[str, Any], previous: dict[str, Any], *, revision: str,
     probes = policy["probes"]
     if {probe["component"] for probe in probes} != set(COMPONENTS):
         raise ValueError("every catalog component needs a probe")
-    observations = []
+    observations: list[dict[str, Any]] = []
     keys = set()
-    for probe in probes:
-        name, platform, version = (text_field(probe[key]) for key in ("component", "platform", "version"))
+    for row_probe in (probes if probe else []):
+        name, platform, version = (text_field(row_probe[key]) for key in ("component", "platform", "version"))
         definition = COMPONENTS[name]
         adapter = definition.discovery_adapter_id()
         key = (name, adapter, platform, version)
@@ -103,9 +108,12 @@ def main() -> None:
     parser.add_argument("--previous", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--revision", required=True)
+    parser.add_argument("--without-probes", action="store_true",
+                        help="Write the authored advisories only, asking no vendor; the launcher's built-in snapshot.")
     arguments = parser.parse_args()
     previous = json.loads(arguments.previous.read_text()) if arguments.previous and arguments.previous.exists() else {}
-    feed = generate(json.loads(arguments.policy.read_text()), previous, revision=arguments.revision)
+    feed = generate(json.loads(arguments.policy.read_text()), previous, revision=arguments.revision,
+                    probe=not arguments.without_probes)
     arguments.output.mkdir(parents=True, exist_ok=True)
     (arguments.output / "compatibility-v1.json").write_text(json.dumps(feed, indent=2) + "\n")
     (arguments.output / "README.md").write_text(render_page(feed))

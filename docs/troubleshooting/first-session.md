@@ -23,7 +23,7 @@ updated: 2026-10-30
 
 If a session started, run `devcapsule project diagnose --export` (see
 [Diagnostics and logs](diagnostics-and-logs.md#when-asking-for-help)) and
-[open an issue](https://github.com/ccozianu/devcapsule/issues/new) with your
+[open an issue](https://github.com/mycodespace-ai/devcapsule/issues/new) with your
 OS, the output of `devcapsule version`, and the failing command and error.
 If no session started, attach the terminal error instead; no session logs exist
 yet. Review any text or archive before posting and remove private project details,

@@ -264,7 +264,7 @@ release_dir="$PWD/dist/releases/$release_tag"
 mkdir -p "$release_dir"
 for asset in devcapsule.pex devcapsule.pex.sha256 release-manifest.json; do
   curl --fail --location --output "$release_dir/$asset" \
-    "https://github.com/ccozianu/devcapsule/releases/download/$release_tag/$asset" || exit 1
+    "https://github.com/mycodespace-ai/devcapsule/releases/download/$release_tag/$asset" || exit 1
 done
 (cd "$release_dir" && sha256sum --check devcapsule.pex.sha256) || exit 1
 chmod 0755 "$release_dir/devcapsule.pex"
@@ -889,7 +889,7 @@ will continue to use immutable digests.
 
 The immutable v026 image uses agent-neutral base recipe version 5, embeds the
 self-contained DevCapsule PEX released from source revision `91d50b1...` at
-the canonical `ccozianu/devcapsule` repository, and contains the supported
+the canonical `mycodespace-ai/devcapsule` repository, and contains the supported
 Python, Node.js, Java, Maven, and PostgreSQL client toolchain. It contains no
 ambient agent CLI.
 

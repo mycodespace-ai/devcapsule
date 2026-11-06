@@ -164,9 +164,6 @@ services, temporary XDG roots, and the `tmp_path` pytest provides.
   regenerated, proving R-COMPAT-001: a newer client needs no user action
   for a project, checkout or lock an older one created. [Its README](../../devcapsule-src/tests/resources/compat/README.md)
   names each client and what was templated.
-- `sample_projects/`: three sample projects as submodules, fixtures for the
-  project model; they have their own suites and are excluded from this one
-  by `norecursedirs`.
 - `supervisor_driver.py`: a driver that runs the supervisor over a JSON
   child-set specification, used by the supervisor and runtime tests.
 

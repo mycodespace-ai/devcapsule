@@ -74,6 +74,6 @@ the capsule running so you can reconnect at the same URL.
    port) to see whether the listener answers inside Linux before troubleshooting
    WSL2-to-Windows `localhost` forwarding.
 3. Avoid applying unverified firewall or DNS workarounds. If loopback
-   forwarding fails on your setup, [open an issue](https://github.com/ccozianu/devcapsule/issues/new)
+   forwarding fails on your setup, [open an issue](https://github.com/mycodespace-ai/devcapsule/issues/new)
    with the exact error, Windows build, and `wsl --version` output—removing the
    private URL tokens before posting.

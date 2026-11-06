@@ -4,8 +4,10 @@
 
 An integration test here crosses a packaging or process boundary and still
 runs without Docker: it executes the built executable, a subprocess, or an
-external tool, and reads what came back. Four kinds exist, and the gate runs
-all of them.
+external tool, and reads what came back. Four kinds exist. The gate runs
+three of them; the tests of the built executable run on demand, as the
+end-to-end suites do, and in the release workflow against the release
+executable.
 
 ## The built executable
 

@@ -230,7 +230,6 @@ status file; internal WIP/archive documents use the local index in that status.
 - [Preamble, for humans: why the workflow is opinionated, and for whom](devcapsule-src/devcapsule/assets/project_workflow/definition/PREAMBLE.md)
 - [PyCharm image vibe-coding bootstrap template](devcapsule-src/devcapsule/assets/pycharm/image-assets/vibe-coding-process.md)
 - [Legacy-compatible PyCharm bootstrap template copy](devcapsule-src/devcapsule/assets/docker4pycharm/image-assets/vibe-coding-process.md)
-- [TypeScript five-in-a-row sample project](devcapsule-src/tests/resources/sample_projects/typescript_tictactoe_5inrow/README.md)
 
 ## Development Blog
 

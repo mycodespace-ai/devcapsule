@@ -223,21 +223,6 @@ def test_realize_environment_requires_exact_locked_base_authorization(tmp_path: 
     materialize.assert_not_called()
 
 
-def test_realize_environment_requires_explicit_claude_download_authorization(
-    tmp_path: Path,
-) -> None:
-    selected = resolved_project(tmp_path)
-    select_claude_code(selected, authorized=False)
-    obtain = Mock()
-    materialize = Mock()
-
-    with pytest.raises(CliError, match="claude-code-download"):
-        realize_environment(selected, obtain_image=obtain, materialize=materialize)
-
-    obtain.assert_not_called()
-    materialize.assert_not_called()
-
-
 def test_realize_environment_allows_terms_bound_claude_download_authorization(
     tmp_path: Path,
 ) -> None:

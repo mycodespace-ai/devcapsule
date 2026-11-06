@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-04; #335 and #336 merged; first legacy test moved under the new rule, delivered for the owner's merge; 0.3.1 queue preserved
+State: active 2026-11-05; the repository moved to `mycodespace-ai/devcapsule` with the merge queue as the gate of `main`; the rename of the repository in code, workflows and docs is in review; 0.3.1 queue preserved
 
 Definition read: WORKFLOW.md@d2ccbbe43dfa, WORKFLOW-LOCAL.md@65501b3407db
 
@@ -12,9 +12,230 @@ Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `ws-maintenance/move-to-organization` from main 0cfaae64; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## The compatibility feed: website address, override, cache, built-in snapshot — 2026-11-05
+
+Owner ruling: from 0.3.1 and its candidates the feed is read from the
+website's domain, not from a repository; the address is overridable from
+the command line for a check against the test site; the last successful
+fetch is cached; a snapshot is built into the launcher; and under no
+circumstances does a launcher fail to start because the feed cannot be
+fetched. Checked first: the last point already held, the fetch being
+bounded, caught and off the ordinary start path, and the cache existed per
+project. The override and the snapshot did not exist.
+
+Delivered on `ws-maintenance/status-feed-fallbacks`:
+
+- `component_status.FEED_URL` is
+  `https://devcapsule.mycodespace.ai/status/compatibility-v1.json`;
+  `DEVCAPSULE_STATUS_URL` overrides it for every check and
+  `project versions check --status-url` for one.
+- The cache moved from each project's state to the cache home,
+  `~/.cache/devcapsule/compatibility-v1.json`, so a new project starts from
+  the newest feed the machine has seen. Lookup order: fetched, cached,
+  built in; the report names the source.
+- `scripts/build-pex.sh` generates the snapshot from
+  `component-status/policy-v1.json` with the publisher's new
+  `--without-probes`, asking no vendor, and packages it as
+  `devcapsule/_compatibility-v1.json`. A snapshot is not a publication: its
+  advisories apply within their own review windows, while a fetched or
+  cached feed stays bound to its three-day validity.
+- Unit tests in the `component_status`, `component_status_publisher` and
+  `commands/versions` mirrors, against constructed feeds, no network.
+
+Blocked, and the owner's ruling is needed before the first 0.3.1 candidate:
+the website path does not exist yet. The production site is a promoted
+candidate deployed whole by `deploy-pages`, so a file refreshed daily
+cannot ride on it without changing how the site is published. Two ways
+keep the ruling that the feed lives on the website's domain: the
+component-status workflow pushes the feed into the website repository and
+that repository's publish workflow redeploys production on such a push,
+daily; or a subdomain, `status.devcapsule.mycodespace.ai`, served by a small
+Pages repository the workflow pushes to. Until one exists, a 0.3.1 launcher
+falls back to its cache, then its snapshot, on every check.
+## Integration tests leave the gate — 2026-11-05
+
+Owner ruling: the integration tests run on demand, as the end-to-end
+suites do, never inside `nox -s build`, `nox -s tests` or a plain
+`pytest`. The unit selection already deselected them through the
+`integration` marker; `build` ran them through its packaging step. That
+step is removed; `nox -s integration` stays as the on-demand session and
+the release workflow keeps running them against the release executable.
+`WORKFLOW-LOCAL.md`, the developer brief and the integration-test document
+say so.
+
+## The website and sample repositories move too — 2026-11-05
+
+The production site went dark with a 404 from GitHub: the custom domain
+had disappeared from the website repository's Pages settings while its
+DNS and its last deployment were sound, and putting it back on a
+repository under the personal account was refused, which is what the
+organization's verification of `mycodespace.ai` does to any repository
+outside it. At the owner's direction, the website repository was
+transferred to the organization on 2026-11-05, keeping its settings, with
+GitHub redirecting the old name. The five sample repositories were
+transferred with it and transferred back the same day: the owner ruled
+that no sample project moves, so they stay under the personal account
+and the organization holds `devcapsule` and `devcapsule-website` only. The
+production domain was set on `mycodespace-ai/devcapsule-website`, the last
+promoted candidate was redeployed there, and the site answers again. The
+owner then changed both DNS records to the organization's Pages host.
+
+The owner ruled the same day that the sample projects are no longer
+submodules of this repository: which samples users get to try DevCapsule
+with, and in what form, is decided later, and probably not as submodules.
+The branch `ws-maintenance/submodules-in-organization` therefore removes
+the four sample gitlinks and their `.gitmodules` entries, with the pytest,
+mypy and unit-test-gate exclusions that existed only for them, and points
+the one remaining submodule, the website, and the two workflows that fetch
+it at the organization.
+
+One link in the publishing chain is broken by the move and is not yet
+fixed: the promotion script of the website repository,
+`scripts/candidate.mjs`, downloads candidates from
+`ccozianu/devcapsule`. That is not a redirect: the personal repository
+still exists, since this one was migrated branch by branch rather than
+transferred, and a candidate built by the organization's repository
+never appears there. The next promotion needs the script pointed at
+`mycodespace-ai/devcapsule` first, a change in the website repository
+together with its records that name the old owner. For the same reason
+a checkout whose `origin` still names the personal repository pushes
+there, silently; remotes are repointed by hand.
+
+## The repository moves to the `mycodespace-ai` organization — 2026-11-05
+
+The owner created the free organization `mycodespace-ai` and the empty
+repository `mycodespace-ai/devcapsule`, and ruled the move branch by
+branch: what git holds is preserved, nothing else. The reason is the
+merge queue, which GitHub grants only to repositories an organization
+owns; a personal repository can require a check on the pull request's
+head but cannot run that check on the merged result before landing it.
+`PR #338` merged with a red check and the seventeen tests of the section
+above reached `main` the same way.
+
+What moved on 2026-11-05: 26 branches, every one the old repository had
+except the two stray `upstream/*` refs, and 44 tags, every one except the
+`website-candidate-*` build tags. `main` is the default branch; merge
+commits are the only merge method, deleted branches on merge and
+auto-merge are on. Ruleset 26585527 guards `main`: no deletion, no force
+push, changes through a pull request only, the `ci-gate` check required,
+and the merge queue required, so a pull request enters the queue when
+`ci-gate` is green on its head and lands only when `ci-gate` is green on
+the merge commit the queue builds. `tests.yml` already runs on
+`merge_group` and confines coverage publication to the pull request run,
+so the workflow needed no change for the gate. The old repository had no
+Actions secrets or variables to carry.
+
+What did not move: the issues, the closed pull requests and the stars stay
+at `ccozianu/devcapsule`, and the records keep linking to them. There is
+no redirect. The website and the sample-project submodules are separate
+repositories still under `ccozianu`, so `.gitmodules` is unchanged.
+
+This branch renames the repository everywhere the live code and
+documentation name it: the coverage and component-status workflow
+conditions, the launcher's release page in `images/contract.py` and in
+the settings-admission message, the component-status feed and page, the
+trust note, the promotion script's default, the READMEs, the platform and
+update docs, the compare link in `WORKFLOW-LOCAL.md` and the canonical
+URL in the root status. The one legacy test asserting the release URL,
+`test_minimum_refusal_precedes_content_and_command_diagnoses`, moved into
+the `storage` mirror with the new URL and a docstring; the legacy test
+data naming the old repository in `test_pycharm.py` and `test_wrap.py`
+is left as data.
+
+Open for the owner's ruling:
+
+1. Launchers already shipped, 0.3.0 included, check for updates against
+   `ccozianu/devcapsule` releases and read the compatibility feed from its
+   `component-status` branch. Without a redirect they keep doing so. Either
+   0.3.1 is also published there, with the feed branch kept current on both
+   repositories for a while, or 0.3.0 users update once by hand. The old
+   repository cannot be archived before this is ruled.
+2. The Pages site `test-devcapsule.mycodespace.ai` is served by the old
+   repository. The new one has no Pages site yet; the domain's DNS record
+   must point at `mycodespace-ai.github.io`, then the domain is removed
+   from the old repository and set on the new.
+3. Whether `devcapsule-website` and the sample-project repositories move
+   too. If they do, `.gitmodules`, the submodule URLs in the workflows and
+   the website's own records follow in a second slice.
+4. Every checkout renames its remotes; the owner's wrap checkout had the
+   organization as `upstream` already.
+
+## Seventeen tests expected to fail for reading the capsule — 2026-11-04
+
+The owner ran the unit suite in the capsule after syncing
+`ws-wrapped-projects/wrap` with `main` at `cc8f1288`: 17 failed, 2809
+passed. A clean checkout of `main` fails the same tests, so no workstream
+broke them; each reads a precondition from outside the test, which *Unit
+Tests* rule 2 forbids. The owner's disposition: mark every one of them
+expected to fail with the reason `TODO: fix the wrong approach to testing`
+and assign the fix to this workstream. Three causes:
+
+1. **The capsule's mounted launcher settings.** Inside a capsule
+   `mounted_settings_path` in `devcapsule/runtime_configuration.py`
+   answers `/etc/devcapsule/home/settings.toml` whenever the launch context
+   file exists, and the owner's capsule has accepted the Claude Code
+   download there. `private_user_directories` in `tests/conftest.py`
+   redirects `HOME` and the XDG variables but has no hold on that path, so
+   every test that assumes no accepted vendor channel sees one. Pointing
+   `HOME_PATH` at an empty directory makes them pass. Thirteen tests:
+   six in `tests/test_trust.py`, three in
+   `tests/test_capability_commands_v2.py`, one each in
+   `tests/test_capability_minimums.py`, `tests/test_console_channel.py`,
+   `tests/test_environment_realization.py` and `tests/test_project_init.py`.
+   This is the private-home fixture already noted in
+   `engineering-docs/development/unit-tests.md` for the 0.3.1 fixture slice.
+2. **The live repository configuration.** The three tests in
+   `tests/test_repository_manifest_compatibility.py` load this checkout's
+   `.devcapsule/devcapsule.toml`; the owner's uncommitted schema-2 rewrite
+   renames `need` to `required` and they raise `KeyError`.
+3. **An ignored directory under the resources.** `test_replaced_scope_word_is_absent`
+   in `tests/test_home.py` walks `tests/resources` and finds a `.venv`
+   inside the `fastapi-webapp` sample project, vendored pip sources included.
+
+The marker is on the 14 functions (three are parametrized). As written in
+the eight legacy files the convention gate refused it, 14 breaches of the
+form `changed in a legacy file`, since rule 5 never marks a legacy test
+expected to fail and the gate compares each function's source, decorators
+included, with the base. The owner's second disposition: move the marked
+tests out of the legacy files into the mirror, against a dummy target
+where the unit has none. So each test left its legacy file verbatim, with
+a one-line docstring naming its cause, and sits in
+`tests/unit/devcapsule/legacy_refactoring/test_<legacy file>.py`, one
+file per legacy file because their `project` fixtures and `config` and
+`snapshot` helpers collide by name; each imports its fixtures and helpers
+from the legacy module as the existing mirror files do. The targets are
+the temporary package `devcapsule/legacy_refactoring/`, eight modules
+holding no code but a docstring saying why they exist; each is deleted
+when its last test is rewritten against its real unit, and the package
+with the last module. The owner's worry at the merge, that the move undermines the safety
+the bad tests still gave, is answered by the marker's condition: it is
+`pytest.mark.xfail(IN_CAPSULE, ...)`, with `IN_CAPSULE` the presence of
+the launch context file, so the tests are expected to fail only inside a
+capsule, where they inherit its state, and run as the tests they were on
+the hosted workflow and on any host. The one change to a body is in
+`test_replaced_scope_word_is_absent`, whose path to `devcapsule-src` is
+taken from the mirror file's deeper place. Verified in the capsule: `nox -s tests` green, the
+checker at 108 legacy files holding 1447 legacy tests, 30 files following
+the convention, 0 breaches; `nox -s typecheck` green. Nothing committed;
+the move is in the owner's checkout.
+
+Two environment findings from the same run, both for the owner:
+
+- Under `devcapsule-src/.venv`, `tests/test_console_channel.py` fails 16
+  tests that pass under the nox session's own environment. The venv's
+  site-packages still carries `devcapsule-0.2.15.dist-info`, so a
+  subprocess started outside `devcapsule-src`, as the console channel's
+  `config` command is, reports itself as 0.2.15 and is refused by the
+  0.3.0 home. The documented one-module command
+  `.venv/bin/python -m pytest tests/<module>.py` is therefore unreliable in
+  this checkout until the editable install is redone:
+  `.venv/bin/python -m pip install -e . --no-deps` from `devcapsule-src`.
+- The suite used about 215 MB of the capsule's 2 GB `/tmp`; no scratch
+  relocation is needed.
 
 ## The first legacy test moves — 2026-11-04
 
@@ -178,6 +399,7 @@ coordination mail at 35e5c6a599cd. GitHub Latest now resolves to v0.3.0.
 
 | Item | Owner | Disposition / next action |
 |---|---|---|
+| Seventeen tests reading the capsule, the repository config or an ignored directory | maintenance | Marked expected to fail on 2026-11-04 at the owner's direction, reason `TODO: fix the wrong approach to testing`, and moved to `tests/unit/devcapsule/legacy_refactoring/` against the temporary targets in `devcapsule/legacy_refactoring/`. Next: rewrite each against its real unit, the private-home fixture first, and delete the targets as they empty. See *Seventeen tests expected to fail for reading the capsule* above. |
 | [Release-independent test fixtures](../../bugs/devcapsule/2026-10-31-release-dependent-test-fixtures.md) | maintenance | Confirmed minor, target 0.3.1; proposed first implementation slice. Use stable fixtures for behavior tests and retain independent real-pin/historical-contract checks. |
 | [October 25 documentation order](../../work-orders/2026-10-25-documentation-orientation-and-concepts.md) | maintenance | Parts A and B assigned to 0.3.1; plan their delivery against the now-complete 0.3.0 guides. |
 | C17 generic project-operation instructions | workflow-improvements | Moved to 0.3.1 planning by the owner's final disposition; scheduling mail delivered at 6fe8ac4cfbb9. Do not implement from maintenance. |

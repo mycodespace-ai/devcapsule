@@ -274,6 +274,21 @@ value = {
 Path(path).write_text(json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
 PY
 
+# The authored compatibility advisories travel inside the launcher as its last
+# fallback, read when the published feed cannot be fetched and nothing is
+# cached. No vendor is asked at build time.
+policy_path="${project_dir}/../component-status/policy-v1.json"
+if [[ ! -f "${policy_path}" ]]; then
+  echo "scripts/build-pex.sh: ${policy_path} is missing; the compatibility feed cannot be embedded" >&2
+  exit 1
+fi
+PYTHONPATH="${build_root}" "${python_bin}" -m devcapsule.component_status_publisher \
+  --policy "${policy_path}" \
+  --output "${build_root}/component-status" \
+  --revision "${source_revision}" \
+  --without-probes > /dev/null
+cp "${build_root}/component-status/compatibility-v1.json" "${build_root}/devcapsule/_compatibility-v1.json"
+
 rm -rf "${project_dir}/build" "${project_dir}/devcapsule.egg-info"
 scie_build_output="${build_root}/devcapsule-scie"
 "${python_bin}" -m pex \

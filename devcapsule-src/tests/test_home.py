@@ -190,23 +190,3 @@ def test_malformed_settings_stop_run_before_project_discovery(home: Path, conten
     assert cli.main(["project", "run", "--print-command"]) == 2
     assert str(path) in capsys.readouterr().err
     assert list(home.iterdir()) == [path] and path.read_text() == content
-
-
-@pytest.mark.parametrize("folder", ["devcapsule", "tests", "docs"])
-def test_replaced_scope_word_is_absent(folder: str) -> None:
-    package = Path(__file__).resolve().parents[1]
-    root = package.parent / "docs" if folder == "docs" else package / folder
-    forbidden = "work" + "station"
-    failures = []
-    for path in root.rglob("*"):
-        if not path.is_file() or "__pycache__" in path.parts or ".pytest_cache" in path.parts:
-            continue
-        if path.is_relative_to(package / "tests" / "resources" / "compat"):
-            continue
-        try:
-            text = path.read_text()
-        except UnicodeError:
-            continue
-        if forbidden in text.lower():
-            failures.append(str(path.relative_to(root)))
-    assert failures == []

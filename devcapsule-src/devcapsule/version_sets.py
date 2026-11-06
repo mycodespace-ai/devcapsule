@@ -35,7 +35,7 @@ from devcapsule.materialization import ArtifactSpec, acquire_artifact, cache_roo
 from devcapsule.platforms import Platform, XdgHomes
 from devcapsule import runtime_configuration
 from devcapsule.build_info import current_build_info
-from devcapsule.component_status import CompatibilityLookup
+from devcapsule.component_status import CompatibilityLookup, cache_path as status_cache_path
 
 
 def home_trust() -> HomeTrust:
@@ -272,7 +272,9 @@ def _render_runtime_inspection(document: Mapping[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def check(start: Path) -> str:
+def check(start: Path, *, status_url: str | None = None) -> str:
+    """The update report of every selected component; ``status_url`` names the compatibility feed to read
+    instead of the configured one, for a check against a test publication."""
     workspace = Workspace.load(start)
     path = workspace.state / "check.toml"
     previous = load_toml(path) if path.exists() else {}
@@ -280,7 +282,7 @@ def check(start: Path) -> str:
     candidates: list[str] = []
     notices: list[dict[str, Any]] = []
     successes: list[dict[str, Any]] = []
-    compatibility = CompatibilityLookup(workspace.state / "compatibility-v1.json", current_build_info().version)
+    compatibility = CompatibilityLookup(status_cache_path(), current_build_info().version, status_url)
     interactive, ancillary = selected_component_definitions(workspace.lock)
     for definition in (interactive, *ancillary):
         channel = definition.discovery_channel()

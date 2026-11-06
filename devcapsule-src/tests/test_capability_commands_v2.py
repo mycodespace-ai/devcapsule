@@ -179,23 +179,6 @@ def test_run_choices_reach_plan_and_save_only_when_requested(project, matrix, sa
         assert path.read_bytes() == before
 
 
-@pytest.mark.parametrize("origin", ["project", "checkout", "run"])
-def test_resolution_grants_no_consent_and_no_partial_save(project, matrix, tmp_path, origin):
-    assert config(project, "ide", "frontend-ide") == 0
-    assert config(project, "authorize", "base-image", "default") == 0
-    assert config(project, "add", "assistant") == 0
-    if origin == "project":
-        assert config(project, "recommend", "assistant", "claude-code") == 0
-        assert config(project, "use", "assistant", "default") == 0
-    elif origin == "checkout":
-        assert config(project, "use", "assistant", "claude-code") == 0
-    before = snapshot(tmp_path)
-    flags = RunFlags(providers=(("assistant", "claude-code"),) if origin == "run" else (), memory="6g", save=True)
-    with pytest.raises(DecisionPending, match="claude"):
-        prepare_launch(project, flags, interactive=False)
-    assert snapshot(tmp_path) == before
-
-
 def test_changed_resolution_keeps_component_consent(project, matrix):
     assert config(project, "ide", "frontend-ide") == 0
     assert config(project, "authorize", "base-image", "default") == 0

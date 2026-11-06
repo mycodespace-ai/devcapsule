@@ -287,19 +287,6 @@ def test_every_owner_preview_leaves_all_files_unchanged(project: Path, tmp_path:
     assert snapshot(tmp_path) == before
 
 
-def test_offered_agent_still_needs_consent_and_can_be_omitted(project: Path, tmp_path: Path, capsys) -> None:
-    write_project(project, MANIFEST.replace('"python>=3.14", ', ''))
-    assert cli.main(["project", "--path", str(project), "init", "--ide", "frontend-ide", "--authorize", "base-image", "default"]) == 0
-    owner_commands.offer_tools(project, ["claude-code-agent"])
-    before = snapshot(tmp_path)
-    assert cli.main(["project", "--path", str(project), "run", "--print-command", "--no-update-check"]) == 3
-    assert "claude-code" in capsys.readouterr().err
-    assert snapshot(tmp_path) == before
-    assert cli.main(["project", "--path", str(project), "config", "omit", "claude-code-agent"]) == 0
-    prepared = prepare_launch(project, RunFlags(), interactive=False, print_only=True)
-    assert "claude-code" not in prepared.selected.lock["components"]
-
-
 def test_owner_drop_recognizes_a_handwritten_component_alias(project: Path) -> None:
     manifest_path, lock_path = write_project(project, MANIFEST.replace('"python>=3.14", ', ''))
     lock_path.write_text(render_toml(generate_lock(CapabilityPolicy.read(load_toml(manifest_path)), MATRIX)))

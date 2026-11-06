@@ -142,7 +142,7 @@ def validate_settings(document: Mapping[str, Any], path: Path) -> None:
     if not admitted:
         raise ProjectConfigurationError(
             f"DevCapsule home {path.parent} requires DevCapsule {required}; this launcher is {own}. "
-            "Get the release at https://github.com/ccozianu/devcapsule/releases."
+            "Get the release at https://github.com/mycodespace-ai/devcapsule/releases."
         )
     schema = document.get("devcapsule-settings-schema-version")
     if type(schema) is not int or schema != 1:

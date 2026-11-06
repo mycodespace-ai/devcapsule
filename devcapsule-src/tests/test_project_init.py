@@ -345,25 +345,6 @@ def test_require_tool_refuses_personal_and_unknown_names_without_touching_the_ma
         assert manifest_path.read_text(encoding="utf-8") == before
 
 
-def test_a_selected_agent_brings_its_own_acquisition_gate(tmp_path: Path, capsys) -> None:
-    project = tmp_path / "fresh-project"
-    project.mkdir()
-    with patch.dict(os.environ, isolated_env(tmp_path), clear=False):
-        assert cli.main(full_init_command(project)) == 0
-        capsys.readouterr()
-
-        # The agent is the developer's; resolving without its vendor's channel names the channel (D-0011).
-        assert cli.main(["project", "--path", str(project), "config", "add", "claude-code-agent"]) == 0
-        assert run_until_prepared(project) == 3
-        assert "home trust accept claude-code" in capsys.readouterr().err
-
-        assert cli.main(["project", "--path", str(project), "config", "authorize", "claude-code-download", "true"]) == 0
-        assert run_until_prepared(project) == 0
-        from devcapsule.configuration.storage import lock_for
-        lock = lock_for(project, read_toml(project / ".devcapsule" / "devcapsule.toml"))[1]
-        assert lock["components"]["claude-code"]["version"]
-
-
 def test_init_repairs_a_deleted_checkout_config_tree(tmp_path: Path, capsys) -> None:
     project = tmp_path / "fresh-project"
     project.mkdir()

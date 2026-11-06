@@ -71,7 +71,7 @@ def base_channel() -> Channel:
         BASE_CHANNEL, "DevCapsule", "the base images", (BASE_REPOSITORY, BASE_ORIGIN),
         "the SHA-256 digest the launcher pins", authorization="base-image",
         note=("A launcher you downloaded already carries these digests; this makes the trust explicit. "
-              "You trust the ccozianu/devcapsule GitHub account and the mycodespaceai Docker Hub account."),
+              "You trust the mycodespace-ai/devcapsule GitHub account and the mycodespaceai Docker Hub account."),
     )
 
 
