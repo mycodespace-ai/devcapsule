@@ -6,8 +6,10 @@
 
 *Unit Tests* in [`WORKFLOW-LOCAL.md`](../../WORKFLOW-LOCAL.md) binds: a
 unit test file mirrors its module under `tests/unit/`, a test is a
-precondition, one call and a postcondition, and its docstring states the
-contract. The companion explains why. `scripts/validate_unittests_follow_conventions.py` is the
+precondition, one call and a postcondition, its outcome is a function of
+inputs the test constructs, with the clock, other processes and services
+among the inputs, and its docstring states the contract. The companion
+explains why. `scripts/validate_unittests_follow_conventions.py` is the
 gate's check; its summary line counts the files still marked `legacy`. The
 flat files under `tests/` are those legacy files: they only lose tests, and
 a test you change moves to the mirror with you.

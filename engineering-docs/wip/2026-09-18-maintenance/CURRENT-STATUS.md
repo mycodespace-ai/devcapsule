@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-05; the repository moved to `mycodespace-ai/devcapsule` with the merge queue as the gate of `main`; the rename of the repository in code, workflows and docs is in review; 0.3.1 queue preserved
+State: active 2026-11-06; the repository moved to `mycodespace-ai/devcapsule` with the merge queue as the gate of `main`; *Unit Tests* rule 2 names the isolation criterion; the seventeen tests expected to fail are next; 0.3.1 queue preserved
 
 Definition read: WORKFLOW.md@d2ccbbe43dfa, WORKFLOW-LOCAL.md@65501b3407db
 
@@ -15,6 +15,36 @@ Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-on
 Branch association: `ws-maintenance/move-to-organization` from main 0cfaae64; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## Rule 2 names the isolation criterion — 2026-11-06
+
+Before the repair of the seventeen tests expected to fail, the owner asked
+for a shared understanding of unit, integration and end-to-end tests, in
+general and as the repository defines them, and then reaffirmed the
+general criterion that *Unit Tests* rule 2 had left implicit: a unit is
+tested in isolation, from no service even a local one, from no clock,
+from no other process whose work the test does not fully control; a
+digest of a file the test wrote is fine, a Docker build never is. The
+agent's refinement, taken: the criterion is that the outcome is a
+function of inputs the test constructs; a unit that needs the time takes
+it as a parameter; another program runs in a unit test only when running
+it is the unit's contract and the test controls its inputs; what can be
+computed in process, a digest among them, is computed there; a test that
+needs a program for what the program does is an integration test. Rule 2
+gained those sentences, the humane companion its paragraph, and the
+unit-tests guide its summary, on the branch
+`ws-maintenance/unit-test-isolation-rule`.
+
+The seventeen stand as follows on 2026-11-06, after the sample
+submodules left the tree: sixteen of the moved tests fail inside a capsule
+as expected, thirteen for the mounted settings and three for the live
+repository configuration; the three scope-word tests pass now that no
+virtualenv sits under the resources; the workflow-parity test of
+`tests/test_workflow_bootstrap.py`, marked non-blocking since 2026-08-22,
+fails because the root and the packaged `WORKFLOW.md` differ; the
+coordination claim test of 2026-09-22 passes when its two calls fall in
+the same second. The repair is planned against the criterion above and
+waits for the owner's rulings on its slices.
 
 ## The compatibility feed: website address, override, cache, built-in snapshot — 2026-11-05
 

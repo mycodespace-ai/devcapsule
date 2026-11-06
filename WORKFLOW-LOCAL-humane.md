@@ -129,12 +129,23 @@ package tree; a test is a precondition it establishes, one call to a public
 operation, and a postcondition the unit promises; every test says in a
 docstring what contract it tests; existing files are marked legacy and only
 shrink, a touched test is fixed and moved; the gate checks what a machine
-can check and the reviewer checks the rest.
+can check and the reviewer checks the rest. A unit test's result depends
+on nothing the test did not build: not the clock, not another process,
+not a service, local or remote, not the host it runs on. A unit that needs
+the time is handed the time. A test starts another program only when
+running that program is the unit's job, and then with inputs the test
+chose. What the test can work out in its own process, a digest of a file
+it just wrote for instance, it works out there. A test that needs a
+program for what the program does is an integration test and runs on
+demand.
 
 **Intended effect.** A reader sees which unit a test tests from its path
 and what it tests from its first line. A test fails only when the unit
 breaks its contract, never because a release moved, a lock was regenerated,
-or the capsule that runs it has already accepted a vendor's terms.
+or the capsule that runs it has already accepted a vendor's terms. The
+same test gives the same answer on a laptop, on the hosted runner and
+inside a capsule, at noon and at midnight, with Docker and without. When
+it fails, the unit broke its promise, and the reader knows which unit.
 
 **Motivation.** On 2026-11-03 the gate failed eighteen tests in the owner's
 own capsule. None was a bug. Thirteen read the owner's accepted trust
@@ -153,6 +164,26 @@ the first line is read. The legacy marker turns 1525 existing tests into a
 debt that is paid at the moment someone is already in the file, rather than
 a rewrite nobody will order. The gate carries the mechanical part because a
 rule an agent must read is a rule an agent can skim.
+
+The isolation sentences were added on 2026-11-06, when the owner and the
+agent compared notes before repairing those tests. The oldest example
+is from 2026-09-22: a test of the coordination claim failed on the hosted
+runner and passed on the rerun, at the same revision. It called the claim
+operation twice and expected the second call to change nothing. That is
+true when both calls fall within the same second and false when they
+straddle one, and a git subprocess runs between them. The operation
+already took the time as a parameter; the test had not used it. The owner
+declined a quick fix and kept the test as a sample of how not to test.
+The thirteen of 2026-11-03 are the same mistake with a different hidden
+input, the trust record of the capsule that ran them. Hence the general
+form: anything that can change the answer is an input, and a unit test
+either sets it or the unit never reads it. The line on other programs
+is drawn by two questions, does the test control every input of that
+program, and is running it what the unit is for. A digest of a file the
+test wrote passes the first and fails the second, so it is computed in
+process. Git on a scratch repository can pass both, and even then its
+commit dates come from the clock unless the test sets them. A Docker
+build passes neither.
 
 ## Reasoning And Code Navigation
 

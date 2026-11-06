@@ -174,6 +174,15 @@ capsule for reasons that were not bugs.
    of the unit, or the raise it expects. It verifies a postcondition the
    unit promises, never a value copied from a run. Release identifiers,
    version strings and digests are not assertions of the unit suite.
+   The outcome of a unit test is a function of the inputs the test
+   constructs. The clock, another process, a service on any host, the
+   network, the environment and the state of the host are inputs: the
+   test sets them, or the unit does not read them. A unit that needs the
+   time takes it as a parameter, and the test passes the instant. A unit
+   test starts another program only when running that program is the
+   unit's contract, and then with inputs the test controls. A test
+   computes in its own process what it can compute there. A test that
+   needs a program for what the program does is an integration test.
 3. Every test function has a docstring stating, in plain English, the
    contract or the part of it under test. One line is enough when the body
    is already plain; the reviewer decides that, not the author.
