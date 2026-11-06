@@ -326,8 +326,9 @@ The tag workflow:
 3. Records source identity, base digests, checksum, build-input hashes, dependency
    distribution fingerprints and the embedded Python fingerprint in the manifest.
 4. Runs the integration tests that need no Docker against the built PEX,
-   and, since 2026-11-06, requires in the tagged revision the record of a
-   run of the integration tests marked `docker`, under
+   and, since 2026-11-06, requires on `main`, read as the acceptance record
+   is read, the record of a run of the integration tests marked `docker`
+   on the candidate's source revision, under
    `engineering-docs/releases/vX.Y.Z/test-runs.json` (*Release
    Policy* rule 9 in `WORKFLOW-LOCAL.md`; the workflow's check of the
    record is the maintenance workstream's next slice). Nothing in
@@ -356,8 +357,8 @@ bytes; they never replace published candidate assets or move tags.
 
 Since 2026-11-06, *Release Policy* rule 10 in `WORKFLOW-LOCAL.md`: at
 least one end-to-end test runs against the downloaded candidate, the run
-goes into `engineering-docs/releases/vX.Y.Z/test-runs.json` with the
-candidate's checksum, the release notes carry the section *End-to-end
+goes into `engineering-docs/releases/vX.Y.Z/test-runs.json` on `main` with
+the candidate's checksum, the release notes carry the section *End-to-end
 tests run* rendered from that record, with the argument for a subset when
 fewer than all ran, and the final-tag job checks record against notes and
 revision. The record's schema, the renderer and the check are the

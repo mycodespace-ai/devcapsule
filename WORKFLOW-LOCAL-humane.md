@@ -44,9 +44,9 @@ Actions builds candidates; a resolved main disposition gates each candidate;
 downloaded-artifact smoke evidence is required; a release includes its
 documentation. The integration tests run before a candidate exists: the
 workflow runs those it can, and for those that need a Docker daemon it
-looks in the tagged revision for the record of a run, and refuses the
-candidate when the record is missing, is about another revision or says
-the run failed. At least one end-to-end test runs for every release, on
+looks on `main`, where the acceptance record also lives, for the record
+of a run on the candidate's source, and refuses the candidate when there
+is none or it says the run failed. At least one end-to-end test runs for every release, on
 the accepted candidate's own bytes; the same record holds that run, the
 release notes say which tests ran and, when not all of them, why those,
 and the final-tag job refuses a release whose notes and record disagree. Promote the manifest on the release branch before the final
@@ -98,10 +98,12 @@ candidate before it was published with integration tests nobody had run,
 and a candidate is what testers download. The owner's rule is that a
 candidate is not produced without them, and since the hosted runner may
 not run Docker, the proof of a run elsewhere must be something the
-workflow can find in the source it is building. A record in the tagged
-revision, naming that revision, is the simplest such thing: commit the
-record, then tag; change anything after, and the record names the wrong
-revision and the workflow says so. The workflow's own run of the
+workflow can find and check. The record goes where the acceptance record
+already goes, on `main`, read by the gate at tag time, and names the
+source revision it tested; a record in the tagged revision itself would
+force a commit after the tested one, and the final tag must point at the
+accepted candidate's own commit. Change the source after the run, and the
+record names the wrong revision and the workflow says so. The workflow's own run of the
 Docker-free tests stays, since a run on the hosted runner is the stronger
 evidence of the two.
 

@@ -61,15 +61,19 @@ source of the packaged one, not an installed copy. See *Exceptions*.
 9. The integration tests run before a candidate is produced. The
    candidate workflow runs the ones that need no Docker against the
    release executable. The ones marked `docker` run where a daemon is
-   known, and their run is recorded in the tagged revision in the test-run
-   record, `engineering-docs/releases/vX.Y.Z/test-runs.json`: the kind,
-   the source revision, the tests, the environment, the operator, the
-   date, the result and the evidence. The candidate workflow refuses a
-   candidate when that record is missing, names another revision or
-   reports a failure. Owner direction, 2026-11-06.
+   known, and their run is recorded in the test-run record,
+   `engineering-docs/releases/vX.Y.Z/test-runs.json` on `main`, which the
+   gate reads as it reads the acceptance record: the kind, the source
+   revision, the tests, the environment, the operator, the date, the
+   result and the evidence. The candidate workflow refuses a candidate
+   when the record has no run on the candidate's source revision or that
+   run reports a failure. Owner direction, 2026-11-06.
 10. At least one end-to-end test runs for every release, against the
    accepted candidate's bytes, and its run is recorded in the test-run
-   record with the candidate's checksum. The release notes carry a section
+   record with the candidate's checksum. The final tag points at the
+   accepted candidate's commit, so the final is the candidate's source
+   and frozen inputs rebuilt under the final version, and the candidate's
+   bytes are the ones the end-to-end tests saw. The release notes carry a section
    *End-to-end tests run*, rendered from the record, naming each test
    that ran; when fewer than all end-to-end tests ran, the record and the
    section give the argument for the selection. The final-tag job

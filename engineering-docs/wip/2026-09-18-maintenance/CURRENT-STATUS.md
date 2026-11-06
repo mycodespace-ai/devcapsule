@@ -44,7 +44,7 @@ documentation contract are gate checks, not tests. A `docker` marker names
 the need, and the candidate workflow's selection became `integration and
 not docker`. The owner then ruled that the integration tests run before a
 candidate is produced: in the workflow where they can, and otherwise with
-a run record in the tagged revision that the workflow can find and check,
+a run record the workflow can find and check,
 *Release Policy* rule 9. The agent proposed the record's place and
 fields, `engineering-docs/releases/vX.Y.Z/integration-runs.json` with the
 source revision, the selection, the environment, the operator, the date
@@ -61,7 +61,16 @@ rule 10 states the release obligation; the record of rule 9 became the
 test-run record of both kinds, `test-runs.json`, with the candidate's
 checksum on end-to-end entries, a notes section rendered from it, and a
 check at the final tag. Schema, renderer and check are one implementation
-slice with the rule 9 check.
+slice with the rule 9 check. The owner then asked whether the last
+candidate and the final are identical; checked on 0.3.0: `v0.3.0-rc9` and
+`v0.3.0` point at the same commit, `475427da`, the workflow rebuilds the
+final under its own version and proves the same source, frozen inputs
+and base references against the accepted candidate's manifest, so the
+bytes differ, `413b1d45` against `f59e05cd`, while everything that went
+into them is the same. Hence the record lives on `main`, read as the
+acceptance record is, keyed by source revision for integration runs and
+by the candidate's checksum for end-to-end runs; a record in the tagged
+revision would force a commit after the one the candidate was built from.
 
 The seventeen stand as follows on 2026-11-06, after the sample
 submodules left the tree: sixteen of the moved tests fail inside a capsule

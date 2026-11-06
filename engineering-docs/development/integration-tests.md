@@ -15,8 +15,9 @@ Integration tests run on demand, as the end-to-end suites do; the gate and
 the unit selection do not run them. They run before a candidate is
 produced: the candidate workflow runs the ones that need no Docker against
 the release executable, and the ones that need Docker carry the `docker`
-marker and run where a daemon is known, with their run recorded in the
-tagged revision, as *Release Policy* rule 9 in `WORKFLOW-LOCAL.md` says.
+marker and run where a daemon is known, with their run recorded on
+`main` in the test-run record the gate reads, as *Release Policy* rule 9
+in `WORKFLOW-LOCAL.md` says.
 The test controls its inputs even here: an image the test runs or
 inspects is named by digest and is present before the test starts, which
 the session establishes, not the test; building a base, which is slow,

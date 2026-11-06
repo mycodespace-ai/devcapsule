@@ -136,7 +136,7 @@ jobs:
       # the downloaded assets; see the operator guide. Integration tests
       # marked docker run where a daemon is known, before the tag, and
       # Release Policy rule 9 in WORKFLOW-LOCAL.md requires their run
-      # record in the tagged revision; the check of that record is the
+      # record on main, read as the acceptance record is; the check is the
       # next slice of the maintenance workstream.
 
       - name: Retain the backend build
