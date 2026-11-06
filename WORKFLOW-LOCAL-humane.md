@@ -353,7 +353,10 @@ is logged in, and then opens, updates and consults pull requests and posts
 reviews as comments; a failed login check stops the agent and asks the human
 to log in. If the CLI is absent, the human does GitHub, and the agent hands
 over the compare link from which one click opens the pull request. Merging
-stays the human's either way.
+stays the human's either way. No pull request is opened or updated before
+the unit session has run on the branch as pushed and the agent has good
+reason to expect the gate to pass; a change that touches only records is
+not excused from it.
 
 **Intended effect.** Pull-request work happens from the capsule when the
 tool is there, without the agent probing for credentials, and degrades to
@@ -378,6 +381,20 @@ detection is a file test, not a search. It is a local arrangement, a hack of
 this project's own, until the GitHub CLI is a proper DevCapsule component.
 
 <a id="review-partners-in-this-checkout"></a>
+
+The sentence about running the unit session first is from 2026-11-06.
+That day the agent opened three pull requests on records and a submodule
+pointer without running the suite, on the reasoning that prose cannot
+break a test. The reasoning is usually right and sometimes wrong: a
+pytest marker, a workflow selection or a file the suite reads as a
+fixture, the release notes among them, live beside the prose. The pull
+request that carries this sentence proved it the same hour: it added a
+pytest marker, and a unit test that holds the isolation fixture's marker
+list to the registered set failed on the hosted gate, for something a
+three-minute local run would have caught before the queue and the human
+saw it. The
+rule asks for reasonable confidence, not certainty: the unit session,
+and the gate's other steps when the change touches what they check.
 
 ## Pair Review Loop In This Checkout
 

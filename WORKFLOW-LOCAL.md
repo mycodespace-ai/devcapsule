@@ -384,7 +384,10 @@ stands until the GitHub CLI is a DevCapsule component.
 4. After the check passes, the agent may create, update and consult pull
    requests and post reviews on this repository with the CLI. Post a review
    as a comment, `gh pr review --comment`. The human merges into `main` and
-   into a release branch.
+   into a release branch. Before opening or updating a pull request, run
+   the unit session on the branch as it will be pushed, and open or update
+   none whose gate is likely to fail. A change to records alone is not an
+   exception. Owner direction, 2026-11-06.
 5. When the file is absent, the human does GitHub: opening, updating and
    merging pull requests; dispatching workflows; changing repository or
    publication settings. Prepare and validate the change, commit and push
