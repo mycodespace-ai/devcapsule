@@ -20,9 +20,10 @@ and their `.gitmodules` entries were removed on the branch
 `ws-maintenance/submodules-in-organization`, together with the pytest, mypy and
 unit-test-gate exclusions that existed only for them. Nothing in the suites,
 scripts or workflows read those directories. The sample repositories stand on
-their own in the `mycodespace-ai` organization: `devcapsule-sample-fastapi-webbapp`,
-`devcapsule-sample-trading-research`, `devcapsule-sample-typescript-tictactoe`,
-`ai-learning-bootstrap` and `devcapsule-sample-frc-learning`. Which of them users
+their own under the owner's personal account, where the owner ruled they stay:
+`ccozianu/devcapsule-sample-fastapi-webbapp`, `ccozianu/devcapsule-sample-trading-research`,
+`ccozianu/devcapsule-sample-typescript-tictactoe`, `ccozianu/ai-learning-bootstrap`
+and `ccozianu/devcapsule-sample-frc-learning`. Which of them users
 get to try DevCapsule with, and in what form, the owner decides later; the owner
 said it will probably not be submodules. The sections below describe the
 workstream as it was delivered.
