@@ -199,6 +199,11 @@ def test_clean_revision_build_and_tag_derived_version(tmp_path: Path, release: s
         shutil.copy2(source_project / name, project / name)
     for name in ("build-pex.sh", "bump-version.py"):
         shutil.copy2(source_project / "scripts" / name, scripts / name)
+    # The build embeds the compatibility snapshot from the authored policy
+    # beside devcapsule-src, and refuses to build without it.
+    policy = repository / "component-status" / "policy-v1.json"
+    policy.parent.mkdir()
+    shutil.copy2(source_project.parent / "component-status" / "policy-v1.json", policy)
 
     subprocess.run(["git", "init", "-q", str(repository)], check=True)
     subprocess.run(
