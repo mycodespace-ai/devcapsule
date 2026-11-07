@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-07; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 0 awaits the owner's word; rulings open before it: executables for the Mac, the compatibility feed's home, the Eclipse amd64 repin; the seventeen tests expected to fail stay queued on `main`
+State: active 2026-11-07; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 0 published as `v0.3.1-rc0` on `8bcee1d0`, verified from the download; rulings open before candidate 1: executables for the Mac, the compatibility feed's home, the Eclipse amd64 repin; the seventeen tests expected to fail stay queued on `main`
 
 Definition read: WORKFLOW.md@d2ccbbe43dfa, WORKFLOW-LOCAL.md@65501b3407db
 
@@ -59,9 +59,14 @@ Three rulings are asked of the owner before candidate 0, in the overview:
 whether 0.3.1 publishes a macOS or an arm64 executable, where the
 compatibility feed lives on the website's domain, and whether the Eclipse
 repin is the cycle's first slice. The full gate, the integration tests and
-their record, the reopening of `main` at `0.3.2.dev0` and the throwaway
-copy's pull request follow in this session; the candidate tag waits for the
-owner.
+their record are done; `main` reopened at `0.3.2.dev0` through PR #8 and the
+release branch reached `main` through PR #9 from the throwaway copy, both
+merged by the owner on 2026-11-07. On the owner's word of the same day,
+`v0.3.1-rc0` was tagged on `8bcee1d0`; the backend run passed, the
+prerelease is public with its three assets, and the download verified its
+checksum and version. The candidate record is under *Candidates* in the
+overview; the hosted run's integration result is the second entry of
+`test-runs.json`. The cycle's slices wait for the three rulings.
 
 ## Rule 2 names the isolation criterion — 2026-11-06
 

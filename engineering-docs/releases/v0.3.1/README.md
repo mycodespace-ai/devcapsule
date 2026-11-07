@@ -1,6 +1,6 @@
 # DevCapsule 0.3.1 — Release Work
 
-Updated: 2026-11-07. Stage: **cut; candidate 0 awaits the owner's word**.
+Updated: 2026-11-07. Stage: **candidate 0 published; cycle slices await the owner's rulings**.
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
 [Changelog since 0.3.0](changelog.md) ·
@@ -156,10 +156,12 @@ decision here, never a silent replacement.
   with PR #7 and the gate does not read the record yet; the record is kept
   by hand until the check exists. The first run found three of the
   eighteen failing on `main` since PR #3, see *Found at the cut*.
-- [ ] `main` reopened at `0.3.2.dev0` by a pull request.
-- [ ] The release branch merged into `main` through the throwaway copy
-  `4PR-1-release-0.3.1`; `v0.3.1-rc0` tagged on the release tip on the
-  owner's word; the three assets downloaded, checksum and version verified.
+- [x] `main` reopened at `0.3.2.dev0` by PR #8, merged by the owner at `41289b9e`.
+- [x] The release branch merged into `main` through the throwaway copy
+  `4PR-1-release-0.3.1`, PR #9, merged by the owner at `f30903c3`;
+  `v0.3.1-rc0` tagged on the release tip on the owner's word of
+  2026-11-07; the three assets downloaded, checksum and version verified.
+  See *Candidates*.
 - [ ] The cycle's slices, each merged to `main` before the next candidate
   tag; the bug records closed on candidates.
 - [ ] The gates before the final tag: the documentation describing the
@@ -169,7 +171,40 @@ decision here, never a silent replacement.
 
 ## Candidates
 
-None tagged yet.
+### RC0 — tagged 2026-11-07
+
+- Tag `v0.3.1-rc0` on `8bcee1d04ce80e29853692e745476de4d8862386`, the release
+  branch's tip at the pre-candidate merge (PR #9 from the throwaway copy
+  `4PR-1-release-0.3.1`, merged by the owner at `f30903c3`, after PR #8
+  reopened `main` at `0.3.2.dev0`). The copy carried one commit keeping
+  `main`'s version files, as the 0.3.0 copies did; both merge orders gave
+  the same tree.
+- Candidate gate from the release worktree before the push: method
+  `mainline`, no unintegrated commits, version `0.3.1rc0`.
+- Backend run [42424847709](https://github.com/mycodespace-ai/devcapsule/actions/runs/42424847709)
+  passed: 2844 unit tests passed, 50 deselected, 1 xfailed, 1 xpassed on
+  the hosted runner; packaging integration 26 passed, 1 skipped against the
+  built PEX. The [prerelease](https://github.com/mycodespace-ai/devcapsule/releases/tag/v0.3.1-rc0)
+  is public, non-draft, with the three assets.
+- Downloaded over HTTPS into `/home/devcapsule/.cache/devcapsule-releases/v0.3.1-rc0`:
+  the checksum file verifies the executable, SHA-256
+  `8c29a15e2fa4ecf61bd67c59ba9c0421a2f662a8f50a9d89e7625eab1d269925`; the
+  manifest records the tag, the branch, the source revision, the
+  `mainline` disposition, the embedded CPython 3.12.14 and, as its base
+  reference, the recipe-11 linux x86-64 base `d7047ced…`; `devcapsule
+  version --json` from an empty directory reports `0.3.1rc0`, build
+  `v0.3.1-rc0`, at `8bcee1d0…` under the organization's repository URL.
+- The hosted runner reports 1 xfailed where the maintenance capsule
+  reports 14: the tests expected to fail depend on the environment. Noted
+  for the repair slices queued on `main`; not a candidate defect.
+- Not in rc0: the Eclipse amd64 libsoup repin (bug record of 2026-11-07),
+  the agent and IDE freshness upgrade, a macOS or arm64 executable, the
+  compatibility feed's home on the website. Each waits for the owner's
+  ruling listed under *Scope And Owner Decisions*; each that is ruled in
+  is a slice merged to `main` before the next candidate tag.
+- Next: the local acceptance proofs on the downloaded executable where
+  the candidate changed behavior (none yet beyond the cut's content), the
+  rulings, the slices, candidate 1.
 
 ## Release Notes Preparation
 

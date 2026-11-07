@@ -11,6 +11,16 @@
       "date": "2026-11-07",
       "result": "passed: 26 passed, 1 skipped in 37.18s",
       "evidence": "The first run, on c449342f, failed 3 of 18: test_clean_revision_build_and_tag_derived_version[None], [v98.7.6] and [v98.7.6-rc0], because the fixture repository lacked component-status/policy-v1.json, which scripts/build-pex.sh requires since PR #3. The fixture was corrected at 7570b14e and 18 passed; the conventions gate then refused the change to a legacy file, so the test moved to tests/integration/test_build_pex.py as four tests of one contract each, this run's source revision. A run between them failed on a full /tmp, the session's own scratch; freed and rerun. The logs are in the session's scratchpad; the release overview records the find."
+    },
+    {
+      "kind": "integration",
+      "source-revision": "8bcee1d04ce80e29853692e745476de4d8862386",
+      "tests": "pytest --no-cov -m \"integration and not docker\" tests/integration against the built candidate PEX, the step 'Run packaging integration tests against the release PEX' of release-pex.yml",
+      "environment": "GitHub-hosted runner of workflow run 42424847709, Linux x86-64, the workflow's Python",
+      "operator": "the candidate workflow on tag v0.3.1-rc0, pushed by Claude Code, Claude Fable 5.1, for maintenance",
+      "date": "2026-11-07",
+      "result": "passed: 26 passed, 1 skipped in 33.09s",
+      "evidence": "https://github.com/mycodespace-ai/devcapsule/actions/runs/42424847709"
     }
   ]
 }
