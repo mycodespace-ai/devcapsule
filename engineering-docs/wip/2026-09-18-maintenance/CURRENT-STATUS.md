@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-06; the repository moved to `mycodespace-ai/devcapsule` with the merge queue as the gate of `main`; *Unit Tests* rule 2 names the isolation criterion; the seventeen tests expected to fail are next; 0.3.1 queue preserved
+State: active 2026-11-07; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 0 awaits the owner's word; rulings open before it: executables for the Mac, the compatibility feed's home, the Eclipse amd64 repin; the seventeen tests expected to fail stay queued on `main`
 
 Definition read: WORKFLOW.md@d2ccbbe43dfa, WORKFLOW-LOCAL.md@65501b3407db
 
@@ -12,9 +12,56 @@ Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `ws-maintenance/move-to-organization` from main 0cfaae64; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## Release 0.3.1 cut — 2026-11-07
+
+The owner's decision, once the website's links named the organization:
+"let's cut the release 0.3.1 as we have plenty for a minor release: we have
+the mac platform ability and we have some the wrap functionality". Recorded
+in [the scope and cut decision](2026-11-07-decision-release-0-3-1-scope-and-cut.md);
+the release work lives in [the 0.3.1 overview](../../releases/v0.3.1/README.md)
+with [the bug table](../../releases/v0.3.1/bugs.md) and
+[the changelog since 0.3.0](../../releases/v0.3.1/changelog.md).
+
+Done on `release-0.3.1`, cut from `main` at `31e8fec7`, the merge of PR #7:
+the version set to 0.3.1 by `nox -s bump` as the branch's first commit; the
+`devel` entry of `docs/versions.yaml` declaring `source-version: "0.3.1"`
+on the branch alone, as 0.3.0 did; the decision record, the overview, the
+bug table, the changelog and the index entries; the registry row and this
+file. The agent freshness review read the vendors on 2026-11-07: Codex
+0.167.0, Claude Code 2.1.319 and Antigravity CLI 1.5.3 are ahead of the
+pins 0.166.0, 2.1.314 and 1.4.12; the attempt is a slice of the cycle.
+
+Found at the cut, from PR #338's note and confirmed against the archive:
+the amd64 Eclipse closure pins `libsoup-3.0` build `3.4.4-5ubuntu0.8`,
+which Ubuntu replaced with `0.10` on 2026-10-08; the two URLs return 404
+and the archive serves `0.10` for amd64, the build the arm64 closure
+already pins. [The bug record](../../bugs/devcapsule/2026-11-07-eclipse-amd64-libsoup-urls-return-404.md)
+is filed as major for 0.3.1: an adopter who requires Eclipse on a Linux
+host with an empty cache cannot acquire it.
+
+The full gate passed on the branch, `nox -s build`: 2825 unit tests, mypy
+over 323 files, the conventions gate, the smoke, the local PEX, the web
+console, the content contract at 249 pages. The integration session, run
+before the candidate as rule 9 asks, failed three of eighteen on its first
+run: the fixture repository of the clean-revision build test lacked the
+compatibility policy that `build-pex.sh` embeds since PR #3, a break on
+`main` the candidate workflow would have found at the tag. Fixed at
+`7570b14e`; the conventions gate then refused the change to the legacy
+file, and the test moved at `3aa21dc0` to `test_build_pex.py`, four
+tests of one contract each; 26 passed, recorded in the release's
+`test-runs.json`.
+
+Three rulings are asked of the owner before candidate 0, in the overview:
+whether 0.3.1 publishes a macOS or an arm64 executable, where the
+compatibility feed lives on the website's domain, and whether the Eclipse
+repin is the cycle's first slice. The full gate, the integration tests and
+their record, the reopening of `main` at `0.3.2.dev0` and the throwaway
+copy's pull request follow in this session; the candidate tag waits for the
+owner.
 
 ## Rule 2 names the isolation criterion — 2026-11-06
 
