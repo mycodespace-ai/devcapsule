@@ -43,6 +43,15 @@ already pins. [The bug record](../../bugs/devcapsule/2026-11-07-eclipse-amd64-li
 is filed as major for 0.3.1: an adopter who requires Eclipse on a Linux
 host with an empty cache cannot acquire it.
 
+The full gate passed on the branch, `nox -s build`: 2825 unit tests, mypy
+over 323 files, the conventions gate, the smoke, the local PEX, the web
+console, the content contract at 249 pages. The integration session, run
+before the candidate as rule 9 asks, failed three of eighteen on its first
+run: the fixture repository of the clean-revision build test lacked the
+compatibility policy that `build-pex.sh` embeds since PR #3, a break on
+`main` the candidate workflow would have found at the tag. Fixed at
+`7570b14e`, 18 passed, recorded in the release's `test-runs.json`.
+
 Three rulings are asked of the owner before candidate 0, in the overview:
 whether 0.3.1 publishes a macOS or an arm64 executable, where the
 compatibility feed lives on the website's domain, and whether the Eclipse

@@ -64,6 +64,21 @@ brings someone else's repository into a project.
 - Routine release-fix propagation to `main` follows the runbook's *Release
   Fixes And Main* under the owner's standing direction of 2026-09-22.
 
+## Found At The Cut
+
+- **Three integration tests failed on `main` since PR #3.** `scripts/build-pex.sh`
+  embeds the compatibility snapshot from `component-status/policy-v1.json`
+  and refuses to build without it; the fixture repository of
+  `test_clean_revision_build_and_tag_derived_version` copied everything
+  but the policy. The integration tests left the build gate in PR #2 and
+  the candidate workflow, which runs them on the hosted runner, had not
+  run since, so nobody saw it: candidate 0 would have failed its gate. The
+  first integration run of the cycle, rule 9's, found it; fixed on the
+  release branch at `7570b14e`, a test-only change that reaches `main`
+  with the pre-candidate merge (*Release Fixes And Main*, ancestry).
+- **Eclipse cannot be acquired from scratch on amd64**, the bug record in
+  the table, confirmed against the archive.
+
 ## What `main` Carried At The Cut
 
 Integrated between `v0.3.0` (final 2026-10-31, source `475427da`) and the
@@ -124,12 +139,20 @@ decision here, never a silent replacement.
 - [x] Cut, version, the content contract satisfied on the branch, the
   decision record, this overview, the bug table and the changelog, the
   registry row and the status file.
-- [ ] Full gate on the release branch at the cut: `nox -s build`; the
-  result is recorded here when it finishes.
-- [ ] Integration tests run before candidate 0 and recorded in
-  `test-runs.json` beside this file, Release Policy rule 9. The rule is
-  new with PR #7 and the gate does not read the record yet; the record is
-  kept by hand until the check exists.
+- [x] Full gate on the release branch at the cut, `nox -s build` on
+  `c449342f` from the scratchpad worktree: distribution version 0.3.1,
+  syntax, mypy clean over 323 files, 2825 unit tests passed, 41
+  deselected, 14 xfailed, 7 xpassed, the conventions gate without a
+  breach, the CLI smoke of every command's help, the local PEX built and
+  smoked, the web console session mypy clean over 9 files with its tests
+  passed, the content contract at 249 pages with devel reading 0.3.1:
+  passed in four minutes.
+- [x] Integration tests run before candidate 0 and recorded in
+  [`test-runs.json`](test-runs.json) beside this file, Release Policy
+  rule 9: `nox -s integration`, 18 passed on `7570b14e`. The rule is new
+  with PR #7 and the gate does not read the record yet; the record is kept
+  by hand until the check exists. The first run found three of the
+  eighteen failing on `main` since PR #3, see *Found at the cut*.
 - [ ] `main` reopened at `0.3.2.dev0` by a pull request.
 - [ ] The release branch merged into `main` through the throwaway copy
   `4PR-1-release-0.3.1`; `v0.3.1-rc0` tagged on the release tip on the

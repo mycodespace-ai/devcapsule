@@ -1,0 +1,16 @@
+{
+  "schema-version": 1,
+  "release": "0.3.1",
+  "runs": [
+    {
+      "kind": "integration",
+      "source-revision": "7570b14e74853402a18cb9aee2606f8e432ae59c",
+      "tests": "nox -s integration: pytest --no-cov -m integration tests/integration, 18 tests: test_pex_runtime.py (11) and test_webconsole_install.py (7); no test carries the docker marker yet, so nothing was left out",
+      "environment": "the maintenance capsule on the owner's workstation, Linux x86-64, Python 3.12.3, pytest 9.1.1; Docker 28.5.1 present, not used by these tests",
+      "operator": "Claude Code, Claude Fable 5.1, for maintenance",
+      "date": "2026-11-07",
+      "result": "passed: 18 passed in 54.83s",
+      "evidence": "The first run, on c449342f, failed 3 of 18: test_clean_revision_build_and_tag_derived_version[None], [v98.7.6] and [v98.7.6-rc0], because the fixture repository lacked component-status/policy-v1.json, which scripts/build-pex.sh requires since PR #3. The fixture was corrected in this run's source revision and the session rerun on it; the two logs are in the session's scratchpad, and the release overview records the find."
+    }
+  ]
+}
