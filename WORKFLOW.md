@@ -1,6 +1,6 @@
 ---
 definition: devcapsule
-version: 0.3.1.dev0
+version: 0.3.1
 ---
 
 # Human / Agent Iteration Workflow
