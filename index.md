@@ -53,6 +53,9 @@ status file; internal WIP/archive documents use the local index in that status.
 - [0.2.15 release notes](engineering-docs/releases/v0.2.15/notes.md)
 - [0.2.14 release notes](engineering-docs/releases/v0.2.14/notes.md)
 
+- [0.3.1 release work, scope and candidates](engineering-docs/releases/v0.3.1/README.md)
+- [0.3.1 changelog since 0.3.0](engineering-docs/releases/v0.3.1/changelog.md)
+- [0.3.1 bug table](engineering-docs/releases/v0.3.1/bugs.md)
 - [0.3.0 release work, scope and candidates](engineering-docs/releases/v0.3.0/README.md)
 - [0.3.0 changelog since 0.2.15](engineering-docs/releases/v0.3.0/changelog.md)
 - [0.3.0 bug table](engineering-docs/releases/v0.3.0/bugs.md)
