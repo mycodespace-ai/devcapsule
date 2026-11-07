@@ -50,7 +50,10 @@ before the candidate as rule 9 asks, failed three of eighteen on its first
 run: the fixture repository of the clean-revision build test lacked the
 compatibility policy that `build-pex.sh` embeds since PR #3, a break on
 `main` the candidate workflow would have found at the tag. Fixed at
-`7570b14e`, 18 passed, recorded in the release's `test-runs.json`.
+`7570b14e`; the conventions gate then refused the change to the legacy
+file, and the test moved at `3aa21dc0` to `test_build_pex.py`, four
+tests of one contract each; 26 passed, recorded in the release's
+`test-runs.json`.
 
 Three rulings are asked of the owner before candidate 0, in the overview:
 whether 0.3.1 publishes a macOS or an arm64 executable, where the

@@ -74,8 +74,10 @@ brings someone else's repository into a project.
   the candidate workflow, which runs them on the hosted runner, had not
   run since, so nobody saw it: candidate 0 would have failed its gate. The
   first integration run of the cycle, rule 9's, found it; fixed on the
-  release branch at `7570b14e`, a test-only change that reaches `main`
-  with the pre-candidate merge (*Release Fixes And Main*, ancestry).
+  release branch at `7570b14e`, and the test moved at `3aa21dc0` to a
+  module of its own, `test_build_pex.py`, when the conventions gate refused
+  the change to a legacy file; test-only changes that reach `main` with
+  the pre-candidate merge (*Release Fixes And Main*, ancestry).
 - **Eclipse cannot be acquired from scratch on amd64**, the bug record in
   the table, confirmed against the archive.
 
@@ -149,7 +151,8 @@ decision here, never a silent replacement.
   passed in four minutes.
 - [x] Integration tests run before candidate 0 and recorded in
   [`test-runs.json`](test-runs.json) beside this file, Release Policy
-  rule 9: `nox -s integration`, 18 passed on `7570b14e`. The rule is new
+  rule 9: `nox -s integration`, 26 passed and 1 skipped by design on
+  `3aa21dc0`. The rule is new
   with PR #7 and the gate does not read the record yet; the record is kept
   by hand until the check exists. The first run found three of the
   eighteen failing on `main` since PR #3, see *Found at the cut*.
