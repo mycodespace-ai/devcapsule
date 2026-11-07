@@ -49,8 +49,9 @@ brings someone else's repository into a project.
   3. *Eclipse on amd64.* Found by PR #338 and confirmed at the cut: the two
      libsoup package URLs in the amd64 Eclipse closure return 404 since
      Ubuntu replaced the build, so Eclipse cannot be acquired from scratch
-     on amd64. The bug record is in the table; the fix is a repin, proposed
-     as a slice of the cycle so that candidate 1 carries it.
+     on amd64. The bug record is in the table; the owner ruled the repin
+     the cycle's first slice on 2026-11-07, and it is done on the release
+     branch, so candidate 1 carries it.
 - **Out of 0.3.1 unless the owner pulls them in:** the 0.3.1 preparation
   queue of 2026-10-31 in the maintenance status: release-independent test
   fixtures; parts A and B of the October 25 documentation order; C17, the
@@ -79,7 +80,8 @@ brings someone else's repository into a project.
   the change to a legacy file; test-only changes that reach `main` with
   the pre-candidate merge (*Release Fixes And Main*, ancestry).
 - **Eclipse cannot be acquired from scratch on amd64**, the bug record in
-  the table, confirmed against the archive.
+  the table, confirmed against the archive; repinned on the release branch
+  the same day as the cycle's first slice.
 
 ## What `main` Carried At The Cut
 
@@ -163,7 +165,8 @@ decision here, never a silent replacement.
   2026-11-07; the three assets downloaded, checksum and version verified.
   See *Candidates*.
 - [ ] The cycle's slices, each merged to `main` before the next candidate
-  tag; the bug records closed on candidates.
+  tag; the bug records closed on candidates. Slice 1, the Eclipse libsoup
+  repin, on the release branch 2026-11-07; verification on candidate 1.
 - [ ] The gates before the final tag: the documentation describing the
   accepted candidate; `notes.md` with the *End-to-end tests run* section,
   Release Policy rule 10; `release-docs.py promote 0.3.1` and `docs-0.3.1`;
