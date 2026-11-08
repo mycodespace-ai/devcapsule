@@ -544,9 +544,12 @@ devcapsule project checkout decisions check DECISIONS-DIR/ID.json
 devcapsule project checkout decisions hand-off DECISIONS-DIR/ID.json
 ```
 
-Each runs `python -m devcapsule_webconsole.decisions` with the console the
-base installs under `/opt/devcapsule-webconsole`, or the checkout's mounted
-console source when the runtime plan names one. `hand-off` prints the
+Each runs `python -m devcapsule_webconsole.decisions` with the console
+interpreter under `/opt/devcapsule-webconsole` and the launcher-delivered
+package at `/opt/devcapsule/webconsole` (or the checkout's mounted console
+source when an unbuilt source run or `DEVCAPSULE_DEV_WEBCONSOLE=1` sets
+`console.source_path`, falling back to the base image's copy when neither is
+present). `hand-off` prints the
 decision as numbered chat text ending with the link into the console, with
 the run's token; the link belongs in the chat, never in a record. Outside a
 capsule the command says where the module is. The contract is

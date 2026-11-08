@@ -15,7 +15,6 @@ from devcapsule.platforms import Platform
 from devcapsule.launch.pycharm._launcher import (
     AttachedResult,
     describe_run_command,
-    console_development_source,
     console_disclosure,
     HostUser,
     PycharmRunError,
@@ -393,16 +392,6 @@ def test_console_token_is_removed_when_preparation_fails(
         with pytest.raises(OSError, match=message):
             prepare_temp_runtime_files(config, env)
     assert list(runtime.iterdir()) == []
-
-
-def test_web_console_runs_the_checkouts_source_under_the_self_hosting_exception(tmp_path: Path) -> None:
-    project = tmp_path / "project"
-    (project / "devcapsule-webconsole" / "devcapsule_webconsole").mkdir(parents=True)
-    (project / "devcapsule-webconsole" / "devcapsule_webconsole" / "__init__.py").write_text("", encoding="utf-8")
-    config = contained_config(tmp_path)
-    assert config.runtime_plan is not None and config.runtime_plan.console is not None
-    assert config.runtime_plan.console.source_path == "/workspace/project/devcapsule-webconsole"
-    assert console_development_source(tmp_path / "other", "/workspace/other") == ""
 
 
 def test_console_disclosure_states_where_it_listens(tmp_path: Path) -> None:

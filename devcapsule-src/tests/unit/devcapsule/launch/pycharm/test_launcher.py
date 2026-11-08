@@ -40,6 +40,8 @@ from devcapsule.launch.pycharm import (
 )
 from devcapsule.launch.pycharm._launcher import (
     AttachedResult,
+    DEV_WEBCONSOLE_ENV,
+    console_development_source,
     display_disclosure,
     describe_run_command,
     console_disclosure,
@@ -1804,3 +1806,67 @@ def test_project_launch_cannot_inherit_unbound_paths_or_credentials(tmp_path: Pa
     assert config.git_token_file is None and config.git_token_env == ""
     assert config.enable_sudo is False and config.docker_mode == "none" and config.network_mode == "bridge"
     assert not unbound.exists()
+
+
+@pytest.mark.parametrize(
+    "built_launcher,env_value,expected",
+    [
+        (True, None, ""),
+        (True, "1", "/workspace/project/devcapsule-webconsole"),
+        (True, "true", "/workspace/project/devcapsule-webconsole"),
+        (True, "0", ""),
+        (False, None, "/workspace/project/devcapsule-webconsole"),
+        (False, "0", ""),
+        (False, "false", ""),
+    ],
+)
+def test_console_development_source_scopes_checkout_override_by_build_mode_and_opt_in(
+    tmp_path: Path, built_launcher: bool, env_value: str | None, expected: str
+) -> None:
+    """Built launchers keep their own console unless opted in; source runs mount a present checkout unless opted out."""
+    project = tmp_path / "project"
+    (project / "devcapsule-webconsole" / "devcapsule_webconsole").mkdir(parents=True)
+    (project / "devcapsule-webconsole" / "devcapsule_webconsole" / "__init__.py").write_text("", encoding="utf-8")
+    env = {} if env_value is None else {DEV_WEBCONSOLE_ENV: env_value}
+
+    assert console_development_source(project, "/workspace/project", env, built_launcher=built_launcher) == expected
+    assert console_development_source(tmp_path / "adopter", "/workspace/adopter", env, built_launcher=built_launcher) == ""
+
+
+def test_console_development_source_refuses_unrecognized_override_value(tmp_path: Path) -> None:
+    """An unrecognized ``DEVCAPSULE_DEV_WEBCONSOLE`` value raises ``PycharmRunError`` rather than guessing."""
+    with pytest.raises(PycharmRunError, match=DEV_WEBCONSOLE_ENV):
+        console_development_source(
+            tmp_path / "project",
+            "/workspace/project",
+            {DEV_WEBCONSOLE_ENV: "maybe"},
+            built_launcher=True,
+        )
+
+
+def test_build_run_config_omits_checkout_console_source_under_a_built_launcher_unless_opted_in(
+    tmp_path: Path,
+) -> None:
+    """``build_run_config`` omits ``console.source_path`` for a built launcher by default and sets it when opted in."""
+    project = tmp_path / "project"
+    (project / "devcapsule-webconsole" / "devcapsule_webconsole").mkdir(parents=True)
+    (project / "devcapsule-webconsole" / "devcapsule_webconsole" / "__init__.py").write_text("", encoding="utf-8")
+    options = PycharmRunOptions(
+        project=project,
+        capsule_platform=Platform.LINUX_AMD64,
+        project_mount="/workspace/project",
+        docker_mode=DockerMode.none,
+        network_mode="bridge",
+        runtime_plan=external_runtime_plan(),
+        use_image_process=True,
+    )
+
+    with patch("devcapsule.launch.pycharm._launcher.is_built_distribution", return_value=True):
+        default_config = build_run_config(options, base_env(tmp_path))
+        opted_in_config = build_run_config(options, {**base_env(tmp_path), DEV_WEBCONSOLE_ENV: "1"})
+
+    assert default_config.runtime_plan is not None and default_config.runtime_plan.console is not None
+    assert default_config.runtime_plan.console.source_path == ""
+    assert opted_in_config.runtime_plan is not None and opted_in_config.runtime_plan.console is not None
+    assert opted_in_config.runtime_plan.console.source_path == "/workspace/project/devcapsule-webconsole"
+

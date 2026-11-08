@@ -74,6 +74,26 @@ class BuildInfo:
         return asdict(self)
 
 
+def is_built_distribution() -> bool:
+    """Whether this process runs from a ``scripts/build-pex.sh`` artifact rather than source.
+
+    As in :func:`current_build_info`, a present-but-malformed ``_build_info.json``
+    raises :class:`BuildInfoError` instead of masquerading as an unbuilt source run.
+    """
+
+    resource = files("devcapsule").joinpath("_build_info.json")
+    try:
+        BuildInfo.from_json(resource.read_text(encoding="utf-8"))
+        return True
+    except OSError:
+        sibling = Path(__file__).with_name("_build_info.json")
+        try:
+            BuildInfo.from_json(sibling.read_text(encoding="utf-8"))
+            return True
+        except OSError:
+            return False
+
+
 def current_build_info() -> BuildInfo:
     """Describe this running distribution: its stamped build, or its source form.
 

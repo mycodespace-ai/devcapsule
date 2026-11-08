@@ -50,6 +50,7 @@ include = ["devcapsule*"]
 "devcapsule" = [
   "_build_info.json",
   "_compatibility-v1.json",
+  "_webconsole_bundle.zip",
 ]
 "devcapsule.container_runtime" = [
   "openbox-rc.xml",

@@ -22,6 +22,11 @@ from urllib.request import urlopen
 from devcapsule.compat import CliError
 from devcapsule.runtime_command import RuntimeCommand
 from devcapsule.build_info import read_pex_build_info
+from devcapsule.webconsole_bundle import (
+    LAUNCHER_WEBCONSOLE_PATH,
+    WebconsoleBundleError,
+    extract_webconsole_bundle,
+)
 from devcapsule.platforms import XdgHomes
 from devcapsule.components.catalog import (
     ComponentCatalogError,
@@ -581,6 +586,7 @@ def surface_materialization_spec(
     recipe_version: str = MATERIALIZATION_RECIPE_VERSION,
     component_id: str = "pycharm",
     runtime_pex: Path | None = None,
+    webconsole_root: Path | None = None,
     runtime_command: RuntimeCommand = RuntimeCommand.STANDARD,
 ) -> ImageBuildSpec:
     profile = surface_profile(component_id)
@@ -646,6 +652,8 @@ def surface_materialization_spec(
             *((FileComponent(runtime_pex, ENTRYPOINT_CONTRACT[0], permissions=0o755),
                ExecComponent(("ln", "-sfn", ENTRYPOINT_CONTRACT[0], descriptor["runtime"]["public-command"])))
               if runtime_pex is not None else ()),
+            *((DirectoryComponent(webconsole_root, LAUNCHER_WEBCONSOLE_PATH),)
+              if webconsole_root is not None else ()),
             *( (EnvComponent(environment),) if environment else () ),
             EnvComponent((("PATH", "/opt/xtras/bin:${PATH}"),)),
             LabelComponent(
@@ -817,6 +825,12 @@ def ensure_materialized_surface(
             )
             npm_projects = _npm_projects(ancillary_files, temporary)
             native_packages = _prepare_native_packages(ancillary_files, temporary / "native-packages")
+            webconsole_root: Path | None = None
+            if runtime_pex is not None:
+                try:
+                    webconsole_root = extract_webconsole_bundle(runtime_pex, temporary / "webconsole")
+                except WebconsoleBundleError as exc:
+                    raise CliError(f"Cannot unpack the launcher web console from {runtime_pex}: {exc}") from exc
             build(
                 surface_materialization_spec(
                     base_reference=base_reference,
@@ -833,6 +847,7 @@ def ensure_materialized_surface(
                     recipe_version=recipe_version,
                     component_id=component_id,
                     runtime_pex=runtime_pex,
+                    webconsole_root=webconsole_root,
                     runtime_command=runtime_command,
                 )
             )
