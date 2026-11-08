@@ -14,8 +14,7 @@ application, static files included.
 from __future__ import annotations
 
 from collections.abc import Iterator
-from contextlib import ExitStack, contextmanager
-import io
+from contextlib import ExitStack
 import json
 import mimetypes
 from pathlib import Path
@@ -35,7 +34,7 @@ from .configuration import MAXIMUM_COMMAND_BYTES, ChannelError, ConfigurationCha
 from .decisions import (
     KEY_PATTERN, MAXIMUM_ANSWER_BYTES, Decision, DecisionError, DecisionStore, answer_from_mapping,
 )
-from .security import PathRefused, TokenGate, list_project_directory, open_project_file, read_project_bytes, read_project_text
+from .security import PathRefused, TokenGate, list_project_directory, open_project_file, read_project_text
 from .settings import Settings
 
 PAGES = {
@@ -82,7 +81,6 @@ RAW_SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",
 }
 _BYTE_RANGE_SPEC = re.compile(r"^([0-9]*)-([0-9]*)$")
-_DEFAULT_READ_PROJECT_BYTES = read_project_bytes
 
 
 def create_app(settings: Settings) -> FastAPI:
@@ -323,7 +321,7 @@ def create_app(settings: Settings) -> FastAPI:
         """A project file streamed in chunks, with single byte-range seeking and optional attachment download."""
         stack = ExitStack()
         try:
-            stream, size = stack.enter_context(_open_raw_project_file(settings.project, path))
+            stream, size = stack.enter_context(open_project_file(settings.project, path))
         except PathRefused as error:
             stack.close()
             return PlainTextResponse(str(error) + "\n", status_code=403)
@@ -382,16 +380,6 @@ def _files_redirect_target(path: str = "") -> str:
 
 class _UnsatisfiableRange(ValueError):
     """A single ``bytes=`` range does not overlap the file."""
-
-
-@contextmanager
-def _open_raw_project_file(root: Path, requested: str) -> Iterator[tuple[BinaryIO, int]]:
-    if read_project_bytes is not _DEFAULT_READ_PROJECT_BYTES:
-        data = read_project_bytes(root, requested)
-        yield io.BytesIO(data), len(data)
-        return
-    with open_project_file(root, requested) as opened:
-        yield opened
 
 
 def _parse_byte_range(header: str | None, size: int) -> tuple[int, int] | None:
