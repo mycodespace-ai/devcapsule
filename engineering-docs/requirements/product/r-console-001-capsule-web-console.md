@@ -27,7 +27,14 @@ reaches it through an SSH port forward.
 The console is part of the base image for every adopter. It is not a
 component and not a selectable capability. It is a separate process from the
 runtime, started and supervised by the runtime, built from a static web
-structure and a FastAPI application for dynamic data. It reads the mounted
+structure and a FastAPI application for dynamic data. Under
+[D-0017](../../decisions/product/d-0017-launcher-delivers-web-console-package.md),
+the base image supplies the hash-pinned virtual environment and baseline
+installation at `/opt/devcapsule-webconsole`, while a built launcher delivers
+its matching `devcapsule_webconsole` package read-only at
+`/opt/devcapsule/webconsole` during environment materialization so CLI and
+console updates ship together without a base rebuild unless third-party
+dependencies change. It reads the mounted
 project and the runtime's read-only records, and calls the runtime CLI's
 `--json` outputs as its API. It does not import the runtime's internals.
 
@@ -65,5 +72,8 @@ materialized views, extend the later scope without changing the statement.
 ## Related
 
 - Workstream: `capsule-webconsole`, started 2026-10-09.
+- Decision: [D-0017](../../decisions/product/d-0017-launcher-delivers-web-console-package.md),
+  launcher delivery of `devcapsule_webconsole` on the base interpreter and
+  scoping of the self-hosting checkout override.
 - Contained display transport: the token and port model the console mirrors.
 - `WORKFLOW.md` topic 9.5, decisions presented as structured artifacts.
