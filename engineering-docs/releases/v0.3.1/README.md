@@ -1,6 +1,6 @@
 # DevCapsule 0.3.1 — Release Work
 
-Updated: 2026-11-07. Stage: **candidate 0 published; cycle slices await the owner's rulings**.
+Updated: 2026-11-08. Stage: **candidate 0 published; slice 1 merged, slice 2 in PR #12; two rulings open**.
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
 [Changelog since 0.3.0](changelog.md) ·
@@ -166,7 +166,11 @@ decision here, never a silent replacement.
   See *Candidates*.
 - [ ] The cycle's slices, each merged to `main` before the next candidate
   tag; the bug records closed on candidates. Slice 1, the Eclipse libsoup
-  repin, on the release branch 2026-11-07; verification on candidate 1.
+  repin, merged to the release branch by PR #10 on 2026-11-08; verification
+  on candidate 1. Slice 2, the web console's Files page, built by Pair
+  Review (Antigravity implementing, Claude Code reviewing) as PR #12 with
+  its review PR #13 merged in; awaits the owner's merge into the release
+  branch.
 - [ ] The gates before the final tag: the documentation describing the
   accepted candidate; `notes.md` with the *End-to-end tests run* section,
   Release Policy rule 10; `release-docs.py promote 0.3.1` and `docs-0.3.1`;

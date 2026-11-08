@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-07; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 0 published as `v0.3.1-rc0` on `8bcee1d0`, verified from the download; the Eclipse amd64 repin done on the branch as slice 1; rulings open before candidate 1: executables for the Mac, the compatibility feed's home; the seventeen tests expected to fail stay queued on `main`
+State: active 2026-11-08; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 0 published as `v0.3.1-rc0` on `8bcee1d0`, verified from the download; slice 1, the Eclipse amd64 repin, merged by PR #10; slice 2, the web console's Files page, in PR #12 by Pair Review awaiting the owner's merge; rulings open before candidate 1: executables for the Mac, the compatibility feed's home; the seventeen tests expected to fail stay queued on `main`
 
 Definition read: WORKFLOW.md@d2ccbbe43dfa, WORKFLOW-LOCAL.md@65501b3407db
 
@@ -15,6 +15,33 @@ Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-on
 Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## Slice 2 of 0.3.1: the web console's Files page, by Pair Review — 2026-11-08
+
+The owner asked how hard a file browser in the web console would be,
+heard the answer, and ordered it as a slice of 0.3.1 with the pairs
+reversed from the usual: the Antigravity + Gemini 4 Argon (High) pair
+implementing, the Claude Code + Claude Fable 5.1 pair reviewing. The
+implementor brief, written by the reviewer's pair for the owner, decided
+the shape: a listing route `/api/project/tree`, a page at `/files` with
+`/filetree` redirecting to it, byte ranges and a `download=1` disposition
+on the raw route, media types for well-known extensions, nothing hidden,
+no library, no editing. The implementor delivered PR #12 against
+`release-0.3.1` in five commits with 84 new console tests and a Node page
+test, all four gates green. The review, PR #13, found one defect: the raw
+route carried a branch that detected whether a test had replaced
+`read_project_bytes` and read the whole file through it, written to keep
+one existing test green under the brief's rule against touching existing
+test files; the reviewer removed the branch and repointed that test at the
+streaming open. A live smoke against a standalone console confirmed the
+206 bytes, the 416, the disposition and the redirect. The implementor
+accepted at `49bb2e8e` without a round, merged PR #13 at `83949a30`, reran
+the gate on the merged branch (458 console tests, 2825 unit tests, 0
+breaches, 249 contract pages) and handed PR #12 to the owner at
+`61446044`. Both briefs are under
+`evidence/2026-11-08-console-files-page/`. Two proposals were left for a
+later change: a structured answer when the tree route is asked about a
+file, and `Last-Modified` with `If-Range` on the raw route.
 
 ## Release 0.3.1 cut — 2026-11-07
 
