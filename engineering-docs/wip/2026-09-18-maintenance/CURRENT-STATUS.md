@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-08; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 published as `v0.3.1-rc1` on `accdec5b` with slices 1 (Eclipse libsoup repin, #10) and 2 (web console Files page, #12), verified from the download, the libsoup bug closed by a fresh Eclipse acquisition on it; rulings open before candidate 1: executables for the Mac, the compatibility feed's home; the seventeen tests expected to fail stay queued on `main`
+State: active 2026-11-08; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 published as `v0.3.1-rc1` on `accdec5b` with slices 1 (Eclipse libsoup repin, #10) and 2 (web console Files page, #12), verified from the download, the libsoup bug closed by a fresh Eclipse acquisition on it; filed 2026-11-08 for candidate 2: Codex checks fail because the npm registry document exceeds the channel's 16 MiB cap (feed `inconclusive` since 2026-10-01); rulings open before candidate 2: executables for the Mac, the compatibility feed's home; the seventeen tests expected to fail stay queued on `main`
 
 Definition read: WORKFLOW.md@d2ccbbe43dfa, WORKFLOW-LOCAL.md@65501b3407db
 

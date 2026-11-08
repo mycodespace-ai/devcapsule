@@ -1,6 +1,6 @@
 # DevCapsule 0.3.1 — Release Work
 
-Updated: 2026-11-08. Stage: **candidate 1 published and verified; the libsoup bug closed on it; two rulings open**.
+Updated: 2026-11-08. Stage: **candidate 1 published and verified; the libsoup bug closed on it; the Codex npm cap bug filed for candidate 2; two rulings open**.
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
 [Changelog since 0.3.0](changelog.md) ·
