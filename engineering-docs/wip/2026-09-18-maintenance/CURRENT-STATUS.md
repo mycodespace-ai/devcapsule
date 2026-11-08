@@ -4,17 +4,33 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-08; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 published as `v0.3.1-rc1` on `accdec5b` with slices 1 (Eclipse libsoup repin, #10) and 2 (web console Files page, #12), verified from the download, the libsoup bug closed by a fresh Eclipse acquisition on it; filed 2026-11-08 for candidate 2: Codex checks fail because the npm registry document exceeds the channel's 16 MiB cap (feed `inconclusive` since 2026-10-01); rulings open before candidate 2: executables for the Mac, the compatibility feed's home; the seventeen tests expected to fail stay queued on `main`
+State: active 2026-11-08; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 (`v0.3.1-rc1` on `accdec5b`) closed the Eclipse libsoup bug, and validation inside `0.3.1rc1` uncovered a blocking delivery bug: `/files`, `/filetree`, and `/api/project/tree` return `404` because `devcapsule.pex` omits `devcapsule-webconsole/`, the pinned bases predate PR #12, and `console_development_source()` overrides built candidates on DevCapsule checkouts; active on `ws-maintenance/webconsole-delivery` to settle and implement the root-cause fix before candidate 2; Codex 16 MiB npm cap bug also queued for candidate 2; two rulings open
 
-Definition read: WORKFLOW.md@d2ccbbe43dfa, WORKFLOW-LOCAL.md@65501b3407db
+Definition read: WORKFLOW.md@d9a8103606fa, WORKFLOW-LOCAL.md@5b13c6d042d5
 
 Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; active slice branch `ws-maintenance/webconsole-delivery` from `release-0.3.1` (`f5d5d2d8`); `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## Blocking 0.3.1rc1 finding: web console Files page is not delivered — 2026-11-08
+
+Validating `v0.3.1-rc1` (`accdec5b`) inside a running capsule found that
+`GET /files`, `GET /filetree`, and `GET /api/project/tree` all return `404`.
+Two couplings caused the failure: `devcapsule.pex` does not carry
+`devcapsule-webconsole/` (so adopter capsules run the pre-PR-#12 package baked
+into the pinned `linux-amd64` and `linux-arm64` recipe-11 bases), and
+`console_development_source()` unconditionally puts a mounted DevCapsule
+checkout's `devcapsule-webconsole/` first on `PYTHONPATH` (shadowing built
+candidates on older branches and masking missing delivery on `release-0.3.1`).
+Filed as [the blocking bug record](../../bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md)
+on `ws-maintenance/webconsole-delivery` (local `main` fast-forwarded 122
+commits to `origin/main` `46ded16d`, `git cherry` clean). Handing the two
+root-cause design choices (launcher-delivered console package vs base rebuilds,
+and self-hosting override scope) to the owner before coding the slice.
 
 ## Slice 2 of 0.3.1: the web console's Files page, by Pair Review — 2026-11-08
 
