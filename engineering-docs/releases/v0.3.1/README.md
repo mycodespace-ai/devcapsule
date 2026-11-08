@@ -1,6 +1,6 @@
 # DevCapsule 0.3.1 — Release Work
 
-Updated: 2026-11-08. Stage: **candidate 0 published; slices 1 and 2 merged; candidate 1 on the owner's word; two rulings open**.
+Updated: 2026-11-08. Stage: **candidate 1 published and verified; the libsoup bug closed on it; two rulings open**.
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
 [Changelog since 0.3.0](changelog.md) ·
@@ -165,7 +165,9 @@ decision here, never a silent replacement.
   2026-11-07; the three assets downloaded, checksum and version verified.
   See *Candidates*.
 - [ ] The cycle's slices, each merged to `main` before the next candidate
-  tag; the bug records closed on candidates. Slice 1, the Eclipse libsoup
+  tag; the bug records closed on candidates. Slices 1 and 2 reached
+  `main` through PR #14 and are in candidate 1; the libsoup bug closed on
+  it. Slice 1, the Eclipse libsoup
   repin, merged to the release branch by PR #10 on 2026-11-08; verification
   on candidate 1. Slice 2, the web console's Files page, built by Pair
   Review (Antigravity implementing, Claude Code reviewing) as PR #12 with
@@ -177,6 +179,45 @@ decision here, never a silent replacement.
   the acceptance record; the final tag; delivery verified.
 
 ## Candidates
+
+### RC1 — tagged 2026-11-08
+
+- Tag `v0.3.1-rc1` on `accdec5bb36626875b0564afbcbf20f67f9d961b`, the release
+  branch's tip at the pre-candidate merge (PR #14 from the throwaway copy
+  `4PR-2-release-0.3.1`, merged by the owner at `8c5a4723`). Carries slice 1,
+  the Eclipse amd64 libsoup repin (PR #10), and slice 2, the web console's
+  Files page (PR #12 with its review PR #13).
+- Candidate gate from the release worktree before the push: method
+  `mainline`, no unintegrated commits, version `0.3.1rc1`.
+- Backend run [42436425955](https://github.com/mycodespace-ai/devcapsule/actions/runs/42436425955)
+  passed: 2844 unit tests passed, 50 deselected, 1 xfailed, 1 xpassed on
+  the hosted runner; packaging integration 26 passed, 1 skipped against the
+  built PEX. The [prerelease](https://github.com/mycodespace-ai/devcapsule/releases/tag/v0.3.1-rc1)
+  is public, non-draft, with the three assets.
+- Downloaded over HTTPS into `/home/devcapsule/.cache/devcapsule-releases/v0.3.1-rc1`:
+  the checksum file verifies the executable, SHA-256 `711d239c0809f892…`;
+  the manifest records the tag, the branch, the source revision, the
+  `mainline` disposition, CPython 3.12.14 and the recipe-11 linux x86-64
+  base `d7047ced…`; `devcapsule version --json` from an empty directory
+  reports `0.3.1rc1`, build `v0.3.1-rc1`, at `accdec5b…`.
+- **Eclipse acquired from scratch on amd64**, closing the libsoup bug: with
+  the downloaded executable and an empty configuration home
+  (`DEVCAPSULE_CONFIG_HOME` on a fresh directory), `project init --ide
+  eclipse-ide --require java --platform linux-amd64` on a scratch
+  repository, then `images build --type environment --network host`: the
+  closure downloaded in full, the two libsoup files landed in the home's
+  artifact cache under their hashes (`c2acdf20…`, 292,272 bytes;
+  `89f066fe…`, 12,882 bytes), the image build set up
+  `libsoup-3.0-0:amd64 (3.4.4-5ubuntu0.10)` and WebKitGTK, and the
+  environment image `devcapsule-local-eclipse:39671f01…` was built in
+  13 minutes 41 seconds on the maintenance capsule's host daemon with
+  the base already present. No container was launched. Log kept at
+  `/home/devcapsule/.cache/devcapsule-releases/acceptance-rc1/acceptance.log`.
+- Not in rc1: a macOS or arm64 executable and the compatibility feed's
+  home, both waiting for the owner's ruling; the agent and IDE freshness
+  upgrade; the Files-page proposals left by the review.
+- Next: the rulings; the freshness slice; the documentation round, the
+  notes and the promotion before the last candidate.
 
 ### RC0 — tagged 2026-11-07
 

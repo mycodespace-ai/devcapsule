@@ -21,6 +21,16 @@
       "date": "2026-11-07",
       "result": "passed: 26 passed, 1 skipped in 33.09s",
       "evidence": "https://github.com/mycodespace-ai/devcapsule/actions/runs/42424847709"
+    },
+    {
+      "kind": "integration",
+      "source-revision": "accdec5bb36626875b0564afbcbf20f67f9d961b",
+      "tests": "pytest --no-cov -m \"integration and not docker\" tests/integration against the built candidate PEX, the step 'Run packaging integration tests against the release PEX' of release-pex.yml",
+      "environment": "GitHub-hosted runner of workflow run 42436425955, Linux x86-64, the workflow's Python",
+      "operator": "the candidate workflow on tag v0.3.1-rc1, pushed by Claude Code, Claude Fable 5.1, for maintenance",
+      "date": "2026-11-08",
+      "result": "passed: 26 passed, 1 skipped in 45.13s",
+      "evidence": "https://github.com/mycodespace-ai/devcapsule/actions/runs/42436425955"
     }
   ]
 }

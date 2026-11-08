@@ -1,5 +1,5 @@
 ---
-status: fixed
+status: closed
 severity: major
 target: 0.3.1
 owner: maintenance
@@ -46,6 +46,15 @@ previous build's files. Nothing in the project watches the archive, so a
 replaced build is found when an acquisition fails.
 
 ## Disposition
+
+Closed 2026-11-08 on candidate 1: with the downloaded `v0.3.1-rc1`
+executable and an empty configuration home, an Eclipse project's
+environment image materialized on Linux x86-64; the two libsoup packages
+downloaded from the archive and verified against the pinned hashes, and
+the image set up `libsoup-3.0-0:amd64 (3.4.4-5ubuntu0.10)`. Evidence in
+the release overview under *Candidates*, RC1. The 0.3.0 executable stays
+affected; 0.3.1 is the remedy.
+
 
 Fixed on `release-0.3.1` on 2026-11-07, the first slice of the 0.3.1 cycle
 (branch `ws-maintenance/eclipse-libsoup-repin`): both packages repinned at
