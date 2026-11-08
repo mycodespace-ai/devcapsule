@@ -47,7 +47,15 @@ instead, and what the product does to keep it.
 
 ## The promise as the documentation makes it today
 
-No page promises "identical bytes". The promise is made through the lock:
+No page promises "identical bytes". The promise is made through the lock
+and the embedded matrix. Correction of 2026-11-08, after the candidate-1
+acceptance: the committed lock carries a component's pins, the Eclipse
+closure included, only when the project *requires* that component; an IDE
+chosen per checkout is pinned in the checkout's own record, and its
+closure is read from the launcher's embedded matrix at materialization.
+Either way the pins are exact URLs and hashes, and the failure is the
+same; what differs is which file an adopter would repair.
+
 
 - *Taking a project to another machine*: the committed lock carries "exact
   component versions and SHA-256 digests"; a clone gets the same
