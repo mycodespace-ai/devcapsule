@@ -1,4 +1,4 @@
-"capabilities-digest" = "5a8581f94902def37cc35f11e607c81bf0ecce7cd8b2d70417a3502d24fc4468"
+"capabilities-digest" = "931a9624b9cc5a45e6c3ef914ab9a83f79c16d5a150490cc6436c802a5143944"
 "devcapsule-lock-format-version" = 1
 "platform" = "linux-amd64"
 "resolution-matrix-version" = "embedded-27"
@@ -13,6 +13,7 @@
 "claude-code-agent" = ["claude-code"]
 "codex-agent" = ["codex"]
 "docker-cli" = []
+"node" = []
 "python" = []
 "python-ide" = ["pycharm"]
 

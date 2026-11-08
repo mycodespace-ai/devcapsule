@@ -1,46 +1,60 @@
-devcapsule-schema-version = 1
-workflow-type = "multiple-streams"
+"devcapsule-schema-version" = 1
+"workflow-type" = "multiple-streams"
 
-[workflow]
-definition = "devcapsule"
-version = "0.2.14.dev0"
-mode = "multiple-streams"
+["capabilities"]
+"optional" = ["node"]
+"required" = ["antigravity-agent", "claude-code-agent", "codex-agent", "docker-cli", "python", "python-ide"]
 
-[capabilities]
-need = ["antigravity-agent", "claude-code-agent", "codex-agent", "docker-cli", "python", "python-ide"]
+["configuration"]
 
-[project]
-name = "DevCapsule"
-slug = "devcapsule"
-creator = "https://github.com/ccozianu"
-mount = "/workspace/301e4208ef81-ChatGPT_Codex"
+["configuration"."values"]
 
-[configuration.values."runtime.memory-limit"]
-type = "memory-size"
-runtime-effect = "docker.memory-limit"
-description = "Hard memory limit applied to the checkout's project container."
+["configuration"."values"."runtime.devcapsule-command"]
+"description" = "Name of the shipped CLI inside the capsule; devcapsule0 leaves devcapsule for a development build."
+"recommended" = "devcapsule0"
+"type" = "string"
 
-# Keep the public devcapsule name available for our development installation.
-# Other projects omit this recommendation and receive the shipped devcapsule.
-# No runtime-effect attribute: the name is reserved and carries the effect,
-# and released clients that predate the effect vocabulary reject any
-# attribute they do not know.
-[configuration.values."runtime.devcapsule-command"]
-type = "string"
-recommended = "devcapsule0"
-description = "Name of the shipped CLI inside the capsule; devcapsule0 leaves devcapsule for a development build."
+["configuration"."values"."runtime.memory-limit"]
+"description" = "Hard memory limit applied to the checkout's project container."
+"runtime-effect" = "docker.memory-limit"
+"type" = "memory-size"
 
-[host.docker.mode.recommended]
-value = "host-socket"
-justification = "Required to run peer DevCapsule instances during the full test suite."
-enables = ["full-test-suite"]
+["host"]
 
-[host.network.mode.recommended]
-value = "host"
-justification = "Temporary dogfood compatibility for host-bound development services."
-enables = ["legacy-dogfood-host-services"]
+["host"."docker"]
 
-[host.privilege.development-sudo.recommended]
-value = true
-justification = "Required by the current dogfood development and validation workflow."
-enables = ["dogfood-development-administration"]
+["host"."docker"."mode"]
+
+["host"."docker"."mode"."recommended"]
+"enables" = ["full-test-suite"]
+"justification" = "Required to run peer DevCapsule instances during the full test suite."
+"value" = "host-socket"
+
+["host"."network"]
+
+["host"."network"."mode"]
+
+["host"."network"."mode"."recommended"]
+"enables" = ["legacy-dogfood-host-services"]
+"justification" = "Temporary dogfood compatibility for host-bound development services."
+"value" = "host"
+
+["host"."privilege"]
+
+["host"."privilege"."development-sudo"]
+
+["host"."privilege"."development-sudo"."recommended"]
+"enables" = ["dogfood-development-administration"]
+"justification" = "Required by the current dogfood development and validation workflow."
+"value" = true
+
+["project"]
+"creator" = "https://github.com/ccozianu"
+"mount" = "/workspace/301e4208ef81-ChatGPT_Codex"
+"name" = "DevCapsule"
+"slug" = "devcapsule"
+
+["workflow"]
+"definition" = "devcapsule"
+"mode" = "multiple-streams"
+"version" = "0.2.14.dev0"
