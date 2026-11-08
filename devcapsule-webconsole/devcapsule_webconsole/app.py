@@ -1,13 +1,14 @@
-"""The FastAPI application: pages, their JSON, records, monitoring, decisions and notifications.
+"""The FastAPI application: pages, their JSON, records, files, monitoring, decisions and notifications.
 
 Writes stay in capsule state: decision answers, notifications read or
 dismissed through the runtime CLI, and configuration requests the launcher
 answers through its mounted channel. Every other route is ``GET``. The pages are static
 files that fetch their facts from the ``/api`` routes, which run the
-runtime CLI, read the capsule's processes and cgroup, read a file inside
+runtime CLI, read the capsule's processes and cgroup, list or read inside
 the project mount, or read the decisions directory. The records page
-renders any markdown file of the project in the browser. The token gate
-wraps the whole application, static files included.
+renders any markdown file of the project in the browser, and the files page
+lists and serves the mounted project's files. The token gate wraps the whole
+application, static files included.
 """
 
 from __future__ import annotations
@@ -15,9 +16,10 @@ from __future__ import annotations
 import json
 import mimetypes
 from typing import Any, Callable
+from urllib.parse import quote
 
 from fastapi import FastAPI, Query, Request, Response
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import __version__
@@ -27,7 +29,7 @@ from .configuration import MAXIMUM_COMMAND_BYTES, ChannelError, ConfigurationCha
 from .decisions import (
     KEY_PATTERN, MAXIMUM_ANSWER_BYTES, Decision, DecisionError, DecisionStore, answer_from_mapping,
 )
-from .security import PathRefused, TokenGate, read_project_bytes, read_project_text
+from .security import PathRefused, TokenGate, list_project_directory, read_project_bytes, read_project_text
 from .settings import Settings
 
 PAGES = {
@@ -37,6 +39,7 @@ PAGES = {
     "/project": "project.html",
     "/processes": "processes.html",
     "/records": "records.html",
+    "/files": "files.html",
     "/decisions": "decisions.html",
     "/notifications": "notifications.html",
 }
@@ -65,9 +68,19 @@ def create_app(settings: Settings) -> FastAPI:
 
     for route, page in PAGES.items():
         app.add_api_route(route, _page(settings, page), methods=["GET"], include_in_schema=False)
-    # One page for every record: the script reads the path from the URL.
+    # One page for every record or directory: the script reads the path from the URL.
     app.add_api_route("/records/{record:path}", _page(settings, "records.html"), methods=["GET"], include_in_schema=False)
+    app.add_api_route("/files/{path:path}", _page(settings, "files.html"), methods=["GET"], include_in_schema=False)
     app.add_api_route("/decisions/{decision_id}", _page(settings, "decisions.html"), methods=["GET"], include_in_schema=False)
+
+    @app.get("/filetree", include_in_schema=False)
+    def filetree_root() -> RedirectResponse:
+        return RedirectResponse(_files_redirect_target(), status_code=307)
+
+    @app.get("/filetree/{path:path}", include_in_schema=False)
+    def filetree_path(path: str) -> RedirectResponse:
+        return RedirectResponse(_files_redirect_target(path), status_code=307)
+
     store = DecisionStore(settings.decisions)
 
     def decision_or_response(decision_id: str) -> Decision | PlainTextResponse:
@@ -246,6 +259,21 @@ def create_app(settings: Settings) -> FastAPI:
     def resources() -> JSONResponse:
         return JSONResponse(monitor.resources())
 
+    @app.get("/api/project/tree")
+    def project_tree(path: str = "") -> Response:
+        """One directory of the mounted project: entries as lstat sees them, links unfollowed."""
+        try:
+            listing = list_project_directory(settings.project, path)
+        except PathRefused as error:
+            return PlainTextResponse(str(error) + "\n", status_code=403)
+        except NotADirectoryError:
+            return PlainTextResponse(f"{path!r} is not a directory in the project\n", status_code=404)
+        except FileNotFoundError:
+            return PlainTextResponse(f"no directory at {path!r} in the project\n", status_code=404)
+        except OSError:
+            return PlainTextResponse(f"cannot read {path!r} in the project\n", status_code=403)
+        return JSONResponse(listing)
+
     @app.get("/api/project/file")
     def project_file(path: str = Query(...)) -> PlainTextResponse:
         try:
@@ -287,6 +315,11 @@ def create_app(settings: Settings) -> FastAPI:
 def same_origin(request: Request) -> bool:
     """Exactly one ``Origin`` header naming this console, port included, no trailing slash."""
     return request.headers.getlist("origin") == [f"{request.url.scheme}://{request.url.netloc}"]
+
+
+def _files_redirect_target(path: str = "") -> str:
+    encoded = "/".join(quote(part, safe="") for part in path.split("/") if part)
+    return f"/files/{encoded}" if encoded else "/files"
 
 
 def _page(settings: Settings, name: str) -> Callable[[], FileResponse]:

@@ -5,9 +5,13 @@ from __future__ import annotations
 import errno
 import os
 from pathlib import Path
+import shutil
+import subprocess
 
+from fastapi.testclient import TestClient
 import pytest
 
+from conftest import with_token
 from devcapsule_webconsole.security import PathRefused, list_project_directory, open_project_file
 
 
@@ -172,3 +176,113 @@ def test_open_project_file_streams_bytes_and_closes_its_descriptor(project: Path
     with pytest.raises(OSError) as closed:
         os.fstat(descriptor)
     assert closed.value.errno == errno.EBADF
+
+
+@pytest.mark.parametrize(
+    ("params", "expected_path", "expected_names"),
+    [
+        (None, "", [".devcapsule", "docs", "escape.md", "image.bin"]),
+        ({"path": ""}, "", [".devcapsule", "docs", "escape.md", "image.bin"]),
+        ({"path": "docs"}, "docs", ["guide.md"]),
+    ],
+)
+def test_tree_route_serves_root_and_nested_listings(
+    client: TestClient, params: dict[str, str] | None, expected_path: str, expected_names: list[str],
+) -> None:
+    """GET /api/project/tree lists the project root when path is absent or empty and a subdirectory when named."""
+    response = with_token(client).get("/api/project/tree", params=params)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["path"] == expected_path
+    assert [entry["name"] for entry in body["entries"]] == expected_names
+
+
+@pytest.mark.parametrize(
+    ("requested", "expected_status"),
+    [
+        ("../outside.txt", 403),
+        ("/etc/passwd", 403),
+        ("escape.md", 403),
+        ("docs/missing", 404),
+        ("docs/guide.md", 404),
+    ],
+)
+def test_tree_route_refuses_escapes_and_reports_missing_or_file_paths(
+    client: TestClient, requested: str, expected_status: int,
+) -> None:
+    """GET /api/project/tree returns 403 for escaping paths and 404 when the path is missing or names a file."""
+    response = with_token(client).get("/api/project/tree", params={"path": requested})
+
+    assert response.status_code == expected_status
+
+
+def test_tree_route_reports_permission_errors_with_403(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """GET /api/project/tree returns 403 without leaking host details when reading the directory fails with PermissionError."""
+    def denied(_target: int) -> object:
+        raise PermissionError("private host detail")
+
+    monkeypatch.setattr(os, "scandir", denied)
+
+    response = with_token(client).get("/api/project/tree", params={"path": "docs"})
+
+    assert response.status_code == 403
+    assert response.text == "cannot read 'docs' in the project\n"
+
+
+@pytest.mark.parametrize(
+    "route",
+    [
+        "/files",
+        "/files/",
+        "/files/docs",
+        "/files/engineering-docs/blog/assets/2026-10-21-eclipse-debug/eclipse-hello-time-debug.webm",
+    ],
+)
+def test_files_routes_serve_the_files_page(client: TestClient, route: str) -> None:
+    """GET /files and GET /files/<path> serve files.html behind the token gate."""
+    response = with_token(client).get(route)
+
+    assert response.status_code == 200
+    assert 'data-page="files"' in response.text
+
+
+@pytest.mark.parametrize(
+    ("route", "expected_location"),
+    [
+        ("/filetree", "/files"),
+        ("/filetree/", "/files"),
+        ("/filetree/docs", "/files/docs"),
+        ("/filetree/docs/sub%20dir", "/files/docs/sub%20dir"),
+        ("/filetree///evil.example", "/files/evil.example"),
+    ],
+)
+def test_filetree_routes_redirect_with_307_to_files(
+    client: TestClient, route: str, expected_location: str,
+) -> None:
+    """GET /filetree and GET /filetree/<path> redirect with 307 to the /files URL on the same origin."""
+    response = with_token(client).get(route, follow_redirects=False)
+
+    assert response.status_code == 307
+    assert response.headers["location"] == expected_location
+
+
+def test_every_page_navigation_includes_files_after_records(client: TestClient) -> None:
+    """Every console page places Files after Records in the navigation bar, and Home includes a Files card."""
+    authed = with_token(client)
+    home = authed.get("/").text
+    assert home.count('href="/files"') == 2
+    for route in ("/", "/configuration", "/versions", "/project", "/processes", "/records", "/files", "/decisions", "/notifications"):
+        html = authed.get(route).text
+        assert '<a href="/records">Records</a><a href="/files">Files</a>' in html
+
+
+def test_files_script_behaviour() -> None:
+    """The files page script renders breadcrumbs, directory and file links, sizes, empty notices, file redirects and failures."""
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node is a development-only script test dependency")
+    subprocess.run([node, str(Path(__file__).with_name("files-script.cjs"))], check=True)
+
