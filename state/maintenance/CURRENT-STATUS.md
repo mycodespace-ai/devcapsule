@@ -4710,6 +4710,8 @@ Earlier open-thread history (read against the current scope above):
 
 ## Workstream Document Index
 
+- [PR #16 review-partner brief (PR16.1)](evidence/2026-11-08-webconsole-delivery/review-brief.md): brief for Claude Code + Claude Fable 5.1 on launcher-delivered web console (`D-0017`) on `ws-maintenance/webconsole-delivery`.
+
 - [RC9 preparation and component verification](evidence/2026-10-31-rc9/README.md).
 
 - [User-docs 0.3.0 CLI alignment work order](../../work-orders/2026-10-30-user-docs-0-3-0-cli-alignment.md),
