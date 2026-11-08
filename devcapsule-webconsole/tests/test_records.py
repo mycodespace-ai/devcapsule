@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Iterator
 from pathlib import Path
+from typing import BinaryIO
 import re
 import tomllib
 
@@ -131,12 +133,17 @@ def test_raw_project_content_is_isolated_even_when_opened_as_a_document(
 
 
 def test_raw_route_reports_a_read_permission_error(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A read the operating system refuses is a 403 that names the path and not the host's reason."""
+    from contextlib import contextmanager
+
     from devcapsule_webconsole import app
 
-    def denied(root: Path, requested: str) -> bytes:
+    @contextmanager
+    def denied(root: Path, requested: str) -> Iterator[tuple[BinaryIO, int]]:
         raise PermissionError("private host detail")
+        yield  # pragma: no cover - the generator form is what open_project_file's callers expect
 
-    monkeypatch.setattr(app, "read_project_bytes", denied)
+    monkeypatch.setattr(app, "open_project_file", denied)
     response = with_token(client).get("/api/project/raw", params={"path": "docs/guide.md"})
     assert response.status_code == 403
     assert response.text == "cannot read 'docs/guide.md' in the project\n"

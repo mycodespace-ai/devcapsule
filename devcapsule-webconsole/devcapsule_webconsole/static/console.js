@@ -527,6 +527,84 @@
     });
   };
 
+  function encodeSegments(path) {
+    return path.split("/").map(encodeURIComponent).join("/");
+  }
+
+  function fileViewUrl(path) {
+    return path.toLowerCase().endsWith(".md")
+      ? "/records/" + encodeSegments(path)
+      : "/api/project/raw?path=" + encodeURIComponent(path);
+  }
+
+  pages.files = async function (container) {
+    const rawTail = window.location.pathname.replace(/^\/files\/?/, "").replace(/\/+$/, "");
+    const requested = rawTail ? rawTail.split("/").map(decodeURIComponent).join("/") : "";
+    const heading = document.getElementById("files-title");
+    if (heading) heading.textContent = requested || "Files";
+    document.title = (requested || "Files") + " · DevCapsule console";
+    const treeUrl = requested ? "/api/project/tree?path=" + encodeURIComponent(requested) : "/api/project/tree";
+    const response = await fetch(treeUrl, { credentials: "same-origin" });
+    const bodyText = await response.text();
+    if (!response.ok) {
+      if (response.status === 404 && requested && bodyText.includes("is not a directory in the project")
+          && typeof window.location.replace === "function") {
+        window.location.replace(fileViewUrl(requested));
+        return;
+      }
+      throw new Error(treeUrl + ": " + (bodyText.trim() || "HTTP " + response.status));
+    }
+    const listing = JSON.parse(bodyText);
+    const directory = listing.path || "";
+    const label = directory || "Files";
+    if (heading) heading.textContent = label;
+    document.title = label + " · DevCapsule console";
+    const crumbs = el("p", { class: "crumbs" }, [el("a", { href: "/files", text: "project" })]);
+    if (directory) {
+      const parts = directory.split("/");
+      parts.forEach((part, index) => {
+        crumbs.appendChild(document.createTextNode(" › "));
+        crumbs.appendChild(el("a", {
+          href: "/files/" + parts.slice(0, index + 1).map(encodeURIComponent).join("/"),
+          text: part,
+        }));
+      });
+    }
+    if (!listing.entries.length) {
+      container.replaceChildren(crumbs, el("p", { class: "notice", text: "This directory is empty." }));
+      return;
+    }
+    const head = el("tr", {}, [
+      el("th", { text: "Name" }),
+      el("th", { class: "num", text: "Size" }),
+      el("th", { class: "keep", text: "Modified" }),
+    ]);
+    const rows = listing.entries.map((entry) => {
+      const entryPath = directory ? directory + "/" + entry.name : entry.name;
+      const rawUrl = "/api/project/raw?path=" + encodeURIComponent(entryPath);
+      let nameNodes;
+      if (entry.kind === "directory") {
+        nameNodes = [el("a", { href: "/files/" + encodeSegments(entryPath), text: entry.name + "/" })];
+      } else if (entry.kind === "file") {
+        nameNodes = [
+          el("a", { href: fileViewUrl(entryPath), text: entry.name }),
+          " · ",
+          el("a", { class: "muted", href: rawUrl + "&download=1", text: "download" }),
+        ];
+      } else if (entry.kind === "link") {
+        nameNodes = [el("a", { href: rawUrl, text: entry.name })];
+      } else {
+        nameNodes = [el("span", { text: entry.name })];
+      }
+      return el("tr", {}, [
+        el("td", {}, nameNodes),
+        el("td", { class: "num", text: bytes(entry.size) }),
+        el("td", { class: "keep", text: scalar(entry.modified) }),
+      ]);
+    });
+    container.replaceChildren(crumbs, el("table", { class: "data" }, [el("thead", {}, [head]), el("tbody", {}, rows)]));
+  };
+
   // Decision pages (deliverable 5): the list, and one decision as a form.
   // The form's submit is the console's one write; everything else reads.
   pages.decisions = async function (container) {

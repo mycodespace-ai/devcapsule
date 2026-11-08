@@ -13,8 +13,10 @@ from devcapsule_webconsole.security import PathRefused, TokenGate, confine, toke
 from devcapsule_webconsole.settings import Settings
 
 
-@pytest.mark.parametrize("path", ["/", "/configuration", "/versions", "/project", "/static/console.css",
+@pytest.mark.parametrize("path", ["/", "/configuration", "/versions", "/project", "/files", "/files/docs",
+                                  "/filetree", "/filetree/docs", "/static/console.css",
                                   "/api/identity", "/api/configuration", "/api/versions", "/api/project",
+                                  "/api/project/tree", "/api/project/tree?path=docs",
                                   "/api/project/file?path=docs/guide.md"])
 def test_every_route_refuses_a_request_without_the_token(client, path):
     response = client.get(path)
