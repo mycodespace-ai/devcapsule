@@ -217,12 +217,14 @@ capsule for reasons that were not bugs.
 4. A unit with no declared public surface is not testable under rule 2
    until it declares one: `__all__`, or a module docstring that names the
    public operations and leaves the rest private.
-5. Existing test files carry `pytestmark = pytest.mark.legacy`. A legacy
-   file only loses test functions. A test function you change is brought
-   to rules 1 to 3 and moved to the mirror. A legacy test broken by a
-   legitimate change is fixed or replaced by a conforming one, never marked
-   expected to fail or deselected. No marker but `legacy` is added to a
-   legacy file.
+5. Existing test files carry `pytestmark = pytest.mark.legacy`. Do not
+   add, change or delete individual test functions in a legacy file. When
+   a change edits a test in a legacy file or adds or changes tests in its
+   mirror, refurbish the entire legacy file to rules 1 to 4, move its
+   tests to their mirrors, and delete the legacy file. Fix or replace a
+   legacy test that a legitimate change breaks; never mark it expected to
+   fail or deselect it. Add no marker other than `legacy` to a legacy
+   file.
 6. The gate holds rules 1, 3 and 5: `scripts/validate_unittests_follow_conventions.py` runs in
    the `tests` and `build` sessions and in `tests.yml`, comparing legacy
    files with the pull request's base. Its summary line counts the legacy

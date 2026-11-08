@@ -194,9 +194,10 @@ and a second run that passes is a finding, never a pass.
 **Rule.** A unit test file is named after its module and mirrors the
 package tree; a test is a precondition it establishes, one call to a public
 operation, and a postcondition the unit promises; every test says in a
-docstring what contract it tests; existing files are marked legacy and only
-shrink, a touched test is fixed and moved; the gate checks what a machine
-can check and the reviewer checks the rest. A unit test's result depends
+docstring what contract it tests; existing files are marked legacy and are
+retired whole, never edited piecemeal or left beside an active mirror; the
+gate checks what a machine can check and the reviewer checks the rest. A
+unit test's result depends
 on nothing the test did not build: not the clock, not another process,
 not a service, local or remote, not the host it runs on. A unit that needs
 the time is handed the time. A test starts another program only when
@@ -228,8 +229,12 @@ intentional change fail it, and the fix is always to update the string.
 The triple forces the precondition into the open, which is exactly what
 the thirteen had left to chance. The mirror makes the unit obvious before
 the first line is read. The legacy marker turns 1525 existing tests into a
-debt that is paid at the moment someone is already in the file, rather than
-a rewrite nobody will order. The gate carries the mechanical part because a
+debt that is paid whole at the moment someone touches the file or adds unit
+tests for its module, rather than leaving two test files for one unit or a
+rewrite nobody will order. Function-at-a-time shrinkage produced thirty-eight
+mirror files while retiring only two legacy files, splitting one module's
+tests across two places; requiring whole-file retirement finishes each module
+once touched. The gate carries the mechanical part because a
 rule an agent must read is a rule an agent can skim.
 
 The isolation sentences were added on 2026-11-06, when the owner and the

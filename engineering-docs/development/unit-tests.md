@@ -11,8 +11,9 @@ inputs the test constructs, with the clock, other processes and services
 among the inputs, and its docstring states the contract. The companion
 explains why. `scripts/validate_unittests_follow_conventions.py` is the
 gate's check; its summary line counts the files still marked `legacy`. The
-flat files under `tests/` are those legacy files: they only lose tests, and
-a test you change moves to the mirror with you.
+flat files under `tests/` are those legacy files: they are never edited in
+place or shrunk one function at a time, and touching one or adding tests in
+its `tests/unit/` mirror retires the entire legacy file into the mirror.
 
 ## Running them
 
