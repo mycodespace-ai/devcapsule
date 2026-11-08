@@ -1,8 +1,25 @@
 # Design: What DevCapsule Promises About Pinned Components When Upstream Withdraws A File
 
-Status: proposal, first cut for the owner; nothing here is adopted.
+Status: tabled by the owner on 2026-11-08; the owner's position below is
+the standing direction, the mechanisms proposed here are not adopted.
 
-Date: 2026-11-07
+Date: 2026-11-07; owner's position 2026-11-08
+
+## Owner's position, 2026-11-08
+
+The owner tabled the design as a fundamentally hard problem on which they
+have ideas of their own, and set the position the product works toward:
+
+- DevCapsule does its very best to help adopters run identical bytes when
+  they want that and have the resources for it, such as space in Docker or
+  other repositories.
+- DevCapsule also helps adopters keep their projects running in up-to-date,
+  security-patched development environments.
+- When it can do neither, it does not fail silently: it tells the adopter
+  and offers options.
+
+The repin of libsoup for 0.3.1 (PR #10) stands on its own. The rest of this
+note is the first cut as written before the ruling, kept for the reopening.
 
 Author: Claude Code (Claude Fable 5.1) for `maintenance`, at the owner's
 request after the Eclipse libsoup bug of 2026-11-07.
