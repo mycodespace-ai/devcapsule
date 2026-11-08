@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-08; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 (`v0.3.1-rc1` on `accdec5b`) closed the Eclipse libsoup bug, and validation inside `0.3.1rc1` uncovered a blocking delivery bug (`/files`, `/filetree`, and `/api/project/tree` returned `404`); owner decided `D-0017` (`launcher-package` + `source-or-opt-in`), root-cause fix implemented and gated on `ws-maintenance/webconsole-delivery` (2,864 unit, 30 integration, 458 webconsole, live base-Python HTTP smoke green) ready for PR into `release-0.3.1`; Codex 16 MiB npm cap bug also queued before candidate 2; two rulings open
+State: active 2026-11-08; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 (`v0.3.1-rc1` on `accdec5b`) closed the Eclipse libsoup bug, and validation inside `0.3.1rc1` uncovered a blocking delivery bug (`/files`, `/filetree`, and `/api/project/tree` returned `404`); owner decided `D-0017` (`launcher-package` + `source-or-opt-in`), PR #16 reviewed by Claude Code + Claude Fable 5.1 in PR #17 (`e23e22c7`, merged at `9919f4ce` without a round), post-merge gate green (2,884 unit, 1,440 legacy / 0 breaches, 30 integration, 458 webconsole, 249 contract pages, live base-Python HTTP check) and handed to the owner for merge into `release-0.3.1`; Codex 16 MiB npm cap bug also queued before candidate 2; two rulings open
 
 Definition read: WORKFLOW.md@d9a8103606fa, WORKFLOW-LOCAL.md@5b13c6d042d5
 
@@ -41,26 +41,51 @@ and [R-CONSOLE-001](../../requirements/product/r-console-001-capsule-web-console
    `/opt/devcapsule/webconsole` read-only alongside
    `/opt/devcapsule/bin/devcapsule.pex` (bound to `runtime.pex-sha256` in
    formation identity); `container_runtime/console.py` and `console_tools.py`
-   run `/opt/devcapsule-webconsole/venv/bin/python` with
-   `PYTHONPATH=/opt/devcapsule/webconsole` on recipe-11+ bases, falling back to
-   `/opt/devcapsule-webconsole` on older bases.
+   share `console_package_path` (`console.source_path` ->
+   `/opt/devcapsule/webconsole` -> `/opt/devcapsule-webconsole`), while the host
+   launcher settles interpreter compatibility via `WEBCONSOLE_RECIPE` (`11`).
 2. `self-hosting-override = source-or-opt-in`: `is_built_distribution()` in
    `build_info.py` distinguishes built executables from source runs;
    `console_development_source()` leaves `console.source_path == ""` by default
    for built executables even on a DevCapsule checkout, keeps automatic checkout
-   mounting for unbuilt source runs, and honors `DEVCAPSULE_DEV_WEBCONSOLE=1`/`0`.
+   mounting for unbuilt source runs, and honors `DEVCAPSULE_DEV_WEBCONSOLE`
+   (`1`/`true` or `0`/`false`).
 
-All gates passed on `ws-maintenance/webconsole-delivery`: `nox -s build` (mypy
-clean across 331 files, 0 unit-convention breaches, 2,864 unit tests passed,
-98% diff coverage vs `origin/release-0.3.1`, 249-page content contract),
+Opened as PR #16 targeting `release-0.3.1`, then reviewed under Pair Review by
+the Claude Code + Claude Fable 5.1 pair in PR #17 (`PR16.1`, brief under
+`evidence/2026-11-08-webconsole-delivery/review-brief.md`). PR #17 found and
+fixed: the dead per-start `import psutil` subprocess probe (`WEBCONSOLE_RECIPE`
+11 already gates console planning on the host) and duplicated precedence rule;
+`extract_webconsole_bundle` rejecting typeless regular zip members (`0o600`
+from `ZipFile.writestr`, fixed via `stat.S_IFMT`); two refusal tests that had
+raised on that file-type check before reaching their target lines (every refusal
+test now pins `match=`, reaching 99% coverage on `webconsole_bundle.py`); *Unit
+Tests* rule 2 and rule 4 gaps (`__all__` added on `build_info.py` and
+`materialization.py`, `/bin/sh` stubs replaced with in-process tests, legacy
+tests reduced `1,444 -> 1,440`); `DEVCAPSULE_DEV_WEBCONSOLE` restricted to
+`1`/`true`/`0`/`false`; and `D-0017` / bug-record compatibility wording aligned.
+Accepted at `e23e22c7` without a round and merged into
+`ws-maintenance/webconsole-delivery` at `9919f4ce`.
+
+Post-merge gates on `ws-maintenance/webconsole-delivery` passed: `nox -s build`
+(mypy clean across 331 files, 0 unit-convention breaches with 1,440 legacy
+tests, 2,884 unit tests passed, `smoke_pex`, 249-page content contract),
 `nox -s integration` (30 passed, 3 skipped), `nox -s webconsole` (458 passed),
 and a live HTTP check on this capsule's pre-PR-#12 `/opt/devcapsule-webconsole/venv/bin/python`
 serving `/files` (`200`), `/filetree` (`307` -> `/files`), `/api/project/tree`
 (`200`), and `/api/project/raw?path=hello.txt` (`200`) from the bundle inside
-`dist/devcapsule-local.pex` against a non-DevCapsule project. Planned next step:
-push `ws-maintenance/webconsole-delivery` and open the PR targeting
-`release-0.3.1` (with Pair Review if directed by the owner), then address the
-Codex 16 MiB npm cap slice before `v0.3.1-rc2`.
+`dist/devcapsule-local.pex` against a non-DevCapsule project. Four non-blocking
+proposals from PR #17 are retained for `main` follow-up: (1) declare `__all__`
+on `launch/pycharm/_launcher.py` for its pre-existing mirror test file; (2)
+migrate legacy tests that import private `materialization` helpers
+(`_npm_projects`, `_ancillary_contributions`, `_ancillary_environment`,
+`_prepare_locked_artifact`) to `tests/unit/devcapsule/test_materialization.py`;
+(3) share a single "one member by suffix" PEX zip helper between
+`read_pex_build_info` and `extract_webconsole_bundle`; and (4) add a test tying
+`WEBCONSOLE_RECIPE` to `BASE_RECIPE_VERSION` and
+`devcapsule-webconsole/requirements.in`. Planned next step: await the owner's
+merge of PR #16 into `release-0.3.1`, then implement the Codex 16 MiB npm cap
+slice before `v0.3.1-rc2`.
 
 ## Slice 2 of 0.3.1: the web console's Files page, by Pair Review — 2026-11-08
 
