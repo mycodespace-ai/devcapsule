@@ -1,8 +1,8 @@
 {
   "format": 1,
-  "generated_at": "2026-11-08T01:56:40.744559+00:00",
-  "expires_at": "2026-11-11T01:56:40.744559+00:00",
-  "source_revision": "8c5a472320e042cbb2614a0fb055855bbb42624a",
+  "generated_at": "2026-11-08T13:38:35.009273+00:00",
+  "expires_at": "2026-11-11T13:38:35.009273+00:00",
+  "source_revision": "46ded16d83290b4e532f2362b3e3c70ef0bd6ff2",
   "cli_version": "0.3.2.dev0",
   "advisories": [],
   "observations": [
@@ -11,10 +11,10 @@
       "adapter": "eclipse-v1",
       "platform": "linux-amd64",
       "current": "2026-09-R",
-      "checked_at": "2026-11-08T01:56:40.744559+00:00",
+      "checked_at": "2026-11-08T13:38:35.009273+00:00",
       "result": "ok",
       "source": "https://www.eclipse.org/downloads/packages/",
-      "last_success_at": "2026-11-08T01:56:40.744559+00:00",
+      "last_success_at": "2026-11-08T13:38:35.009273+00:00",
       "consecutive_failures": 0,
       "candidates": [],
       "current_status": "available",
@@ -25,10 +25,10 @@
       "adapter": "intellij-v1",
       "platform": "linux-amd64",
       "current": "2026.2.3",
-      "checked_at": "2026-11-08T01:56:40.744559+00:00",
+      "checked_at": "2026-11-08T13:38:35.009273+00:00",
       "result": "ok",
       "source": "https://data.services.jetbrains.com/products/releases?code=IIU&latest=true&type=release",
-      "last_success_at": "2026-11-08T01:56:40.744559+00:00",
+      "last_success_at": "2026-11-08T13:38:35.009273+00:00",
       "consecutive_failures": 0,
       "candidates": [
         "2026.3"
@@ -41,10 +41,10 @@
       "adapter": "playwright-v1",
       "platform": "linux-amd64",
       "current": "1.63.0",
-      "checked_at": "2026-11-08T01:56:40.744559+00:00",
+      "checked_at": "2026-11-08T13:38:35.009273+00:00",
       "result": "ok",
       "source": "https://pypi.org/pypi/playwright/json",
-      "last_success_at": "2026-11-08T01:56:40.744559+00:00",
+      "last_success_at": "2026-11-08T13:38:35.009273+00:00",
       "consecutive_failures": 0,
       "candidates": [
         "1.64.1"
@@ -57,10 +57,10 @@
       "adapter": "pycharm-v1",
       "platform": "linux-amd64",
       "current": "2026.2.0.1",
-      "checked_at": "2026-11-08T01:56:40.744559+00:00",
+      "checked_at": "2026-11-08T13:38:35.009273+00:00",
       "result": "ok",
       "source": "https://data.services.jetbrains.com/products/releases?code=PY&latest=true&type=release",
-      "last_success_at": "2026-11-08T01:56:40.744559+00:00",
+      "last_success_at": "2026-11-08T13:38:35.009273+00:00",
       "consecutive_failures": 0,
       "candidates": [
         "2026.3"
@@ -73,10 +73,10 @@
       "adapter": "codium-v1",
       "platform": "linux-amd64",
       "current": "1.126.04524",
-      "checked_at": "2026-11-08T01:56:40.744559+00:00",
+      "checked_at": "2026-11-08T13:38:35.009273+00:00",
       "result": "ok",
       "source": "https://api.github.com/repos/VSCodium/vscodium/releases/latest",
-      "last_success_at": "2026-11-08T01:56:40.744559+00:00",
+      "last_success_at": "2026-11-08T13:38:35.009273+00:00",
       "consecutive_failures": 0,
       "candidates": [
         "1.143.17232"
@@ -89,10 +89,10 @@
       "adapter": "vscode-v1",
       "platform": "linux-amd64",
       "current": "1.143.1",
-      "checked_at": "2026-11-08T01:56:40.744559+00:00",
+      "checked_at": "2026-11-08T13:38:35.009273+00:00",
       "result": "ok",
       "source": "https://update.code.visualstudio.com/api/update/linux-x64/stable/latest",
-      "last_success_at": "2026-11-08T01:56:40.744559+00:00",
+      "last_success_at": "2026-11-08T13:38:35.009273+00:00",
       "consecutive_failures": 0,
       "candidates": [
         "1.145.2"
@@ -105,9 +105,9 @@
       "adapter": "codex-v1",
       "platform": "linux-amd64",
       "current": "0.153.4",
-      "checked_at": "2026-11-08T01:56:40.744559+00:00",
+      "checked_at": "2026-11-08T13:38:35.009273+00:00",
       "result": "inconclusive",
-      "consecutive_failures": 45,
+      "consecutive_failures": 46,
       "error": "CliError",
       "detail": "Distribution check unavailable at https://registry.npmjs.org/@openai%2Fcodex: metadata exceeds 16 MiB. Retry 'project versions check'; saved choices are unchanged.",
       "last_success_at": "2026-10-01T06:52:01.142796+00:00"
@@ -117,10 +117,10 @@
       "adapter": "claude-code-v1",
       "platform": "linux-amd64",
       "current": "2.1.261",
-      "checked_at": "2026-11-08T01:56:40.744559+00:00",
+      "checked_at": "2026-11-08T13:38:35.009273+00:00",
       "result": "ok",
       "source": "https://downloads.claude.ai/claude-code-releases/latest",
-      "last_success_at": "2026-11-08T01:56:40.744559+00:00",
+      "last_success_at": "2026-11-08T13:38:35.009273+00:00",
       "consecutive_failures": 0,
       "candidates": [
         "2.1.319"
@@ -133,10 +133,10 @@
       "adapter": "antigravity-cli-v1",
       "platform": "linux-amd64",
       "current": "1.1.24",
-      "checked_at": "2026-11-08T01:56:40.744559+00:00",
+      "checked_at": "2026-11-08T13:38:35.009273+00:00",
       "result": "ok",
       "source": "https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests/linux_amd64.json",
-      "last_success_at": "2026-11-08T01:56:40.744559+00:00",
+      "last_success_at": "2026-11-08T13:38:35.009273+00:00",
       "consecutive_failures": 0,
       "candidates": [
         "1.5.3"
@@ -149,10 +149,10 @@
       "adapter": "postgresql-client-v1",
       "platform": "linux-amd64",
       "current": "16",
-      "checked_at": "2026-11-08T01:56:40.744559+00:00",
+      "checked_at": "2026-11-08T13:38:35.009273+00:00",
       "result": "ok",
       "source": "https://www.postgresql.org/versions.json",
-      "last_success_at": "2026-11-08T01:56:40.744559+00:00",
+      "last_success_at": "2026-11-08T13:38:35.009273+00:00",
       "consecutive_failures": 0,
       "candidates": [],
       "current_status": "available",
@@ -163,10 +163,10 @@
       "adapter": "dotnet-sdk-v1",
       "platform": "linux-amd64",
       "current": "10.0.401",
-      "checked_at": "2026-11-08T01:56:40.744559+00:00",
+      "checked_at": "2026-11-08T13:38:35.009273+00:00",
       "result": "ok",
       "source": "https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json",
-      "last_success_at": "2026-11-08T01:56:40.744559+00:00",
+      "last_success_at": "2026-11-08T13:38:35.009273+00:00",
       "consecutive_failures": 0,
       "candidates": [
         "10.0.403"
@@ -179,10 +179,10 @@
       "adapter": "rider-v1",
       "platform": "linux-amd64",
       "current": "2026.2.3.1",
-      "checked_at": "2026-11-08T01:56:40.744559+00:00",
+      "checked_at": "2026-11-08T13:38:35.009273+00:00",
       "result": "ok",
       "source": "https://data.services.jetbrains.com/products/releases?code=RD&latest=true&type=release",
-      "last_success_at": "2026-11-08T01:56:40.744559+00:00",
+      "last_success_at": "2026-11-08T13:38:35.009273+00:00",
       "consecutive_failures": 0,
       "candidates": [
         "2026.2.4.1"
