@@ -2,22 +2,41 @@
 
 Every request carries the token or is refused; the token arrives in the URL
 the launcher prints and is kept in a port-scoped cookie from then on. Every
-file the console reads lies inside the project mount; a path that escapes it is
-refused before its contents are read.
+file or directory the console reads lies inside the project mount; a path that
+escapes it is refused before its contents are read. Public operations on the
+project mount are ``confine``, ``list_project_directory``, ``open_project_file``,
+``read_project_bytes`` and ``read_project_text``.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from contextlib import ExitStack
+from collections.abc import Iterator, Sequence
+from contextlib import ExitStack, contextmanager
+from datetime import datetime, timezone
 import errno
 import os
 from pathlib import Path
 import secrets
 import stat
+from typing import Any, BinaryIO
 from urllib.parse import parse_qs, urlsplit
 
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+__all__ = [
+    "PathRefused",
+    "REFUSAL_BODY",
+    "TOKEN_COOKIE",
+    "TOKEN_HEADER",
+    "TOKEN_QUERY_PARAMETER",
+    "TokenGate",
+    "confine",
+    "list_project_directory",
+    "open_project_file",
+    "read_project_bytes",
+    "read_project_text",
+    "token_cookie_name",
+]
 
 TOKEN_QUERY_PARAMETER = "token"
 TOKEN_COOKIE = "devcapsule-console-token"
@@ -180,34 +199,128 @@ def read_project_text(root: Path, requested: str) -> str:
     return read_project_bytes(root, requested).decode("utf-8")
 
 
-def read_project_bytes(root: Path, requested: str) -> bytes:
-    """Resolve inside the mount, then open without following replacement links.
+@contextmanager
+def open_project_file(root: Path, requested: str) -> Iterator[tuple[BinaryIO, int]]:
+    """Resolve inside the mount, open without following replacement links, and yield ``(stream, size)``.
 
     A pathname check alone is insufficient: an editor or agent can replace
     the file or a parent directory between resolution and open. Directory
-    descriptors anchor each lookup; O_NOFOLLOW refuses a substituted symlink.
-    Internal symlinks still work because confine resolves them first.
+    descriptors anchor each lookup; O_NOFOLLOW refuses a substituted symlink,
+    and parent descriptors close before the file stream is yielded. Internal
+    symlinks still work because confine resolves them first.
     """
     base = root.resolve()
     resolved = confine(base, requested)
     parts = resolved.relative_to(base).parts
     if not parts:
         raise FileNotFoundError(requested)
-    with ExitStack() as opened:
-        directory = os.open(base, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-        opened.callback(os.close, directory)
-        try:
-            for part in parts[:-1]:
-                directory = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=directory)
-                opened.callback(os.close, directory)
-            # Do not block if a regular file was replaced by a FIFO.
-            descriptor = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
-        except OSError as error:
-            if error.errno in (errno.ELOOP, errno.ENOTDIR):
-                raise PathRefused(f"path {requested!r} changed during the read") from error
-            raise
-        opened.callback(os.close, descriptor)
-        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+    with ExitStack() as file_opened:
+        with ExitStack() as directories:
+            try:
+                directory = os.open(base, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+                directories.callback(os.close, directory)
+                for part in parts[:-1]:
+                    directory = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=directory)
+                    directories.callback(os.close, directory)
+                # Do not block if a regular file was replaced by a FIFO.
+                descriptor = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
+            except OSError as error:
+                if error.errno in (errno.ELOOP, errno.ENOTDIR):
+                    raise PathRefused(f"path {requested!r} changed during the read") from error
+                raise
+            file_opened.callback(os.close, descriptor)
+        info = os.fstat(descriptor)
+        if not stat.S_ISREG(info.st_mode):
             raise FileNotFoundError(requested)
         with os.fdopen(descriptor, "rb", closefd=False) as stream:
-            return stream.read()
+            yield stream, info.st_size
+
+
+def read_project_bytes(root: Path, requested: str) -> bytes:
+    """Resolve inside the mount, then read all bytes without following replacement links."""
+    with open_project_file(root, requested) as (stream, _):
+        return stream.read()
+
+
+def _open_directory_step(parent_fd: int | None, target: Path | str, requested: str, *, is_last: bool) -> int:
+    try:
+        if parent_fd is None:
+            return os.open(target, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        return os.open(target, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent_fd)
+    except OSError as error:
+        if error.errno == errno.ELOOP:
+            raise PathRefused(f"path {requested!r} changed during the read") from error
+        if error.errno == errno.ENOTDIR:
+            try:
+                mode = (
+                    os.lstat(target).st_mode
+                    if parent_fd is None
+                    else os.stat(target, dir_fd=parent_fd, follow_symlinks=False).st_mode
+                )
+            except FileNotFoundError:
+                raise
+            except OSError as stat_error:
+                raise PathRefused(f"path {requested!r} changed during the read") from stat_error
+            if stat.S_ISLNK(mode):
+                raise PathRefused(f"path {requested!r} changed during the read") from error
+            if not is_last:
+                raise FileNotFoundError(requested) from error
+        raise
+
+
+def _entry_name(raw_name: str) -> str:
+    try:
+        raw_name.encode("utf-8")
+        return raw_name
+    except UnicodeEncodeError:
+        return raw_name.encode("utf-8", "surrogateescape").decode("utf-8", "replace")
+
+
+def list_project_directory(root: Path, requested: str = "") -> dict[str, Any]:
+    """List one directory inside ``root`` without following entry links.
+
+    ``requested`` is empty for the project root, or a relative directory path
+    inside ``root`` checked with ``confine``. Each step from ``root`` opens by
+    descriptor with ``O_DIRECTORY | O_NOFOLLOW`` so a directory replaced by a
+    symbolic link after resolution is refused with ``PathRefused``. Entries are
+    inspected with ``lstat`` and sorted directories first, then non-directories,
+    each group by ``name.casefold()``.
+    """
+    base = root.resolve()
+    if requested == "":
+        parts: tuple[str, ...] = ()
+        clean_path = ""
+    else:
+        resolved = confine(base, requested)
+        parts = resolved.relative_to(base).parts
+        clean_path = "/".join(part for part in Path(requested).parts if part != ".")
+    entries: list[dict[str, Any]] = []
+    with ExitStack() as opened:
+        directory = _open_directory_step(None, base, requested, is_last=not parts)
+        opened.callback(os.close, directory)
+        for index, part in enumerate(parts):
+            directory = _open_directory_step(directory, part, requested, is_last=index == len(parts) - 1)
+            opened.callback(os.close, directory)
+        with os.scandir(directory) as iterator:
+            for entry in iterator:
+                try:
+                    info = entry.stat(follow_symlinks=False)
+                except FileNotFoundError:
+                    continue
+                mode = info.st_mode
+                if stat.S_ISLNK(mode):
+                    kind = "link"
+                elif stat.S_ISDIR(mode):
+                    kind = "directory"
+                elif stat.S_ISREG(mode):
+                    kind = "file"
+                else:
+                    kind = "other"
+                entries.append({
+                    "name": _entry_name(entry.name),
+                    "kind": kind,
+                    "size": info.st_size if kind == "file" else None,
+                    "modified": datetime.fromtimestamp(info.st_mtime, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                })
+    entries.sort(key=lambda item: (item["kind"] != "directory", item["name"].casefold(), item["name"]))
+    return {"path": clean_path, "entries": entries}
