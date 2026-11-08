@@ -139,6 +139,7 @@ status file; internal WIP/archive documents use the local index in that status.
 
 ## Work Orders
 
+- [Test improvements: declared public surfaces, no patching of project modules, the discovery module first](engineering-docs/work-orders/2026-11-08-test-improvements.md)
 - [Wrapped projects: a foreign repository as a submodule, three commands](engineering-docs/work-orders/2026-11-02-wrapped-projects.md)
 - [0.3.0 user documentation CLI alignment, full stub authoring, and prose review — maintenance, 0.3.0](engineering-docs/work-orders/2026-10-30-user-docs-0-3-0-cli-alignment.md)
 - [CI path gating and advisory diff coverage — maintenance, 0.3.0](engineering-docs/work-orders/2026-10-30-ci-path-gating-and-diff-coverage.md)
