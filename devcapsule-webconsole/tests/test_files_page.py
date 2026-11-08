@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 import errno
 import os
 from pathlib import Path
 import shutil
 import subprocess
+from typing import BinaryIO
 
 from fastapi.testclient import TestClient
 import pytest
 
 from conftest import with_token
+from devcapsule_webconsole import app as console_app
 from devcapsule_webconsole.security import PathRefused, list_project_directory, open_project_file
 
 
@@ -285,4 +289,154 @@ def test_files_script_behaviour() -> None:
     if node is None:
         pytest.skip("Node is a development-only script test dependency")
     subprocess.run([node, str(Path(__file__).with_name("files-script.cjs"))], check=True)
+
+
+def test_raw_route_serves_full_file_in_chunks_with_accept_ranges(
+    client: TestClient, project: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """GET /api/project/raw streams the file in bounded chunks and advertises Accept-Ranges on 200."""
+    payload = bytes(index % 251 for index in range(160 * 1024))
+    (project / "docs" / "clip.webm").write_bytes(payload)
+    read_sizes: list[int] = []
+
+    @contextmanager
+    def observed_open(root: Path, requested: str) -> Iterator[tuple[BinaryIO, int]]:
+        with open_project_file(root, requested) as (stream, size):
+            class ObservedStream:
+                def seek(self, offset: int) -> int:
+                    return stream.seek(offset)
+
+                def read(self, count: int = -1) -> bytes:
+                    read_sizes.append(count)
+                    return stream.read(count)
+
+            yield ObservedStream(), size  # type: ignore[misc]
+
+    monkeypatch.setattr(console_app, "open_project_file", observed_open)
+
+    response = with_token(client).get("/api/project/raw", params={"path": "docs/clip.webm"})
+
+    assert response.status_code == 200
+    assert response.content == payload
+    assert response.headers["accept-ranges"] == "bytes"
+    assert response.headers["content-length"] == str(len(payload))
+    assert response.headers["content-security-policy"] == "sandbox; default-src 'none'; style-src 'unsafe-inline'"
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert "content-range" not in response.headers
+    assert "content-disposition" not in response.headers
+    assert len(read_sizes) == 3
+    assert max(read_sizes) <= console_app.RAW_CHUNK_BYTES
+
+
+@pytest.mark.parametrize(
+    ("range_header", "expected_status", "expected_body", "expected_content_range"),
+    [
+        ("bytes=2-5", 206, b"2345", "bytes 2-5/10"),
+        ("bytes=2-99", 206, b"23456789", "bytes 2-9/10"),
+        ("bytes=6-", 206, b"6789", "bytes 6-9/10"),
+        ("bytes=-4", 206, b"6789", "bytes 6-9/10"),
+        ("bytes=-99", 206, b"0123456789", "bytes 0-9/10"),
+        ("bytes=0-2, 6-8", 200, b"0123456789", None),
+    ],
+)
+def test_raw_route_honours_single_byte_ranges_and_multi_range_fallback(
+    client: TestClient,
+    project: Path,
+    range_header: str,
+    expected_status: int,
+    expected_body: bytes,
+    expected_content_range: str | None,
+) -> None:
+    """GET /api/project/raw answers single byte ranges with 206 and multiple ranges with the full 200 body."""
+    (project / "docs" / "digits.bin").write_bytes(b"0123456789")
+
+    response = with_token(client).get(
+        "/api/project/raw",
+        params={"path": "docs/digits.bin"},
+        headers={"Range": range_header},
+    )
+
+    assert response.status_code == expected_status
+    assert response.content == expected_body
+    assert response.headers["accept-ranges"] == "bytes"
+    assert response.headers["content-length"] == str(len(expected_body))
+    assert response.headers["content-security-policy"] == "sandbox; default-src 'none'; style-src 'unsafe-inline'"
+    assert response.headers["x-content-type-options"] == "nosniff"
+    if expected_content_range is None:
+        assert "content-range" not in response.headers
+    else:
+        assert response.headers["content-range"] == expected_content_range
+
+
+@pytest.mark.parametrize(
+    ("file_bytes", "range_header", "expected_content_range"),
+    [
+        (b"0123456789", "bytes=10-12", "bytes */10"),
+        (b"0123456789", "bytes=10-", "bytes */10"),
+        (b"0123456789", "bytes=5-2", "bytes */10"),
+        (b"0123456789", "bytes=-0", "bytes */10"),
+        (b"0123456789", "bytes=-", "bytes */10"),
+        (b"0123456789", "bytes=invalid", "bytes */10"),
+        (b"", "bytes=0-0", "bytes */0"),
+    ],
+)
+def test_raw_route_rejects_unsatisfiable_ranges_with_416_and_isolation_headers(
+    client: TestClient,
+    project: Path,
+    file_bytes: bytes,
+    range_header: str,
+    expected_content_range: str,
+) -> None:
+    """Unsatisfiable byte ranges return 416 with Content-Range bytes */<size> and keep sandbox and nosniff headers."""
+    (project / "docs" / "bounded.bin").write_bytes(file_bytes)
+
+    response = with_token(client).get(
+        "/api/project/raw",
+        params={"path": "docs/bounded.bin"},
+        headers={"Range": range_header},
+    )
+
+    assert response.status_code == 416
+    assert response.content == b""
+    assert response.headers["content-range"] == expected_content_range
+    assert response.headers["accept-ranges"] == "bytes"
+    assert response.headers["content-security-policy"] == "sandbox; default-src 'none'; style-src 'unsafe-inline'"
+    assert response.headers["x-content-type-options"] == "nosniff"
+
+
+@pytest.mark.parametrize(
+    ("filename", "download", "expected_disposition"),
+    [
+        ("guide.md", "1", "attachment; filename=\"guide.md\"; filename*=UTF-8''guide.md"),
+        (
+            'résumé "2026".txt',
+            "1",
+            "attachment; filename=\"r_sum_ _2026_.txt\"; filename*=UTF-8''r%C3%A9sum%C3%A9%20%222026%22.txt",
+        ),
+        ("guide.md", None, None),
+        ("guide.md", "0", None),
+    ],
+)
+def test_raw_route_adds_attachment_disposition_only_when_download_is_one(
+    client: TestClient,
+    project: Path,
+    filename: str,
+    download: str | None,
+    expected_disposition: str | None,
+) -> None:
+    """download=1 adds Content-Disposition with an ASCII fallback and UTF-8 filename*, while omitting it leaves headers unchanged."""
+    target = project / "docs" / filename
+    target.write_text("content\n", encoding="utf-8")
+    params = {"path": f"docs/{filename}"}
+    if download is not None:
+        params["download"] = download
+
+    response = with_token(client).get("/api/project/raw", params=params)
+
+    assert response.status_code == 200
+    if expected_disposition is None:
+        assert "content-disposition" not in response.headers
+    else:
+        assert response.headers["content-disposition"] == expected_disposition
+
 

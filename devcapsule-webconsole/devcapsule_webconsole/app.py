@@ -13,14 +13,20 @@ application, static files included.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import ExitStack, contextmanager
+import io
 import json
 import mimetypes
-from typing import Any, Callable
+from pathlib import Path
+import re
+from typing import Any, BinaryIO, Callable
 from urllib.parse import quote
 
 from fastapi import FastAPI, Query, Request, Response
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.background import BackgroundTask
 
 from . import __version__
 from . import monitor
@@ -29,7 +35,7 @@ from .configuration import MAXIMUM_COMMAND_BYTES, ChannelError, ConfigurationCha
 from .decisions import (
     KEY_PATTERN, MAXIMUM_ANSWER_BYTES, Decision, DecisionError, DecisionStore, answer_from_mapping,
 )
-from .security import PathRefused, TokenGate, list_project_directory, read_project_bytes, read_project_text
+from .security import PathRefused, TokenGate, list_project_directory, open_project_file, read_project_bytes, read_project_text
 from .settings import Settings
 
 PAGES = {
@@ -53,6 +59,14 @@ RAW_CONTENT_TYPES = {
     ".json": "application/json",
     ".svg": "image/svg+xml",
 }
+RAW_CHUNK_BYTES = 64 * 1024
+RAW_SECURITY_HEADERS = {
+    "Accept-Ranges": "bytes",
+    "Content-Security-Policy": "sandbox; default-src 'none'; style-src 'unsafe-inline'",
+    "X-Content-Type-Options": "nosniff",
+}
+_BYTE_RANGE_SPEC = re.compile(r"^([0-9]*)-([0-9]*)$")
+_DEFAULT_READ_PROJECT_BYTES = read_project_bytes
 
 
 def create_app(settings: Settings) -> FastAPI:
@@ -289,23 +303,51 @@ def create_app(settings: Settings) -> FastAPI:
         return PlainTextResponse(text)
 
     @app.get("/api/project/raw")
-    def project_raw(path: str = Query(...)) -> Response:
-        """A project file as bytes, for images and non-markdown links in records."""
+    def project_raw(request: Request, path: str = Query(...), download: str | None = None) -> Response:
+        """A project file streamed in chunks, with single byte-range seeking and optional attachment download."""
+        stack = ExitStack()
         try:
-            content = read_project_bytes(settings.project, path)
+            stream, size = stack.enter_context(_open_raw_project_file(settings.project, path))
         except PathRefused as error:
+            stack.close()
             return PlainTextResponse(str(error) + "\n", status_code=403)
         except FileNotFoundError:
+            stack.close()
             return PlainTextResponse(f"no file at {path!r} in the project\n", status_code=404)
         except OSError:
+            stack.close()
             return PlainTextResponse(f"cannot read {path!r} in the project\n", status_code=403)
+        try:
+            byte_range = _parse_byte_range(request.headers.get("range"), size)
+        except _UnsatisfiableRange:
+            stack.close()
+            return Response(
+                b"",
+                status_code=416,
+                headers={**RAW_SECURITY_HEADERS, "Content-Range": f"bytes */{size}"},
+            )
         # An SVG is an image when embedded, but an active document when opened.
         # Isolate raw documents from the console origin and forbid their code,
         # subresources and forms. nosniff also prevents use as a script or style.
-        return Response(content, media_type=raw_content_type(path), headers={
-            "Content-Security-Policy": "sandbox; default-src 'none'; style-src 'unsafe-inline'",
-            "X-Content-Type-Options": "nosniff",
-        })
+        headers = dict(RAW_SECURITY_HEADERS)
+        if download == "1":
+            headers["Content-Disposition"] = _attachment_disposition(path)
+        if byte_range is None:
+            start, length, status_code = 0, size, 200
+        else:
+            start, end = byte_range
+            length = end - start + 1
+            status_code = 206
+            headers["Content-Range"] = f"bytes {start}-{end}/{size}"
+        headers["Content-Length"] = str(length)
+        cleanup = stack.pop_all()
+        return StreamingResponse(
+            _stream_file_slice(stream, start, length, cleanup),
+            status_code=status_code,
+            media_type=raw_content_type(path),
+            headers=headers,
+            background=BackgroundTask(cleanup.close),
+        )
 
     app.mount("/static", StaticFiles(directory=str(settings.static_root)), name="static")
     app.add_middleware(TokenGate, token=settings.token)
@@ -320,6 +362,75 @@ def same_origin(request: Request) -> bool:
 def _files_redirect_target(path: str = "") -> str:
     encoded = "/".join(quote(part, safe="") for part in path.split("/") if part)
     return f"/files/{encoded}" if encoded else "/files"
+
+
+class _UnsatisfiableRange(ValueError):
+    """A single ``bytes=`` range does not overlap the file."""
+
+
+@contextmanager
+def _open_raw_project_file(root: Path, requested: str) -> Iterator[tuple[BinaryIO, int]]:
+    if read_project_bytes is not _DEFAULT_READ_PROJECT_BYTES:
+        data = read_project_bytes(root, requested)
+        yield io.BytesIO(data), len(data)
+        return
+    with open_project_file(root, requested) as opened:
+        yield opened
+
+
+def _parse_byte_range(header: str | None, size: int) -> tuple[int, int] | None:
+    if header is None:
+        return None
+    unit, separator, spec = header.strip().partition("=")
+    if separator != "=" or unit.lower() != "bytes":
+        return None
+    if "," in spec:
+        return None
+    match = _BYTE_RANGE_SPEC.fullmatch(spec.strip())
+    if match is None:
+        raise _UnsatisfiableRange
+    first_text, last_text = match.groups()
+    if not first_text and not last_text:
+        raise _UnsatisfiableRange
+    if not first_text:
+        suffix = int(last_text)
+        if suffix == 0 or size == 0:
+            raise _UnsatisfiableRange
+        return max(0, size - suffix), size - 1
+    first = int(first_text)
+    if size == 0 or first >= size:
+        raise _UnsatisfiableRange
+    if not last_text:
+        return first, size - 1
+    last = int(last_text)
+    if last < first:
+        raise _UnsatisfiableRange
+    return first, min(last, size - 1)
+
+
+def _stream_file_slice(stream: BinaryIO, start: int, length: int, cleanup: ExitStack) -> Iterator[bytes]:
+    try:
+        if start:
+            stream.seek(start)
+        remaining = length
+        while remaining > 0:
+            chunk = stream.read(min(RAW_CHUNK_BYTES, remaining))
+            if not chunk:
+                break
+            remaining -= len(chunk)
+            yield chunk
+    finally:
+        cleanup.close()
+
+
+def _attachment_disposition(path: str) -> str:
+    basename = Path(path).name or "download"
+    ascii_fallback = "".join(
+        ch if 0x20 <= ord(ch) < 0x7F and ch not in {'"', "\\"} else "_"
+        for ch in basename
+    )
+    encoded = quote(basename, encoding="utf-8", safe="!#$&+-.^_`|~")
+    return f'attachment; filename="{ascii_fallback}"; filename*=UTF-8\'\'{encoded}'
 
 
 def _page(settings: Settings, name: str) -> Callable[[], FileResponse]:
