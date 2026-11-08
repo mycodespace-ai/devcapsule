@@ -2,6 +2,12 @@
 
 Hashes are from Ubuntu signed APT metadata, verified against downloaded bytes.
 Packages install offline; the host environment is never modified.
+
+Repinned 2026-11-07: Ubuntu removed libsoup 3.4.4-5ubuntu0.8 from every noble
+pocket on 2026-10-08, so both libsoup packages are 3.4.4-5ubuntu0.10, the one
+build the archive serves, with hashes from the signed noble-updates index.
+The archive keeps one build of a package per series; a pinned URL answers
+404 once a stable or security update replaces it.
 """
 
 PACKAGES = {'bubblewrap': {'sha256': '2461f1beee9cb04c8942739fe1a2b37e7b7c2a3d518f0779dc75f9245baa3094',
@@ -142,12 +148,12 @@ PACKAGES = {'bubblewrap': {'sha256': '2461f1beee9cb04c8942739fe1a2b37e7b7c2a3d51
  'libsndfile1': {'sha256': 'fe2461b27e747fa88ede157ea39c6379e2101c280a730cda9c825f566a3808e5',
                  'url': 'https://archive.ubuntu.com/ubuntu/pool/main/libs/libsndfile/libsndfile1_1.2.2-1ubuntu5.24.04.1_amd64.deb',
                  'version': '1.2.2-1ubuntu5.24.04.1'},
- 'libsoup-3.0-0': {'sha256': '2e1c12d3264f7960f948a5d1b1ed924f588cfa35241d7af38d13a5a92fb10f3b',
-                   'url': 'https://archive.ubuntu.com/ubuntu/pool/main/libs/libsoup3/libsoup-3.0-0_3.4.4-5ubuntu0.8_amd64.deb',
-                   'version': '3.4.4-5ubuntu0.8'},
- 'libsoup-3.0-common': {'sha256': '175a3d508eb94e2d676d4f68fb67961a4600426598ce6ee1838c8207e1d947c4',
-                        'url': 'https://archive.ubuntu.com/ubuntu/pool/main/libs/libsoup3/libsoup-3.0-common_3.4.4-5ubuntu0.8_all.deb',
-                        'version': '3.4.4-5ubuntu0.8'},
+ 'libsoup-3.0-0': {'sha256': 'c2acdf204d37613bddae570fcf0c579f5422655e74df625bee636a29969fe6c5',
+                   'url': 'https://archive.ubuntu.com/ubuntu/pool/main/libs/libsoup3/libsoup-3.0-0_3.4.4-5ubuntu0.10_amd64.deb',
+                   'version': '3.4.4-5ubuntu0.10'},
+ 'libsoup-3.0-common': {'sha256': '89f066fe021cb2991750dc9a65fb64cc24a467ab32b5a1a722e377244b6fda4c',
+                        'url': 'https://archive.ubuntu.com/ubuntu/pool/main/libs/libsoup3/libsoup-3.0-common_3.4.4-5ubuntu0.10_all.deb',
+                        'version': '3.4.4-5ubuntu0.10'},
  'libspeex1': {'sha256': '12d57caab1e3fa847cd385a21c1044f7d38209e97b0f87372fe41e346c2c17f7',
                'url': 'https://archive.ubuntu.com/ubuntu/pool/main/s/speex/libspeex1_1.2.1-2ubuntu2.24.04.1_amd64.deb',
                'version': '1.2.1-2ubuntu2.24.04.1'},

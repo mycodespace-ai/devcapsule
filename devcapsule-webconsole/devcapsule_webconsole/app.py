@@ -1,24 +1,31 @@
-"""The FastAPI application: pages, their JSON, records, monitoring, decisions and notifications.
+"""The FastAPI application: pages, their JSON, records, files, monitoring, decisions and notifications.
 
 Writes stay in capsule state: decision answers, notifications read or
 dismissed through the runtime CLI, and configuration requests the launcher
 answers through its mounted channel. Every other route is ``GET``. The pages are static
 files that fetch their facts from the ``/api`` routes, which run the
-runtime CLI, read the capsule's processes and cgroup, read a file inside
+runtime CLI, read the capsule's processes and cgroup, list or read inside
 the project mount, or read the decisions directory. The records page
-renders any markdown file of the project in the browser. The token gate
-wraps the whole application, static files included.
+renders any markdown file of the project in the browser, and the files page
+lists and serves the mounted project's files. The token gate wraps the whole
+application, static files included.
 """
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import ExitStack
 import json
 import mimetypes
-from typing import Any, Callable
+from pathlib import Path
+import re
+from typing import Any, BinaryIO, Callable
+from urllib.parse import quote
 
 from fastapi import FastAPI, Query, Request, Response
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.background import BackgroundTask
 
 from . import __version__
 from . import monitor
@@ -27,7 +34,7 @@ from .configuration import MAXIMUM_COMMAND_BYTES, ChannelError, ConfigurationCha
 from .decisions import (
     KEY_PATTERN, MAXIMUM_ANSWER_BYTES, Decision, DecisionError, DecisionStore, answer_from_mapping,
 )
-from .security import PathRefused, TokenGate, read_project_bytes, read_project_text
+from .security import PathRefused, TokenGate, list_project_directory, open_project_file, read_project_text
 from .settings import Settings
 
 PAGES = {
@@ -37,19 +44,43 @@ PAGES = {
     "/project": "project.html",
     "/processes": "processes.html",
     "/records": "records.html",
+    "/files": "files.html",
     "/decisions": "decisions.html",
     "/notifications": "notifications.html",
 }
-# What a raw project file is served as, by extension. Markdown is text so a
-# browser shows it; anything unknown is bytes a browser offers to save.
-# SVG can contain active content. The raw route isolates every response below.
+# What a raw project file is served as when mimetypes.guess_type and the
+# image/video/audio/text rules in raw_content_type would not give it across
+# platforms. Markdown is text so a browser shows it; anything unknown is bytes
+# a browser offers to save. SVG can contain active content; the raw route
+# isolates every response below.
 RAW_CONTENT_TYPES = {
     ".md": "text/markdown; charset=utf-8",
     ".txt": "text/plain; charset=utf-8",
     ".toml": "text/plain; charset=utf-8",
+    ".yaml": "text/plain; charset=utf-8",
+    ".yml": "text/plain; charset=utf-8",
+    ".lock": "text/plain; charset=utf-8",
+    ".cfg": "text/plain; charset=utf-8",
+    ".ini": "text/plain; charset=utf-8",
+    ".cjs": "text/plain; charset=utf-8",
+    ".sh": "text/plain; charset=utf-8",
+    ".log": "text/plain; charset=utf-8",
+    ".xml": "text/plain; charset=utf-8",
     ".json": "application/json",
+    ".pdf": "application/pdf",
     ".svg": "image/svg+xml",
+    ".webp": "image/webp",
+    ".mkv": "video/x-matroska",
+    ".ogg": "audio/ogg",
+    ".wav": "audio/wav",
 }
+RAW_CHUNK_BYTES = 64 * 1024
+RAW_SECURITY_HEADERS = {
+    "Accept-Ranges": "bytes",
+    "Content-Security-Policy": "sandbox; default-src 'none'; style-src 'unsafe-inline'",
+    "X-Content-Type-Options": "nosniff",
+}
+_BYTE_RANGE_SPEC = re.compile(r"^([0-9]*)-([0-9]*)$")
 
 
 def create_app(settings: Settings) -> FastAPI:
@@ -65,9 +96,19 @@ def create_app(settings: Settings) -> FastAPI:
 
     for route, page in PAGES.items():
         app.add_api_route(route, _page(settings, page), methods=["GET"], include_in_schema=False)
-    # One page for every record: the script reads the path from the URL.
+    # One page for every record or directory: the script reads the path from the URL.
     app.add_api_route("/records/{record:path}", _page(settings, "records.html"), methods=["GET"], include_in_schema=False)
+    app.add_api_route("/files/{path:path}", _page(settings, "files.html"), methods=["GET"], include_in_schema=False)
     app.add_api_route("/decisions/{decision_id}", _page(settings, "decisions.html"), methods=["GET"], include_in_schema=False)
+
+    @app.get("/filetree", include_in_schema=False)
+    def filetree_root() -> RedirectResponse:
+        return RedirectResponse(_files_redirect_target(), status_code=307)
+
+    @app.get("/filetree/{path:path}", include_in_schema=False)
+    def filetree_path(path: str) -> RedirectResponse:
+        return RedirectResponse(_files_redirect_target(path), status_code=307)
+
     store = DecisionStore(settings.decisions)
 
     def decision_or_response(decision_id: str) -> Decision | PlainTextResponse:
@@ -246,6 +287,21 @@ def create_app(settings: Settings) -> FastAPI:
     def resources() -> JSONResponse:
         return JSONResponse(monitor.resources())
 
+    @app.get("/api/project/tree")
+    def project_tree(path: str = "") -> Response:
+        """One directory of the mounted project: entries as lstat sees them, links unfollowed."""
+        try:
+            listing = list_project_directory(settings.project, path)
+        except PathRefused as error:
+            return PlainTextResponse(str(error) + "\n", status_code=403)
+        except NotADirectoryError:
+            return PlainTextResponse(f"{path!r} is not a directory in the project\n", status_code=404)
+        except FileNotFoundError:
+            return PlainTextResponse(f"no directory at {path!r} in the project\n", status_code=404)
+        except OSError:
+            return PlainTextResponse(f"cannot read {path!r} in the project\n", status_code=403)
+        return JSONResponse(listing)
+
     @app.get("/api/project/file")
     def project_file(path: str = Query(...)) -> PlainTextResponse:
         try:
@@ -261,23 +317,51 @@ def create_app(settings: Settings) -> FastAPI:
         return PlainTextResponse(text)
 
     @app.get("/api/project/raw")
-    def project_raw(path: str = Query(...)) -> Response:
-        """A project file as bytes, for images and non-markdown links in records."""
+    def project_raw(request: Request, path: str = Query(...), download: str | None = None) -> Response:
+        """A project file streamed in chunks, with single byte-range seeking and optional attachment download."""
+        stack = ExitStack()
         try:
-            content = read_project_bytes(settings.project, path)
+            stream, size = stack.enter_context(open_project_file(settings.project, path))
         except PathRefused as error:
+            stack.close()
             return PlainTextResponse(str(error) + "\n", status_code=403)
         except FileNotFoundError:
+            stack.close()
             return PlainTextResponse(f"no file at {path!r} in the project\n", status_code=404)
         except OSError:
+            stack.close()
             return PlainTextResponse(f"cannot read {path!r} in the project\n", status_code=403)
+        try:
+            byte_range = _parse_byte_range(request.headers.get("range"), size)
+        except _UnsatisfiableRange:
+            stack.close()
+            return Response(
+                b"",
+                status_code=416,
+                headers={**RAW_SECURITY_HEADERS, "Content-Range": f"bytes */{size}"},
+            )
         # An SVG is an image when embedded, but an active document when opened.
         # Isolate raw documents from the console origin and forbid their code,
         # subresources and forms. nosniff also prevents use as a script or style.
-        return Response(content, media_type=raw_content_type(path), headers={
-            "Content-Security-Policy": "sandbox; default-src 'none'; style-src 'unsafe-inline'",
-            "X-Content-Type-Options": "nosniff",
-        })
+        headers = dict(RAW_SECURITY_HEADERS)
+        if download == "1":
+            headers["Content-Disposition"] = _attachment_disposition(path)
+        if byte_range is None:
+            start, length, status_code = 0, size, 200
+        else:
+            start, end = byte_range
+            length = end - start + 1
+            status_code = 206
+            headers["Content-Range"] = f"bytes {start}-{end}/{size}"
+        headers["Content-Length"] = str(length)
+        cleanup = stack.pop_all()
+        return StreamingResponse(
+            _stream_file_slice(stream, start, length, cleanup),
+            status_code=status_code,
+            media_type=raw_content_type(path),
+            headers=headers,
+            background=BackgroundTask(cleanup.close),
+        )
 
     app.mount("/static", StaticFiles(directory=str(settings.static_root)), name="static")
     app.add_middleware(TokenGate, token=settings.token)
@@ -287,6 +371,70 @@ def create_app(settings: Settings) -> FastAPI:
 def same_origin(request: Request) -> bool:
     """Exactly one ``Origin`` header naming this console, port included, no trailing slash."""
     return request.headers.getlist("origin") == [f"{request.url.scheme}://{request.url.netloc}"]
+
+
+def _files_redirect_target(path: str = "") -> str:
+    encoded = "/".join(quote(part, safe="") for part in path.split("/") if part)
+    return f"/files/{encoded}" if encoded else "/files"
+
+
+class _UnsatisfiableRange(ValueError):
+    """A single ``bytes=`` range does not overlap the file."""
+
+
+def _parse_byte_range(header: str | None, size: int) -> tuple[int, int] | None:
+    if header is None:
+        return None
+    unit, separator, spec = header.strip().partition("=")
+    if separator != "=" or unit.lower() != "bytes":
+        return None
+    if "," in spec:
+        return None
+    match = _BYTE_RANGE_SPEC.fullmatch(spec.strip())
+    if match is None:
+        raise _UnsatisfiableRange
+    first_text, last_text = match.groups()
+    if not first_text and not last_text:
+        raise _UnsatisfiableRange
+    if not first_text:
+        suffix = int(last_text)
+        if suffix == 0 or size == 0:
+            raise _UnsatisfiableRange
+        return max(0, size - suffix), size - 1
+    first = int(first_text)
+    if size == 0 or first >= size:
+        raise _UnsatisfiableRange
+    if not last_text:
+        return first, size - 1
+    last = int(last_text)
+    if last < first:
+        raise _UnsatisfiableRange
+    return first, min(last, size - 1)
+
+
+def _stream_file_slice(stream: BinaryIO, start: int, length: int, cleanup: ExitStack) -> Iterator[bytes]:
+    try:
+        if start:
+            stream.seek(start)
+        remaining = length
+        while remaining > 0:
+            chunk = stream.read(min(RAW_CHUNK_BYTES, remaining))
+            if not chunk:
+                break
+            remaining -= len(chunk)
+            yield chunk
+    finally:
+        cleanup.close()
+
+
+def _attachment_disposition(path: str) -> str:
+    basename = Path(path).name or "download"
+    ascii_fallback = "".join(
+        ch if 0x20 <= ord(ch) < 0x7F and ch not in {'"', "\\"} else "_"
+        for ch in basename
+    )
+    encoded = quote(basename, encoding="utf-8", safe="!#$&+-.^_`|~")
+    return f'attachment; filename="{ascii_fallback}"; filename*=UTF-8\'\'{encoded}'
 
 
 def _page(settings: Settings, name: str) -> Callable[[], FileResponse]:

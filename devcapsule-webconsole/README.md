@@ -18,6 +18,9 @@ imports none of the runtime's internals. Its API is the runtime CLI's
   `127.0.0.1`.
 - File reads resolve inside the project mount only. A path that escapes
   it, by `..`, by an absolute path or by a symbolic link, is refused.
+  Directory listings use the same confinement and descriptor walk, list every
+  entry including dotfiles and `.git` without hiding anything, and inspect
+  entries without following symbolic links.
 - The console writes only into the capsule's state: the answer to a
   decision page, one file in the capsule's decisions directory (see
   [DECISIONS.md](DECISIONS.md)); a notification marked read or
@@ -35,9 +38,11 @@ imports none of the runtime's internals. Its API is the runtime CLI's
   both vendored under `devcapsule_webconsole/static/vendor/` with their
   provenance in `VENDORED.md`; no build step, no Node in the capsule. Raw
   HTML in a record is not rendered. Raw files carry a sandbox policy and
-  `nosniff`; an opened SVG cannot use the console origin. DOT output is an
-  image, so its links are inactive. Record headings have fragment targets;
-  relative URL paths are decoded before resolution inside the project.
+  `nosniff`; an opened SVG cannot use the console origin. The raw route streams
+  from the confined descriptor, honours single byte-range requests for seeking,
+  and adds an attachment disposition only when `download=1` is requested. DOT
+  output is an image, so its links are inactive. Record headings have fragment
+  targets; relative URL paths are decoded before resolution inside the project.
 
 ## Running it on a host
 
