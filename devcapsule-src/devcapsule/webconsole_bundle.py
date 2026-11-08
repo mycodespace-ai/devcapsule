@@ -112,8 +112,12 @@ def extract_webconsole_bundle(runtime_pex: Path, destination: Path) -> Path:
             for info in bundle.infolist():
                 if info.is_dir():
                     continue
-                unix_mode = info.external_attr >> 16
-                if unix_mode and (stat.S_ISLNK(unix_mode) or not stat.S_ISREG(unix_mode)):
+                # The Unix file type travels in the high external attributes; a
+                # member that declares one must be a regular file, never a symlink,
+                # a directory or a device. A member without one (a zip from a
+                # non-Unix tool) is a regular file by the archive format.
+                file_type = stat.S_IFMT(info.external_attr >> 16)
+                if file_type and file_type != stat.S_IFREG:
                     raise WebconsoleBundleError(
                         f"bundled web console member {info.filename!r} is not a regular file"
                     )
