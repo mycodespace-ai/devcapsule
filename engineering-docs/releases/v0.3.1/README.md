@@ -1,6 +1,6 @@
 # DevCapsule 0.3.1 — Release Work
 
-Updated: 2026-11-08. Stage: **candidate 0 published; slice 1 merged, slice 2 in PR #12; two rulings open**.
+Updated: 2026-11-08. Stage: **candidate 0 published; slices 1 and 2 merged; candidate 1 on the owner's word; two rulings open**.
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
 [Changelog since 0.3.0](changelog.md) ·
@@ -169,8 +169,8 @@ decision here, never a silent replacement.
   repin, merged to the release branch by PR #10 on 2026-11-08; verification
   on candidate 1. Slice 2, the web console's Files page, built by Pair
   Review (Antigravity implementing, Claude Code reviewing) as PR #12 with
-  its review PR #13 merged in; awaits the owner's merge into the release
-  branch.
+  its review PR #13 merged in; merged by the owner at `ec8af13a` on
+  2026-11-08.
 - [ ] The gates before the final tag: the documentation describing the
   accepted candidate; `notes.md` with the *End-to-end tests run* section,
   Release Policy rule 10; `release-docs.py promote 0.3.1` and `docs-0.3.1`;

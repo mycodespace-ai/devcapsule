@@ -49,6 +49,14 @@ No candidate is tagged yet; the cut is 2026-11-07 at `31e8fec7` on `main`.
   because the feed cannot be fetched. The website path is not served yet;
   until it is, every check uses the cache or the snapshot.
 
+- **A Files page in the web console.** Every file of the mounted project,
+  listed directory by directory at `/files` and served read-only with its
+  media type: a recording or an image opens in the browser, a Markdown
+  file opens in Records, and each row has a download link. The raw route
+  seeks by byte range, so long videos play from any point. `/filetree`
+  leads to the same page. Built by Pair Review as PR #12, merged
+  2026-11-08.
+
 ## Changed
 
 - **The project's home is `github.com/mycodespace-ai/devcapsule`.**

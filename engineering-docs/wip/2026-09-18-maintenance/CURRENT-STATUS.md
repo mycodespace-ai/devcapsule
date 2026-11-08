@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-08; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 0 published as `v0.3.1-rc0` on `8bcee1d0`, verified from the download; slice 1, the Eclipse amd64 repin, merged by PR #10; slice 2, the web console's Files page, in PR #12 by Pair Review awaiting the owner's merge; rulings open before candidate 1: executables for the Mac, the compatibility feed's home; the seventeen tests expected to fail stay queued on `main`
+State: active 2026-11-08; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 0 published as `v0.3.1-rc0` on `8bcee1d0`, verified from the download; slice 1, the Eclipse amd64 repin, merged by PR #10; slice 2, the web console's Files page, merged by PR #12 at `ec8af13a`; candidate 1 on the owner's word; rulings open before candidate 1: executables for the Mac, the compatibility feed's home; the seventeen tests expected to fail stay queued on `main`
 
 Definition read: WORKFLOW.md@d2ccbbe43dfa, WORKFLOW-LOCAL.md@65501b3407db
 
