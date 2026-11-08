@@ -2319,12 +2319,14 @@ Web console:
 
 
 DEV_WEBCONSOLE_ENV = "DEVCAPSULE_DEV_WEBCONSOLE"
+_DEV_WEBCONSOLE_ENABLED = frozenset({"1", "true"})
+_DEV_WEBCONSOLE_DISABLED = frozenset({"0", "false"})
 
 
 def console_development_source(
     project: Path,
     project_mount: str,
-    env: Mapping[str, str] | None = None,
+    env: Mapping[str, str],
     *,
     built_launcher: bool | None = None,
 ) -> str:
@@ -2334,24 +2336,23 @@ def console_development_source(
     launcher-delivered console by default so dogfooding tests the artifact
     under test rather than whichever branch is checked out in the workspace.
     An unbuilt source-form launch mounts ``<project_mount>/devcapsule-webconsole``
-    automatically when present, and ``DEVCAPSULE_DEV_WEBCONSOLE`` (``1``/``true``
-    or ``0``/``false``) explicitly enables or disables the override in either mode.
+    automatically when present. ``DEVCAPSULE_DEV_WEBCONSOLE`` in ``env``
+    decides instead of the build mode: ``1`` or ``true`` enables the override,
+    ``0`` or ``false`` disables it, case-insensitively; any other non-empty
+    value is refused. A project without ``devcapsule-webconsole/`` has no
+    source to mount, so the result is empty whatever decides. ``built_launcher``
+    replaces :func:`is_built_distribution`'s answer about this process.
     """
 
-    raw = (env or {}).get(DEV_WEBCONSOLE_ENV, "").strip()
-    if raw:
-        lowered = raw.lower()
-        if lowered in {"1", "true", "yes", "on"}:
-            enabled = True
-        elif lowered in {"0", "false", "no", "off"}:
-            enabled = False
-        else:
-            raise PycharmRunError(
-                f"{DEV_WEBCONSOLE_ENV} must be 1/true or 0/false; got {raw!r}."
-            )
+    raw = env.get(DEV_WEBCONSOLE_ENV, "").strip().lower()
+    if raw in _DEV_WEBCONSOLE_ENABLED:
+        enabled = True
+    elif raw in _DEV_WEBCONSOLE_DISABLED:
+        enabled = False
+    elif raw:
+        raise PycharmRunError(f"{DEV_WEBCONSOLE_ENV} must be 1/true or 0/false; got {raw!r}.")
     else:
-        is_built = is_built_distribution() if built_launcher is None else built_launcher
-        enabled = not is_built
+        enabled = not (is_built_distribution() if built_launcher is None else built_launcher)
     if enabled and (project / "devcapsule-webconsole" / "devcapsule_webconsole" / "__init__.py").is_file():
         return f"{project_mount}/devcapsule-webconsole"
     return ""

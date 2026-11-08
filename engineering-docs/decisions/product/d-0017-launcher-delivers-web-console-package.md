@@ -51,8 +51,10 @@ Embed `devcapsule_webconsole` in `devcapsule.pex` as a tracked PEX build input.
 During environment materialization, unpack and copy that package read-only to
 `/opt/devcapsule/webconsole` alongside `/opt/devcapsule/bin/devcapsule.pex`.
 Run `/opt/devcapsule-webconsole/venv/bin/python` with `/opt/devcapsule/webconsole`
-on `PYTHONPATH` when the base interpreter satisfies the console's dependencies,
-falling back to `/opt/devcapsule-webconsole` on older bases.
+on `PYTHONPATH`. The launcher plans a console only on a base of recipe
+`WEBCONSOLE_RECIPE` (11) or later, whose interpreter satisfies the console's
+dependencies; the base's own `/opt/devcapsule-webconsole` copy answers only
+when no launcher package was installed.
 
 Cost: ~420 KB compressed in `devcapsule.pex`, and console code edits change
 `pex-sha256` (triggering a fast local formation rebuild, just as CLI edits
@@ -116,10 +118,14 @@ Adopt **Option A** (`launcher-package`) and **Option 1** (`source-or-opt-in`):
    package into formation identity.
 3. The base image continues to provide `/opt/devcapsule-webconsole/venv` and a
    baseline console copy. Inside the capsule, the runtime supervisor and
-   `project checkout decisions` select the console package in precedence order:
-   an explicit checkout `console.source_path` when compatible with the base
-   interpreter, otherwise `/opt/devcapsule/webconsole` when present and
-   compatible, otherwise the base image's `/opt/devcapsule-webconsole` copy.
+   `project checkout decisions` select the console package by one rule,
+   `console_package_path` in `devcapsule/container_runtime/console.py`, in
+   precedence order: an explicit checkout `console.source_path`, otherwise
+   `/opt/devcapsule/webconsole` when present, otherwise the base image's
+   `/opt/devcapsule-webconsole` copy. Compatibility with the base interpreter
+   is settled on the host: the launcher plans a console only on a base whose
+   recipe is `WEBCONSOLE_RECIPE` or later (`devcapsule/images/contract.py`),
+   so the capsule runs no import probe.
 4. A built DevCapsule executable sets `console.source_path` to empty by
    default, even on a DevCapsule checkout. `console_development_source`
    selects `<project_mount>/devcapsule-webconsole` only in unbuilt source-form
@@ -147,7 +153,8 @@ binary.
   public-revision builds and produces a new `pex-sha256` on materialization.
 - Base images remain responsible for `/opt/devcapsule-webconsole/venv`; adding
   or changing third-party dependencies in `devcapsule-webconsole/requirements.in`
-  still requires advancing the base recipe and compatibility probe.
+  still requires advancing the base recipe and `WEBCONSOLE_RECIPE` together, so
+  the launcher plans no console on a base that lacks the new dependency.
 - Dogfooding a built candidate on the DevCapsule repository tests that
   candidate's console regardless of which branch is checked out in the mounted
   workspace.

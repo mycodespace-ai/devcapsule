@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
-import subprocess
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -116,50 +115,6 @@ def test_console_readiness_probes_the_listener_address_family(
         connection.__exit__.assert_called_once()
     with patch("devcapsule.container_runtime.console.socket.create_connection", side_effect=OSError):
         assert child.ready() is False
-
-
-def test_console_child_prefers_the_mounted_source_and_says_so(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
-    monkeypatch.setattr("devcapsule.container_runtime.console.CONSOLE_PYTHON", str(tmp_path / "python"))
-    (tmp_path / "python").write_text("", encoding="utf-8")
-    plan = plan_with_console(tmp_path, source_path="/workspace/project/devcapsule-webconsole")
-    with patch("devcapsule.container_runtime.console.subprocess.run") as probe:
-        child = console_child(plan, lambda command: command)
-    probe.assert_called_once_with(
-        [str(tmp_path / "python"), "-I", "-c", "import psutil"],
-        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5.0,
-    )
-    assert child is not None
-    assert child.command[:3] == ("env", "PYTHONPATH=/workspace/project/devcapsule-webconsole", str(tmp_path / "python"))
-    assert "running the mounted checkout's source at /workspace/project/devcapsule-webconsole" in capsys.readouterr().err
-
-
-@pytest.mark.parametrize("failure", [
-    subprocess.CalledProcessError(1, "python"),
-    subprocess.TimeoutExpired("python", 5.0),
-    PermissionError("python"),
-])
-def test_console_source_falls_back_to_installed_copy_when_base_lacks_monitor_dependency(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], failure: Exception,
-) -> None:
-    python = tmp_path / "python"
-    python.touch()
-    monkeypatch.setattr("devcapsule.container_runtime.console.CONSOLE_PYTHON", str(python))
-    plan = plan_with_console(tmp_path, source_path="/workspace/project/devcapsule-webconsole")
-    with patch("devcapsule.container_runtime.console.subprocess.run", side_effect=failure):
-        child = console_child(plan, lambda command: ("as-user", *command))
-    assert child is not None
-    assert child.command[:4] == ("as-user", str(python), "-m", "devcapsule_webconsole")
-    assert not any("PYTHONPATH" in argument for argument in child.command)
-    assert "running the installed console instead of the mounted source" in capsys.readouterr().err
-
-
-def test_installed_console_does_not_need_the_monitor_probe(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    python = tmp_path / "python"
-    python.touch()
-    monkeypatch.setattr("devcapsule.container_runtime.console.CONSOLE_PYTHON", str(python))
-    with patch("devcapsule.container_runtime.console.subprocess.run") as probe:
-        assert console_child(plan_with_console(tmp_path), lambda command: command) is not None
-    probe.assert_not_called()
 
 
 def test_console_child_is_absent_without_a_section_or_on_an_older_base(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:

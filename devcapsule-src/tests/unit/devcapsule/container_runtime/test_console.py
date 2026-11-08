@@ -1,4 +1,4 @@
-"""Unit tests of ``devcapsule/container_runtime/console.py``: launcher package precedence and base fallback."""
+"""Unit tests of ``devcapsule/container_runtime/console.py``: which console package the child imports."""
 
 from __future__ import annotations
 
@@ -7,8 +7,10 @@ from pathlib import Path
 import pytest
 
 from devcapsule.components.pycharm import runtime_template as pycharm_runtime_template
-from devcapsule.container_runtime.console import RUNTIME_CLI, console_child
+from devcapsule.container_runtime.console import RUNTIME_CLI, console_child, console_package_path
 from devcapsule.container_runtime.contract import ConsolePlan, Identity, RuntimePlan
+
+CHECKOUT_SOURCE = "/workspace/project/devcapsule-webconsole"
 
 
 def _plan(*, source_path: str = "") -> RuntimePlan:
@@ -23,10 +25,8 @@ def _plan(*, source_path: str = "") -> RuntimePlan:
     )
 
 
-def _python_stub(path: Path, *, has_psutil: bool) -> Path:
-    code = 0 if has_psutil else 1
-    path.write_text(f"#!/bin/sh\nexit {code}\n", encoding="utf-8")
-    path.chmod(0o755)
+def _console_python(path: Path) -> Path:
+    path.touch()
     return path
 
 
@@ -37,9 +37,30 @@ def _launcher_bundle(path: Path) -> Path:
     return path
 
 
-def test_console_child_runs_launcher_package_when_present_and_compatible(tmp_path: Path) -> None:
-    """When ``console.source_path`` is empty and the launcher package is installed on a recipe-11+ base, ``PYTHONPATH`` selects it."""
-    python = _python_stub(tmp_path / "python", has_psutil=True)
+def test_console_package_path_prefers_the_plans_checkout_source(tmp_path: Path) -> None:
+    """A non-empty ``console.source_path`` wins over an installed launcher package."""
+    bundled = _launcher_bundle(tmp_path / "launcher-webconsole")
+
+    assert console_package_path(CHECKOUT_SOURCE, bundled) == CHECKOUT_SOURCE
+
+
+def test_console_package_path_selects_the_launcher_package_when_installed(tmp_path: Path) -> None:
+    """Without a checkout source, the launcher package directory is selected when it holds the package."""
+    bundled = _launcher_bundle(tmp_path / "launcher-webconsole")
+
+    assert console_package_path("", bundled) == str(bundled)
+
+
+def test_console_package_path_is_empty_when_only_the_base_copy_exists(tmp_path: Path) -> None:
+    """Without a checkout source or an installed launcher package, the empty result leaves the base copy to the import."""
+    absent = tmp_path / "launcher-webconsole"
+
+    assert console_package_path("", absent) == ""
+
+
+def test_console_child_runs_the_launcher_package_on_the_base_interpreter(tmp_path: Path) -> None:
+    """With an empty ``console.source_path`` and an installed launcher package, ``PYTHONPATH`` selects that package."""
+    python = _console_python(tmp_path / "python")
     bundled = _launcher_bundle(tmp_path / "launcher-webconsole")
 
     child = console_child(
@@ -70,41 +91,39 @@ def test_console_child_runs_launcher_package_when_present_and_compatible(tmp_pat
     )
 
 
-def test_console_child_prefers_explicit_checkout_source_over_launcher_package(tmp_path: Path) -> None:
-    """When ``console.source_path`` is set alongside a launcher package, ``PYTHONPATH`` selects the checkout source."""
-    python = _python_stub(tmp_path / "python", has_psutil=True)
+def test_console_child_runs_the_mounted_checkout_source_and_says_so(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """With ``console.source_path`` set beside a launcher package, ``PYTHONPATH`` selects the checkout and stderr announces it."""
+    python = _console_python(tmp_path / "python")
     bundled = _launcher_bundle(tmp_path / "launcher-webconsole")
 
     child = console_child(
-        _plan(source_path="/workspace/project/devcapsule-webconsole"),
+        _plan(source_path=CHECKOUT_SOURCE),
         lambda command: command,
         console_python=python,
         launcher_source=bundled,
     )
 
     assert child is not None
-    assert child.command[:3] == (
-        "env",
-        "PYTHONPATH=/workspace/project/devcapsule-webconsole",
-        str(python),
-    )
+    assert child.command[:3] == ("env", f"PYTHONPATH={CHECKOUT_SOURCE}", str(python))
+    assert f"running the mounted checkout's source at {CHECKOUT_SOURCE}" in capsys.readouterr().err
 
 
-def test_console_child_falls_back_to_base_copy_when_base_lacks_psutil(
+def test_console_child_runs_the_base_copy_without_a_launcher_package(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """When the base interpreter lacks ``psutil`` (recipe 10), ``console_child`` skips the launcher package and runs the base copy."""
-    python = _python_stub(tmp_path / "python", has_psutil=False)
-    bundled = _launcher_bundle(tmp_path / "launcher-webconsole")
+    """With neither a checkout source nor a launcher package, the command carries no ``PYTHONPATH`` and nothing is announced."""
+    python = _console_python(tmp_path / "python")
 
     child = console_child(
         _plan(),
         lambda command: command,
         console_python=python,
-        launcher_source=bundled,
+        launcher_source=tmp_path / "absent-launcher-webconsole",
     )
 
     assert child is not None
     assert child.command[:3] == (str(python), "-m", "devcapsule_webconsole")
     assert not any("PYTHONPATH" in item for item in child.command)
-    assert "running the base image's console instead of the launcher's package" in capsys.readouterr().err
+    assert capsys.readouterr().err == ""

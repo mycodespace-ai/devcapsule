@@ -60,6 +60,42 @@ from devcapsule.images.metadata import (
     managed_labels,
 )
 
+__all__ = [
+    "ArtifactSpec",
+    "ArtifactUnavailable",
+    "ENTRYPOINT_CONTRACT",
+    "ImageDetails",
+    "LockedEnvironment",
+    "MATERIALIZATION_RECIPE_ID",
+    "MATERIALIZATION_RECIPE_VERSION",
+    "RUNTIME_PLAN_PATH",
+    "SURFACE_MATERIALIZATIONS",
+    "SurfaceMaterialization",
+    "UNPACKED_DIRECTORY",
+    "UNPACKED_MARKER",
+    "acquire_artifact",
+    "cache_root",
+    "canonical_image_name",
+    "canonical_json",
+    "component_runtime_template",
+    "descriptor_differences",
+    "ensure_materialized_surface",
+    "formation_descriptor",
+    "formation_identity",
+    "normalize_archive_directory",
+    "npm_install_step",
+    "parse_locked_environment",
+    "runtime_config_drift",
+    "runtime_enforcement_spec",
+    "sha256_file",
+    "surface_materialization_spec",
+    "surface_profile",
+    "unpacked_tree",
+    "validate_base_image",
+    "validate_locked_artifact",
+    "verify_materialized_image",
+]
+
 
 @dataclass(frozen=True)
 class ArtifactSpec:

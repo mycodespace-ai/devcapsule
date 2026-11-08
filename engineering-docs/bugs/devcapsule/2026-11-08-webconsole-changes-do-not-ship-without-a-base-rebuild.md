@@ -98,8 +98,9 @@ and updated [R-CONSOLE-001](../../requirements/product/r-console-001-capsule-web
    - `devcapsule/container_runtime/console.py` and `devcapsule/console_tools.py`
      run `/opt/devcapsule-webconsole/venv/bin/python` with
      `PYTHONPATH=/opt/devcapsule/webconsole` when `console.source_path` is empty
-     and the base satisfies `psutil` (recipe 11+), falling back to the base's
-     `/opt/devcapsule-webconsole` copy on older bases.
+     and the launcher package is installed, else with the base's
+     `/opt/devcapsule-webconsole` copy; the launcher plans a console only on
+     recipe 11+ bases, which carry every console dependency.
 2. **Source-only or opt-in self-hosting override (`self-hosting-override = source-or-opt-in`).**
    - `devcapsule/build_info.py` adds `is_built_distribution()`.
    - `console_development_source()` in `devcapsule/launch/pycharm/_launcher.py`

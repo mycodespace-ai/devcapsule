@@ -60,23 +60,6 @@ def test_the_installed_console_runs_when_the_plan_has_no_usable_source(tmp_path:
     assert command == (str(python), "-m", "devcapsule_webconsole.decisions", "hand-off", "d/x.json", "--token-file", "t")
 
 
-def test_a_mounted_source_uses_the_console_childs_path_prefix(tmp_path: Path, monkeypatch) -> None:
-    python = tmp_path / "python"
-    python.touch()
-    plan = runtime_plan("/workspace/project with spaces/devcapsule-webconsole")
-    plan_path = tmp_path / "plan.json"
-    plan_path.write_text(plan.to_json(), encoding="utf-8")
-    monkeypatch.setattr(console_child, "CONSOLE_PYTHON", str(python))
-    monkeypatch.setattr(console_child, "_monitor_dependency_available", lambda: True)
-    monkeypatch.setenv("PYTHONPATH", "/unrelated/source")
-    child = console_child.console_child(plan, lambda command: command)
-    assert child is not None
-    command = console_decisions_command(["check", "x.json"], environ={"DEVCAPSULE_CONTAINER_NAME": "c"},
-                                        console_python=python, runtime_plan_path=plan_path)
-    assert command[:2] == child.command[:2] == ("env", "PYTHONPATH=/workspace/project with spaces/devcapsule-webconsole")
-    assert command[2:] == (str(python), "-m", "devcapsule_webconsole.decisions", "check", "x.json")
-
-
 @pytest.mark.parametrize("status", [0, 3])
 def test_cli_preserves_argument_boundaries_streams_and_exit_status(tmp_path: Path, capfd, monkeypatch, status: int) -> None:
     fake = tmp_path / "fake-console-python"

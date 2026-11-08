@@ -6,19 +6,22 @@ ahead of the foreground child. The base image supplies the hash-pinned virtual
 environment and baseline package under ``/opt/devcapsule-webconsole`` (base
 recipe 10+); under ``D-0017``, environment materialization installs the
 launcher's own ``devcapsule_webconsole`` package at ``/opt/devcapsule/webconsole``,
-which runs on the base interpreter ahead of the base copy whenever the base
-satisfies its dependencies. See ``R-CONSOLE-001`` and ``D-0017``.
+which runs on the base interpreter ahead of the base copy. The launcher plans
+a console only on a base whose recipe is ``WEBCONSOLE_RECIPE`` or later
+(``devcapsule.images.contract``), so the interpreter satisfies the package's
+third-party dependencies by construction; a console dependency added later
+advances the base recipe and that constant together. See ``R-CONSOLE-001``
+and ``D-0017``.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 import socket
-import subprocess
 import sys
 from typing import Callable
 
-from devcapsule.webconsole_bundle import LAUNCHER_WEBCONSOLE_PATH
+from devcapsule.webconsole_bundle import LAUNCHER_WEBCONSOLE_PATH, PACKAGE_NAME
 
 from .contract import RuntimePlan
 from .supervisor import SupervisedChild
@@ -32,6 +35,7 @@ __all__ = [
     "LAUNCHER_CONSOLE_SOURCE",
     "RUNTIME_CLI",
     "console_child",
+    "console_package_path",
 ]
 
 CONSOLE_CHILD = "console"
@@ -61,7 +65,9 @@ def console_child(
     ``None`` when the plan carries no console section, and, announced, when
     the base predates the console (recipe 9 and earlier): the runtime is
     launcher-supplied and runs on any base carrying the display label, so an
-    absent console is a known degradation rather than a failed start.
+    absent console is a known degradation rather than a failed start. The
+    package the child imports is :func:`console_package_path`'s choice.
+    ``console_python`` and ``launcher_source`` replace the installed paths.
     """
 
     console = plan.console
@@ -77,7 +83,7 @@ def console_child(
         )
         return None
     command: tuple[str, ...] = (
-        str(python), "-m", "devcapsule_webconsole",
+        str(python), "-m", PACKAGE_NAME,
         "--project", plan.project_path,
         "--cli", RUNTIME_CLI,
         "--token-file", console.token_path,
@@ -85,43 +91,17 @@ def console_child(
         "--port", str(console.port),
     )
     bundled = launcher_source if launcher_source is not None else Path(LAUNCHER_CONSOLE_SOURCE)
+    package_path = console_package_path(console.source_path, bundled)
+    if package_path:
+        # ``env`` replaces any ambient PYTHONPATH: the same interpreter and
+        # dependencies, the selected package ahead of the base's installed copy.
+        command = ("env", f"PYTHONPATH={package_path}", *command)
     if console.source_path:
-        compatible = (
-            _monitor_dependency_available()
-            if console_python is None
-            else _python_has_monitor_dependency(python)
+        print(
+            f"devcapsule console: running the mounted checkout's source at {console.source_path}",
+            file=sys.stderr,
+            flush=True,
         )
-        if compatible:
-            # The checkout's own console source, ahead of any installed copy:
-            # the same interpreter and dependencies, the mounted package.
-            command = ("env", f"PYTHONPATH={console.source_path}", *command)
-            print(
-                f"devcapsule console: running the mounted checkout's source at {console.source_path}",
-                file=sys.stderr,
-                flush=True,
-            )
-        else:
-            print(
-                "devcapsule console: the base cannot import psutil (base recipe 11 adds it); "
-                "running the installed console instead of the mounted source",
-                file=sys.stderr,
-                flush=True,
-            )
-    elif (bundled / "devcapsule_webconsole" / "__init__.py").is_file():
-        compatible = (
-            _monitor_dependency_available()
-            if console_python is None
-            else _python_has_monitor_dependency(python)
-        )
-        if compatible:
-            command = ("env", f"PYTHONPATH={bundled}", *command)
-        else:
-            print(
-                "devcapsule console: the base cannot import psutil (base recipe 11 adds it); "
-                "running the base image's console instead of the launcher's package",
-                file=sys.stderr,
-                flush=True,
-            )
     probe_address = {"0.0.0.0": "127.0.0.1", "::": "::1"}.get(console.listen_address, console.listen_address)
     return SupervisedChild(
         name=CONSOLE_CHILD,
@@ -131,24 +111,20 @@ def console_child(
     )
 
 
-def _monitor_dependency_available() -> bool:
-    """Check the base interpreter, without the checkout or ambient PYTHONPATH.
+def console_package_path(source_path: str, launcher_source: Path) -> str:
+    """The directory to put first on ``PYTHONPATH``, or empty for the base's copy.
 
-    Recipe 10 has the console but lacks psutil. Its installed console still
-    works; mounting slice-5+ source over it would fail at import time.
+    Precedence under ``D-0017``: the runtime plan's ``console.source_path``
+    when it names a mounted checkout, else ``launcher_source`` when
+    materialization installed the launcher's package there, else empty, and
+    the base image's installed copy answers the import.
     """
-    return _python_has_monitor_dependency(Path(CONSOLE_PYTHON))
 
-
-def _python_has_monitor_dependency(python: Path) -> bool:
-    try:
-        subprocess.run(
-            [str(python), "-I", "-c", "import psutil"],
-            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5.0,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return False
-    return True
+    if source_path:
+        return source_path
+    if (launcher_source / PACKAGE_NAME / "__init__.py").is_file():
+        return str(launcher_source)
+    return ""
 
 
 def _accepts_connections(address: str, port: int) -> bool:

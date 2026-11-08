@@ -12,6 +12,15 @@ import tomllib
 from typing import Any, Mapping
 from zipfile import BadZipFile, ZipFile
 
+__all__ = [
+    "BuildInfo",
+    "BuildInfoError",
+    "build_info_json",
+    "current_build_info",
+    "is_built_distribution",
+    "read_pex_build_info",
+]
+
 
 class BuildInfoError(ValueError):
     """A distribution's embedded build information is absent or malformed."""
@@ -77,21 +86,14 @@ class BuildInfo:
 def is_built_distribution() -> bool:
     """Whether this process runs from a ``scripts/build-pex.sh`` artifact rather than source.
 
-    As in :func:`current_build_info`, a present-but-malformed ``_build_info.json``
-    raises :class:`BuildInfoError` instead of masquerading as an unbuilt source run.
+    Only that script creates ``_build_info.json``, so the record's presence is
+    the definition of a built artifact, in a PEX, a scie-wrapped PEX or an
+    installed wheel of one alike; an editable or plain install of the source
+    tree carries none. As in :func:`current_build_info`, a present-but-malformed
+    record raises :class:`BuildInfoError` instead of masquerading as source.
     """
 
-    resource = files("devcapsule").joinpath("_build_info.json")
-    try:
-        BuildInfo.from_json(resource.read_text(encoding="utf-8"))
-        return True
-    except OSError:
-        sibling = Path(__file__).with_name("_build_info.json")
-        try:
-            BuildInfo.from_json(sibling.read_text(encoding="utf-8"))
-            return True
-        except OSError:
-            return False
+    return _embedded_build_info() is not None
 
 
 def current_build_info() -> BuildInfo:
@@ -106,6 +108,13 @@ def current_build_info() -> BuildInfo:
     ``v<version>-local`` mnemonic that marks an unbuilt source run.
     """
 
+    embedded = _embedded_build_info()
+    return embedded if embedded is not None else _source_form_build_info()
+
+
+def _embedded_build_info() -> BuildInfo | None:
+    """The stamped record of a built artifact, or ``None`` in a source-form run."""
+
     resource = files("devcapsule").joinpath("_build_info.json")
     try:
         return BuildInfo.from_json(resource.read_text(encoding="utf-8"))
@@ -118,7 +127,7 @@ def current_build_info() -> BuildInfo:
         try:
             return BuildInfo.from_json(sibling.read_text(encoding="utf-8"))
         except OSError:
-            return _source_form_build_info()
+            return None
 
 
 # In a source checkout the authored pyproject.toml sits beside the package;

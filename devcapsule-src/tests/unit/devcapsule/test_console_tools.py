@@ -72,3 +72,20 @@ def test_decisions_command_prefers_checkout_source_over_launcher_package(tmp_pat
     )
 
     assert command[:2] == ("env", "PYTHONPATH=/workspace/project/devcapsule-webconsole")
+
+
+def test_decisions_command_runs_the_base_copy_without_a_launcher_package(tmp_path: Path) -> None:
+    """Without ``console.source_path`` or an installed launcher package, the command carries no ``PYTHONPATH``."""
+    python = tmp_path / "python"
+    python.touch()
+    plan = _write_plan(tmp_path / "plan.json")
+
+    command = console_decisions_command(
+        ["check", "decision.json"],
+        environ={"DEVCAPSULE_CONTAINER_NAME": "capsule"},
+        console_python=python,
+        runtime_plan_path=plan,
+        launcher_console_source=tmp_path / "absent-launcher-webconsole",
+    )
+
+    assert command == (str(python), "-m", DECISIONS_MODULE, "check", "decision.json")

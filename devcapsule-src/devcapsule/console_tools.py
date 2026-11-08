@@ -36,8 +36,9 @@ def console_decisions_command(
     """The command that runs the console's ``decisions`` module with ``arguments``.
 
     Refuses outside a capsule, and inside one whose base predates the console,
-    naming what to run instead. Precedence matches the console child: the
-    runtime plan's ``console.source_path`` first, else the launcher-delivered
+    naming what to run instead. The package on ``PYTHONPATH`` is the console
+    child's own choice, :func:`devcapsule.container_runtime.console.console_package_path`:
+    the runtime plan's ``console.source_path`` first, else the launcher-delivered
     package at ``/opt/devcapsule/webconsole`` when present, else the base copy.
     """
     values = os.environ if environ is None else environ
@@ -59,10 +60,9 @@ def console_decisions_command(
         plan = RuntimePlan.from_file(plan_path)
         source_path = plan.console.source_path if plan.console else ""
     except (RuntimePlanError, UnicodeError):
-        pass  # Without a readable plan, prefer the launcher package or base console.
-    if not source_path and (bundled / "devcapsule_webconsole" / "__init__.py").is_file():
-        source_path = str(bundled)
+        pass  # Without a readable plan, the launcher package or the base copy answers.
     command: tuple[str, ...] = (str(python), "-m", DECISIONS_MODULE, *arguments)
-    if source_path:
-        command = ("env", f"PYTHONPATH={source_path}", *command)
+    package_path = console_child.console_package_path(source_path, bundled)
+    if package_path:
+        command = ("env", f"PYTHONPATH={package_path}", *command)
     return command
