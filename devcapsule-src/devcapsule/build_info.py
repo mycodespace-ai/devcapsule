@@ -5,12 +5,21 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from importlib.metadata import PackageNotFoundError, version as distribution_version
 from importlib.resources import files
+from importlib.resources.abc import Traversable
 import json
 from pathlib import Path
 import re
 import tomllib
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 from zipfile import BadZipFile, ZipFile
+
+__all__ = [
+    "BuildInfo",
+    "BuildInfoError",
+    "build_info_json",
+    "current_build_info",
+    "read_pex_build_info",
+]
 
 
 class BuildInfoError(ValueError):
@@ -74,7 +83,17 @@ class BuildInfo:
         return asdict(self)
 
 
-def current_build_info() -> BuildInfo:
+# In a source checkout the authored pyproject.toml sits beside the package;
+# in any installed form it does not, and the installed metadata answers.
+_SOURCE_PYPROJECT = Path(__file__).parents[1] / "pyproject.toml"
+
+
+def current_build_info(
+    *,
+    record_paths: Sequence[Traversable | Path] | None = None,
+    pyproject_path: Path | None = None,
+    installed_version: str | None = None,
+) -> BuildInfo:
     """Describe this running distribution: its stamped build, or its source form.
 
     Only ``scripts/build-pex.sh`` creates ``_build_info.json``, so the record's
@@ -86,28 +105,38 @@ def current_build_info() -> BuildInfo:
     ``v<version>-local`` mnemonic that marks an unbuilt source run.
     """
 
-    resource = files("devcapsule").joinpath("_build_info.json")
-    try:
-        return BuildInfo.from_json(resource.read_text(encoding="utf-8"))
-    except OSError:
-        # Some editable installers expose the project root as the package's
-        # resource location even though imports resolve to this source tree.
-        # The sibling path preserves source/PEX command parity without
-        # weakening the packaged-resource validation.
-        sibling = Path(__file__).with_name("_build_info.json")
+    candidates: Sequence[Traversable | Path] = (
+        record_paths
+        if record_paths is not None
+        else (
+            files("devcapsule").joinpath("_build_info.json"),
+            # Some editable installers expose the project root as the package's
+            # resource location even though imports resolve to this source tree.
+            # The sibling path preserves source/PEX command parity without
+            # weakening the packaged-resource validation.
+            Path(__file__).with_name("_build_info.json"),
+        )
+    )
+    for candidate in candidates:
         try:
-            return BuildInfo.from_json(sibling.read_text(encoding="utf-8"))
+            text = candidate.read_text(encoding="utf-8")
         except OSError:
-            return _source_form_build_info()
+            continue
+        return BuildInfo.from_json(text)
+    return _source_form_build_info(
+        pyproject_path=_SOURCE_PYPROJECT if pyproject_path is None else pyproject_path,
+        installed_version=installed_version,
+    )
 
 
-# In a source checkout the authored pyproject.toml sits beside the package;
-# in any installed form it does not, and the installed metadata answers.
-_SOURCE_PYPROJECT = Path(__file__).parents[1] / "pyproject.toml"
-
-
-def _source_form_build_info() -> BuildInfo:
-    package_version = _authored_version() or _installed_version()
+def _source_form_build_info(
+    *,
+    pyproject_path: Path,
+    installed_version: str | None,
+) -> BuildInfo:
+    package_version = _authored_version(pyproject_path) or (
+        installed_version if installed_version is not None else _installed_version()
+    )
     return BuildInfo(
         schema_version=2,
         version=package_version,
@@ -118,7 +147,7 @@ def _source_form_build_info() -> BuildInfo:
     )
 
 
-def _authored_version() -> str | None:
+def _authored_version(pyproject_path: Path) -> str | None:
     """The version pyproject.toml authors, when running from a source checkout.
 
     Preferred over installed metadata because an editable install freezes its
@@ -127,7 +156,7 @@ def _authored_version() -> str | None:
     """
 
     try:
-        document = tomllib.loads(_SOURCE_PYPROJECT.read_text(encoding="utf-8"))
+        document = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
     except (OSError, tomllib.TOMLDecodeError):
         return None
     project = document.get("project")

@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import argparse
+from typing import Sequence
 
-from devcapsule.build_info import build_info_json, current_build_info
+from devcapsule.build_info import BuildInfo, build_info_json, current_build_info
 from devcapsule.commands.framework import Command
+
+__all__ = ["COMMAND", "VersionCommand"]
 
 
 class VersionCommand(Command):
@@ -22,8 +25,19 @@ class VersionCommand(Command):
         )
 
     @classmethod
+    def invoke(
+        cls,
+        prog: str,
+        argv: Sequence[str],
+        context: object | None = None,
+        *,
+        build_info: BuildInfo | None = None,
+    ) -> int:
+        return super().invoke(prog, argv, build_info if build_info is not None else context)
+
+    @classmethod
     def run(cls, arguments: argparse.Namespace, context: object | None) -> int:
-        info = current_build_info()
+        info = context if isinstance(context, BuildInfo) else current_build_info()
         if arguments.as_json:
             print(build_info_json(info))
             return 0

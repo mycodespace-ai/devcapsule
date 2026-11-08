@@ -3,21 +3,31 @@
 When the runtime plan carries a console section, the entrypoint starts the
 console beside the display infrastructure, or alone in a headless capsule,
 ahead of the foreground child. The console is its own distribution, installed
-by the base image under ``/opt/devcapsule-webconsole`` (base recipe 10); it
-reads the mounted project and calls the runtime CLI's ``--json`` outputs. See
+by the base image under ``/opt/devcapsule-webconsole`` (base recipe 10; host
+console planning gates on ``WEBCONSOLE_RECIPE``, recipe 11); it reads the
+mounted project and calls the runtime CLI's ``--json`` outputs. See
 ``R-CONSOLE-001`` and ``engineering-docs/work-orders/2026-10-09-capsule-webconsole.md``.
 """
 
 from __future__ import annotations
 
+from contextlib import AbstractContextManager
 from pathlib import Path
 import socket
-import subprocess
 import sys
 from typing import Callable
 
 from .contract import RuntimePlan
 from .supervisor import SupervisedChild
+
+__all__ = [
+    "CONSOLE_CHILD",
+    "CONSOLE_PYTHON",
+    "CONSOLE_READY_TIMEOUT_SECONDS",
+    "CONSOLE_ROOT",
+    "RUNTIME_CLI",
+    "console_child",
+]
 
 CONSOLE_CHILD = "console"
 CONSOLE_ROOT = "/opt/devcapsule-webconsole"
@@ -30,9 +40,16 @@ RUNTIME_CLI = "/opt/devcapsule/bin/devcapsule.pex"
 CONSOLE_READY_TIMEOUT_SECONDS = 60.0
 
 CommandWrapper = Callable[[tuple[str, ...]], tuple[str, ...]]
+ConnectionProbe = Callable[[tuple[str, int], float], AbstractContextManager[object]]
 
 
-def console_child(plan: RuntimePlan, run_as_identity: CommandWrapper) -> SupervisedChild | None:
+def console_child(
+    plan: RuntimePlan,
+    run_as_identity: CommandWrapper,
+    *,
+    console_python: Path | None = None,
+    connect: ConnectionProbe | None = None,
+) -> SupervisedChild | None:
     """The console child for ``plan``, or ``None`` when there is none to start.
 
     ``None`` when the plan carries no console section, and, announced, when
@@ -44,7 +61,8 @@ def console_child(plan: RuntimePlan, run_as_identity: CommandWrapper) -> Supervi
     console = plan.console
     if console is None:
         return None
-    if not Path(CONSOLE_PYTHON).is_file():
+    python = Path(CONSOLE_PYTHON) if console_python is None else console_python
+    if not python.is_file():
         print(
             f"devcapsule console: this base has no web console (base recipe 10 adds it at {CONSOLE_ROOT}); "
             "the capsule runs without one",
@@ -53,26 +71,21 @@ def console_child(plan: RuntimePlan, run_as_identity: CommandWrapper) -> Supervi
         )
         return None
     command: tuple[str, ...] = (
-        CONSOLE_PYTHON, "-m", "devcapsule_webconsole",
+        str(python), "-m", "devcapsule_webconsole",
         "--project", plan.project_path,
         "--cli", RUNTIME_CLI,
         "--token-file", console.token_path,
         "--listen", console.listen_address,
         "--port", str(console.port),
     )
-    if console.source_path and _monitor_dependency_available():
+    if console.source_path:
         # The checkout's own console source, ahead of the image's installed
         # copy: the same interpreter and dependencies, the mounted package.
+        # Host-side console planning gates on WEBCONSOLE_RECIPE (11), so any
+        # base that reaches here with a planned console already carries psutil.
         command = ("env", f"PYTHONPATH={console.source_path}", *command)
         print(
             f"devcapsule console: running the mounted checkout's source at {console.source_path}",
-            file=sys.stderr,
-            flush=True,
-        )
-    elif console.source_path:
-        print(
-            "devcapsule console: the base cannot import psutil (base recipe 11 adds it); "
-            "running the installed console instead of the mounted source",
             file=sys.stderr,
             flush=True,
         )
@@ -80,30 +93,24 @@ def console_child(plan: RuntimePlan, run_as_identity: CommandWrapper) -> Supervi
     return SupervisedChild(
         name=CONSOLE_CHILD,
         command=run_as_identity(command),
-        ready=lambda: _accepts_connections(probe_address, console.port),
+        ready=lambda: _accepts_connections(probe_address, console.port, connect=connect),
         ready_timeout_seconds=CONSOLE_READY_TIMEOUT_SECONDS,
     )
 
 
-def _monitor_dependency_available() -> bool:
-    """Check the base interpreter, without the checkout or ambient PYTHONPATH.
-
-    Recipe 10 has the console but lacks psutil. Its installed console still
-    works; mounting slice-5 source over it would fail at import time.
-    """
+def _accepts_connections(
+    address: str,
+    port: int,
+    *,
+    connect: ConnectionProbe | None = None,
+) -> bool:
+    open_connection: ConnectionProbe = (
+        (lambda target, timeout: socket.create_connection(target, timeout=timeout))
+        if connect is None
+        else connect
+    )
     try:
-        subprocess.run(
-            [CONSOLE_PYTHON, "-I", "-c", "import psutil"],
-            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5.0,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return False
-    return True
-
-
-def _accepts_connections(address: str, port: int) -> bool:
-    try:
-        with socket.create_connection((address, port), timeout=0.2):
+        with open_connection((address, port), 0.2):
             return True
     except OSError:
         return False

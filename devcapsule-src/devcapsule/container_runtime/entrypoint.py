@@ -19,19 +19,28 @@ from dataclasses import replace
 import os
 from pathlib import Path
 import sys
-from typing import Sequence
+from typing import Callable, MutableMapping, Protocol, Sequence
 
 from . import contract as rtcontract
 from .. import logs
 
 from .components import eclipse, jetbrains, vscode
-from .console import console_child
+from .console import CommandWrapper, console_child
 from .contract import RuntimePlan, RuntimePlanError
-from .display import prepare_contained_display
+from .display import ContainedDisplay, prepare_contained_display
 from .filesystem import plan_filesystem, prepare_filesystem
 from .graphics import environment as graphics_environment
 from .identity import foreground_command
 from .supervisor import SupervisedChild, Supervisor, SupervisorError
+
+__all__ = [
+    "SUPERVISOR_LOG_COMPONENT",
+    "USAGE",
+    "log_rotation",
+    "logged_children",
+    "main",
+    "run",
+]
 
 USAGE = (
     "usage: devcapsule runtime RUNTIME_PLAN.json [-- COMMAND [ARGUMENT...]]\n"
@@ -42,20 +51,42 @@ USAGE = (
 SUPERVISOR_LOG_COMPONENT = "supervisor"
 
 
-def run(plan: rtcontract.RuntimePlan, job: tuple[str, ...] | None = None) -> int:
+class SupervisorRunner(Protocol):
+    def run(self) -> int: ...
+
+
+SupervisorFactory = Callable[..., SupervisorRunner]
+DisplayPreparer = Callable[[RuntimePlan, str, CommandWrapper], ContainedDisplay]
+ConsoleBuilder = Callable[[RuntimePlan, CommandWrapper], SupervisedChild | None]
+
+
+def run(
+    plan: rtcontract.RuntimePlan,
+    job: tuple[str, ...] | None = None,
+    *,
+    environ: MutableMapping[str, str] | None = None,
+    prepare_display: DisplayPreparer | None = None,
+    build_console_child: ConsoleBuilder | None = None,
+    supervisor_factory: SupervisorFactory | None = None,
+) -> int:
+    target_env: MutableMapping[str, str] = os.environ if environ is None else environ
+    make_display = prepare_contained_display if prepare_display is None else prepare_display
+    make_console = console_child if build_console_child is None else build_console_child
+    make_supervisor: SupervisorFactory = Supervisor if supervisor_factory is None else supervisor_factory
+
     owner = (plan.identity.uid, plan.identity.gid)
     log_directory = None if plan.logs is None else plan.logs.directory
     segment_bytes, rotations = log_rotation(plan)
     logs.configure(SUPERVISOR_LOG_COMPONENT, log_directory, owner=owner, segment_bytes=segment_bytes, rotations=rotations)
     filesystem = plan_filesystem(plan)
     prepare_filesystem(filesystem, plan.identity)
-    os.environ.update(filesystem.environment)
-    os.environ.update(plan.component_environment())
-    os.environ.update(graphics_environment(os.environ))
+    target_env.update(filesystem.environment)
+    target_env.update(plan.component_environment())
+    target_env.update(graphics_environment(target_env))
     if plan.component.adapter == "jetbrains":
         launch = jetbrains.plan(plan)
         Path(launch.properties_path).write_text(launch.properties, encoding="utf-8")
-        os.environ[launch.properties_environment_variable] = launch.properties_path
+        target_env[launch.properties_environment_variable] = launch.properties_path
         command = launch.command
     elif plan.component.adapter == "vscode":
         command = vscode.plan(plan).command
@@ -69,10 +100,10 @@ def run(plan: rtcontract.RuntimePlan, job: tuple[str, ...] | None = None) -> int
 
     infrastructure: tuple[SupervisedChild, ...] = ()
     if job is None and plan.display is not None and plan.display.is_contained:
-        contained = prepare_contained_display(plan, filesystem.environment["XDG_RUNTIME_DIR"], as_capsule_user)
-        os.environ.update(contained.environment)
+        contained = make_display(plan, filesystem.environment["XDG_RUNTIME_DIR"], as_capsule_user)
+        target_env.update(contained.environment)
         infrastructure = contained.children
-    console = console_child(plan, as_capsule_user)
+    console = make_console(plan, as_capsule_user)
     if console is not None:
         infrastructure = (*infrastructure, console)
     if job is None:
@@ -92,7 +123,7 @@ def run(plan: rtcontract.RuntimePlan, job: tuple[str, ...] | None = None) -> int
         )
     guard = jetbrains.session_lock(plan) if plan.component.adapter == "jetbrains" and job is None else nullcontext()
     with guard:
-        return Supervisor(
+        return make_supervisor(
             logged_children((*infrastructure, child), log_directory),
             log_owner=owner, segment_bytes=segment_bytes, rotations=rotations,
         ).run()
