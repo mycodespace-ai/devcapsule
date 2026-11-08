@@ -11,11 +11,6 @@ notice: >
 versions:
 - version: devel
   source: main
-  # On release-0.3.1 only: the branch's source declares the release
-  # version, and the website's check reads this checkout as main. The
-  # line satisfies contract 1, section 4.2, for the local gate; it is not
-  # carried to main, whose source declares a development version.
-  source-version: "0.3.1"
   status: development
 - version: 0.3.0
   source: docs-0.3.0
