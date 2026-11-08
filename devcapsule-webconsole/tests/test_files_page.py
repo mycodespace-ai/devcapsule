@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 import errno
+import mimetypes
 import os
 from pathlib import Path
 import shutil
@@ -438,5 +439,57 @@ def test_raw_route_adds_attachment_disposition_only_when_download_is_one(
         assert "content-disposition" not in response.headers
     else:
         assert response.headers["content-disposition"] == expected_disposition
+
+
+@pytest.mark.parametrize(
+    ("extension", "expected_media_type"),
+    [
+        (".webm", "video/webm"),
+        (".mp4", "video/mp4"),
+        (".mkv", "video/x-matroska"),
+        (".mp3", "audio/mpeg"),
+        (".ogg", "audio/ogg"),
+        (".wav", "audio/wav"),
+        (".pdf", "application/pdf"),
+        (".webp", "image/webp"),
+        (".gif", "image/gif"),
+        (".png", "image/png"),
+        (".jpg", "image/jpeg"),
+        (".jpeg", "image/jpeg"),
+        (".yaml", "text/plain; charset=utf-8"),
+        (".yml", "text/plain; charset=utf-8"),
+        (".lock", "text/plain; charset=utf-8"),
+        (".cfg", "text/plain; charset=utf-8"),
+        (".ini", "text/plain; charset=utf-8"),
+        (".py", "text/plain; charset=utf-8"),
+        (".js", "text/plain; charset=utf-8"),
+        (".mjs", "text/plain; charset=utf-8"),
+        (".cjs", "text/plain; charset=utf-8"),
+        (".css", "text/plain; charset=utf-8"),
+        (".sh", "text/plain; charset=utf-8"),
+        (".csv", "text/plain; charset=utf-8"),
+        (".log", "text/plain; charset=utf-8"),
+        (".xml", "text/plain; charset=utf-8"),
+    ],
+)
+def test_raw_route_serves_well_known_extensions_with_expected_media_types(
+    client: TestClient,
+    project: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    extension: str,
+    expected_media_type: str,
+) -> None:
+    """GET /api/project/raw serves each documented media, document and source extension with its promised Content-Type even without host mime.types."""
+    bare_guess = mimetypes.MimeTypes(filenames=()).guess_type
+    filename = f"sample{extension}"
+    (project / "docs" / filename).write_bytes(b"sample")
+
+    response = with_token(client).get("/api/project/raw", params={"path": f"docs/{filename}"})
+    assert response.status_code == 200
+    assert response.headers["content-type"] == expected_media_type
+
+    monkeypatch.setattr(mimetypes, "guess_type", bare_guess)
+    assert console_app.raw_content_type(f"docs/{filename}") == expected_media_type
+
 
 

@@ -49,15 +49,31 @@ PAGES = {
     "/decisions": "decisions.html",
     "/notifications": "notifications.html",
 }
-# What a raw project file is served as, by extension. Markdown is text so a
-# browser shows it; anything unknown is bytes a browser offers to save.
-# SVG can contain active content. The raw route isolates every response below.
+# What a raw project file is served as when mimetypes.guess_type and the
+# image/video/audio/text rules in raw_content_type would not give it across
+# platforms. Markdown is text so a browser shows it; anything unknown is bytes
+# a browser offers to save. SVG can contain active content; the raw route
+# isolates every response below.
 RAW_CONTENT_TYPES = {
     ".md": "text/markdown; charset=utf-8",
     ".txt": "text/plain; charset=utf-8",
     ".toml": "text/plain; charset=utf-8",
+    ".yaml": "text/plain; charset=utf-8",
+    ".yml": "text/plain; charset=utf-8",
+    ".lock": "text/plain; charset=utf-8",
+    ".cfg": "text/plain; charset=utf-8",
+    ".ini": "text/plain; charset=utf-8",
+    ".cjs": "text/plain; charset=utf-8",
+    ".sh": "text/plain; charset=utf-8",
+    ".log": "text/plain; charset=utf-8",
+    ".xml": "text/plain; charset=utf-8",
     ".json": "application/json",
+    ".pdf": "application/pdf",
     ".svg": "image/svg+xml",
+    ".webp": "image/webp",
+    ".mkv": "video/x-matroska",
+    ".ogg": "audio/ogg",
+    ".wav": "audio/wav",
 }
 RAW_CHUNK_BYTES = 64 * 1024
 RAW_SECURITY_HEADERS = {
