@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-08; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 (`v0.3.1-rc1` on `accdec5b`) closed the Eclipse libsoup bug, and validation inside `0.3.1rc1` uncovered a blocking delivery bug: `/files`, `/filetree`, and `/api/project/tree` return `404` because `devcapsule.pex` omits `devcapsule-webconsole/`, the pinned bases predate PR #12, and `console_development_source()` overrides built candidates on DevCapsule checkouts; active on `ws-maintenance/webconsole-delivery` to settle and implement the root-cause fix before candidate 2; Codex 16 MiB npm cap bug also queued for candidate 2; two rulings open
+State: active 2026-11-08; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 (`v0.3.1-rc1` on `accdec5b`) closed the Eclipse libsoup bug, and validation inside `0.3.1rc1` uncovered a blocking delivery bug (`/files`, `/filetree`, and `/api/project/tree` returned `404`); owner decided `D-0017` (`launcher-package` + `source-or-opt-in`), root-cause fix implemented and gated on `ws-maintenance/webconsole-delivery` (2,864 unit, 30 integration, 458 webconsole, live base-Python HTTP smoke green) ready for PR into `release-0.3.1`; Codex 16 MiB npm cap bug also queued before candidate 2; two rulings open
 
 Definition read: WORKFLOW.md@d9a8103606fa, WORKFLOW-LOCAL.md@5b13c6d042d5
 
@@ -16,21 +16,51 @@ Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selecti
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
-## Blocking 0.3.1rc1 finding: web console Files page is not delivered — 2026-11-08
+## Blocking 0.3.1rc1 finding and D-0017 fix: launcher-delivered web console — 2026-11-08
 
 Validating `v0.3.1-rc1` (`accdec5b`) inside a running capsule found that
-`GET /files`, `GET /filetree`, and `GET /api/project/tree` all return `404`.
-Two couplings caused the failure: `devcapsule.pex` does not carry
-`devcapsule-webconsole/` (so adopter capsules run the pre-PR-#12 package baked
+`GET /files`, `GET /filetree`, and `GET /api/project/tree` all returned `404`.
+Two couplings caused the failure: `devcapsule.pex` did not carry
+`devcapsule-webconsole/` (so adopter capsules ran the pre-PR-#12 package baked
 into the pinned `linux-amd64` and `linux-arm64` recipe-11 bases), and
-`console_development_source()` unconditionally puts a mounted DevCapsule
+`console_development_source()` unconditionally put a mounted DevCapsule
 checkout's `devcapsule-webconsole/` first on `PYTHONPATH` (shadowing built
 candidates on older branches and masking missing delivery on `release-0.3.1`).
 Filed as [the blocking bug record](../../bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md)
 on `ws-maintenance/webconsole-delivery` (local `main` fast-forwarded 122
-commits to `origin/main` `46ded16d`, `git cherry` clean). Handing the two
-root-cause design choices (launcher-delivered console package vs base rebuilds,
-and self-hosting override scope) to the owner before coding the slice.
+commits to `origin/main` `46ded16d`, `git cherry` clean).
+
+The owner answered both design decisions through the capsule console, recorded
+in [D-0017](../../decisions/product/d-0017-launcher-delivers-web-console-package.md)
+and [R-CONSOLE-001](../../requirements/product/r-console-001-capsule-web-console.md):
+
+1. `console-delivery = launcher-package`: `scripts/build-pex.sh` treats
+   `devcapsule-webconsole/` as a tracked clean build input and embeds
+   `devcapsule/_webconsole_bundle.zip` inside `devcapsule.pex` via
+   `devcapsule/webconsole_bundle.py`; `materialization.py` extracts and installs
+   `/opt/devcapsule/webconsole` read-only alongside
+   `/opt/devcapsule/bin/devcapsule.pex` (bound to `runtime.pex-sha256` in
+   formation identity); `container_runtime/console.py` and `console_tools.py`
+   run `/opt/devcapsule-webconsole/venv/bin/python` with
+   `PYTHONPATH=/opt/devcapsule/webconsole` on recipe-11+ bases, falling back to
+   `/opt/devcapsule-webconsole` on older bases.
+2. `self-hosting-override = source-or-opt-in`: `is_built_distribution()` in
+   `build_info.py` distinguishes built executables from source runs;
+   `console_development_source()` leaves `console.source_path == ""` by default
+   for built executables even on a DevCapsule checkout, keeps automatic checkout
+   mounting for unbuilt source runs, and honors `DEVCAPSULE_DEV_WEBCONSOLE=1`/`0`.
+
+All gates passed on `ws-maintenance/webconsole-delivery`: `nox -s build` (mypy
+clean across 331 files, 0 unit-convention breaches, 2,864 unit tests passed,
+98% diff coverage vs `origin/release-0.3.1`, 249-page content contract),
+`nox -s integration` (30 passed, 3 skipped), `nox -s webconsole` (458 passed),
+and a live HTTP check on this capsule's pre-PR-#12 `/opt/devcapsule-webconsole/venv/bin/python`
+serving `/files` (`200`), `/filetree` (`307` -> `/files`), `/api/project/tree`
+(`200`), and `/api/project/raw?path=hello.txt` (`200`) from the bundle inside
+`dist/devcapsule-local.pex` against a non-DevCapsule project. Planned next step:
+push `ws-maintenance/webconsole-delivery` and open the PR targeting
+`release-0.3.1` (with Pair Review if directed by the owner), then address the
+Codex 16 MiB npm cap slice before `v0.3.1-rc2`.
 
 ## Slice 2 of 0.3.1: the web console's Files page, by Pair Review — 2026-11-08
 
