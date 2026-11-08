@@ -82,7 +82,7 @@ class ResolutionError(ProjectConfigurationError):
     """
 
 
-_MATRIX_VERSION = "embedded-31"
+_MATRIX_VERSION = "embedded-32"
 
 
 # --------------------------------------------------------------------------

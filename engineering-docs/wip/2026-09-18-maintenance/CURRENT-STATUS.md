@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-07; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 0 published as `v0.3.1-rc0` on `8bcee1d0`, verified from the download; rulings open before candidate 1: executables for the Mac, the compatibility feed's home, the Eclipse amd64 repin; the seventeen tests expected to fail stay queued on `main`
+State: active 2026-11-07; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 0 published as `v0.3.1-rc0` on `8bcee1d0`, verified from the download; the Eclipse amd64 repin done on the branch as slice 1; rulings open before candidate 1: executables for the Mac, the compatibility feed's home; the seventeen tests expected to fail stay queued on `main`
 
 Definition read: WORKFLOW.md@d2ccbbe43dfa, WORKFLOW-LOCAL.md@65501b3407db
 
@@ -41,7 +41,13 @@ which Ubuntu replaced with `0.10` on 2026-10-08; the two URLs return 404
 and the archive serves `0.10` for amd64, the build the arm64 closure
 already pins. [The bug record](../../bugs/devcapsule/2026-11-07-eclipse-amd64-libsoup-urls-return-404.md)
 is filed as major for 0.3.1: an adopter who requires Eclipse on a Linux
-host with an empty cache cannot acquire it.
+host with an empty cache cannot acquire it. Fixed on the release branch on
+2026-11-07 by the owner's ruling, the cycle's first slice: both packages
+at `0.10`, hashes from the signed index, matrix `embedded-32`, golden
+locks regenerated; closed when a fresh acquisition succeeds on candidate 1.
+The owner also asked for a first cut of how the pin promise is reconciled
+with an archive that recycles its files; that proposal is a design matter
+for the owner, outside the release.
 
 The full gate passed on the branch, `nox -s build`: 2825 unit tests, mypy
 over 323 files, the conventions gate, the smoke, the local PEX, the web

@@ -7,11 +7,11 @@ and signed Ubuntu index available (Ubuntu's InRelease files verified with
 gpgv against the archive signing key). Notes on particular entries:
 
 - Eclipse's WebKitGTK closure is the amd64 closure's package versions from
-  ports.ubuntu.com, except libsoup: Ubuntu removed 3.4.4-5ubuntu0.8 from
-  every noble pocket on 2026-10-08, so both libsoup packages are
-  3.4.4-5ubuntu0.10 from noble-security. Architecture-independent packages
-  are the amd64 closure's own bytes. libunwind8 is added: arm64's
-  libgstreamer1.0-0 depends on it.
+  ports.ubuntu.com. Both libsoup packages are 3.4.4-5ubuntu0.10: Ubuntu
+  removed 3.4.4-5ubuntu0.8 from every noble pocket on 2026-10-08, and the
+  amd64 closure moved to the same build on 2026-11-07. Architecture-
+  independent packages are the amd64 closure's own bytes. libunwind8 is
+  added: arm64's libgstreamer1.0-0 depends on it.
 - Playwright 1.63.0's Chromium comes from Chrome for Testing's linux-arm64
   build of 153.0.8010.12 on Playwright's CDN, byte-identical to Google's.
 - Antigravity's arm64 builds live under ``linux-arm/``; VS Code's arm64
