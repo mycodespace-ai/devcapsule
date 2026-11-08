@@ -1,7 +1,7 @@
 ---
-description: "The web console: inspect your running capsule, answer agent decisions, read records, and queue configuration changes for the next launch."
+description: "The web console: inspect your running capsule, answer agent decisions, read records, browse project files, and queue configuration changes for the next launch."
 weight: 5
-updated: 2026-10-31
+updated: 2026-11-08
 ---
 # The web console
 
@@ -28,7 +28,7 @@ under host X11 passthrough), the console opens automatically instead.
 ## What is on each page
 
 Opening the link shows the capsule's identity at **Home**, with navigation to
-seven pages:
+eight pages:
 
 - **Configuration**: the launch-time listing from `devcapsule project config
   show`, forms to send `config` changes to the launcher for the **next**
@@ -48,6 +48,12 @@ seven pages:
   `dot` blocks render as Graphviz diagrams, and linked images or text files are
   served alongside them. Each file is read from the mounted working tree on
   every open, so edits appear on reload.
+- **Files**: every file of the mounted project listed directory by directory
+  and served read-only with its media type. Videos, audio, PDFs, images, and
+  plain-text source or configuration files open in the browser, Markdown files
+  open in **Records**, and each file row offers a download link alongside its
+  view link. `/files/<path>` links can be shared with anyone who has this run's
+  console link.
 - **Decisions**: structured multiple-choice questions an agent inside the
   capsule handed to you, with options and cited project records. Pick your
   answers, add an optional note, and submit. Your answer is written only to
