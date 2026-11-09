@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-09; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 (`v0.3.1-rc1` on `accdec5b`) closed the Eclipse libsoup bug; stacked PRs #18 (`b84b06e9`, whole-file legacy test retirement + 4-file refurbishment) and #16 (`f2bae5cb`, launcher-delivered `devcapsule_webconsole` under `D-0017`) merged into `release-0.3.1`; Codex npm abbreviated-metadata fix (`2026-11-08-codex-npm-metadata-exceeds-16-mib.md`) implemented and verified on `ws-maintenance/codex-npm-metadata`; agent CLI freshness upgrade (Codex `0.167.0`, Claude Code `2.1.321`, Antigravity CLI `1.5.3`) next before `v0.3.1-rc2`; two rulings open
+State: active 2026-11-09; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 (`v0.3.1-rc1` on `accdec5b`) closed the Eclipse libsoup bug; stacked PRs #18 (`b84b06e9`) and #16 (`f2bae5cb`) merged into `release-0.3.1`; two stacked slices ready for merge into `release-0.3.1` before `v0.3.1-rc2`: (1) PR #20 (`ws-maintenance/codex-npm-metadata` -> `release-0.3.1`, CI green) fixing the Codex npm 16 MiB cap via `Accept: application/vnd.npm.install-v1+json`, and (2) `ws-maintenance/0.3.1-agent-freshness` (stacked on #20) advancing Codex `0.166.0 -> 0.167.0` and Claude Code `2.1.314 -> 2.1.321` across `linux-amd64` and `linux-arm64` (`embedded-33`, Antigravity CLI held at `1.4.12`); two rulings open
 
 Definition read: WORKFLOW.md@d9a8103606fa, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
@@ -12,9 +12,41 @@ Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/codex-npm-metadata` from `release-0.3.1` (`f2bae5cb`); `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/codex-npm-metadata` from `release-0.3.1` (`f2bae5cb`), open as PR #20; `ws-maintenance/0.3.1-agent-freshness` stacked on `ws-maintenance/codex-npm-metadata` (`bd59abf0`); `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## Agent CLI freshness refresh for 0.3.1 candidate 2 (`embedded-33`) — 2026-11-09
+
+Stacked on PR #20 (`ws-maintenance/codex-npm-metadata` at `bd59abf0`) as
+`ws-maintenance/0.3.1-agent-freshness`:
+
+- Rechecked live vendor pointers on 2026-11-09: Codex `0.167.0`, Claude Code
+  `2.1.321` (up from `2.1.319` at the 2026-11-07 cut after Anthropic's model
+  launch), and Antigravity CLI `1.5.3`.
+- Downloaded and cryptographically verified both `linux-amd64` and
+  `linux-arm64` artifacts for Codex `0.167.0` (against npm SHA-512 SRI:
+  meta `e858522a…`, `linux-x64` `2dc9aa87…`, `linux-arm64` `e24d7b6f…`) and
+  Claude Code `2.1.321` (against `2.1.321/manifest.json` SHA-256: `linux-x64`
+  `426c3381…`, `linux-arm64` `6bea0633…`).
+- Verified offline layout, seeded configuration (`config.toml` /
+  `settings.json`), `--version` (`codex-cli 0.167.0`, `2.1.321 (Claude Code)`),
+  and `--help` inside `mycodespaceai/devcapsule-base:v0.3.0-base-20261031`
+  (`--network none`) using `materialization.npm_install_step`.
+- Advanced `resolution_matrix.py` to `embedded-33` (appending `_CODEX_0_167_0`,
+  `_CLAUDE_CODE_2_1_321`, and their `_VerifiedEdge` entries while keeping all
+  prior pins), added matching `linux-arm64` entries in
+  `components/linux_arm64_pins.py`, and regenerated all 11 golden locks.
+- Held Antigravity CLI at `1.4.12` (surfaced to the owner): advancing
+  `antigravity-cli` alters four literal `"1.4.12"` assertions in `1,396`-line
+  legacy `tests/test_project_init.py` (documented in
+  `2026-10-31-release-dependent-test-fixtures.md`), which *Unit Tests* rule 5
+  requires refurbishing whole.
+- Planned next step: once PR #20 and this stacked freshness PR merge into
+  `release-0.3.1`, run `nox -s integration` on `release-0.3.1` (recording
+  `test-runs.json`), merge `release-0.3.1` into `main` through a throwaway
+  `4PR-3-release-0.3.1` PR keeping `main`'s `0.3.2.dev0` version files, and tag
+  `v0.3.1-rc2` on the owner's word.
 
 ## Codex npm registry metadata > 16 MiB fix for 0.3.1 candidate 2 — 2026-11-09
 
