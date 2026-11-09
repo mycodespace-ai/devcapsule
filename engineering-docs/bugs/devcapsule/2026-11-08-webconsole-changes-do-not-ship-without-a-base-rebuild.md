@@ -1,5 +1,5 @@
 ---
-status: fixing
+status: fixed
 severity: blocking
 target: 0.3.1
 owner: maintenance
@@ -78,22 +78,76 @@ uncertainty):
    mounted project is a DevCapsule checkout. That breaks candidate testing on
    older branches and hides missing candidate delivery on newer branches.
 
+## Fix and verification
+
+Resolved on `ws-maintenance/webconsole-delivery` under
+[D-0017](../../decisions/product/d-0017-launcher-delivers-web-console-package.md)
+and updated [R-CONSOLE-001](../../requirements/product/r-console-001-capsule-web-console.md):
+
+1. **Launcher-delivered web console package (`console-delivery = launcher-package`).**
+   - `devcapsule/webconsole_bundle.py` packs `devcapsule-webconsole/devcapsule_webconsole`
+     into a deterministic stored zip (`devcapsule/_webconsole_bundle.zip`) and
+     extracts it with path-confinement validation.
+   - `scripts/build-pex.sh` treats `devcapsule-webconsole/` as a tracked clean
+     build input and embeds `_webconsole_bundle.zip` in `devcapsule.pex`, so any
+     console edit changes `runtime.pex-sha256` and invalidates the materialized
+     formation identity.
+   - `devcapsule/materialization.py` extracts `_webconsole_bundle.zip` from
+     `runtime_pex` and installs `/opt/devcapsule/webconsole` read-only alongside
+     `/opt/devcapsule/bin/devcapsule.pex`.
+   - `devcapsule/container_runtime/console.py` and `devcapsule/console_tools.py`
+     run `/opt/devcapsule-webconsole/venv/bin/python` with
+     `PYTHONPATH=/opt/devcapsule/webconsole` when `console.source_path` is empty
+     and the launcher package is installed, else with the base's
+     `/opt/devcapsule-webconsole` copy; the launcher plans a console only on
+     recipe 11+ bases, which carry every console dependency.
+2. **Source-only or opt-in self-hosting override (`self-hosting-override = source-or-opt-in`).**
+   - `devcapsule/build_info.py` adds `is_built_distribution()`.
+   - `console_development_source()` in `devcapsule/launch/pycharm/_launcher.py`
+     returns `""` by default when `is_built_distribution()` is true, even on a
+     DevCapsule checkout. Unbuilt source runs (`.venv/bin/devcapsule`) continue
+     to mount `<project_mount>/devcapsule-webconsole` automatically;
+     `DEVCAPSULE_DEV_WEBCONSOLE=1` (`true`) opts in for built executables and
+     `0` (`false`) opts out in source runs.
+
+Verified on 2026-11-08 / 2026-11-09 (stacked on PR #18 `ws-maintenance/webconsole-legacy-tests`):
+
+- `nox -s build`: passed (`mypy` clean across 331 files; unit conventions 0
+  breaches across 104 legacy files holding 1,387 legacy tests and 43 conforming
+  files; 2,900 unit tests passed, 89% total coverage; 99% coverage on
+  `webconsole_bundle.py`; `smoke_pex` and 249-page content contract green).
+- `nox -s integration`: passed (40 passed, 3 skipped, including clean-revision
+  and dirty-input checks on `devcapsule-webconsole/` and embedded Files-page
+  verification inside built `devcapsule.pex`).
+- `nox -s webconsole`: passed (`mypy` clean across 9 files; 458 passed).
+- Live base-interpreter HTTP check on this pre-PR-#12 recipe-11 base
+  (`sha256:da255c81…`): extracted `dist/devcapsule-local.pex`'s console bundle
+  and ran `/opt/devcapsule-webconsole/venv/bin/python -m devcapsule_webconsole`
+  with `env PYTHONPATH=<extracted>` against a non-DevCapsule project;
+  `GET /?token=…` (`200`), `GET /files` (`200`), `GET /filetree` (`307` to
+  `/files`), `GET /api/project/tree` (`200`), and
+  `GET /api/project/raw?path=hello.txt` (`200`) all succeeded without a base
+  rebuild or checkout mount.
+- `main` disposition: reaches `main` with the pre-candidate merge of
+  `release-0.3.1` per *Release Fixes And Main*.
+
 ## Verification target and close criteria
 
-Owner `maintenance` works on the fix on `ws-maintenance/webconsole-delivery`
-for `0.3.1` (candidate 2).
+Owner `maintenance` delivered the fix on `ws-maintenance/webconsole-delivery`
+targeting `release-0.3.1` for `0.3.1` (candidate 2).
 
 Close when:
 
-1. The owner selects the delivery mechanism (launcher-delivered console package
-   on the base's `/opt/devcapsule-webconsole/venv` vs rebuilt and repinned
-   bases with a gate check) and the self-hosting override rule.
-2. Unit and integration tests verify that a built `devcapsule.pex` delivers the
-   current `devcapsule_webconsole` (including `/files`, `/filetree`, and
-   `/api/project/tree`) without relying on a DevCapsule checkout mount.
-3. A fresh non-DevCapsule project launched by the downloaded `v0.3.1-rc2`
-   executable on the pinned recipe-11 base serves `200 OK` on `/files` and
-   `/api/project/tree`, and redirects `/filetree` to `/files`.
+1. Done (`D-0017`): launcher-delivered console package on
+   `/opt/devcapsule-webconsole/venv` and source-only/opt-in self-hosting
+   override recorded and implemented.
+2. Done: unit and integration tests verify that a built `devcapsule.pex`
+   delivers the current `devcapsule_webconsole` (including `/files`, `/filetree`,
+   and `/api/project/tree`) without relying on a DevCapsule checkout mount.
+3. Pending `v0.3.1-rc2`: launch a fresh non-DevCapsule project with the
+   downloaded `v0.3.1-rc2` executable on the pinned recipe-11 base and confirm
+   `200 OK` on `/files` and `/api/project/tree`, and `307` redirect from
+   `/filetree` to `/files`.
 
 Reopen if a change under `devcapsule-webconsole/` merges and a built PEX on the
 pinned base fails to serve it.

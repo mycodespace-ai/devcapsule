@@ -63,6 +63,12 @@ No candidate is tagged yet; the cut is 2026-11-07 at `31e8fec7` on `main`.
   Releases from 0.3.1 on are published there; the website's links and the
   install guide name it. The old repository under the personal account
   stays as it was at the move and is not a redirect.
+- **The launcher delivers its matching web console.** Materialization installs
+  the launcher's own `devcapsule_webconsole` package at
+  `/opt/devcapsule/webconsole` on the base image's pinned interpreter, so
+  web-console updates ship with each launcher release without a base-image
+  rebuild. A built executable runs its own console even on a DevCapsule
+  checkout unless `DEVCAPSULE_DEV_WEBCONSOLE=1` opts into the checkout copy.
 
 ## Fixed
 
