@@ -122,15 +122,17 @@ def test_run_console_decisions_preserves_arguments_streams_and_exit_status(
     assert output.err == "console diagnostic\n"
 
 
-def test_run_console_decisions_raises_cli_error_when_interpreter_cannot_start(tmp_path: Path) -> None:
-    """When executing ``console_python`` raises ``OSError``, ``run_console_decisions`` wraps it in ``CliError``."""
+def test_run_console_decisions_raises_cli_error_naming_an_interpreter_that_cannot_start(tmp_path: Path) -> None:
+    """When executing ``console_python`` raises ``OSError``, ``run_console_decisions`` wraps it in a ``CliError`` that names the interpreter."""
     python = tmp_path / "not-executable"
     python.touch(mode=0o600)
 
-    with pytest.raises(CliError, match="cannot run the console's decision tools"):
+    with pytest.raises(CliError, match="cannot run the console's decision tools") as caught:
         run_console_decisions(
             ["check", "x.json"],
             environ={"DEVCAPSULE_CONTAINER_NAME": "capsule-fixture"},
             console_python=python,
             runtime_plan_path=tmp_path / "no-plan.json",
         )
+
+    assert str(python) in str(caught.value)
