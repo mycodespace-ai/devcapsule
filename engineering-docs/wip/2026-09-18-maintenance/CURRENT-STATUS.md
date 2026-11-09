@@ -37,13 +37,29 @@ input/collaborator parameters (`current_build_info`, `VersionCommand.invoke`,
 `CheckoutDecisionsCommand.invoke`) so no refactored test patches
 `devcapsule.*` attributes; the dead per-start `import psutil` subprocess
 probe in `console.py` is removed (`WEBCONSOLE_RECIPE` 11 on the host already
-gates console planning). Initial gate on `ef157824` passed (`nox -s build`:
-`328` mypy files, `0` breaches, `2,833` unit passed, `249` contract pages;
-`nox -s integration`: `36` passed, `1` skipped; `nox -s webconsole`: `458`
-passed). Next step: run Pair Review (`Claude Code + Claude Fable 5.1`) using
-[the PR18.1 review brief](evidence/2026-11-08-webconsole-legacy-tests/review-brief.md),
-then rebase PR #16 (`ws-maintenance/webconsole-delivery`) on top as the second
-stacked PR.
+gates console planning).
+
+Pair Review (`Claude Code + Claude Fable 5.1`, [brief](evidence/2026-11-08-webconsole-legacy-tests/review-brief.md))
+opened [PR #19](https://github.com/mycodespace-ai/devcapsule/pull/19)
+(`PR18.1`), accepted at `4aac5dfc` without a round and merged at `a1aad17f`:
+completed `__all__` in `container_runtime/console.py`,
+`container_runtime/entrypoint.py`, and `materialization.py`; removed a dead
+`subprocess` import in `commands/project.py`; aligned rule 5, its companion,
+`engineering-docs/development/unit-tests.md`, and the checker diagnostic on
+basename pairing and mirror test deletions (4 new checker tests); added an
+`environ` isolation test in `test_entrypoint.py`; and restored interpreter-path
+matching in `test_console_tools.py`. Three unimplemented proposals from PR #19
+are recorded for later owner review: pairing legacy files with mirrors by
+imported `devcapsule.*` modules rather than file name alone; descending into
+nested `Test*`-in-`Test*` classes in `_test_functions`; and passing the runtime
+directory root into `prepare_filesystem` so `entrypoint.run` tests stay inside
+`tmp_path`. Post-merge gate on `a1aad17f` passed (`nox -s build`: `329` mypy
+files, `0` breaches across `104` legacy / `1,387` legacy tests and `42`
+conforming files, `2,838` unit passed, `89%` total coverage, `458` webconsole
+passed, `249` contract pages; `nox -s integration`: `36` passed, `1` skipped).
+[PR #18](https://github.com/mycodespace-ai/devcapsule/pull/18) is ready for
+owner merge into `release-0.3.1`, with PR #16
+(`ws-maintenance/webconsole-delivery`) stacked directly on top.
 
 ## Slice 2 of 0.3.1: the web console's Files page, by Pair Review — 2026-11-08
 
