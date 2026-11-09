@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-09; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 (`v0.3.1-rc1` on `accdec5b`) closed the Eclipse libsoup bug, and validation inside `0.3.1rc1` uncovered a blocking delivery bug (`/files`, `/filetree`, and `/api/project/tree` returned `404`); delivered as two stacked Pair-Reviewed PRs for `release-0.3.1`: (1) PR #18 (`ws-maintenance/webconsole-legacy-tests` -> `release-0.3.1`, reviewed in #19) tightening *Unit Tests* rule 5 to whole-file legacy retirement and retiring `test_build_info.py`, `test_console_runtime.py`, `test_console_tools.py`, and `test_materialization.py` (`108 -> 104` legacy files), and (2) PR #16 (`ws-maintenance/webconsole-delivery` -> `ws-maintenance/webconsole-legacy-tests`, reviewed in #17) delivering `devcapsule_webconsole` inside `devcapsule.pex` (`D-0017`) with stacked gate green (`2,900` unit, `104` legacy / `43` conforming / `0` breaches, `40` integration, `458` webconsole, `249` contract pages, live base-Python HTTP check); Codex 16 MiB npm cap bug also queued before candidate 2; two rulings open
+State: active 2026-11-09; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 (`v0.3.1-rc1` on `accdec5b`) closed the Eclipse libsoup bug, and validation inside `0.3.1rc1` uncovered a blocking delivery bug (`/files`, `/filetree`, and `/api/project/tree` returned `404`); delivered as two stacked Pair-Reviewed PRs for `release-0.3.1`: (1) PR #18 (`ws-maintenance/webconsole-legacy-tests` -> `release-0.3.1`, reviewed in #19) tightening *Unit Tests* rule 5 to whole-file legacy retirement and retiring `test_build_info.py`, `test_console_runtime.py`, `test_console_tools.py`, and `test_materialization.py` (`108 -> 104` legacy files), and (2) PR #16 (`ws-maintenance/webconsole-delivery` -> `ws-maintenance/webconsole-legacy-tests`, reviewed in #17) delivering `devcapsule_webconsole` inside `devcapsule.pex` (`D-0017`) with stacked gate green (`2,904` unit, `104` legacy / `44` conforming / `0` breaches, `40` integration, `458` webconsole, `249` contract pages, live base-Python HTTP check); Codex 16 MiB npm cap bug also queued before candidate 2; two rulings open
 
 Definition read: WORKFLOW.md@d9a8103606fa, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
@@ -12,7 +12,7 @@ Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/webconsole-legacy-tests` from `release-0.3.1` (`f5d5d2d8`), open as PR #18; `ws-maintenance/webconsole-delivery` stacked on `ws-maintenance/webconsole-legacy-tests` (`e301367d`), open as PR #16; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/webconsole-legacy-tests` from `release-0.3.1` (`f5d5d2d8`), open as PR #18; `ws-maintenance/webconsole-delivery` stacked on `ws-maintenance/webconsole-legacy-tests` (`e9e5700b`), open as PR #16; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
@@ -69,8 +69,8 @@ the refurbished mirror modules with zero legacy/mirror test twins and zero
 `devcapsule.*` attribute patches (`test_pycharm.py` untouched).
 
 Stacked gates on `ws-maintenance/webconsole-delivery` passed: `nox -s build`
-(mypy clean across `331` files, `0` unit-convention breaches across `104` legacy
-files holding `1,387` legacy tests and `43` conforming files, `2,900` unit tests
+(mypy clean across `332` files, `0` unit-convention breaches across `104` legacy
+files holding `1,387` legacy tests and `44` conforming files, `2,904` unit tests
 passed at `89%` total coverage, `smoke_pex`, `249`-page content contract),
 `nox -s integration` (`40` passed, `3` skipped), `nox -s webconsole` (`458`
 passed), and a live HTTP check on this capsule's pre-PR-#12
@@ -103,9 +103,9 @@ legacy files touched by the web-console delivery slice (`test_build_info.py`,
 `test_console_runtime.py`, `test_console_tools.py`, and
 `test_materialization.py`), dropping legacy files from `108` to `104`
 (`1,445 -> 1,387` legacy tests, `-58`) and raising conforming files from
-`34` to `42`. Each touched module declares `__all__` and exposes explicit
+`34` to `43`. Each touched module declares `__all__` and exposes explicit
 input/collaborator parameters (`current_build_info`, `VersionCommand.invoke`,
-`console_child`, `entrypoint.run`, `run_console_decisions`,
+`console_child`, `plan_filesystem`, `entrypoint.run`, `run_console_decisions`,
 `CheckoutDecisionsCommand.invoke`) so no refactored test patches
 `devcapsule.*` attributes; the dead per-start `import psutil` subprocess
 probe in `console.py` is removed (`WEBCONSOLE_RECIPE` 11 on the host already
@@ -120,15 +120,23 @@ completed `__all__` in `container_runtime/console.py`,
 `engineering-docs/development/unit-tests.md`, and the checker diagnostic on
 basename pairing and mirror test deletions (4 new checker tests); added an
 `environ` isolation test in `test_entrypoint.py`; and restored interpreter-path
-matching in `test_console_tools.py`. Three unimplemented proposals from PR #19
-are recorded for later owner review: pairing legacy files with mirrors by
-imported `devcapsule.*` modules rather than file name alone; descending into
-nested `Test*`-in-`Test*` classes in `_test_functions`; and passing the runtime
-directory root into `prepare_filesystem` so `entrypoint.run` tests stay inside
-`tmp_path`. Post-merge gate on `a1aad17f` passed (`nox -s build`: `329` mypy
-files, `0` breaches across `104` legacy / `1,387` legacy tests and `42`
-conforming files, `2,838` unit passed, `89%` total coverage, `458` webconsole
-passed, `249` contract pages; `nox -s integration`: `36` passed, `1` skipped).
+matching in `test_console_tools.py`. Hosted CI on `e301367d` caught a
+capsule-masked host-filesystem leak in `test_entrypoint.py` (`make_plan`
+inherited `pycharm_runtime_template()`'s `/ide-config` state slots and
+`/tmp/devcapsule-jetbrains.properties`, which existed inside the PyCharm
+capsule but raised `PermissionError: '/ide-config'` on GitHub Actions); fixed
+by rooting `make_plan`'s `state_slots` and `properties_path` under `tmp_path`
+and implementing PR #19's third proposal (`runtime_root`, `caller_uid`, and
+`configure_logs` seams across `filesystem.py`, `identity.py`, and
+`entrypoint.run`, with `__all__` on `filesystem.py` and `identity.py` plus
+mirror unit tests in `test_filesystem.py` so the unit tests touch no host
+paths, `os.geteuid()`, `os.environ`, or the root logger). Two unimplemented proposals from PR #19 remain
+recorded for later owner review: pairing legacy files with mirrors by imported
+`devcapsule.*` modules rather than file name alone, and descending into nested
+`Test*`-in-`Test*` classes in `_test_functions`. Gate passed (`330` mypy files,
+`0` breaches across `104` legacy / `1,387` legacy tests and `43` conforming
+files, `2,842` unit passed, `458` webconsole passed, `249` contract pages;
+`nox -s integration`: `36` passed, `1` skipped).
 [PR #18](https://github.com/mycodespace-ai/devcapsule/pull/18) is ready for
 owner merge into `release-0.3.1`, with PR #16
 (`ws-maintenance/webconsole-delivery`) stacked directly on top.
