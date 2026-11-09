@@ -34,7 +34,11 @@ from .identity import foreground_command
 from .supervisor import SupervisedChild, Supervisor, SupervisorError
 
 __all__ = [
+    "ConsoleBuilder",
+    "DisplayPreparer",
     "SUPERVISOR_LOG_COMPONENT",
+    "SupervisorFactory",
+    "SupervisorRunner",
     "USAGE",
     "log_rotation",
     "logged_children",

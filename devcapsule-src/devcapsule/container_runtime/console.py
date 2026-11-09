@@ -25,6 +25,8 @@ __all__ = [
     "CONSOLE_PYTHON",
     "CONSOLE_READY_TIMEOUT_SECONDS",
     "CONSOLE_ROOT",
+    "CommandWrapper",
+    "ConnectionProbe",
     "RUNTIME_CLI",
     "console_child",
 ]

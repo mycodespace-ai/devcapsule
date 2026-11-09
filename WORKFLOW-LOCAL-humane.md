@@ -195,7 +195,8 @@ and a second run that passes is a finding, never a pass.
 package tree; a test is a precondition it establishes, one call to a public
 operation, and a postcondition the unit promises; every test says in a
 docstring what contract it tests; existing files are marked legacy and are
-retired whole, never edited piecemeal or left beside an active mirror; the
+retired whole, never edited piecemeal, the moment one is touched or a
+mirror file of the same name gains, loses or changes a test; the
 gate checks what a machine can check and the reviewer checks the rest. A
 unit test's result depends
 on nothing the test did not build: not the clock, not another process,
@@ -234,7 +235,11 @@ tests for its module, rather than leaving two test files for one unit or a
 rewrite nobody will order. Function-at-a-time shrinkage produced thirty-eight
 mirror files while retiring only two legacy files, splitting one module's
 tests across two places; requiring whole-file retirement finishes each module
-once touched. The gate carries the mechanical part because a
+once touched. The gate pairs a legacy file with its mirror by file name
+alone, because a legacy file does not declare which module it tests; a
+mirror of another module that happens to share the name retires the legacy
+file too, and a legacy file named after no module is retired when a change
+touches it. The gate carries the mechanical part because a
 rule an agent must read is a rule an agent can skim.
 
 The isolation sentences were added on 2026-11-06, when the owner and the

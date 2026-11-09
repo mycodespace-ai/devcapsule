@@ -20,7 +20,6 @@ from dataclasses import dataclass, replace
 import json
 from pathlib import Path
 import os
-import subprocess
 import sys
 import termios
 import shlex

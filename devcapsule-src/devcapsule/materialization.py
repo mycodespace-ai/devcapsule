@@ -73,6 +73,7 @@ __all__ = [
     "NpmProject",
     "RUNTIME_COMMAND_PATH",
     "RUNTIME_PLAN_PATH",
+    "SURFACE_MATERIALIZATIONS",
     "SurfaceMaterialization",
     "UNPACKED_DIRECTORY",
     "UNPACKED_MARKER",
