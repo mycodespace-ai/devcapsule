@@ -12,12 +12,20 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import subprocess
 from typing import Mapping, Sequence
 
+from devcapsule.compat import CliError
 from devcapsule.configuration.file_formats import ProjectConfigurationError
 from devcapsule.container_runtime import console as console_child
 from devcapsule.container_runtime.contract import RuntimePlan, RuntimePlanError
 from devcapsule import recursive_dogfood
+
+__all__ = [
+    "DECISIONS_MODULE",
+    "console_decisions_command",
+    "run_console_decisions",
+]
 
 DECISIONS_MODULE = "devcapsule_webconsole.decisions"
 
@@ -54,3 +62,23 @@ def console_decisions_command(arguments: Sequence[str], *, environ: Mapping[str,
     if source_path:
         command = ("env", f"PYTHONPATH={source_path}", *command)
     return command
+
+
+def run_console_decisions(
+    arguments: Sequence[str],
+    *,
+    environ: Mapping[str, str] | None = None,
+    console_python: Path | None = None,
+    runtime_plan_path: Path | None = None,
+) -> int:
+    """Execute ``devcapsule_webconsole.decisions`` in the capsule's console interpreter."""
+    command = console_decisions_command(
+        arguments,
+        environ=environ,
+        console_python=console_python,
+        runtime_plan_path=runtime_plan_path,
+    )
+    try:
+        return subprocess.run(command, check=False).returncode
+    except OSError as error:
+        raise CliError(f"cannot run the console's decision tools: {error}") from error

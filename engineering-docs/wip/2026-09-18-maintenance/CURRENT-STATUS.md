@@ -16,6 +16,59 @@ Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selecti
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
+## Whole-file legacy test retirement and 4-file refurbishment for 0.3.1, by Pair Review — 2026-11-08
+
+Reviewing the initial `0.3.1` web-console delivery PR (#16), the owner noted
+that per-function shrinkage under *Unit Tests* rule 5 had left two
+`test_materialization.py` files side by side (and 38 mirror files with only
+two retired legacy files across the tree). By owner decision
+(`2026-11-08-stacked-legacy-tests`: `legacy-marker-scope = retire-four-plus-gate`,
+`stacked-delivery-branch = force-push-pr-16`, `psutil-probe-in-pr1 = drop-in-pr1`),
+this prerequisite slice (`ws-maintenance/webconsole-legacy-tests` ->
+`release-0.3.1`) tightens rule 5 and its gate checker so legacy unit-test
+files are retired whole when touched or mirrored, and refurbishes all four
+legacy files touched by the web-console delivery slice (`test_build_info.py`,
+`test_console_runtime.py`, `test_console_tools.py`, and
+`test_materialization.py`), dropping legacy files from `108` to `104`
+(`1,445 -> 1,387` legacy tests, `-58`) and raising conforming files from
+`34` to `43`. Each touched module declares `__all__` and exposes explicit
+input/collaborator parameters (`current_build_info`, `VersionCommand.invoke`,
+`console_child`, `plan_filesystem`, `entrypoint.run`, `run_console_decisions`,
+`CheckoutDecisionsCommand.invoke`) so no refactored test patches
+`devcapsule.*` attributes; the dead per-start `import psutil` subprocess
+probe in `console.py` is removed (`WEBCONSOLE_RECIPE` 11 on the host already
+gates console planning).
+
+Pair Review (`Claude Code + Claude Fable 5.1`, [brief](evidence/2026-11-08-webconsole-legacy-tests/review-brief.md))
+opened [PR #19](https://github.com/mycodespace-ai/devcapsule/pull/19)
+(`PR18.1`), accepted at `4aac5dfc` without a round and merged at `a1aad17f`:
+completed `__all__` in `container_runtime/console.py`,
+`container_runtime/entrypoint.py`, and `materialization.py`; removed a dead
+`subprocess` import in `commands/project.py`; aligned rule 5, its companion,
+`engineering-docs/development/unit-tests.md`, and the checker diagnostic on
+basename pairing and mirror test deletions (4 new checker tests); added an
+`environ` isolation test in `test_entrypoint.py`; and restored interpreter-path
+matching in `test_console_tools.py`. Hosted CI on `e301367d` caught a
+capsule-masked host-filesystem leak in `test_entrypoint.py` (`make_plan`
+inherited `pycharm_runtime_template()`'s `/ide-config` state slots and
+`/tmp/devcapsule-jetbrains.properties`, which existed inside the PyCharm
+capsule but raised `PermissionError: '/ide-config'` on GitHub Actions); fixed
+by rooting `make_plan`'s `state_slots` and `properties_path` under `tmp_path`
+and implementing PR #19's third proposal (`runtime_root`, `caller_uid`, and
+`configure_logs` seams across `filesystem.py`, `identity.py`, and
+`entrypoint.run`, with `__all__` on `filesystem.py` and `identity.py` plus
+mirror unit tests in `test_filesystem.py` so the unit tests touch no host
+paths, `os.geteuid()`, `os.environ`, or the root logger). Two unimplemented proposals from PR #19 remain
+recorded for later owner review: pairing legacy files with mirrors by imported
+`devcapsule.*` modules rather than file name alone, and descending into nested
+`Test*`-in-`Test*` classes in `_test_functions`. Gate passed (`330` mypy files,
+`0` breaches across `104` legacy / `1,387` legacy tests and `43` conforming
+files, `2,842` unit passed, `458` webconsole passed, `249` contract pages;
+`nox -s integration`: `36` passed, `1` skipped).
+[PR #18](https://github.com/mycodespace-ai/devcapsule/pull/18) is ready for
+owner merge into `release-0.3.1`, with PR #16
+(`ws-maintenance/webconsole-delivery`) stacked directly on top.
+
 ## Slice 2 of 0.3.1: the web console's Files page, by Pair Review — 2026-11-08
 
 The owner asked how hard a file browser in the web console would be,
@@ -4663,6 +4716,8 @@ Earlier open-thread history (read against the current scope above):
   release documents and bug records.
 
 ## Workstream Document Index
+
+- [PR #18 Pair Review brief (PR18.1)](evidence/2026-11-08-webconsole-legacy-tests/review-brief.md): brief for `Claude Code + Claude Fable 5.1` on whole-file legacy test retirement and 4-file refurbishment (`ws-maintenance/webconsole-legacy-tests`).
 
 - [RC9 preparation and component verification](evidence/2026-10-31-rc9/README.md).
 
