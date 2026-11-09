@@ -156,6 +156,8 @@ def journey(tmp_path, monkeypatch, request):
     monkeypatch.setattr("devcapsule.runtime_artifact.runtime_artifact", lambda _platform: runtime)
     monkeypatch.setattr("devcapsule.materialization.read_pex_build_info", lambda _: SimpleNamespace(
         build_mnemonic="fixture", source_repository="fixture", source_revision="fixture", source_url="fixture"))
+    monkeypatch.setattr("devcapsule.materialization.extract_webconsole_bundle",
+                        lambda _pex, destination: (destination.mkdir(parents=True, exist_ok=True), destination)[1])
     base = ImageDetails(lock["base"]["reference"], "sha256:" + "a" * 64, {
         "devcapsule.image.managed": "true", "devcapsule.metadata.version": "1", "devcapsule.image.kind": "base",
         "devcapsule.base.display": "contained"}, "linux", "amd64")

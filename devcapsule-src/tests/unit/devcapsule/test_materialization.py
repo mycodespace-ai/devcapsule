@@ -7,6 +7,7 @@ import io
 import json
 from pathlib import Path
 import tarfile
+from zipfile import ZipFile
 
 import pytest
 
@@ -30,10 +31,12 @@ from devcapsule.materialization import (
     formation_identity,
     npm_install_step,
     parse_locked_environment,
+    sha256_file,
     surface_materialization_spec,
     validate_base_image,
     verify_materialized_image,
 )
+from devcapsule.webconsole_bundle import BUNDLE_RESOURCE_NAME, LAUNCHER_WEBCONSOLE_PATH, build_webconsole_bundle
 
 
 def fixture_archive(path: Path) -> bytes:
@@ -1086,3 +1089,155 @@ def test_materialization_redoes_unpacked_tree_missing_completion_marker(tmp_path
 
     assert not (tree / "leftover").exists()
     assert (tree / UNPACKED_MARKER).is_file()
+
+
+def runtime_pex_with_console(path: Path, *, files_html: str) -> Path:
+    pkg = path.parent / f"pkg-{path.stem}" / "devcapsule_webconsole"
+    (pkg / "static").mkdir(parents=True)
+    (pkg / "__init__.py").write_text('__version__ = "0.1.0"\n', encoding="utf-8")
+    (pkg / "static" / "files.html").write_text(files_html, encoding="utf-8")
+    bundle = build_webconsole_bundle(pkg, path.parent / f"{path.stem}-{BUNDLE_RESOURCE_NAME}")
+    revision = "b" * 40
+    with ZipFile(path, "w") as archive:
+        archive.writestr(
+            ".deps/devcapsule-0.3.1-py3-none-any.whl/devcapsule/_build_info.json",
+            json.dumps(
+                {
+                    "schema_version": 2,
+                    "version": "0.3.1",
+                    "build_mnemonic": "v0.3.1-rc2",
+                    "source_repository": "https://github.com/example/devcapsule",
+                    "source_revision": revision,
+                    "source_url": f"https://github.com/example/devcapsule/commit/{revision}",
+                }
+            ),
+        )
+        archive.writestr(
+            f".deps/devcapsule-0.3.1-py3-none-any.whl/devcapsule/{BUNDLE_RESOURCE_NAME}",
+            bundle.read_bytes(),
+        )
+    return path
+
+
+def test_surface_materialization_spec_copies_webconsole_root_when_supplied(tmp_path: Path) -> None:
+    """When ``webconsole_root`` is supplied, ``surface_materialization_spec`` copies it to ``/opt/devcapsule/webconsole``."""
+    surface = tmp_path / "surface"
+    surface.mkdir()
+    webconsole = tmp_path / "webconsole"
+    (webconsole / "devcapsule_webconsole").mkdir(parents=True)
+    (webconsole / "devcapsule_webconsole" / "__init__.py").write_text("", encoding="utf-8")
+    template = tmp_path / "template.json"
+    template.write_text(canonical_json(component_runtime_template("pycharm")), encoding="utf-8")
+    spec = ArtifactSpec("2026.2", "https://example.test/pycharm.tar.gz", "a" * 64)
+
+    plan = surface_materialization_spec(
+        base_reference="base:test",
+        base_identity="sha256:base",
+        image="devcapsule-local-pycharm:test",
+        surface_root=surface,
+        component_template=template,
+        artifact=spec,
+        platform="linux-amd64",
+        webconsole_root=webconsole,
+    ).build_plan()
+
+    assert any(
+        copy.source == webconsole and copy.destination == LAUNCHER_WEBCONSOLE_PATH
+        for copy in plan.directories
+    )
+
+
+def test_ensure_materialized_surface_unpacks_and_stages_the_launcher_webconsole(tmp_path: Path) -> None:
+    """Materializing with a ``runtime_pex`` extracts its embedded ``devcapsule_webconsole`` bundle for ``/opt/devcapsule/webconsole``."""
+    source = tmp_path / "pycharm.tar.gz"
+    spec = artifact(source, hashlib.sha256(fixture_archive(source)).hexdigest())
+    pex = runtime_pex_with_console(tmp_path / "devcapsule.pex", files_html="<title>Files v1</title>\n")
+    built: dict[str, ImageDetails] = {}
+    captured_html: list[str] = []
+
+    def record_build(build_spec: ImageBuildSpec) -> None:
+        plan = build_spec.build_plan()
+        webconsole_copy = next(copy for copy in plan.directories if copy.destination == LAUNCHER_WEBCONSOLE_PATH)
+        captured_html.append(
+            (webconsole_copy.source / "devcapsule_webconsole" / "static" / "files.html").read_text(encoding="utf-8")
+        )
+        built[plan.image] = ImageDetails(
+            reference=plan.image,
+            identity="sha256:materialized",
+            labels=dict(plan.labels),
+            operating_system="linux",
+            architecture="amd64",
+            entrypoint=plan.entrypoint,
+            command=plan.command,
+        )
+
+    image, created = ensure_materialized_surface(
+        base_reference="base:test",
+        base_identity="sha256:base",
+        platform="linux-amd64",
+        artifact=spec,
+        cache_root=tmp_path / "cache",
+        inspect_image=built.get,
+        build=record_build,
+        runtime_pex=pex,
+    )
+
+    assert created is True
+    assert image in built
+    assert captured_html == ["<title>Files v1</title>\n"]
+
+
+def test_changing_bundled_webconsole_changes_pex_digest_and_formation_identity(tmp_path: Path) -> None:
+    """Editing a web console file inside ``runtime_pex`` changes ``pex-sha256`` and the formation identity."""
+    spec = ArtifactSpec("2026.2", "https://example.test/pycharm.tar.gz", "a" * 64)
+    first_pex = runtime_pex_with_console(tmp_path / "first.pex", files_html="<title>v1</title>\n")
+    second_pex = runtime_pex_with_console(tmp_path / "second.pex", files_html="<title>v2</title>\n")
+
+    first = formation_descriptor(
+        platform="linux-amd64",
+        base_identity="sha256:base",
+        artifact=spec,
+        runtime_sha256=sha256_file(first_pex),
+    )
+    second = formation_descriptor(
+        platform="linux-amd64",
+        base_identity="sha256:base",
+        artifact=spec,
+        runtime_sha256=sha256_file(second_pex),
+    )
+
+    assert first["runtime"]["pex-sha256"] != second["runtime"]["pex-sha256"]
+    assert formation_identity(first) != formation_identity(second)
+
+
+def test_ensure_materialized_surface_refuses_runtime_pex_without_webconsole_bundle(tmp_path: Path) -> None:
+    """Materializing with a ``runtime_pex`` that lacks the web console bundle raises ``CliError``."""
+    source = tmp_path / "pycharm.tar.gz"
+    spec = artifact(source, hashlib.sha256(fixture_archive(source)).hexdigest())
+    incomplete_pex = tmp_path / "incomplete.pex"
+    with ZipFile(incomplete_pex, "w") as archive:
+        archive.writestr(
+            ".deps/devcapsule-0.3.1-py3-none-any.whl/devcapsule/_build_info.json",
+            json.dumps(
+                {
+                    "schema_version": 2,
+                    "version": "0.3.1",
+                    "build_mnemonic": "v0.3.1-rc2",
+                    "source_repository": "unknown",
+                    "source_revision": "unknown",
+                    "source_url": "unknown",
+                }
+            ),
+        )
+
+    with pytest.raises(CliError, match="Cannot unpack the launcher web console"):
+        ensure_materialized_surface(
+            base_reference="base:test",
+            base_identity="sha256:base",
+            platform="linux-amd64",
+            artifact=spec,
+            cache_root=tmp_path / "cache",
+            inspect_image=lambda _name: None,
+            build=lambda _spec: None,
+            runtime_pex=incomplete_pex,
+        )
