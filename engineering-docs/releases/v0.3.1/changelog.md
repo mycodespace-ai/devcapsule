@@ -72,6 +72,12 @@ No candidate is tagged yet; the cut is 2026-11-07 at `31e8fec7` on `main`.
 
 ## Fixed
 
+- **Codex version and compatibility checks answer again.** `NpmChannel.check()`
+  requests the npm registry's abbreviated install metadata
+  (`Accept: application/vnd.npm.install-v1+json`, ~5.2 MiB for `@openai/codex`
+  against the channel's 16 MiB cap) rather than the full 18.7 MB package
+  history, restoring `project versions check` for Codex and the published
+  compatibility feed's Codex probe.
 - Eclipse can be acquired from scratch on Linux x86-64 again. The closure's
   two libsoup packages are repinned at `3.4.4-5ubuntu0.10`, the build the
   Ubuntu archive serves since it replaced `0.8` on 2026-10-08; the arm64
