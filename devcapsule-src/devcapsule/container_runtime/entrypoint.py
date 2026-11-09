@@ -36,6 +36,7 @@ from .supervisor import SupervisedChild, Supervisor, SupervisorError
 __all__ = [
     "ConsoleBuilder",
     "DisplayPreparer",
+    "LogConfigurer",
     "SUPERVISOR_LOG_COMPONENT",
     "SupervisorFactory",
     "SupervisorRunner",
@@ -60,6 +61,7 @@ class SupervisorRunner(Protocol):
 
 
 SupervisorFactory = Callable[..., SupervisorRunner]
+LogConfigurer = Callable[..., Path | None]
 DisplayPreparer = Callable[[RuntimePlan, str, CommandWrapper], ContainedDisplay]
 ConsoleBuilder = Callable[[RuntimePlan, CommandWrapper], SupervisedChild | None]
 
@@ -69,11 +71,15 @@ def run(
     job: tuple[str, ...] | None = None,
     *,
     environ: MutableMapping[str, str] | None = None,
+    runtime_root: Path = Path("/tmp"),
+    caller_uid: int | None = None,
+    configure_logs: LogConfigurer | None = None,
     prepare_display: DisplayPreparer | None = None,
     build_console_child: ConsoleBuilder | None = None,
     supervisor_factory: SupervisorFactory | None = None,
 ) -> int:
     target_env: MutableMapping[str, str] = os.environ if environ is None else environ
+    setup_logs: LogConfigurer = logs.configure if configure_logs is None else configure_logs
     make_display = prepare_contained_display if prepare_display is None else prepare_display
     make_console = console_child if build_console_child is None else build_console_child
     make_supervisor: SupervisorFactory = Supervisor if supervisor_factory is None else supervisor_factory
@@ -81,9 +87,16 @@ def run(
     owner = (plan.identity.uid, plan.identity.gid)
     log_directory = None if plan.logs is None else plan.logs.directory
     segment_bytes, rotations = log_rotation(plan)
-    logs.configure(SUPERVISOR_LOG_COMPONENT, log_directory, owner=owner, segment_bytes=segment_bytes, rotations=rotations)
-    filesystem = plan_filesystem(plan)
-    prepare_filesystem(filesystem, plan.identity)
+    setup_logs(
+        SUPERVISOR_LOG_COMPONENT,
+        log_directory,
+        environ=target_env,
+        owner=owner,
+        segment_bytes=segment_bytes,
+        rotations=rotations,
+    )
+    filesystem = plan_filesystem(plan, runtime_root=runtime_root)
+    prepare_filesystem(filesystem, plan.identity, caller_uid=caller_uid)
     target_env.update(filesystem.environment)
     target_env.update(plan.component_environment())
     target_env.update(graphics_environment(target_env))
@@ -100,7 +113,7 @@ def run(
         raise RuntimePlanError(f"unsupported component adapter: {plan.component.adapter}")
 
     def as_capsule_user(child_command: tuple[str, ...]) -> tuple[str, ...]:
-        return foreground_command(child_command, plan.identity)
+        return foreground_command(child_command, plan.identity, caller_uid=caller_uid)
 
     infrastructure: tuple[SupervisedChild, ...] = ()
     if job is None and plan.display is not None and plan.display.is_contained:
@@ -113,7 +126,7 @@ def run(
     if job is None:
         child = SupervisedChild(
             name=plan.component.id,
-            command=foreground_command(command, plan.identity),
+            command=foreground_command(command, plan.identity, caller_uid=caller_uid),
             foreground=True,
         )
     else:
@@ -121,7 +134,7 @@ def run(
         # in the project it was launched against, not the image's workdir.
         child = SupervisedChild(
             name="job",
-            command=foreground_command(job, plan.identity),
+            command=foreground_command(job, plan.identity, caller_uid=caller_uid),
             foreground=True,
             working_directory=plan.project_path,
         )
