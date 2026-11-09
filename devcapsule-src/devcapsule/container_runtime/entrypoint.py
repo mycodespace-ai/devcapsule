@@ -71,7 +71,7 @@ def run(
     job: tuple[str, ...] | None = None,
     *,
     environ: MutableMapping[str, str] | None = None,
-    runtime_root: Path = Path("/tmp"),
+    runtime_root: Path | None = None,
     caller_uid: int | None = None,
     configure_logs: LogConfigurer | None = None,
     prepare_display: DisplayPreparer | None = None,
@@ -95,8 +95,11 @@ def run(
         segment_bytes=segment_bytes,
         rotations=rotations,
     )
-    filesystem = plan_filesystem(plan, runtime_root=runtime_root)
-    prepare_filesystem(filesystem, plan.identity, caller_uid=caller_uid)
+    filesystem = plan_filesystem(plan) if runtime_root is None else plan_filesystem(plan, runtime_root=runtime_root)
+    if caller_uid is None:
+        prepare_filesystem(filesystem, plan.identity)
+    else:
+        prepare_filesystem(filesystem, plan.identity, caller_uid=caller_uid)
     target_env.update(filesystem.environment)
     target_env.update(plan.component_environment())
     target_env.update(graphics_environment(target_env))
@@ -112,21 +115,23 @@ def run(
     else:
         raise RuntimePlanError(f"unsupported component adapter: {plan.component.adapter}")
 
-    def as_capsule_user(child_command: tuple[str, ...]) -> tuple[str, ...]:
+    def wrap_for_user(child_command: tuple[str, ...]) -> tuple[str, ...]:
+        if caller_uid is None:
+            return foreground_command(child_command, plan.identity)
         return foreground_command(child_command, plan.identity, caller_uid=caller_uid)
 
     infrastructure: tuple[SupervisedChild, ...] = ()
     if job is None and plan.display is not None and plan.display.is_contained:
-        contained = make_display(plan, filesystem.environment["XDG_RUNTIME_DIR"], as_capsule_user)
+        contained = make_display(plan, filesystem.environment["XDG_RUNTIME_DIR"], wrap_for_user)
         target_env.update(contained.environment)
         infrastructure = contained.children
-    console = make_console(plan, as_capsule_user)
+    console = make_console(plan, wrap_for_user)
     if console is not None:
         infrastructure = (*infrastructure, console)
     if job is None:
         child = SupervisedChild(
             name=plan.component.id,
-            command=foreground_command(command, plan.identity, caller_uid=caller_uid),
+            command=wrap_for_user(command),
             foreground=True,
         )
     else:
@@ -134,7 +139,7 @@ def run(
         # in the project it was launched against, not the image's workdir.
         child = SupervisedChild(
             name="job",
-            command=foreground_command(job, plan.identity, caller_uid=caller_uid),
+            command=wrap_for_user(job),
             foreground=True,
             working_directory=plan.project_path,
         )
