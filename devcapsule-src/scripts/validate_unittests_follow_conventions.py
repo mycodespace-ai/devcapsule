@@ -17,9 +17,10 @@ The checks, in the order the section states its rules:
    ``pytestmark`` includes ``legacy``, is compared with the base revision:
    no test function is added, changed or removed while the file remains, and
    no marker other than ``legacy`` is added. A legacy file the base does not
-   have is refused. Creating or changing tests in ``tests/unit/<path>/test_<name>.py``
+   have is refused. Adding, changing or deleting a test in ``tests/unit/<path>/test_<name>.py``
    while a flat legacy unit-test file ``tests/test_<name>.py`` still exists is
-   also refused; refurbish the entire legacy file into the mirror and delete it.
+   also refused, the two paired by file name alone; refurbish the entire
+   legacy file into the mirror and delete it.
 
 The base revision is ``--base``, else ``DEVCAPSULE_DIFF_BASE``, else
 ``origin/main``, compared at its merge base with ``HEAD``. The exit status
@@ -227,7 +228,7 @@ def _check_mirror_against_legacy(
     if base_mirror is not None and module.functions == base_mirror.functions:
         return []
     return [
-        f"{module.path}: {legacy_path} is still marked legacy; "
+        f"{module.path}: its tests changed while {legacy_path}, the legacy file of the same name, remains; "
         f"refurbish the whole legacy file into the mirror and delete {legacy_path}"
         for legacy_path in legacy_paths
     ]

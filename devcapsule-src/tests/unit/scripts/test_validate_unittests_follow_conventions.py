@@ -148,7 +148,8 @@ def test_a_new_or_changed_mirror_cannot_leave_its_flat_legacy_twin_behind(tmp_pa
 
     new_breaches = conventions.check([legacy, mirror], {legacy.path: legacy, mirror.path: None}, tmp_path)
     assert new_breaches == [
-        "tests/unit/devcapsule/test_thing.py: tests/test_thing.py is still marked legacy; "
+        "tests/unit/devcapsule/test_thing.py: its tests changed while tests/test_thing.py, "
+        "the legacy file of the same name, remains; "
         "refurbish the whole legacy file into the mirror and delete tests/test_thing.py"
     ]
 
@@ -175,6 +176,62 @@ def test_an_untouched_preexisting_mirror_and_non_flat_legacy_files_do_not_breach
         new_contract_mirror.path: None,
     }
     assert conventions.check([legacy_flat, untouched_mirror, legacy_nested, new_contract_mirror], base, tmp_path) == []
+
+
+def test_deleting_a_test_from_a_mirror_with_a_flat_legacy_twin_is_a_breach(tmp_path: Path) -> None:
+    """Precondition: ``tests/test_thing.py`` is legacy; the mirror's base holds tests one and two and the mirror keeps only one.
+    Action: check. Postcondition: one breach naming the legacy file, as for an addition or a change."""
+    (tmp_path / "devcapsule").mkdir()
+    (tmp_path / "devcapsule" / "thing.py").write_text("")
+    legacy = _module("tests/test_thing.py", "import pytest\npytestmark = pytest.mark.legacy\n" + UNDOCUMENTED)
+    base_mirror = _module("tests/unit/devcapsule/test_thing.py", DOCUMENTED + 'def test_two():\n    """Also."""\n    assert True\n')
+    mirror = _module("tests/unit/devcapsule/test_thing.py", DOCUMENTED)
+
+    breaches = conventions.check([legacy, mirror], {legacy.path: legacy, mirror.path: base_mirror}, tmp_path)
+
+    assert breaches == [
+        "tests/unit/devcapsule/test_thing.py: its tests changed while tests/test_thing.py, "
+        "the legacy file of the same name, remains; "
+        "refurbish the whole legacy file into the mirror and delete tests/test_thing.py"
+    ]
+
+
+def test_a_mirror_edit_outside_its_tests_leaves_a_flat_legacy_twin_alone(tmp_path: Path) -> None:
+    """Precondition: ``tests/test_thing.py`` is legacy; the mirror gains a module constant and keeps its tests as in base.
+    Action: check. Postcondition: no breach, since only test functions are compared."""
+    (tmp_path / "devcapsule").mkdir()
+    (tmp_path / "devcapsule" / "thing.py").write_text("")
+    legacy = _module("tests/test_thing.py", "import pytest\npytestmark = pytest.mark.legacy\n" + UNDOCUMENTED)
+    base_mirror = _module("tests/unit/devcapsule/test_thing.py", DOCUMENTED)
+    mirror = _module("tests/unit/devcapsule/test_thing.py", "HELPER = 1\n\n" + DOCUMENTED)
+
+    assert conventions.check([legacy, mirror], {legacy.path: legacy, mirror.path: base_mirror}, tmp_path) == []
+
+
+def test_a_flat_legacy_file_of_a_heavier_suite_is_not_a_mirror_twin(tmp_path: Path) -> None:
+    """Precondition: ``tests/test_thing.py`` carries ``legacy`` and ``e2e``; a new documented mirror shares its name.
+    Action: check. Postcondition: no breach, since the flat file is not a unit-test file."""
+    (tmp_path / "devcapsule").mkdir()
+    (tmp_path / "devcapsule" / "thing.py").write_text("")
+    legacy_e2e = _module("tests/test_thing.py", "import pytest\npytestmark = [pytest.mark.legacy, pytest.mark.e2e]\n" + UNDOCUMENTED)
+    mirror = _module("tests/unit/devcapsule/test_thing.py", DOCUMENTED)
+
+    assert conventions.check([legacy_e2e, mirror], {legacy_e2e.path: legacy_e2e, mirror.path: None}, tmp_path) == []
+
+
+def test_a_changed_decorator_on_a_legacy_class_method_is_a_breach(tmp_path: Path) -> None:
+    """Precondition: base holds ``TestThing.test_one`` under one ``parametrize``; the legacy file changes only that decorator.
+    Action: check. Postcondition: one breach naming the qualified method as changed."""
+    body = "class TestThing:\n    @pytest.mark.parametrize('x', [{}])\n    def test_one(self, x):\n        assert x\n"
+    base = _module("tests/test_old.py", "import pytest\npytestmark = pytest.mark.legacy\n" + body.format(1))
+    module = _module("tests/test_old.py", "import pytest\npytestmark = pytest.mark.legacy\n" + body.format(2))
+
+    breaches = conventions.check([module], {module.path: base}, tmp_path)
+
+    assert breaches == [
+        "tests/test_old.py: TestThing.test_one changed in a legacy file; "
+        "refurbish the whole legacy file into tests/unit and delete tests/test_old.py"
+    ]
 
 
 def test_a_marker_other_than_legacy_cannot_be_added_to_a_legacy_file(tmp_path: Path) -> None:
@@ -264,7 +321,7 @@ def test_main_fails_when_a_new_mirror_leaves_its_legacy_file_behind(tmp_path: Pa
     _git(root, "add", ".")
     _git(root, "commit", "-q", "-m", "split")
     assert conventions.main(["--base", "main", "--project-root", str(root)]) == 1
-    assert "tests/test_thing.py is still marked legacy" in capsys.readouterr().err
+    assert "tests/test_thing.py, the legacy file of the same name, remains" in capsys.readouterr().err
 
 
 def test_main_fails_when_the_base_cannot_be_resolved(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
