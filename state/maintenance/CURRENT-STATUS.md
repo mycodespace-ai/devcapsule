@@ -4,19 +4,19 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-08; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 (`v0.3.1-rc1` on `accdec5b`) closed the Eclipse libsoup bug, and validation inside `0.3.1rc1` uncovered a blocking delivery bug (`/files`, `/filetree`, and `/api/project/tree` returned `404`); owner decided `D-0017` (`launcher-package` + `source-or-opt-in`), PR #16 reviewed by Claude Code + Claude Fable 5.1 in PR #17 (`e23e22c7`, merged at `9919f4ce` without a round), post-merge gate green (2,884 unit, 1,440 legacy / 0 breaches, 30 integration, 458 webconsole, 249 contract pages, live base-Python HTTP check) and handed to the owner for merge into `release-0.3.1`; Codex 16 MiB npm cap bug also queued before candidate 2; two rulings open
+State: active 2026-11-09; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 (`v0.3.1-rc1` on `accdec5b`) closed the Eclipse libsoup bug, and validation inside `0.3.1rc1` uncovered a blocking delivery bug (`/files`, `/filetree`, and `/api/project/tree` returned `404`); delivered as two stacked Pair-Reviewed PRs for `release-0.3.1`: (1) PR #18 (`ws-maintenance/webconsole-legacy-tests` -> `release-0.3.1`, reviewed in #19) tightening *Unit Tests* rule 5 to whole-file legacy retirement and retiring `test_build_info.py`, `test_console_runtime.py`, `test_console_tools.py`, and `test_materialization.py` (`108 -> 104` legacy files), and (2) PR #16 (`ws-maintenance/webconsole-delivery` -> `ws-maintenance/webconsole-legacy-tests`, reviewed in #17) delivering `devcapsule_webconsole` inside `devcapsule.pex` (`D-0017`) with stacked gate green (`2,900` unit, `104` legacy / `43` conforming / `0` breaches, `40` integration, `458` webconsole, `249` contract pages, live base-Python HTTP check); Codex 16 MiB npm cap bug also queued before candidate 2; two rulings open
 
-Definition read: WORKFLOW.md@d9a8103606fa, WORKFLOW-LOCAL.md@5b13c6d042d5
+Definition read: WORKFLOW.md@d9a8103606fa, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
 Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; active slice branch `ws-maintenance/webconsole-delivery` from `release-0.3.1` (`f5d5d2d8`); `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/webconsole-legacy-tests` from `release-0.3.1` (`f5d5d2d8`), open as PR #18; `ws-maintenance/webconsole-delivery` stacked on `ws-maintenance/webconsole-legacy-tests` (`e301367d`), open as PR #16; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
-## Blocking 0.3.1rc1 finding and D-0017 fix: launcher-delivered web console — 2026-11-08
+## Blocking 0.3.1rc1 finding and D-0017 fix: launcher-delivered web console (stacked on PR #18) — 2026-11-08 / 2026-11-09
 
 Validating `v0.3.1-rc1` (`accdec5b`) inside a running capsule found that
 `GET /files`, `GET /filetree`, and `GET /api/project/tree` all returned `404`.
@@ -51,41 +51,87 @@ and [R-CONSOLE-001](../../requirements/product/r-console-001-capsule-web-console
    mounting for unbuilt source runs, and honors `DEVCAPSULE_DEV_WEBCONSOLE`
    (`1`/`true` or `0`/`false`).
 
-Opened as PR #16 targeting `release-0.3.1`, then reviewed under Pair Review by
-the Claude Code + Claude Fable 5.1 pair in PR #17 (`PR16.1`, brief under
-`evidence/2026-11-08-webconsole-delivery/review-brief.md`). PR #17 found and
-fixed: the dead per-start `import psutil` subprocess probe (`WEBCONSOLE_RECIPE`
-11 already gates console planning on the host) and duplicated precedence rule;
-`extract_webconsole_bundle` rejecting typeless regular zip members (`0o600`
-from `ZipFile.writestr`, fixed via `stat.S_IFMT`); two refusal tests that had
-raised on that file-type check before reaching their target lines (every refusal
-test now pins `match=`, reaching 99% coverage on `webconsole_bundle.py`); *Unit
-Tests* rule 2 and rule 4 gaps (`__all__` added on `build_info.py` and
-`materialization.py`, `/bin/sh` stubs replaced with in-process tests, legacy
-tests reduced `1,444 -> 1,440`); `DEVCAPSULE_DEV_WEBCONSOLE` restricted to
-`1`/`true`/`0`/`false`; and `D-0017` / bug-record compatibility wording aligned.
-Accepted at `e23e22c7` without a round and merged into
-`ws-maintenance/webconsole-delivery` at `9919f4ce`.
+Reviewed under Pair Review by `Claude Code + Claude Fable 5.1` in
+[PR #17](https://github.com/mycodespace-ai/devcapsule/pull/17) (`PR16.1`,
+[brief](evidence/2026-11-08-webconsole-delivery/review-brief.md)), accepted at
+`e23e22c7` without a round and merged at `9919f4ce`. PR #17 unified
+`console_package_path` and dropped the dead `psutil` probe, masked
+`external_attr >> 16` with `stat.S_IFMT` in `extract_webconsole_bundle` while
+pinning `match=` on every refusal test (`99%` bundle coverage), tightened
+`DEVCAPSULE_DEV_WEBCONSOLE` to `1`/`true`/`0`/`false`, and aligned `D-0017` and
+the bug record. Per subsequent owner decision (`2026-11-08-stacked-legacy-tests`:
+`legacy-marker-scope = retire-four-plus-gate`,
+`stacked-delivery-branch = force-push-pr-16`,
+`psutil-probe-in-pr1 = drop-in-pr1`), `ws-maintenance/webconsole-delivery` was
+then rebased onto [PR #18](https://github.com/mycodespace-ai/devcapsule/pull/18)
+(`ws-maintenance/webconsole-legacy-tests`) so all new `D-0017` unit tests extend
+the refurbished mirror modules with zero legacy/mirror test twins and zero
+`devcapsule.*` attribute patches (`test_pycharm.py` untouched).
 
-Post-merge gates on `ws-maintenance/webconsole-delivery` passed: `nox -s build`
-(mypy clean across 331 files, 0 unit-convention breaches with 1,440 legacy
-tests, 2,884 unit tests passed, `smoke_pex`, 249-page content contract),
-`nox -s integration` (30 passed, 3 skipped), `nox -s webconsole` (458 passed),
-and a live HTTP check on this capsule's pre-PR-#12 `/opt/devcapsule-webconsole/venv/bin/python`
-serving `/files` (`200`), `/filetree` (`307` -> `/files`), `/api/project/tree`
-(`200`), and `/api/project/raw?path=hello.txt` (`200`) from the bundle inside
-`dist/devcapsule-local.pex` against a non-DevCapsule project. Four non-blocking
-proposals from PR #17 are retained for `main` follow-up: (1) declare `__all__`
+Stacked gates on `ws-maintenance/webconsole-delivery` passed: `nox -s build`
+(mypy clean across `331` files, `0` unit-convention breaches across `104` legacy
+files holding `1,387` legacy tests and `43` conforming files, `2,900` unit tests
+passed at `89%` total coverage, `smoke_pex`, `249`-page content contract),
+`nox -s integration` (`40` passed, `3` skipped), `nox -s webconsole` (`458`
+passed), and a live HTTP check on this capsule's pre-PR-#12
+`/opt/devcapsule-webconsole/venv/bin/python` serving `/files` (`200`),
+`/filetree` (`307` -> `/files`), `/api/project/tree` (`200`), and
+`/api/project/raw?path=hello.txt` (`200`) from `dist/devcapsule-local.pex`
+against a non-DevCapsule project. Three remaining proposals from PR #17 stay
+queued for `main` follow-up (PR #17's fourth proposal, migrating private
+`materialization` test imports, was completed in PR #18): (1) declare `__all__`
 on `launch/pycharm/_launcher.py` for its pre-existing mirror test file; (2)
-migrate legacy tests that import private `materialization` helpers
-(`_npm_projects`, `_ancillary_contributions`, `_ancillary_environment`,
-`_prepare_locked_artifact`) to `tests/unit/devcapsule/test_materialization.py`;
-(3) share a single "one member by suffix" PEX zip helper between
-`read_pex_build_info` and `extract_webconsole_bundle`; and (4) add a test tying
+share a single "one member by suffix" PEX zip helper between
+`read_pex_build_info` and `extract_webconsole_bundle`; and (3) add a test tying
 `WEBCONSOLE_RECIPE` to `BASE_RECIPE_VERSION` and
 `devcapsule-webconsole/requirements.in`. Planned next step: await the owner's
-merge of PR #16 into `release-0.3.1`, then implement the Codex 16 MiB npm cap
-slice before `v0.3.1-rc2`.
+merge of PR #18 into `release-0.3.1` followed by PR #16 into `release-0.3.1`,
+then implement the Codex 16 MiB npm cap slice before `v0.3.1-rc2`.
+
+## Whole-file legacy test retirement and 4-file refurbishment for 0.3.1, by Pair Review — 2026-11-08
+
+Reviewing the initial `0.3.1` web-console delivery PR (#16), the owner noted
+that per-function shrinkage under *Unit Tests* rule 5 had left two
+`test_materialization.py` files side by side (and 38 mirror files with only
+two retired legacy files across the tree). By owner decision
+(`2026-11-08-stacked-legacy-tests`: `legacy-marker-scope = retire-four-plus-gate`,
+`stacked-delivery-branch = force-push-pr-16`, `psutil-probe-in-pr1 = drop-in-pr1`),
+this prerequisite slice (`ws-maintenance/webconsole-legacy-tests` ->
+`release-0.3.1`) tightens rule 5 and its gate checker so legacy unit-test
+files are retired whole when touched or mirrored, and refurbishes all four
+legacy files touched by the web-console delivery slice (`test_build_info.py`,
+`test_console_runtime.py`, `test_console_tools.py`, and
+`test_materialization.py`), dropping legacy files from `108` to `104`
+(`1,445 -> 1,387` legacy tests, `-58`) and raising conforming files from
+`34` to `42`. Each touched module declares `__all__` and exposes explicit
+input/collaborator parameters (`current_build_info`, `VersionCommand.invoke`,
+`console_child`, `entrypoint.run`, `run_console_decisions`,
+`CheckoutDecisionsCommand.invoke`) so no refactored test patches
+`devcapsule.*` attributes; the dead per-start `import psutil` subprocess
+probe in `console.py` is removed (`WEBCONSOLE_RECIPE` 11 on the host already
+gates console planning).
+
+Pair Review (`Claude Code + Claude Fable 5.1`, [brief](evidence/2026-11-08-webconsole-legacy-tests/review-brief.md))
+opened [PR #19](https://github.com/mycodespace-ai/devcapsule/pull/19)
+(`PR18.1`), accepted at `4aac5dfc` without a round and merged at `a1aad17f`:
+completed `__all__` in `container_runtime/console.py`,
+`container_runtime/entrypoint.py`, and `materialization.py`; removed a dead
+`subprocess` import in `commands/project.py`; aligned rule 5, its companion,
+`engineering-docs/development/unit-tests.md`, and the checker diagnostic on
+basename pairing and mirror test deletions (4 new checker tests); added an
+`environ` isolation test in `test_entrypoint.py`; and restored interpreter-path
+matching in `test_console_tools.py`. Three unimplemented proposals from PR #19
+are recorded for later owner review: pairing legacy files with mirrors by
+imported `devcapsule.*` modules rather than file name alone; descending into
+nested `Test*`-in-`Test*` classes in `_test_functions`; and passing the runtime
+directory root into `prepare_filesystem` so `entrypoint.run` tests stay inside
+`tmp_path`. Post-merge gate on `a1aad17f` passed (`nox -s build`: `329` mypy
+files, `0` breaches across `104` legacy / `1,387` legacy tests and `42`
+conforming files, `2,838` unit passed, `89%` total coverage, `458` webconsole
+passed, `249` contract pages; `nox -s integration`: `36` passed, `1` skipped).
+[PR #18](https://github.com/mycodespace-ai/devcapsule/pull/18) is ready for
+owner merge into `release-0.3.1`, with PR #16
+(`ws-maintenance/webconsole-delivery`) stacked directly on top.
 
 ## Slice 2 of 0.3.1: the web console's Files page, by Pair Review — 2026-11-08
 
@@ -4735,7 +4781,9 @@ Earlier open-thread history (read against the current scope above):
 
 ## Workstream Document Index
 
-- [PR #16 review-partner brief (PR16.1)](evidence/2026-11-08-webconsole-delivery/review-brief.md): brief for Claude Code + Claude Fable 5.1 on launcher-delivered web console (`D-0017`) on `ws-maintenance/webconsole-delivery`.
+- [PR #16 Pair Review brief (PR16.1)](evidence/2026-11-08-webconsole-delivery/review-brief.md), [D-0017](../../decisions/product/d-0017-launcher-delivers-web-console-package.md), and [0.3.1rc1 web console delivery bug](../../bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md): launcher-delivered web console slice (`ws-maintenance/webconsole-delivery`, stacked on PR #18).
+
+- [PR #18 Pair Review brief (PR18.1)](evidence/2026-11-08-webconsole-legacy-tests/review-brief.md): brief for `Claude Code + Claude Fable 5.1` on whole-file legacy test retirement and 4-file refurbishment (`ws-maintenance/webconsole-legacy-tests`).
 
 - [RC9 preparation and component verification](evidence/2026-10-31-rc9/README.md).
 
