@@ -16,6 +16,34 @@ Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selecti
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
+## Whole-file legacy test retirement and 4-file refurbishment for 0.3.1, by Pair Review — 2026-11-08
+
+Reviewing the initial `0.3.1` web-console delivery PR (#16), the owner noted
+that per-function shrinkage under *Unit Tests* rule 5 had left two
+`test_materialization.py` files side by side (and 38 mirror files with only
+two retired legacy files across the tree). By owner decision
+(`2026-11-08-stacked-legacy-tests`: `legacy-marker-scope = retire-four-plus-gate`,
+`stacked-delivery-branch = force-push-pr-16`, `psutil-probe-in-pr1 = drop-in-pr1`),
+this prerequisite slice (`ws-maintenance/webconsole-legacy-tests` ->
+`release-0.3.1`) tightens rule 5 and its gate checker so legacy unit-test
+files are retired whole when touched or mirrored, and refurbishes all four
+legacy files touched by the web-console delivery slice (`test_build_info.py`,
+`test_console_runtime.py`, `test_console_tools.py`, and
+`test_materialization.py`), dropping legacy files from `108` to `104`
+(`1,445 -> 1,387` legacy tests, `-58`) and raising conforming files from
+`34` to `42`. Each touched module declares `__all__` and exposes explicit
+input/collaborator parameters (`current_build_info`, `VersionCommand.invoke`,
+`console_child`, `entrypoint.run`, `run_console_decisions`,
+`CheckoutDecisionsCommand.invoke`) so no refactored test patches
+`devcapsule.*` attributes; the dead per-start `import psutil` subprocess
+probe in `console.py` is removed (`WEBCONSOLE_RECIPE` 11 on the host already
+gates console planning). Initial gate on `ef157824` passed (`nox -s build`:
+`328` mypy files, `0` breaches, `2,833` unit passed, `249` contract pages;
+`nox -s integration`: `36` passed, `1` skipped; `nox -s webconsole`: `458`
+passed). Next step: run Pair Review (`Claude Code + Claude Fable 5.1`), then
+rebase PR #16 (`ws-maintenance/webconsole-delivery`) on top as the second
+stacked PR.
+
 ## Slice 2 of 0.3.1: the web console's Files page, by Pair Review — 2026-11-08
 
 The owner asked how hard a file browser in the web console would be,
