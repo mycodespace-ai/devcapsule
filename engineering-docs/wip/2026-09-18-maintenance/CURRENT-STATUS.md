@@ -40,8 +40,9 @@ probe in `console.py` is removed (`WEBCONSOLE_RECIPE` 11 on the host already
 gates console planning). Initial gate on `ef157824` passed (`nox -s build`:
 `328` mypy files, `0` breaches, `2,833` unit passed, `249` contract pages;
 `nox -s integration`: `36` passed, `1` skipped; `nox -s webconsole`: `458`
-passed). Next step: run Pair Review (`Claude Code + Claude Fable 5.1`), then
-rebase PR #16 (`ws-maintenance/webconsole-delivery`) on top as the second
+passed). Next step: run Pair Review (`Claude Code + Claude Fable 5.1`) using
+[the PR18.1 review brief](evidence/2026-11-08-webconsole-legacy-tests/review-brief.md),
+then rebase PR #16 (`ws-maintenance/webconsole-delivery`) on top as the second
 stacked PR.
 
 ## Slice 2 of 0.3.1: the web console's Files page, by Pair Review — 2026-11-08
@@ -4691,6 +4692,8 @@ Earlier open-thread history (read against the current scope above):
   release documents and bug records.
 
 ## Workstream Document Index
+
+- [PR #18 Pair Review brief (PR18.1)](evidence/2026-11-08-webconsole-legacy-tests/review-brief.md): brief for `Claude Code + Claude Fable 5.1` on whole-file legacy test retirement and 4-file refurbishment (`ws-maintenance/webconsole-legacy-tests`).
 
 - [RC9 preparation and component verification](evidence/2026-10-31-rc9/README.md).
 
