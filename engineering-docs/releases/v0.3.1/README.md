@@ -1,6 +1,6 @@
 # DevCapsule 0.3.1 — Release Work
 
-Updated: 2026-11-09. Stage: **candidate 1 published; the libsoup bug closed on it; web-console delivery (`D-0017`) merged in PRs #18 and #16; Codex npm abbreviated-metadata fix ready on `ws-maintenance/codex-npm-metadata` and agent CLI freshness slice next before candidate 2; two rulings open**.
+Updated: 2026-11-09. Stage: **candidate 1 published; the libsoup bug closed on it; web-console delivery (`D-0017`) merged in PRs #18 and #16; Codex npm abbreviated-metadata fix green in PR #20 (`ws-maintenance/codex-npm-metadata`) and Codex `0.167.0` + Claude Code `2.1.321` freshness pins (`embedded-33`) stacked on `ws-maintenance/0.3.1-agent-freshness` for candidate 2; two rulings open**.
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
 [Changelog since 0.3.0](changelog.md) ·
@@ -114,14 +114,14 @@ cut commit, by the merges on `main`'s first parent:
 
 Owner direction of 2026-09-27, applied to every release: try to upgrade the
 supported agent CLIs to their current generally available versions. The
-vendor pointers were read on 2026-11-07 at 12:27 UTC, with the sources the
-0.3.0 review used.
+vendor pointers were read at the cut on 2026-11-07 (`0.167.0`, `2.1.319`,
+`1.5.3`) and rechecked on 2026-11-09 (`0.167.0`, `2.1.321`, `1.5.3`).
 
-| Agent | Current pin | Vendor current | Source consulted | Disposition |
+| Agent | Prior pin | Vendor current (2026-11-09) | Source consulted | Disposition |
 |---|---|---|---|---|
-| Codex | 0.166.0 | 0.167.0 | [OpenAI npm latest](https://registry.npmjs.org/@openai/codex/latest) | ahead; the upgrade attempt is a slice of the cycle, on the owner's word |
-| Claude Code | 2.1.314 | 2.1.319 | [Vendor latest channel](https://downloads.claude.ai/claude-code-releases/latest) | ahead; 2.1.316 was held at 0.3.0 for this review; same slice |
-| Antigravity CLI | 1.4.12 | 1.5.3 | [Vendor Linux amd64 manifest](https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests/linux_amd64.json) | ahead by a minor version; same slice |
+| Codex | 0.166.0 | 0.167.0 | [OpenAI npm latest](https://registry.npmjs.org/@openai/codex/latest) | **adopted (`embedded-33`)**: `linux-amd64` and `linux-arm64` tarballs verified against npm SHA-512 SRI; offline npm materialization, `--version` (`codex-cli 0.167.0`), `--help`, and seeded `config.toml` smoke passed on `mycodespaceai/devcapsule-base:v0.3.0-base-20261031` |
+| Claude Code | 2.1.314 | 2.1.321 | [Vendor latest channel](https://downloads.claude.ai/claude-code-releases/latest) | **adopted (`embedded-33`)**: `linux-x64` and `linux-arm64` binaries verified against `2.1.321/manifest.json` SHA-256 checksums; offline `--version` (`2.1.321 (Claude Code)`), `--help`, and seeded `settings.json` smoke passed on `mycodespaceai/devcapsule-base:v0.3.0-base-20261031` |
+| Antigravity CLI | 1.4.12 | 1.5.3 | [Vendor Linux amd64 manifest](https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests/linux_amd64.json) | **held at `1.4.12` (pending owner ruling)**: `1.5.3` alters four literal `"1.4.12"` expectations in `1,396`-line legacy `tests/test_project_init.py` (tracked under [`2026-10-31-release-dependent-test-fixtures.md`](../../bugs/devcapsule/2026-10-31-release-dependent-test-fixtures.md)), which *Unit Tests* rule 5 requires refurbishing whole |
 
 Every vendor is ahead of the pin. The attempt follows the 0.3.0 method on
 a slice branch for a pull request into the release branch: artifacts

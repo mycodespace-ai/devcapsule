@@ -69,6 +69,10 @@ No candidate is tagged yet; the cut is 2026-11-07 at `31e8fec7` on `main`.
   web-console updates ship with each launcher release without a base-image
   rebuild. A built executable runs its own console even on a DevCapsule
   checkout unless `DEVCAPSULE_DEV_WEBCONSOLE=1` opts into the checkout copy.
+- **Refreshed Codex and Claude Code pins (`embedded-33`).** New locks and
+  upgrades select Codex `0.167.0` (up from `0.166.0`) and Claude Code
+  `2.1.321` (up from `2.1.314`) on both `linux-amd64` and `linux-arm64`,
+  retaining all prior pins so existing locks remain valid.
 
 ## Fixed
 
@@ -90,5 +94,5 @@ No candidate is tagged yet; the cut is 2026-11-07 at `31e8fec7` on `main`.
 - A macOS or arm64 executable; the owner's ruling is open.
 - The compatibility feed's path on the website; the owner's ruling is open.
 - The remaining wrapped-projects slices.
-- The agent upgrades: Codex 0.167.0, Claude Code 2.1.319 and Antigravity
-  CLI 1.5.3 are ahead of the tested pins 0.166.0, 2.1.314 and 1.4.12.
+- Antigravity CLI 1.5.3 (held at 1.4.12 pending test-fixture decoupling on
+  `main`).
