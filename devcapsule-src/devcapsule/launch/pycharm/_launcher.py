@@ -76,7 +76,7 @@ from ...host_open import (
     host_open_bridge,
 )
 from ..command_output import render_command
-from ...build_info import BuildInfoError, current_build_info
+from ...build_info import BuildInfoError, current_build_info, is_built_distribution
 from ...images.contract import WEBCONSOLE_RECIPE, WebConsoleAvailability
 from ...materialization import RUNTIME_PLAN_PATH
 from ...commands._console_channel import ChannelWatcher
@@ -1086,7 +1086,7 @@ def build_run_config(options: PycharmRunOptions, env: Mapping[str, str]) -> Pych
             console_port = console_host_port if options.network_mode == "host" else CONTAINER_CONSOLE_PORT
             selected_runtime_plan = selected_runtime_plan.with_console(ConsolePlan(
                 console_listen, console_port, CONSOLE_TOKEN_DESTINATION,
-                source_path=console_development_source(project, runtime_plan.project_mount),
+                source_path=console_development_source(project, runtime_plan.project_mount, env),
             ))
     session_id = logs.new_session_id()
     session_log_path = session_logs_root(project, env) / session_id
@@ -2318,16 +2318,43 @@ Web console:
   pages on {where}, behind this run's token. It is read-only."""
 
 
-def console_development_source(project: Path, project_mount: str) -> str:
+DEV_WEBCONSOLE_ENV = "DEVCAPSULE_DEV_WEBCONSOLE"
+_DEV_WEBCONSOLE_ENABLED = frozenset({"1", "true"})
+_DEV_WEBCONSOLE_DISABLED = frozenset({"0", "false"})
+
+
+def console_development_source(
+    project: Path,
+    project_mount: str,
+    env: Mapping[str, str] | None = None,
+    *,
+    built_launcher: bool | None = None,
+) -> str:
     """The mounted path of the checkout's own console source, or empty.
 
-    The self-hosting exception: a DevCapsule checkout that carries the console
-    subproject runs that source instead of the base's installed copy, so an
-    edit shows on the next run without a base release. Any other project
-    returns empty and the base's console runs.
+    Under ``D-0017``, a built DevCapsule executable runs its own
+    launcher-delivered console by default so dogfooding tests the artifact
+    under test rather than whichever branch is checked out in the workspace.
+    An unbuilt source-form launch mounts ``<project_mount>/devcapsule-webconsole``
+    automatically when present. ``DEVCAPSULE_DEV_WEBCONSOLE`` in ``env``
+    decides instead of the build mode: ``1`` or ``true`` enables the override,
+    ``0`` or ``false`` disables it, case-insensitively; any other non-empty
+    value is refused. A project without ``devcapsule-webconsole/`` has no
+    source to mount, so the result is empty whatever decides. ``built_launcher``
+    replaces :func:`is_built_distribution`'s answer about this process.
     """
 
-    if (project / "devcapsule-webconsole" / "devcapsule_webconsole" / "__init__.py").is_file():
+    values = os.environ if env is None else env
+    raw = values.get(DEV_WEBCONSOLE_ENV, "").strip().lower()
+    if raw in _DEV_WEBCONSOLE_ENABLED:
+        enabled = True
+    elif raw in _DEV_WEBCONSOLE_DISABLED:
+        enabled = False
+    elif raw:
+        raise PycharmRunError(f"{DEV_WEBCONSOLE_ENV} must be 1/true or 0/false; got {raw!r}.")
+    else:
+        enabled = not (is_built_distribution() if built_launcher is None else built_launcher)
+    if enabled and (project / "devcapsule-webconsole" / "devcapsule_webconsole" / "__init__.py").is_file():
         return f"{project_mount}/devcapsule-webconsole"
     return ""
 

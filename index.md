@@ -119,6 +119,7 @@ status file; internal WIP/archive documents use the local index in that status.
 - [D-0014 The IDE Role Stays As It Is, Or Generalizes To An Entry Point That Owns The Container's Lifetime](engineering-docs/decisions/product/d-0014-entry-point-generalizes-the-ide-role.md) (proposed, in scope for V1)
 - [D-0015 A Project Constrains Its Base Directly, Not Through Capabilities Or Components](engineering-docs/decisions/product/d-0015-a-project-constrains-its-base-directly.md) (proposed, in scope for V1)
 - [D-0016 A Required IDE Stays Required; One Launch May Depart From It Explicitly](engineering-docs/decisions/product/d-0016-explicit-launch-departure-from-a-required-ide.md) (accepted 2026-10-28)
+- [D-0017 The Launcher Delivers Its Web Console Package On The Base Interpreter](engineering-docs/decisions/product/d-0017-launcher-delivers-web-console-package.md) (accepted 2026-11-08)
 
 - [Decision record template](engineering-docs/decisions/product/_template.md)
 - [D-0001 Capability-First CLI Model](engineering-docs/decisions/product/d-0001-capability-first-cli-model.md)
@@ -302,6 +303,9 @@ history; record current decisions in the active documents above.
 
 ## Bugs
 
+- [Web console changes in `v0.3.1-rc1` do not reach capsules: the PEX omits the console package and the self-hosting override shadows it](engineering-docs/bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md)
+- [Codex status and version checks fail: the npm registry document exceeds the channel's 16 MiB cap](engineering-docs/bugs/devcapsule/2026-11-08-codex-npm-metadata-exceeds-16-mib.md)
+- [Eclipse cannot be acquired from scratch on amd64: the libsoup package URLs return 404](engineering-docs/bugs/devcapsule/2026-11-07-eclipse-amd64-libsoup-urls-return-404.md)
 - [Release-dependent test fixtures cause avoidable release PR churn](engineering-docs/bugs/devcapsule/2026-10-31-release-dependent-test-fixtures.md)
 
 - [Concurrent web consoles on `127.0.0.1` overwrite one another's authentication cookie across ports](engineering-docs/bugs/devcapsule/2026-10-31-webconsole-cookie-collides-across-ports.md)

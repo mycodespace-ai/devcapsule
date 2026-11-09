@@ -65,4 +65,11 @@ package's type check and tests in their own environment, built from
 
 `requirements.txt` and `requirements-dev.txt` are hash-pinned with
 `pip-compile --generate-hashes` from the `.in` files beside them; the base
-image recipe installs the runtime set from them.
+image recipe installs the runtime dependency set from them under
+`/opt/devcapsule-webconsole/venv`. `devcapsule-src/scripts/build-pex.sh`
+embeds `devcapsule_webconsole` inside `devcapsule.pex`, and environment
+materialization installs that package read-only at `/opt/devcapsule/webconsole`
+so CLI and console releases travel together (`D-0017`). Unbuilt source launches
+mount the checkout's `devcapsule-webconsole/` automatically; set
+`DEVCAPSULE_DEV_WEBCONSOLE=1` on the host to mount checkout edits when
+launching with a built `devcapsule` binary.

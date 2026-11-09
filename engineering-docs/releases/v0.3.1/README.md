@@ -1,6 +1,6 @@
 # DevCapsule 0.3.1 — Release Work
 
-Updated: 2026-11-08. Stage: **candidate 1 published and verified; the libsoup bug closed on it; the Codex npm cap bug filed for candidate 2; two rulings open**.
+Updated: 2026-11-08. Stage: **candidate 1 published; the libsoup bug closed on it; blocking web-console delivery bug (`D-0017`) fixed and gated on `ws-maintenance/webconsole-delivery` for candidate 2; Codex npm cap bug open for candidate 2; two rulings open**.
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
 [Changelog since 0.3.0](changelog.md) ·
@@ -213,6 +213,14 @@ decision here, never a silent replacement.
   13 minutes 41 seconds on the maintenance capsule's host daemon with
   the base already present. No container was launched. Log kept at
   `/home/devcapsule/.cache/devcapsule-releases/acceptance-rc1/acceptance.log`.
+- **Blocking finding on `v0.3.1-rc1` (2026-11-08):** `/files`, `/filetree`,
+  and `/api/project/tree` return `404` in capsules launched by `v0.3.1-rc1`.
+  `devcapsule.pex` does not carry `devcapsule-webconsole/`, both pinned
+  recipe-11 bases (`d7047ced…` and `7d322680…`) predate PR #12, and
+  `console_development_source()` unconditionally overrides the console on
+  DevCapsule checkouts. Filed as
+  [blocking for 0.3.1](../../bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md);
+  being fixed on `ws-maintenance/webconsole-delivery` before candidate 2.
 - Not in rc1: a macOS or arm64 executable and the compatibility feed's
   home, both waiting for the owner's ruling; the agent and IDE freshness
   upgrade; the Files-page proposals left by the review.

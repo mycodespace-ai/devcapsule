@@ -18,6 +18,7 @@ __all__ = [
     "BuildInfoError",
     "build_info_json",
     "current_build_info",
+    "is_built_distribution",
     "read_pex_build_info",
 ]
 
@@ -88,6 +89,22 @@ class BuildInfo:
 _SOURCE_PYPROJECT = Path(__file__).parents[1] / "pyproject.toml"
 
 
+def is_built_distribution(
+    *,
+    record_paths: Sequence[Traversable | Path] | None = None,
+) -> bool:
+    """Whether this process runs from a ``scripts/build-pex.sh`` artifact rather than source.
+
+    Only that script creates ``_build_info.json``, so the record's presence is
+    the definition of a built artifact, in a PEX, a scie-wrapped PEX or an
+    installed wheel of one alike; an editable or plain install of the source
+    tree carries none. As in :func:`current_build_info`, a present-but-malformed
+    record raises :class:`BuildInfoError` instead of masquerading as source.
+    """
+
+    return _embedded_build_info(record_paths) is not None
+
+
 def current_build_info(
     *,
     record_paths: Sequence[Traversable | Path] | None = None,
@@ -104,6 +121,20 @@ def current_build_info(
     distribution metadata that ``pyproject.toml`` alone authors, and the
     ``v<version>-local`` mnemonic that marks an unbuilt source run.
     """
+
+    embedded = _embedded_build_info(record_paths)
+    if embedded is not None:
+        return embedded
+    return _source_form_build_info(
+        pyproject_path=_SOURCE_PYPROJECT if pyproject_path is None else pyproject_path,
+        installed_version=installed_version,
+    )
+
+
+def _embedded_build_info(
+    record_paths: Sequence[Traversable | Path] | None = None,
+) -> BuildInfo | None:
+    """The stamped record of a built artifact, or ``None`` in a source-form run."""
 
     candidates: Sequence[Traversable | Path] = (
         record_paths
@@ -123,10 +154,7 @@ def current_build_info(
         except OSError:
             continue
         return BuildInfo.from_json(text)
-    return _source_form_build_info(
-        pyproject_path=_SOURCE_PYPROJECT if pyproject_path is None else pyproject_path,
-        installed_version=installed_version,
-    )
+    return None
 
 
 def _source_form_build_info(

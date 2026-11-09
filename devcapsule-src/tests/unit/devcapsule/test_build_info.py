@@ -1,4 +1,4 @@
-"""Unit tests of ``devcapsule/build_info.py``: stamped build records, source-form identity, and PEX inspection."""
+"""Unit tests of ``devcapsule/build_info.py``: stamped build records, source-form identity, built-artifact detection, and PEX inspection."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from devcapsule.build_info import (
     BuildInfoError,
     build_info_json,
     current_build_info,
+    is_built_distribution,
     read_pex_build_info,
 )
 
@@ -152,3 +153,37 @@ def test_current_build_info_raises_on_malformed_build_record(tmp_path: Path) -> 
 
     with pytest.raises(BuildInfoError, match="not valid JSON"):
         current_build_info(record_paths=(malformed,))
+
+
+def test_is_built_distribution_returns_false_without_embedded_build_info(tmp_path: Path) -> None:
+    """Without any readable ``_build_info.json`` candidate, ``is_built_distribution`` returns ``False``."""
+    assert is_built_distribution(record_paths=(tmp_path / "missing-resource.json", tmp_path / "missing-sibling.json")) is False
+
+
+def test_is_built_distribution_returns_true_with_valid_embedded_build_info(tmp_path: Path) -> None:
+    """A valid ``_build_info.json`` on the first candidate path marks the running process as a built distribution."""
+    record = tmp_path / "_build_info.json"
+    info = BuildInfo(2, "0.3.1rc2", "https://github.com/example/devcapsule", "a" * 40,
+                     f"https://github.com/example/devcapsule/commit/{'a' * 40}", "v0.3.1-rc2")
+    record.write_text(build_info_json(info), encoding="utf-8")
+
+    assert is_built_distribution(record_paths=(record,)) is True
+
+
+def test_is_built_distribution_reads_fallback_record_when_first_candidate_is_absent(tmp_path: Path) -> None:
+    """When the first candidate is absent, a valid fallback ``_build_info.json`` still marks a built distribution."""
+    sibling = tmp_path / "_build_info.json"
+    info = BuildInfo(2, "0.3.1rc2", "https://github.com/example/devcapsule", "a" * 40,
+                     f"https://github.com/example/devcapsule/commit/{'a' * 40}", "v0.3.1-rc2")
+    sibling.write_text(build_info_json(info), encoding="utf-8")
+
+    assert is_built_distribution(record_paths=(tmp_path / "missing-resource.json", sibling)) is True
+
+
+def test_is_built_distribution_refuses_malformed_embedded_build_info(tmp_path: Path) -> None:
+    """A malformed ``_build_info.json`` raises ``BuildInfoError`` instead of pretending to be a source run."""
+    malformed = tmp_path / "_build_info.json"
+    malformed.write_text("{not-json", encoding="utf-8")
+
+    with pytest.raises(BuildInfoError, match="not valid JSON"):
+        is_built_distribution(record_paths=(malformed,))

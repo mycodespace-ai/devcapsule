@@ -50,7 +50,8 @@ def console_builder_with_interpreter(tmp_path: Path) -> ConsoleBuilder:
     """A console builder whose base interpreter is an empty file under ``tmp_path``, so a console child is made."""
     python = tmp_path / "python"
     python.touch()
-    return lambda plan, as_user: console_child(plan, as_user, console_python=python)
+    absent_bundle = tmp_path / "absent-launcher-webconsole"
+    return lambda plan, as_user: console_child(plan, as_user, console_python=python, launcher_source=absent_bundle)
 
 
 def make_plan(tmp_path: Path, *, with_display: bool) -> RuntimePlan:
