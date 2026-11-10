@@ -40,6 +40,8 @@ from devcapsule.launch.pycharm import (
 )
 from devcapsule.launch.pycharm._launcher import (
     AttachedResult,
+    DEV_WEBCONSOLE_ENV,
+    console_development_source,
     display_disclosure,
     describe_run_command,
     console_disclosure,
@@ -1804,3 +1806,80 @@ def test_project_launch_cannot_inherit_unbound_paths_or_credentials(tmp_path: Pa
     assert config.git_token_file is None and config.git_token_env == ""
     assert config.enable_sudo is False and config.docker_mode == "none" and config.network_mode == "bridge"
     assert not unbound.exists()
+
+
+def _devcapsule_checkout(root: Path) -> Path:
+    project = root / "project"
+    (project / "devcapsule-webconsole" / "devcapsule_webconsole").mkdir(parents=True)
+    (project / "devcapsule-webconsole" / "devcapsule_webconsole" / "__init__.py").write_text("", encoding="utf-8")
+    return project
+
+
+@pytest.mark.parametrize(
+    "built_launcher,env_value,expected",
+    [
+        (True, None, ""),
+        (True, "1", "/workspace/project/devcapsule-webconsole"),
+        (True, "true", "/workspace/project/devcapsule-webconsole"),
+        (True, " TRUE ", "/workspace/project/devcapsule-webconsole"),
+        (True, "0", ""),
+        (False, None, "/workspace/project/devcapsule-webconsole"),
+        (False, "0", ""),
+        (False, "false", ""),
+        (False, "", "/workspace/project/devcapsule-webconsole"),
+    ],
+)
+def test_console_development_source_scopes_checkout_override_by_build_mode_and_opt_in(
+    tmp_path: Path, built_launcher: bool, env_value: str | None, expected: str
+) -> None:
+    """Built launchers keep their own console unless opted in; source runs mount a present checkout unless opted out; the variable is trimmed and case-insensitive."""
+    project = _devcapsule_checkout(tmp_path)
+    env = {} if env_value is None else {DEV_WEBCONSOLE_ENV: env_value}
+
+    assert console_development_source(project, "/workspace/project", env, built_launcher=built_launcher) == expected
+
+
+@pytest.mark.parametrize("built_launcher", [True, False])
+def test_console_development_source_is_empty_without_the_console_subproject_even_when_opted_in(
+    tmp_path: Path, built_launcher: bool
+) -> None:
+    """A project without ``devcapsule-webconsole/devcapsule_webconsole/__init__.py`` has no source to mount, opted in or not."""
+    project = tmp_path / "adopter"
+    project.mkdir()
+
+    assert console_development_source(project, "/workspace/adopter", {DEV_WEBCONSOLE_ENV: "1"}, built_launcher=built_launcher) == ""
+
+
+@pytest.mark.parametrize("value", ["maybe", "yes", "on", "2"])
+def test_console_development_source_refuses_unrecognized_override_value(tmp_path: Path, value: str) -> None:
+    """A ``DEVCAPSULE_DEV_WEBCONSOLE`` value outside 1/true/0/false raises ``PycharmRunError`` naming the variable rather than guessing."""
+    project = _devcapsule_checkout(tmp_path)
+
+    with pytest.raises(PycharmRunError, match=DEV_WEBCONSOLE_ENV):
+        console_development_source(project, "/workspace/project", {DEV_WEBCONSOLE_ENV: value}, built_launcher=True)
+
+
+def test_build_run_config_omits_checkout_console_source_under_a_built_launcher_unless_opted_in(
+    tmp_path: Path,
+) -> None:
+    """``build_run_config`` omits ``console.source_path`` for a built launcher by default and sets it when opted in."""
+    project = _devcapsule_checkout(tmp_path)
+    options = PycharmRunOptions(
+        project=project,
+        capsule_platform=Platform.LINUX_AMD64,
+        project_mount="/workspace/project",
+        docker_mode=DockerMode.none,
+        network_mode="bridge",
+        runtime_plan=external_runtime_plan(),
+        use_image_process=True,
+    )
+
+    with patch("devcapsule.launch.pycharm._launcher.is_built_distribution", return_value=True):
+        default_config = build_run_config(options, base_env(tmp_path))
+        opted_in_config = build_run_config(options, {**base_env(tmp_path), DEV_WEBCONSOLE_ENV: "1"})
+
+    assert default_config.runtime_plan is not None and default_config.runtime_plan.console is not None
+    assert default_config.runtime_plan.console.source_path == ""
+    assert opted_in_config.runtime_plan is not None and opted_in_config.runtime_plan.console is not None
+    assert opted_in_config.runtime_plan.console.source_path == "/workspace/project/devcapsule-webconsole"
+

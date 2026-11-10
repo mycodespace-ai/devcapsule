@@ -13,10 +13,14 @@ The checks, in the order the section states its rules:
    suite at module level, since it is then not a unit test.
 2. **Docstrings.** Every test function in a file that is not legacy has a
    docstring.
-3. **Legacy files only shrink.** A legacy file, one whose module-level
+3. **Whole-file legacy retirement.** A legacy file, one whose module-level
    ``pytestmark`` includes ``legacy``, is compared with the base revision:
-   no test function is added, no test function's source changes, and no
-   marker is added. A legacy file the base does not have is refused.
+   no test function is added, changed or removed while the file remains, and
+   no marker other than ``legacy`` is added. A legacy file the base does not
+   have is refused. Adding, changing or deleting a test in ``tests/unit/<path>/test_<name>.py``
+   while a flat legacy unit-test file ``tests/test_<name>.py`` still exists is
+   also refused, the two paired by file name alone; refurbish the entire
+   legacy file into the mirror and delete it.
 
 The base revision is ``--base``, else ``DEVCAPSULE_DIFF_BASE``, else
 ``origin/main``, compared at its merge base with ``HEAD``. The exit status
@@ -42,6 +46,9 @@ HEAVIER_SUITE_MARKERS = frozenset({
     "integration", "e2e", "recursive_e2e", "contributor_e2e", "ide_smoke", "base_build_e2e",
 })
 """Markers of the suites that are not unit tests; a file carrying one may live outside the mirror."""
+
+FLAT_TESTS_DIR = Path("tests")
+"""The root test directory holding flat legacy unit-test files."""
 
 UNIT_MIRROR = Path("tests") / "unit"
 """The directory that mirrors ``devcapsule-src`` for unit tests."""
@@ -142,18 +149,36 @@ def mirrored_module(test_path: Path, project_root: Path) -> Path | None:
 def check(modules: list[TestModule], base: dict[Path, TestModule | None], project_root: Path) -> list[str]:
     """All breaches, one line each, for the given files against their base versions.
 
-    ``base`` maps each legacy file's path to its parsed base version, or to
+    ``base`` maps each checked file's path to its parsed base version, or to
     None when the base revision does not have the file.
     """
+    flat_legacy_by_name: dict[str, list[Path]] = {}
+    for module in modules:
+        if _is_flat_legacy_unit_file(module):
+            flat_legacy_by_name.setdefault(module.path.name, []).append(module.path)
+
     breaches: list[str] = []
     for module in modules:
         if module.legacy:
             breaches.extend(_check_legacy(module, base.get(module.path)))
             continue
-        breaches.extend(_check_placement(module, project_root))
+        placement_breaches = _check_placement(module, project_root)
+        breaches.extend(placement_breaches)
+        if not placement_breaches and module.path.is_relative_to(UNIT_MIRROR):
+            breaches.extend(_check_mirror_against_legacy(
+                module, base.get(module.path), flat_legacy_by_name.get(module.path.name, []),
+            ))
         for name, line in module.undocumented:
             breaches.append(f"{module.path}:{line}: {name} has no docstring stating its contract")
     return breaches
+
+
+def _is_flat_legacy_unit_file(module: TestModule) -> bool:
+    return (
+        module.legacy
+        and module.path.parent == FLAT_TESTS_DIR
+        and not (module.markers & HEAVIER_SUITE_MARKERS)
+    )
 
 
 def _check_placement(module: TestModule, project_root: Path) -> list[str]:
@@ -173,12 +198,40 @@ def _check_legacy(module: TestModule, base: TestModule | None) -> list[str]:
     breaches: list[str] = []
     for name, source in module.functions.items():
         if name not in base.functions:
-            breaches.append(f"{module.path}: {name} was added to a legacy file; put it in the mirror")
+            breaches.append(
+                f"{module.path}: {name} was added to a legacy file; "
+                f"refurbish the whole legacy file into {UNIT_MIRROR} and delete {module.path}"
+            )
         elif source != base.functions[name]:
-            breaches.append(f"{module.path}: {name} changed in a legacy file; fix it to the convention and move it to the mirror")
+            breaches.append(
+                f"{module.path}: {name} changed in a legacy file; "
+                f"refurbish the whole legacy file into {UNIT_MIRROR} and delete {module.path}"
+            )
+    for name in base.functions:
+        if name not in module.functions:
+            breaches.append(
+                f"{module.path}: {name} was removed while the legacy file remains; "
+                f"refurbish the whole legacy file into {UNIT_MIRROR} and delete {module.path}"
+            )
     for marker in sorted(module.markers - base.markers - {LEGACY_MARKER}):
         breaches.append(f"{module.path}: marker {marker!r} was added to a legacy file")
     return breaches
+
+
+def _check_mirror_against_legacy(
+    module: TestModule,
+    base_mirror: TestModule | None,
+    legacy_paths: list[Path],
+) -> list[str]:
+    if not legacy_paths:
+        return []
+    if base_mirror is not None and module.functions == base_mirror.functions:
+        return []
+    return [
+        f"{module.path}: its tests changed while {legacy_path}, the legacy file of the same name, remains; "
+        f"refurbish the whole legacy file into the mirror and delete {legacy_path}"
+        for legacy_path in legacy_paths
+    ]
 
 
 def _test_files(project_root: Path) -> list[Path]:
@@ -217,7 +270,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"test conventions: cannot resolve base {arguments.base!r}: {error.stderr.strip()}", file=sys.stderr)
         return 1
     modules = [parse_module(path, (root / path).read_text(encoding="utf-8")) for path in _test_files(root)]
-    base = {module.path: _base_version(root, merge_base, module.path) for module in modules if module.legacy}
+    flat_legacy_names = {module.path.name for module in modules if _is_flat_legacy_unit_file(module)}
+    needs_base = [
+        module for module in modules
+        if module.legacy or (module.path.is_relative_to(UNIT_MIRROR) and module.path.name in flat_legacy_names)
+    ]
+    base = {module.path: _base_version(root, merge_base, module.path) for module in needs_base}
     breaches = check(modules, base, root)
     for breach in breaches:
         print(breach, file=sys.stderr)

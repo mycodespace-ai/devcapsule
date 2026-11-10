@@ -22,6 +22,8 @@ from pathlib import Path
 
 import pytest
 
+from devcapsule.webconsole_bundle import extract_webconsole_bundle
+
 pytestmark = pytest.mark.integration
 
 SOURCE_PROJECT = Path(__file__).resolve().parents[2]
@@ -89,6 +91,14 @@ def clean_build(request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPat
     policy = repository / "component-status" / "policy-v1.json"
     policy.parent.mkdir()
     shutil.copy2(SOURCE_PROJECT.parent / "component-status" / "policy-v1.json", policy)
+    webconsole = repository / "devcapsule-webconsole"
+    shutil.copytree(
+        SOURCE_PROJECT.parent / "devcapsule-webconsole" / "devcapsule_webconsole",
+        webconsole / "devcapsule_webconsole",
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+    )
+    for name in ("pyproject.toml", "requirements.txt"):
+        shutil.copy2(SOURCE_PROJECT.parent / "devcapsule-webconsole" / name, webconsole / name)
 
     git = ("git", "-C", str(repository))
     _run("git", "init", "-q", str(repository))
@@ -164,3 +174,48 @@ def test_a_tagged_build_installs_the_tag_version_and_leaves_the_tree_clean(clean
                      env={**os.environ, "PEX_INTERPRETER": "1"}, cwd=tmp_path).stdout.strip()
     assert installed == clean_build.expected_version
     assert _run("git", "-C", str(clean_build.repository), "diff", "--exit-code").stdout == ""
+
+
+def test_the_executable_embeds_the_web_console_package_and_its_files_page(
+    clean_build: CleanBuild, tmp_path: Path
+) -> None:
+    """``extract_webconsole_bundle`` unpacks the full ``devcapsule_webconsole`` package, including ``/files`` assets, from ``dist/devcapsule.pex``."""
+
+    assert clean_build.completed.returncode == 0, clean_build.completed.stderr
+    extracted = extract_webconsole_bundle(clean_build.output, tmp_path / "webconsole")
+    package = extracted / "devcapsule_webconsole"
+    assert (package / "__init__.py").is_file()
+    assert (package / "app.py").is_file()
+    assert (package / "decisions.py").is_file()
+    assert (package / "static" / "files.html").is_file()
+    assert (package / "static" / "vendor" / "viz-3.31.0.global.js").is_file()
+    app_source = (package / "app.py").read_text(encoding="utf-8")
+    assert '"/files"' in app_source and '"/filetree"' in app_source and '"/api/project/tree"' in app_source
+
+
+def test_dirty_webconsole_inputs_refuse_a_public_revision_build(clean_build: CleanBuild, tmp_path: Path) -> None:
+    """Modifying a file under ``devcapsule-webconsole/`` marks PEX inputs dirty and refuses a public-revision build."""
+
+    if clean_build.release is not None:
+        pytest.skip("one repository copy suffices to prove dirty web console detection")
+    copy = tmp_path / "dirty-repo"
+    shutil.copytree(clean_build.repository, copy)
+    target = copy / "devcapsule-webconsole" / "devcapsule_webconsole" / "static" / "files.html"
+    target.write_text(target.read_text(encoding="utf-8") + "<!-- local edit -->\n", encoding="utf-8")
+    environment = {
+        name: value
+        for name, value in os.environ.items()
+        if name not in {"DEVCAPSULE_SOURCE_REPOSITORY", "DEVCAPSULE_SOURCE_REVISION"}
+    }
+    environment["PYTHON"] = sys.executable
+    completed = subprocess.run(
+        [str(copy / "devcapsule-src" / "scripts" / "build-pex.sh"), "--allow-unpublished-revision"],
+        check=False,
+        text=True,
+        capture_output=True,
+        env=environment,
+        cwd=copy / "devcapsule-src",
+    )
+    assert completed.returncode != 0
+    assert "public-revision builds require clean PEX inputs" in completed.stderr
+

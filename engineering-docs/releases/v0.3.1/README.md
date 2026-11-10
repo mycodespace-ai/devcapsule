@@ -1,6 +1,6 @@
 # DevCapsule 0.3.1 — Release Work
 
-Updated: 2026-11-08. Stage: **candidate 0 published; slices 1 and 2 merged; candidate 1 on the owner's word; two rulings open**.
+Updated: 2026-11-10. Stage: **candidate 1 published; the libsoup bug closed on it; web-console delivery (`D-0017`, #18/#16), Codex npm abbreviated metadata (#20), and Codex `0.167.0` + Claude Code `2.1.321` freshness (`embedded-33`, #21) merged on `release-0.3.1`, pre-candidate `nox -s integration` green (`40` passed, `3` skipped), ready for `main` merge (`4PR-3-release-0.3.1`) and `v0.3.1-rc2` tag; two rulings open**.
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
 [Changelog since 0.3.0](changelog.md) ·
@@ -114,14 +114,14 @@ cut commit, by the merges on `main`'s first parent:
 
 Owner direction of 2026-09-27, applied to every release: try to upgrade the
 supported agent CLIs to their current generally available versions. The
-vendor pointers were read on 2026-11-07 at 12:27 UTC, with the sources the
-0.3.0 review used.
+vendor pointers were read at the cut on 2026-11-07 (`0.167.0`, `2.1.319`,
+`1.5.3`) and rechecked on 2026-11-09 (`0.167.0`, `2.1.321`, `1.5.3`).
 
-| Agent | Current pin | Vendor current | Source consulted | Disposition |
+| Agent | Prior pin | Vendor current (2026-11-09) | Source consulted | Disposition |
 |---|---|---|---|---|
-| Codex | 0.166.0 | 0.167.0 | [OpenAI npm latest](https://registry.npmjs.org/@openai/codex/latest) | ahead; the upgrade attempt is a slice of the cycle, on the owner's word |
-| Claude Code | 2.1.314 | 2.1.319 | [Vendor latest channel](https://downloads.claude.ai/claude-code-releases/latest) | ahead; 2.1.316 was held at 0.3.0 for this review; same slice |
-| Antigravity CLI | 1.4.12 | 1.5.3 | [Vendor Linux amd64 manifest](https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests/linux_amd64.json) | ahead by a minor version; same slice |
+| Codex | 0.166.0 | 0.167.0 | [OpenAI npm latest](https://registry.npmjs.org/@openai/codex/latest) | **adopted (`embedded-33`)**: `linux-amd64` and `linux-arm64` tarballs verified against npm SHA-512 SRI; offline npm materialization, `--version` (`codex-cli 0.167.0`), `--help`, and seeded `config.toml` smoke passed on `mycodespaceai/devcapsule-base:v0.3.0-base-20261031` |
+| Claude Code | 2.1.314 | 2.1.321 | [Vendor latest channel](https://downloads.claude.ai/claude-code-releases/latest) | **adopted (`embedded-33`)**: `linux-x64` and `linux-arm64` binaries verified against `2.1.321/manifest.json` SHA-256 checksums; offline `--version` (`2.1.321 (Claude Code)`), `--help`, and seeded `settings.json` smoke passed on `mycodespaceai/devcapsule-base:v0.3.0-base-20261031` |
+| Antigravity CLI | 1.4.12 | 1.5.3 | [Vendor Linux amd64 manifest](https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests/linux_amd64.json) | **held at `1.4.12` (pending owner ruling)**: `1.5.3` alters four literal `"1.4.12"` expectations in `1,396`-line legacy `tests/test_project_init.py` (tracked under [`2026-10-31-release-dependent-test-fixtures.md`](../../bugs/devcapsule/2026-10-31-release-dependent-test-fixtures.md)), which *Unit Tests* rule 5 requires refurbishing whole |
 
 Every vendor is ahead of the pin. The attempt follows the 0.3.0 method on
 a slice branch for a pull request into the release branch: artifacts
@@ -165,7 +165,9 @@ decision here, never a silent replacement.
   2026-11-07; the three assets downloaded, checksum and version verified.
   See *Candidates*.
 - [ ] The cycle's slices, each merged to `main` before the next candidate
-  tag; the bug records closed on candidates. Slice 1, the Eclipse libsoup
+  tag; the bug records closed on candidates. Slices 1 and 2 reached
+  `main` through PR #14 and are in candidate 1; the libsoup bug closed on
+  it. Slice 1, the Eclipse libsoup
   repin, merged to the release branch by PR #10 on 2026-11-08; verification
   on candidate 1. Slice 2, the web console's Files page, built by Pair
   Review (Antigravity implementing, Claude Code reviewing) as PR #12 with
@@ -177,6 +179,53 @@ decision here, never a silent replacement.
   the acceptance record; the final tag; delivery verified.
 
 ## Candidates
+
+### RC1 — tagged 2026-11-08
+
+- Tag `v0.3.1-rc1` on `accdec5bb36626875b0564afbcbf20f67f9d961b`, the release
+  branch's tip at the pre-candidate merge (PR #14 from the throwaway copy
+  `4PR-2-release-0.3.1`, merged by the owner at `8c5a4723`). Carries slice 1,
+  the Eclipse amd64 libsoup repin (PR #10), and slice 2, the web console's
+  Files page (PR #12 with its review PR #13).
+- Candidate gate from the release worktree before the push: method
+  `mainline`, no unintegrated commits, version `0.3.1rc1`.
+- Backend run [42436425955](https://github.com/mycodespace-ai/devcapsule/actions/runs/42436425955)
+  passed: 2844 unit tests passed, 50 deselected, 1 xfailed, 1 xpassed on
+  the hosted runner; packaging integration 26 passed, 1 skipped against the
+  built PEX. The [prerelease](https://github.com/mycodespace-ai/devcapsule/releases/tag/v0.3.1-rc1)
+  is public, non-draft, with the three assets.
+- Downloaded over HTTPS into `/home/devcapsule/.cache/devcapsule-releases/v0.3.1-rc1`:
+  the checksum file verifies the executable, SHA-256 `711d239c0809f892…`;
+  the manifest records the tag, the branch, the source revision, the
+  `mainline` disposition, CPython 3.12.14 and the recipe-11 linux x86-64
+  base `d7047ced…`; `devcapsule version --json` from an empty directory
+  reports `0.3.1rc1`, build `v0.3.1-rc1`, at `accdec5b…`.
+- **Eclipse acquired from scratch on amd64**, closing the libsoup bug: with
+  the downloaded executable and an empty configuration home
+  (`DEVCAPSULE_CONFIG_HOME` on a fresh directory), `project init --ide
+  eclipse-ide --require java --platform linux-amd64` on a scratch
+  repository, then `images build --type environment --network host`: the
+  closure downloaded in full, the two libsoup files landed in the home's
+  artifact cache under their hashes (`c2acdf20…`, 292,272 bytes;
+  `89f066fe…`, 12,882 bytes), the image build set up
+  `libsoup-3.0-0:amd64 (3.4.4-5ubuntu0.10)` and WebKitGTK, and the
+  environment image `devcapsule-local-eclipse:39671f01…` was built in
+  13 minutes 41 seconds on the maintenance capsule's host daemon with
+  the base already present. No container was launched. Log kept at
+  `/home/devcapsule/.cache/devcapsule-releases/acceptance-rc1/acceptance.log`.
+- **Blocking finding on `v0.3.1-rc1` (2026-11-08):** `/files`, `/filetree`,
+  and `/api/project/tree` return `404` in capsules launched by `v0.3.1-rc1`.
+  `devcapsule.pex` does not carry `devcapsule-webconsole/`, both pinned
+  recipe-11 bases (`d7047ced…` and `7d322680…`) predate PR #12, and
+  `console_development_source()` unconditionally overrides the console on
+  DevCapsule checkouts. Filed as
+  [blocking for 0.3.1](../../bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md);
+  being fixed on `ws-maintenance/webconsole-delivery` before candidate 2.
+- Not in rc1: a macOS or arm64 executable and the compatibility feed's
+  home, both waiting for the owner's ruling; the agent and IDE freshness
+  upgrade; the Files-page proposals left by the review.
+- Next: the rulings; the freshness slice; the documentation round, the
+  notes and the promotion before the last candidate.
 
 ### RC0 — tagged 2026-11-07
 

@@ -152,7 +152,10 @@ if [[ -n "${repo_root}" ]]; then
     devcapsule-src/pyproject.toml \
     devcapsule-src/requirements.txt \
     devcapsule-src/scripts/bump-version.py \
-    devcapsule-src/scripts/build-pex.sh)" ]]; then
+    devcapsule-src/scripts/build-pex.sh \
+    devcapsule-webconsole/devcapsule_webconsole \
+    devcapsule-webconsole/pyproject.toml \
+    devcapsule-webconsole/requirements.txt)" ]]; then
     source_inputs_dirty=0
   fi
 fi
@@ -288,6 +291,17 @@ PYTHONPATH="${build_root}" "${python_bin}" -m devcapsule.component_status_publis
   --revision "${source_revision}" \
   --without-probes > /dev/null
 cp "${build_root}/component-status/compatibility-v1.json" "${build_root}/devcapsule/_compatibility-v1.json"
+
+# The web console application package travels inside the launcher so materialization
+# installs the exact console matching this CLI onto the base's interpreter (D-0017).
+webconsole_package="${project_dir}/../devcapsule-webconsole/devcapsule_webconsole"
+if [[ ! -f "${webconsole_package}/__init__.py" ]]; then
+  echo "scripts/build-pex.sh: ${webconsole_package} is missing; the web console package cannot be embedded" >&2
+  exit 1
+fi
+PYTHONPATH="${build_root}" "${python_bin}" -m devcapsule.webconsole_bundle \
+  --package "${webconsole_package}" \
+  --output "${build_root}/devcapsule/_webconsole_bundle.zip"
 
 rm -rf "${project_dir}/build" "${project_dir}/devcapsule.egg-info"
 scie_build_output="${build_root}/devcapsule-scie"

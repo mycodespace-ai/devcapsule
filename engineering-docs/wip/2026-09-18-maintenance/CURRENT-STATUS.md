@@ -4,17 +4,202 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-08; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 0 published as `v0.3.1-rc0` on `8bcee1d0`, verified from the download; slice 1, the Eclipse amd64 repin, merged by PR #10; slice 2, the web console's Files page, merged by PR #12 at `ec8af13a`; candidate 1 on the owner's word; rulings open before candidate 1: executables for the Mac, the compatibility feed's home; the seventeen tests expected to fail stay queued on `main`
+State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 (`v0.3.1-rc1` on `accdec5b`) closed the Eclipse libsoup bug; PRs #18 (`b84b06e9`), #16 (`f2bae5cb`), #20 (`eb8ff8cf`, Codex npm abbreviated metadata), and #21 (`3ea05e68`, Codex `0.167.0` + Claude Code `2.1.321`, `embedded-33`) all merged into `release-0.3.1`; pre-candidate `nox -s integration` passed on `3ea05e68` (`40` passed, `3` skipped, recorded in `test-runs.json`); pre-candidate merge PR `4PR-3-release-0.3.1 -> main` open so `v0.3.1-rc2` can be tagged immediately after merge; two rulings open
 
-Definition read: WORKFLOW.md@d2ccbbe43dfa, WORKFLOW-LOCAL.md@65501b3407db
+Definition read: WORKFLOW.md@d9a8103606fa, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
 Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## Agent CLI freshness refresh for 0.3.1 candidate 2 (`embedded-33`) — 2026-11-09
+
+Stacked on PR #20 (`ws-maintenance/codex-npm-metadata` at `8f458a12`) as
+`ws-maintenance/0.3.1-agent-freshness`:
+
+- Rechecked live vendor pointers on 2026-11-09: Codex `0.167.0`, Claude Code
+  `2.1.321` (up from `2.1.319` at the 2026-11-07 cut after Anthropic's model
+  launch), and Antigravity CLI `1.5.3`.
+- Downloaded and cryptographically verified both `linux-amd64` and
+  `linux-arm64` artifacts for Codex `0.167.0` (against npm SHA-512 SRI:
+  meta `e858522a…`, `linux-x64` `2dc9aa87…`, `linux-arm64` `e24d7b6f…`) and
+  Claude Code `2.1.321` (against `2.1.321/manifest.json` SHA-256: `linux-x64`
+  `426c3381…`, `linux-arm64` `6bea0633…`).
+- Verified offline layout, seeded configuration (`config.toml` /
+  `settings.json`), `--version` (`codex-cli 0.167.0`, `2.1.321 (Claude Code)`),
+  and `--help` inside `mycodespaceai/devcapsule-base:v0.3.0-base-20261031`
+  (`--network none`) using `materialization.npm_install_step`.
+- Advanced `resolution_matrix.py` to `embedded-33` (appending `_CODEX_0_167_0`,
+  `_CLAUDE_CODE_2_1_321`, and their `_VerifiedEdge` entries while keeping all
+  prior pins), added matching `linux-arm64` entries in
+  `components/linux_arm64_pins.py`, and regenerated all 11 golden locks.
+- Held Antigravity CLI at `1.4.12` (surfaced to the owner): advancing
+  `antigravity-cli` alters four literal `"1.4.12"` assertions in `1,396`-line
+  legacy `tests/test_project_init.py` (documented in
+  `2026-10-31-release-dependent-test-fixtures.md`), which *Unit Tests* rule 5
+  requires refurbishing whole.
+- Planned next step: once PR #20 and this stacked freshness PR merge into
+  `release-0.3.1`, run `nox -s integration` on `release-0.3.1` (recording
+  `test-runs.json`), merge `release-0.3.1` into `main` through a throwaway
+  `4PR-3-release-0.3.1` PR keeping `main`'s `0.3.2.dev0` version files, and tag
+  `v0.3.1-rc2` on the owner's word.
+
+## Codex npm registry metadata > 16 MiB fix for 0.3.1 candidate 2 — 2026-11-09
+
+After the owner merged stacked PRs #18 (`b84b06e9`) and #16 (`f2bae5cb`) into
+`release-0.3.1`, the owner directed fixing
+[the Codex npm metadata cap bug](../../bugs/devcapsule/2026-11-08-codex-npm-metadata-exceeds-16-mib.md)
+first, followed by the agent CLI freshness upgrade (noting Anthropic's new model
+launch; live vendor pointers read 2026-11-09: Codex `0.167.0`, Claude Code
+`2.1.321`, Antigravity CLI `1.5.3`) and cutting `v0.3.1-rc2`.
+
+On `ws-maintenance/codex-npm-metadata` (from `release-0.3.1` at `f2bae5cb`):
+
+- `NpmChannel._metadata` in `devcapsule/components/npm_channel.py` sends
+  `Accept: application/vnd.npm.install-v1+json` when `version == ""` (`check()`),
+  keeping full single-version fetches in `select()` and the 16 MiB cap intact,
+  and exposes `__all__` plus an optional `opener` parameter for pure unit tests
+  while preserving `urlopen` module-level compatibility for legacy
+  `test_distribution_channels.py` and `test_version_sets.py`.
+- Added 6 single-action Hoare-triple unit tests in
+  `tests/unit/devcapsule/components/test_npm_channel.py` (`45` conforming files,
+  `104` legacy files, `0` breaches).
+- Verified live against `https://registry.npmjs.org/@openai%2Fcodex` (`5,456,187`
+  bytes / `5.20 MiB`, `5,786` versions): `CodexComponent().distribution_channel().check("0.166.0", ...)`
+  returns `0.166.0` `available` and candidate `0.167.0` `available` on both
+  `linux-amd64` and `linux-arm64`.
+- Planned next step: open PR to `release-0.3.1`, prepare the agent CLI freshness
+  upgrade slice (`0.167.0` / `2.1.321` / `1.5.3` across `linux-amd64` and
+  `linux-arm64`), merge `release-0.3.1` to `main`, and cut `v0.3.1-rc2`.
+
+## Blocking 0.3.1rc1 finding and D-0017 fix: launcher-delivered web console (stacked on PR #18) — 2026-11-08 / 2026-11-09
+
+Validating `v0.3.1-rc1` (`accdec5b`) inside a running capsule found that
+`GET /files`, `GET /filetree`, and `GET /api/project/tree` all returned `404`.
+Two couplings caused the failure: `devcapsule.pex` did not carry
+`devcapsule-webconsole/` (so adopter capsules ran the pre-PR-#12 package baked
+into the pinned `linux-amd64` and `linux-arm64` recipe-11 bases), and
+`console_development_source()` unconditionally put a mounted DevCapsule
+checkout's `devcapsule-webconsole/` first on `PYTHONPATH` (shadowing built
+candidates on older branches and masking missing delivery on `release-0.3.1`).
+Filed as [the blocking bug record](../../bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md)
+on `ws-maintenance/webconsole-delivery` (local `main` fast-forwarded 122
+commits to `origin/main` `46ded16d`, `git cherry` clean).
+
+The owner answered both design decisions through the capsule console, recorded
+in [D-0017](../../decisions/product/d-0017-launcher-delivers-web-console-package.md)
+and [R-CONSOLE-001](../../requirements/product/r-console-001-capsule-web-console.md):
+
+1. `console-delivery = launcher-package`: `scripts/build-pex.sh` treats
+   `devcapsule-webconsole/` as a tracked clean build input and embeds
+   `devcapsule/_webconsole_bundle.zip` inside `devcapsule.pex` via
+   `devcapsule/webconsole_bundle.py`; `materialization.py` extracts and installs
+   `/opt/devcapsule/webconsole` read-only alongside
+   `/opt/devcapsule/bin/devcapsule.pex` (bound to `runtime.pex-sha256` in
+   formation identity); `container_runtime/console.py` and `console_tools.py`
+   share `console_package_path` (`console.source_path` ->
+   `/opt/devcapsule/webconsole` -> `/opt/devcapsule-webconsole`), while the host
+   launcher settles interpreter compatibility via `WEBCONSOLE_RECIPE` (`11`).
+2. `self-hosting-override = source-or-opt-in`: `is_built_distribution()` in
+   `build_info.py` distinguishes built executables from source runs;
+   `console_development_source()` leaves `console.source_path == ""` by default
+   for built executables even on a DevCapsule checkout, keeps automatic checkout
+   mounting for unbuilt source runs, and honors `DEVCAPSULE_DEV_WEBCONSOLE`
+   (`1`/`true` or `0`/`false`).
+
+Reviewed under Pair Review by `Claude Code + Claude Fable 5.1` in
+[PR #17](https://github.com/mycodespace-ai/devcapsule/pull/17) (`PR16.1`,
+[brief](evidence/2026-11-08-webconsole-delivery/review-brief.md)), accepted at
+`e23e22c7` without a round and merged at `9919f4ce`. PR #17 unified
+`console_package_path` and dropped the dead `psutil` probe, masked
+`external_attr >> 16` with `stat.S_IFMT` in `extract_webconsole_bundle` while
+pinning `match=` on every refusal test (`99%` bundle coverage), tightened
+`DEVCAPSULE_DEV_WEBCONSOLE` to `1`/`true`/`0`/`false`, and aligned `D-0017` and
+the bug record. Per subsequent owner decision (`2026-11-08-stacked-legacy-tests`:
+`legacy-marker-scope = retire-four-plus-gate`,
+`stacked-delivery-branch = force-push-pr-16`,
+`psutil-probe-in-pr1 = drop-in-pr1`), `ws-maintenance/webconsole-delivery` was
+then rebased onto [PR #18](https://github.com/mycodespace-ai/devcapsule/pull/18)
+(`ws-maintenance/webconsole-legacy-tests`) so all new `D-0017` unit tests extend
+the refurbished mirror modules with zero legacy/mirror test twins and zero
+`devcapsule.*` attribute patches (`test_pycharm.py` untouched).
+
+Stacked gates on `ws-maintenance/webconsole-delivery` passed: `nox -s build`
+(mypy clean across `332` files, `0` unit-convention breaches across `104` legacy
+files holding `1,387` legacy tests and `44` conforming files, `2,904` unit tests
+passed at `89%` total coverage, `smoke_pex`, `249`-page content contract),
+`nox -s integration` (`40` passed, `3` skipped), `nox -s webconsole` (`458`
+passed), and a live HTTP check on this capsule's pre-PR-#12
+`/opt/devcapsule-webconsole/venv/bin/python` serving `/files` (`200`),
+`/filetree` (`307` -> `/files`), `/api/project/tree` (`200`), and
+`/api/project/raw?path=hello.txt` (`200`) from `dist/devcapsule-local.pex`
+against a non-DevCapsule project. Three remaining proposals from PR #17 stay
+queued for `main` follow-up (PR #17's fourth proposal, migrating private
+`materialization` test imports, was completed in PR #18): (1) declare `__all__`
+on `launch/pycharm/_launcher.py` for its pre-existing mirror test file; (2)
+share a single "one member by suffix" PEX zip helper between
+`read_pex_build_info` and `extract_webconsole_bundle`; and (3) add a test tying
+`WEBCONSOLE_RECIPE` to `BASE_RECIPE_VERSION` and
+`devcapsule-webconsole/requirements.in`. Planned next step: await the owner's
+merge of PR #18 into `release-0.3.1` followed by PR #16 into `release-0.3.1`,
+then implement the Codex 16 MiB npm cap slice before `v0.3.1-rc2`.
+
+## Whole-file legacy test retirement and 4-file refurbishment for 0.3.1, by Pair Review — 2026-11-08
+
+Reviewing the initial `0.3.1` web-console delivery PR (#16), the owner noted
+that per-function shrinkage under *Unit Tests* rule 5 had left two
+`test_materialization.py` files side by side (and 38 mirror files with only
+two retired legacy files across the tree). By owner decision
+(`2026-11-08-stacked-legacy-tests`: `legacy-marker-scope = retire-four-plus-gate`,
+`stacked-delivery-branch = force-push-pr-16`, `psutil-probe-in-pr1 = drop-in-pr1`),
+this prerequisite slice (`ws-maintenance/webconsole-legacy-tests` ->
+`release-0.3.1`) tightens rule 5 and its gate checker so legacy unit-test
+files are retired whole when touched or mirrored, and refurbishes all four
+legacy files touched by the web-console delivery slice (`test_build_info.py`,
+`test_console_runtime.py`, `test_console_tools.py`, and
+`test_materialization.py`), dropping legacy files from `108` to `104`
+(`1,445 -> 1,387` legacy tests, `-58`) and raising conforming files from
+`34` to `43`. Each touched module declares `__all__` and exposes explicit
+input/collaborator parameters (`current_build_info`, `VersionCommand.invoke`,
+`console_child`, `plan_filesystem`, `entrypoint.run`, `run_console_decisions`,
+`CheckoutDecisionsCommand.invoke`) so no refactored test patches
+`devcapsule.*` attributes; the dead per-start `import psutil` subprocess
+probe in `console.py` is removed (`WEBCONSOLE_RECIPE` 11 on the host already
+gates console planning).
+
+Pair Review (`Claude Code + Claude Fable 5.1`, [brief](evidence/2026-11-08-webconsole-legacy-tests/review-brief.md))
+opened [PR #19](https://github.com/mycodespace-ai/devcapsule/pull/19)
+(`PR18.1`), accepted at `4aac5dfc` without a round and merged at `a1aad17f`:
+completed `__all__` in `container_runtime/console.py`,
+`container_runtime/entrypoint.py`, and `materialization.py`; removed a dead
+`subprocess` import in `commands/project.py`; aligned rule 5, its companion,
+`engineering-docs/development/unit-tests.md`, and the checker diagnostic on
+basename pairing and mirror test deletions (4 new checker tests); added an
+`environ` isolation test in `test_entrypoint.py`; and restored interpreter-path
+matching in `test_console_tools.py`. Hosted CI on `e301367d` caught a
+capsule-masked host-filesystem leak in `test_entrypoint.py` (`make_plan`
+inherited `pycharm_runtime_template()`'s `/ide-config` state slots and
+`/tmp/devcapsule-jetbrains.properties`, which existed inside the PyCharm
+capsule but raised `PermissionError: '/ide-config'` on GitHub Actions); fixed
+by rooting `make_plan`'s `state_slots` and `properties_path` under `tmp_path`
+and implementing PR #19's third proposal (`runtime_root`, `caller_uid`, and
+`configure_logs` seams across `filesystem.py`, `identity.py`, and
+`entrypoint.run`, with `__all__` on `filesystem.py` and `identity.py` plus
+mirror unit tests in `test_filesystem.py` so the unit tests touch no host
+paths, `os.geteuid()`, `os.environ`, or the root logger). Two unimplemented proposals from PR #19 remain
+recorded for later owner review: pairing legacy files with mirrors by imported
+`devcapsule.*` modules rather than file name alone, and descending into nested
+`Test*`-in-`Test*` classes in `_test_functions`. Gate passed (`330` mypy files,
+`0` breaches across `104` legacy / `1,387` legacy tests and `43` conforming
+files, `2,842` unit passed, `458` webconsole passed, `249` contract pages;
+`nox -s integration`: `36` passed, `1` skipped).
+[PR #18](https://github.com/mycodespace-ai/devcapsule/pull/18) is ready for
+owner merge into `release-0.3.1`, with PR #16
+(`ws-maintenance/webconsole-delivery`) stacked directly on top.
 
 ## Slice 2 of 0.3.1: the web console's Files page, by Pair Review — 2026-11-08
 
@@ -4663,6 +4848,10 @@ Earlier open-thread history (read against the current scope above):
   release documents and bug records.
 
 ## Workstream Document Index
+
+- [PR #16 Pair Review brief (PR16.1)](evidence/2026-11-08-webconsole-delivery/review-brief.md), [D-0017](../../decisions/product/d-0017-launcher-delivers-web-console-package.md), and [0.3.1rc1 web console delivery bug](../../bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md): launcher-delivered web console slice (`ws-maintenance/webconsole-delivery`, stacked on PR #18).
+
+- [PR #18 Pair Review brief (PR18.1)](evidence/2026-11-08-webconsole-legacy-tests/review-brief.md): brief for `Claude Code + Claude Fable 5.1` on whole-file legacy test retirement and 4-file refurbishment (`ws-maintenance/webconsole-legacy-tests`).
 
 - [RC9 preparation and component verification](evidence/2026-10-31-rc9/README.md).
 

@@ -63,9 +63,25 @@ No candidate is tagged yet; the cut is 2026-11-07 at `31e8fec7` on `main`.
   Releases from 0.3.1 on are published there; the website's links and the
   install guide name it. The old repository under the personal account
   stays as it was at the move and is not a redirect.
+- **The launcher delivers its matching web console.** Materialization installs
+  the launcher's own `devcapsule_webconsole` package at
+  `/opt/devcapsule/webconsole` on the base image's pinned interpreter, so
+  web-console updates ship with each launcher release without a base-image
+  rebuild. A built executable runs its own console even on a DevCapsule
+  checkout unless `DEVCAPSULE_DEV_WEBCONSOLE=1` opts into the checkout copy.
+- **Refreshed Codex and Claude Code pins (`embedded-33`).** New locks and
+  upgrades select Codex `0.167.0` (up from `0.166.0`) and Claude Code
+  `2.1.321` (up from `2.1.314`) on both `linux-amd64` and `linux-arm64`,
+  retaining all prior pins so existing locks remain valid.
 
 ## Fixed
 
+- **Codex version and compatibility checks answer again.** `NpmChannel.check()`
+  requests the npm registry's abbreviated install metadata
+  (`Accept: application/vnd.npm.install-v1+json`, ~5.2 MiB for `@openai/codex`
+  against the channel's 16 MiB cap) rather than the full 18.7 MB package
+  history, restoring `project versions check` for Codex and the published
+  compatibility feed's Codex probe.
 - Eclipse can be acquired from scratch on Linux x86-64 again. The closure's
   two libsoup packages are repinned at `3.4.4-5ubuntu0.10`, the build the
   Ubuntu archive serves since it replaced `0.8` on 2026-10-08; the arm64
@@ -78,5 +94,5 @@ No candidate is tagged yet; the cut is 2026-11-07 at `31e8fec7` on `main`.
 - A macOS or arm64 executable; the owner's ruling is open.
 - The compatibility feed's path on the website; the owner's ruling is open.
 - The remaining wrapped-projects slices.
-- The agent upgrades: Codex 0.167.0, Claude Code 2.1.319 and Antigravity
-  CLI 1.5.3 are ahead of the tested pins 0.166.0, 2.1.314 and 1.4.12.
+- Antigravity CLI 1.5.3 (held at 1.4.12 pending test-fixture decoupling on
+  `main`).
