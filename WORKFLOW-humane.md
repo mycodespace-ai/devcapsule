@@ -362,7 +362,8 @@ workstream is a row that misleads.
 ### 7.3 The reserved `project-management` workstream
 
 **Rule.** It owns priorities, sequencing, dependencies, lifecycle decisions,
-and routing of unowned work; it is not a second list, not a catch-all, and
+routing of unowned work, and triage of the pile of ideas; it is not a second
+list, not a catch-all, and
 not the owner of others' state; its authority is advisory and recorded; it is
 permanent; it retires only on migration to single-stream.
 
@@ -1075,6 +1076,38 @@ first case: it is not a human-maintained exception to the principle but a
 view whose generator is an agent, reviewed by the owner for wording and style,
 and the local file's same-commit rule is the hand-operated version of the
 dependency until the console tracks it.
+
+### 12.13 The pile of ideas
+
+**Rule.** An idea nobody has triaged is one file under
+`engineering-docs/pile-of-ideas/`, added by anyone on their working branch,
+with no status, priority, or owner; `project-management` reads the pile at
+its session starts and before each release branch is cut; triage ends an idea
+as a backlog entry, a bug record, a sent item, a work order, or a drop,
+removes the file, and logs one line.
+
+**Intended effect.** Keeping a thought costs one small file, so it is not
+lost in a conversation, and the pile holds only what nobody has decided yet.
+
+**Motivation.** Owner direction of 2026-11-10, during the 0.3.1 cycle. A
+model new to the codebase reported a list of observations, and the workflow
+had nowhere cheap to put them: an item must say why it belongs to its
+recipient and what accepting it means, and a backlog entry carries a priority
+that somebody has already decided. An idea usually arrives in the middle of
+other work, to whoever happens to be looking, and it survives only if writing
+it down costs almost nothing. The rule therefore separates capture from
+decision. One file per idea, rather than one living list, lets several
+branches add ideas without conflicting. There is no status field because
+presence in the directory is the status, and the file is removed at triage
+because a pile that keeps decided ideas is the second backlog the other
+record rules forbid. Slow transport is accepted: no pull request exists for a
+record alone, so an idea reaches `main` with its branch, and an idea that
+cannot wait for that is by that fact an item for mail. The two triage
+occasions exist because a pile nobody is scheduled to read only grows;
+`project-management` was paused when the rule was written. An idea may stay
+through a triage, since forcing a decision would only move undecided ideas
+into the backlog under `later`. The rule is new: the 0.3.1 cycle is its first
+use, and it ships to adopters before it has been proven here.
 
 ## Section Map: Previous Edition To This One
 

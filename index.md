@@ -138,6 +138,11 @@ status file; internal WIP/archive documents use the local index in that status.
 - [DevCapsule V1 state and persistence](engineering-docs/specifications/product/state-and-persistence.md)
 - [Project workflow bootstrap](engineering-docs/specifications/product/project-workflow-bootstrap.md)
 
+## Pile Of Ideas
+
+- [The pile of ideas](engineering-docs/pile-of-ideas/README.md): untriaged
+  ideas, one file each; the files themselves are not listed here.
+
 ## Work Orders
 
 - [Test improvements: declared public surfaces, no patching of project modules, the discovery module first](engineering-docs/work-orders/2026-11-08-test-improvements.md)
@@ -305,6 +310,8 @@ history; record current decisions in the active documents above.
 
 ## Bugs
 
+- [Markdown-only changes run the whole Python unit suite: the hosted path filter lists too few non-inputs, and the local gate has no filter](engineering-docs/bugs/devcapsule/2026-11-10-markdown-only-changes-run-the-python-unit-suite.md)
+- [Unit tests read the developer's real launcher settings inside a capsule: the consent and trust tests fail or prove nothing there](engineering-docs/bugs/devcapsule/2026-11-10-unit-tests-read-the-capsules-mounted-launcher-settings.md)
 - [Web console changes in `v0.3.1-rc1` do not reach capsules: the PEX omits the console package and the self-hosting override shadows it](engineering-docs/bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md)
 - [Codex status and version checks fail: the npm registry document exceeds the channel's 16 MiB cap](engineering-docs/bugs/devcapsule/2026-11-08-codex-npm-metadata-exceeds-16-mib.md)
 - [Eclipse cannot be acquired from scratch on amd64: the libsoup package URLs return 404](engineering-docs/bugs/devcapsule/2026-11-07-eclipse-amd64-libsoup-urls-return-404.md)

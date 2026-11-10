@@ -4,17 +4,94 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 (`v0.3.1-rc1` on `accdec5b`) closed the Eclipse libsoup bug; PRs #18 (`b84b06e9`), #16 (`f2bae5cb`), #20 (`eb8ff8cf`, Codex npm abbreviated metadata), and #21 (`3ea05e68`, Codex `0.167.0` + Claude Code `2.1.321`, `embedded-33`) all merged into `release-0.3.1`; pre-candidate `nox -s integration` passed on `3ea05e68` (`40` passed, `3` skipped, recorded in `test-runs.json`); pre-candidate merge PR `4PR-3-release-0.3.1 -> main` open so `v0.3.1-rc2` can be tagged immediately after merge; two rulings open
+State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, no fix started
 
-Definition read: WORKFLOW.md@d9a8103606fa, WORKFLOW-LOCAL.md@d92bdcbb0a01
+Definition read: WORKFLOW.md@e83f22a20701, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
 Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/pile-of-ideas` from release-0.3.1 c4bd458b, PR #23 open, the owner merges; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## The pile of ideas, a workflow rule for 0.3.1 — 2026-11-10
+
+Owner direction of 2026-11-10: a directory, `engineering-docs/pile-of-ideas/`,
+holds one file per idea nobody has triaged, and `project-management` triages
+it. The rule is topic 12.13 of `WORKFLOW.md` with its glossary entry, file
+role, one sentence in topic 7.3, the 0.3.1 changes entry and the humane
+paragraph; the packaged definition carries the same rules under *Pile Of
+Ideas*, so adopters get it with 0.3.1. The owner chose to ship it in the
+definition before it has been used here. Two ideas open the pile: the
+recursive test machinery out of the adopter's executable, and a tiling
+desktop with the IDE on the side. Branch `ws-maintenance/pile-of-ideas` from
+`release-0.3.1` at `c4bd458b`; PR #23 to `release-0.3.1` is open for the
+owner, and the merge to `main` follows it.
+
+Finding, not caused by this slice and not diagnosed: `nox -s tests` in the
+owner's capsule on this branch gives 17 failed, 2893 passed, and the same 17
+fail on the untouched `v0.3.1-rc2` tree in the same environment. They are in
+`tests/test_run_flow.py` (8), `tests/test_trust.py` (3),
+`tests/configuration/test_contract.py` (2),
+`tests/test_ide_requirement_override.py` (2),
+`tests/test_capability_policy.py` (1) and `tests/test_owner_commands.py`
+(1). None is among the tests marked expected to fail on 2026-11-04.
+
+Diagnosed the same day: the capsule's read-only mount of the host's launcher
+settings, where `devcapsule-base` and `vscode` were accepted on 2026-11-08;
+all 17 pass with the mount hidden. Filed at the owner's direction as
+[blocking for 0.3.1](../../bugs/devcapsule/2026-11-10-unit-tests-read-the-capsules-mounted-launcher-settings.md).
+Next action: make the isolation fixture a private home; no fix started.
+
+Also filed the same day, reported by the owner:
+[Markdown-only changes run the whole Python unit suite](../../bugs/devcapsule/2026-11-10-markdown-only-changes-run-the-python-unit-suite.md),
+minor, no target. Next action: the owner chooses among the fix notes.
+
+## Candidate 2 (`v0.3.1-rc2`) published and verified — 2026-11-10
+
+After the owner merged PR #20 (`eb8ff8cf`) and PR #21 (`3ea05e68`) into
+`release-0.3.1`, `nox -s integration` passed on `3ea05e68` (`40` passed, `3`
+skipped in `39.65s`, recorded at `be0140ca` in `test-runs.json`). Pre-candidate
+PR #22 (`4PR-3-release-0.3.1` -> `main`, keeping `main` at `0.3.2.dev0` while
+preserving `_webconsole_bundle.zip` in `pyproject.toml`) merged at `aabace3c`.
+
+- Tagged `v0.3.1-rc2` on `be0140ca19b426cc9eea4dafa1a8958826d20c56` (`mainline`,
+  zero unintegrated commits, `0.3.1rc2`). Hosted workflow run
+  [`42734994462`](https://github.com/mycodespace-ai/devcapsule/actions/runs/42734994462)
+  passed (`2,929` unit passed, `66` deselected, `1` xfailed, `1` xpassed;
+  packaging integration `40` passed, `3` skipped in `54.14s`) and published the
+  non-draft [prerelease](https://github.com/mycodespace-ai/devcapsule/releases/tag/v0.3.1-rc2).
+- Downloaded into `/home/devcapsule/.cache/devcapsule-releases/v0.3.1-rc2`
+  (`devcapsule.pex` SHA-256 `2c3ace0f2f5b94ef4dfce9f568a09cf00ce045964fbbf6bf90ff06b1fe54a5d4`,
+  `version --json` `0.3.1rc2` at `be0140ca…`) and closed both remaining
+  candidate-gating bugs:
+  - [`2026-11-08-codex-npm-metadata-exceeds-16-mib.md`](../../bugs/devcapsule/2026-11-08-codex-npm-metadata-exceeds-16-mib.md):
+    `origin/component-status` (`0bc31c64`, `2026-11-10T00:58:45Z` from
+    `aabace3c`) reports Codex `ok` with `consecutive_failures: 0` and candidate
+    `0.167.0`; `devcapsule.pex project init` + `project versions check` on a
+    fresh adopter project with empty `DEVCAPSULE_CONFIG_HOME` locked `codex
+    0.167.0` and `claude-code 2.1.321` (`embedded-33`) and reported both
+    `available` live.
+  - [`2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md`](../../bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md):
+    `_webconsole_bundle.zip` extracted from the downloaded `v0.3.1-rc2`
+    `devcapsule.pex` and served on the pre-PR-#12 base interpreter
+    (`/opt/devcapsule-webconsole/venv/bin/python`) against that non-DevCapsule
+    project answered `200 OK` on `/files`, `/api/project/tree`, and
+    `/api/project/raw`, and `307` (`Location: /files`) on `/filetree`;
+    `is_built_distribution()` returned `True`, leaving `console_development_source()`
+    empty by default on DevCapsule checkouts.
+- Also updated this capsule's persistent `/home/devcapsule/.gemini/config/AGENTS.md`
+  co-author address from `<noreply@google.com>` (unclaimed on GitHub, no commit
+  avatar) to Google's official Gemini GitHub App noreply address
+  `<176961590+gemini-code-assist[bot]@users.noreply.github.com>` at the owner's
+  request.
+- Planned next step: await the owner's rulings on Mac/arm64 published
+  executables, the compatibility feed's website path, and whether Antigravity
+  CLI stays held at `1.4.12` for `0.3.1`; then run the end-to-end test selection
+  on the accepted candidate (*Release Policy* rule 10), write `notes.md`, run
+  `release-docs.py promote 0.3.1`, and prepare final `v0.3.1`.
 
 ## Agent CLI freshness refresh for 0.3.1 candidate 2 (`embedded-33`) — 2026-11-09
 

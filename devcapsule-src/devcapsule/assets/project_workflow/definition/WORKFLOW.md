@@ -283,6 +283,10 @@ remain understood as synonyms for one release and are then retired.
   entries to a workstream, with finish criteria, under
   `engineering-docs/work-orders/`. An optional kind; delivered by mail like
   any item. Not a requirement, and not the workstream's status file.
+- **Idea**: a thought about the project that nobody has triaged yet, small or
+  large, in one file under `engineering-docs/pile-of-ideas/`. It has no
+  priority and no owner. Not a backlog entry, not a bug record, and not an
+  item; see *Pile Of Ideas*.
 - **Priority**: for requirements and backlog items, one of `gating`, the next
   release does not ship without it; `wanted`, high value, the release ships
   without it; `optional`, taken if cheap; `later`, not for this release. Not
@@ -335,6 +339,17 @@ One entry per DevCapsule release that changed a rule, newest first, each with
 the step a project takes to adopt it where one exists. The `version` in this
 file's frontmatter names the release this text ships in; see *Workflow
 Declaration* for what that version means and who keeps it correct.
+
+#### 0.3.1
+
+Rules changed since 0.3.0:
+
+- **Pile of ideas.** An idea nobody has triaged is one file under
+  `engineering-docs/pile-of-ideas/`; anyone adds one on the working branch;
+  `project-management` reads the pile at its session starts and before each
+  release branch is cut; triage removes the file and logs one line. See
+  *Pile Of Ideas*; the *Glossary* gains **idea**. Migration: none; create
+  the directory with the first idea.
 
 #### 0.3.0
 
@@ -810,7 +825,8 @@ workstream gives it a durable owner.
 **Scope.** It owns project-wide priorities, sequencing, cross-workstream
 dependencies, portfolio-level checkpoints, lifecycle decisions about opening,
 pausing, resuming, blocking, and concluding other workstreams, and routing work
-that has no owning workstream yet.
+that has no owning workstream yet. It triages the pile of ideas; see *Pile Of
+Ideas*.
 
 Three exclusions keep it from absorbing the project:
 
@@ -2254,6 +2270,8 @@ Use markdown files with distinct responsibilities:
 - `engineering-docs/bugs/`: one file per active or recently investigated
   bug, with symptoms, reproduction, evidence, hypotheses, verification target,
   and close criteria.
+- `engineering-docs/pile-of-ideas/`: one file per idea nobody has triaged
+  yet; see *Pile Of Ideas*.
 - `engineering-docs/completed-tasks/`: one file per completed, retired,
   manually validated, or no-longer-reproduced task. This is the retrospective
   archive.
@@ -2502,6 +2520,35 @@ retired:
    launcher change regresses this path."
 
 This keeps the next-session question "what should we do next?" unambiguous.
+
+## Pile Of Ideas
+
+A thought about the project usually arrives in the middle of other work. The
+pile keeps it for the price of one small file, and holds only what nobody has
+decided yet.
+
+1. An idea is one markdown file under `engineering-docs/pile-of-ideas/`,
+   named `YYYY-MM-DD-<slug>.md`. It states the idea, who had it, and why it
+   could be worth doing. A large idea names its parts under their own
+   headings.
+2. Anyone, human or agent, adds an idea at any time, on the working branch.
+   The file reaches `main` with that branch's integration; see *Publishing
+   Before Integration*.
+3. Do not add an idea for work you do now, for a defect, or for work whose
+   owner you know. Do the work, file the bug record, or send the item.
+4. A file in the pile is untriaged. Give it no status, priority, or owner. Do
+   not list it in `index.md`. Only its author amends it. Only triage splits
+   or removes it.
+5. `project-management` triages the pile. Read the whole pile at each session
+   start of that workstream and before each release branch is cut. Triage
+   what can be decided then. An idea that cannot be decided stays. In
+   `single-stream` mode the human and the agent triage it together.
+6. Triage ends an idea as exactly one of: a backlog entry, a bug record, an
+   item sent to a workstream, a work order, or a drop. Split a large idea
+   first when its parts end differently. In one commit, remove the file and
+   append one line to the triaging workstream's decision log: the file name,
+   the date, the outcome, and where the idea went or why it was dropped. In
+   `single-stream` mode the line goes in the status file.
 
 ## Completed Task Archive
 
