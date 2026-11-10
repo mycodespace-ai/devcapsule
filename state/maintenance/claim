@@ -1,5 +1,0 @@
-who: Costin Cozianu
-branch: ws-maintenance/python-route-guard
-slice: python route guard: tests may read only CI inputs; filter default flips (bug 2026-11-10)
-since: 2026-11-10T12:55:29+00:00
-expires: 2026-11-11T00:55:29+00:00
