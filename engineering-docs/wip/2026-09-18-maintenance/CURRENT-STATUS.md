@@ -45,6 +45,10 @@ all 17 pass with the mount hidden. Filed at the owner's direction as
 [blocking for 0.3.1](../../bugs/devcapsule/2026-11-10-unit-tests-read-the-capsules-mounted-launcher-settings.md).
 Next action: make the isolation fixture a private home; no fix started.
 
+Also filed the same day, reported by the owner:
+[Markdown-only changes run the whole Python unit suite](../../bugs/devcapsule/2026-11-10-markdown-only-changes-run-the-python-unit-suite.md),
+minor, no target. Next action: the owner chooses among the fix notes.
+
 ## Candidate 2 (`v0.3.1-rc2`) published and verified — 2026-11-10
 
 After the owner merged PR #20 (`eb8ff8cf`) and PR #21 (`3ea05e68`) into
