@@ -1,6 +1,6 @@
 # DevCapsule 0.3.1 — Release Work
 
-Updated: 2026-11-08. Stage: **candidate 1 published; the libsoup bug closed on it; blocking web-console delivery bug (`D-0017`) fixed and gated on `ws-maintenance/webconsole-delivery` for candidate 2; Codex npm cap bug open for candidate 2; two rulings open**.
+Updated: 2026-11-09. Stage: **candidate 1 published; the libsoup bug closed on it; web-console delivery (`D-0017`) merged in PRs #18 and #16; Codex npm abbreviated-metadata fix ready on `ws-maintenance/codex-npm-metadata` and agent CLI freshness slice next before candidate 2; two rulings open**.
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
 [Changelog since 0.3.0](changelog.md) ·

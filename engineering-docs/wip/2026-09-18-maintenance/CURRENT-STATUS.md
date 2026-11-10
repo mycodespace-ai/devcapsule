@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-09; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 (`v0.3.1-rc1` on `accdec5b`) closed the Eclipse libsoup bug, and validation inside `0.3.1rc1` uncovered a blocking delivery bug (`/files`, `/filetree`, and `/api/project/tree` returned `404`); delivered as two stacked Pair-Reviewed PRs for `release-0.3.1`: (1) PR #18 (`ws-maintenance/webconsole-legacy-tests` -> `release-0.3.1`, reviewed in #19) tightening *Unit Tests* rule 5 to whole-file legacy retirement and retiring `test_build_info.py`, `test_console_runtime.py`, `test_console_tools.py`, and `test_materialization.py` (`108 -> 104` legacy files), and (2) PR #16 (`ws-maintenance/webconsole-delivery` -> `ws-maintenance/webconsole-legacy-tests`, reviewed in #17) delivering `devcapsule_webconsole` inside `devcapsule.pex` (`D-0017`) with stacked gate green (`2,904` unit, `104` legacy / `44` conforming / `0` breaches, `40` integration, `458` webconsole, `249` contract pages, live base-Python HTTP check); Codex 16 MiB npm cap bug also queued before candidate 2; two rulings open
+State: active 2026-11-09; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 1 (`v0.3.1-rc1` on `accdec5b`) closed the Eclipse libsoup bug; stacked PRs #18 (`b84b06e9`, whole-file legacy test retirement + 4-file refurbishment) and #16 (`f2bae5cb`, launcher-delivered `devcapsule_webconsole` under `D-0017`) merged into `release-0.3.1`; Codex npm abbreviated-metadata fix (`2026-11-08-codex-npm-metadata-exceeds-16-mib.md`) implemented and verified on `ws-maintenance/codex-npm-metadata`; agent CLI freshness upgrade (Codex `0.167.0`, Claude Code `2.1.321`, Antigravity CLI `1.5.3`) next before `v0.3.1-rc2`; two rulings open
 
 Definition read: WORKFLOW.md@d9a8103606fa, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
@@ -12,9 +12,37 @@ Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/webconsole-legacy-tests` from `release-0.3.1` (`f5d5d2d8`), open as PR #18; `ws-maintenance/webconsole-delivery` stacked on `ws-maintenance/webconsole-legacy-tests` (`e9e5700b`), open as PR #16; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/codex-npm-metadata` from `release-0.3.1` (`f2bae5cb`); `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## Codex npm registry metadata > 16 MiB fix for 0.3.1 candidate 2 — 2026-11-09
+
+After the owner merged stacked PRs #18 (`b84b06e9`) and #16 (`f2bae5cb`) into
+`release-0.3.1`, the owner directed fixing
+[the Codex npm metadata cap bug](../../bugs/devcapsule/2026-11-08-codex-npm-metadata-exceeds-16-mib.md)
+first, followed by the agent CLI freshness upgrade (noting Anthropic's new model
+launch; live vendor pointers read 2026-11-09: Codex `0.167.0`, Claude Code
+`2.1.321`, Antigravity CLI `1.5.3`) and cutting `v0.3.1-rc2`.
+
+On `ws-maintenance/codex-npm-metadata` (from `release-0.3.1` at `f2bae5cb`):
+
+- `NpmChannel._metadata` in `devcapsule/components/npm_channel.py` sends
+  `Accept: application/vnd.npm.install-v1+json` when `version == ""` (`check()`),
+  keeping full single-version fetches in `select()` and the 16 MiB cap intact,
+  and exposes `__all__` plus an optional `opener` parameter for pure unit tests
+  while preserving `urlopen` module-level compatibility for legacy
+  `test_distribution_channels.py` and `test_version_sets.py`.
+- Added 6 single-action Hoare-triple unit tests in
+  `tests/unit/devcapsule/components/test_npm_channel.py` (`45` conforming files,
+  `104` legacy files, `0` breaches).
+- Verified live against `https://registry.npmjs.org/@openai%2Fcodex` (`5,456,187`
+  bytes / `5.20 MiB`, `5,786` versions): `CodexComponent().distribution_channel().check("0.166.0", ...)`
+  returns `0.166.0` `available` and candidate `0.167.0` `available` on both
+  `linux-amd64` and `linux-arm64`.
+- Planned next step: open PR to `release-0.3.1`, prepare the agent CLI freshness
+  upgrade slice (`0.167.0` / `2.1.321` / `1.5.3` across `linux-amd64` and
+  `linux-arm64`), merge `release-0.3.1` to `main`, and cut `v0.3.1-rc2`.
 
 ## Blocking 0.3.1rc1 finding and D-0017 fix: launcher-delivered web console (stacked on PR #18) — 2026-11-08 / 2026-11-09
 

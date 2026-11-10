@@ -1,5 +1,5 @@
 ---
-status: confirmed
+status: fixed
 severity: major
 target: 0.3.1
 owner: maintenance
@@ -81,3 +81,26 @@ downloaded candidate: `project versions check` on a Codex project reports
 the pinned version's status and the registry's latest; and the first feed
 published from `main` after the merge shows Codex `ok` with the failure
 count reset. The 0.3.0 executable stays affected; 0.3.1 is the remedy.
+
+## Fix and verification
+
+Fixed on `ws-maintenance/codex-npm-metadata` (2026-11-09):
+
+- `NpmChannel._metadata` in `devcapsule-src/devcapsule/components/npm_channel.py`
+  now sends `Accept: application/vnd.npm.install-v1+json` when fetching the
+  package-wide document (`version == ""` in `check()`), while keeping full
+  single-version fetches (`version != ""` in `select()`) and the 16 MiB cap
+  unchanged, and declares `__all__` plus an injectable `opener` collaborator.
+- Mirror Hoare-triple unit tests in
+  `devcapsule-src/tests/unit/devcapsule/components/test_npm_channel.py` verify
+  the outgoing `Accept` header, available/current-is-latest/withdrawn/deprecated
+  classifications, the 16 MiB cap, and full single-version `select()` requests
+  without network or module monkeypatching.
+- Live probe on 2026-11-09 against `https://registry.npmjs.org/@openai%2Fcodex`:
+  abbreviated payload measured `5,456,187` bytes (`5.20 MiB`, `5,786` versions),
+  and `CodexComponent().distribution_channel().check("0.166.0", ...)` returned
+  `0.166.0` `available` with candidate `0.167.0` `available` on both
+  `linux-amd64` and `linux-arm64`.
+- Close once verified via `project versions check` on the downloaded
+  `v0.3.1-rc2` executable and once the next `component-status` publication from
+  `main` reports Codex `ok`.
