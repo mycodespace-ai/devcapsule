@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`
+State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, no fix started
 
 Definition read: WORKFLOW.md@e83f22a20701, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
@@ -37,8 +37,13 @@ fail on the untouched `v0.3.1-rc2` tree in the same environment. They are in
 `tests/configuration/test_contract.py` (2),
 `tests/test_ide_requirement_override.py` (2),
 `tests/test_capability_policy.py` (1) and `tests/test_owner_commands.py`
-(1). None is among the tests marked expected to fail on 2026-11-04. No bug
-record is filed yet; the owner decides.
+(1). None is among the tests marked expected to fail on 2026-11-04.
+
+Diagnosed the same day: the capsule's read-only mount of the host's launcher
+settings, where `devcapsule-base` and `vscode` were accepted on 2026-11-08;
+all 17 pass with the mount hidden. Filed at the owner's direction as
+[blocking for 0.3.1](../../bugs/devcapsule/2026-11-10-unit-tests-read-the-capsules-mounted-launcher-settings.md).
+Next action: make the isolation fixture a private home; no fix started.
 
 ## Candidate 2 (`v0.3.1-rc2`) published and verified — 2026-11-10
 
