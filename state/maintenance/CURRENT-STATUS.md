@@ -12,13 +12,13 @@ Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/codex-npm-metadata` from `release-0.3.1` (`f2bae5cb`), open as PR #20; `ws-maintenance/0.3.1-agent-freshness` stacked on `ws-maintenance/codex-npm-metadata` (`bd59abf0`); `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/codex-npm-metadata` from `release-0.3.1` (`f2bae5cb`), open as PR #20; `ws-maintenance/0.3.1-agent-freshness` stacked on `ws-maintenance/codex-npm-metadata` (`8f458a12`); `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
 ## Agent CLI freshness refresh for 0.3.1 candidate 2 (`embedded-33`) — 2026-11-09
 
-Stacked on PR #20 (`ws-maintenance/codex-npm-metadata` at `bd59abf0`) as
+Stacked on PR #20 (`ws-maintenance/codex-npm-metadata` at `8f458a12`) as
 `ws-maintenance/0.3.1-agent-freshness`:
 
 - Rechecked live vendor pointers on 2026-11-09: Codex `0.167.0`, Claude Code
