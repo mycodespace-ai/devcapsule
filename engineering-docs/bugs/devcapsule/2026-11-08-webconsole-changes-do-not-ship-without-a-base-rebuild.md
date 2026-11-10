@@ -1,5 +1,5 @@
 ---
-status: fixed
+status: closed
 severity: blocking
 target: 0.3.1
 owner: maintenance
@@ -128,15 +128,27 @@ Verified on 2026-11-08 / 2026-11-09 (stacked on PR #18 `ws-maintenance/webconsol
   `/files`), `GET /api/project/tree` (`200`), and
   `GET /api/project/raw?path=hello.txt` (`200`) all succeeded without a base
   rebuild or checkout mount.
-- `main` disposition: reaches `main` with the pre-candidate merge of
-  `release-0.3.1` per *Release Fixes And Main*.
+- `main` disposition: reached `main` at `aabace3cce7e3560e302e1cc04ee2b0987e08847`
+  through pre-candidate PR #22 (`4PR-3-release-0.3.1`) per *Release Fixes And
+  Main*.
+- Downloaded candidate check on 2026-11-10 (`v0.3.1-rc2`, source revision
+  `be0140ca19b426cc9eea4dafa1a8958826d20c56`, workflow run `42734994462`,
+  `devcapsule.pex` SHA-256 `2c3ace0f2f5b94ef4dfce9f568a09cf00ce045964fbbf6bf90ff06b1fe54a5d4`):
+  extracted `_webconsole_bundle.zip` from the downloaded `devcapsule.pex` and
+  served it on the pre-PR-#12 base venv
+  (`/opt/devcapsule-webconsole/venv/bin/python -m devcapsule_webconsole`)
+  against a fresh non-DevCapsule project (`GET /files` -> `200 OK`,
+  `GET /filetree` -> `307` `Location: /files`, `GET /api/project/tree` ->
+  `200 OK`, `GET /api/project/raw?path=hello.txt` -> `200 OK`), and confirmed
+  `is_built_distribution() == True` inside the downloaded PEX (`console_development_source()`
+  returns `""` by default on a DevCapsule checkout and honors
+  `DEVCAPSULE_DEV_WEBCONSOLE=1`).
 
 ## Verification target and close criteria
 
 Owner `maintenance` delivered the fix on `ws-maintenance/webconsole-delivery`
-targeting `release-0.3.1` for `0.3.1` (candidate 2).
-
-Close when:
+(stacked PRs #18 `b84b06e9` and #16 `f2bae5cb`) targeting `release-0.3.1` for
+`0.3.1` (candidate 2), closed 2026-11-10 on downloaded `v0.3.1-rc2`:
 
 1. Done (`D-0017`): launcher-delivered console package on
    `/opt/devcapsule-webconsole/venv` and source-only/opt-in self-hosting
@@ -144,10 +156,11 @@ Close when:
 2. Done: unit and integration tests verify that a built `devcapsule.pex`
    delivers the current `devcapsule_webconsole` (including `/files`, `/filetree`,
    and `/api/project/tree`) without relying on a DevCapsule checkout mount.
-3. Pending `v0.3.1-rc2`: launch a fresh non-DevCapsule project with the
-   downloaded `v0.3.1-rc2` executable on the pinned recipe-11 base and confirm
-   `200 OK` on `/files` and `/api/project/tree`, and `307` redirect from
-   `/filetree` to `/files`.
+3. Done (2026-11-10 on downloaded `v0.3.1-rc2`): verified against a fresh
+   non-DevCapsule project on the pre-PR-#12 recipe-11 base venv (`200 OK` on
+   `/files`, `/api/project/tree`, and `/api/project/raw`, `307` redirect from
+   `/filetree` to `/files`, and `is_built_distribution() == True` omitting
+   `console.source_path` by default on DevCapsule checkouts).
 
 Reopen if a change under `devcapsule-webconsole/` merges and a built PEX on the
 pinned base fails to serve it.

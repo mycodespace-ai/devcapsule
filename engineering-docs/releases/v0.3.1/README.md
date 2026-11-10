@@ -1,6 +1,6 @@
 # DevCapsule 0.3.1 — Release Work
 
-Updated: 2026-11-10. Stage: **candidate 1 published; the libsoup bug closed on it; web-console delivery (`D-0017`, #18/#16), Codex npm abbreviated metadata (#20), and Codex `0.167.0` + Claude Code `2.1.321` freshness (`embedded-33`, #21) merged on `release-0.3.1`, pre-candidate `nox -s integration` green (`40` passed, `3` skipped), ready for `main` merge (`4PR-3-release-0.3.1`) and `v0.3.1-rc2` tag; two rulings open**.
+Updated: 2026-11-10. Stage: **candidate 2 (`v0.3.1-rc2` on `be0140ca`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered web console `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open**.
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
 [Changelog since 0.3.0](changelog.md) ·
@@ -164,21 +164,86 @@ decision here, never a silent replacement.
   `v0.3.1-rc0` tagged on the release tip on the owner's word of
   2026-11-07; the three assets downloaded, checksum and version verified.
   See *Candidates*.
-- [ ] The cycle's slices, each merged to `main` before the next candidate
-  tag; the bug records closed on candidates. Slices 1 and 2 reached
-  `main` through PR #14 and are in candidate 1; the libsoup bug closed on
-  it. Slice 1, the Eclipse libsoup
-  repin, merged to the release branch by PR #10 on 2026-11-08; verification
-  on candidate 1. Slice 2, the web console's Files page, built by Pair
-  Review (Antigravity implementing, Claude Code reviewing) as PR #12 with
-  its review PR #13 merged in; merged by the owner at `ec8af13a` on
-  2026-11-08.
-- [ ] The gates before the final tag: the documentation describing the
-  accepted candidate; `notes.md` with the *End-to-end tests run* section,
-  Release Policy rule 10; `release-docs.py promote 0.3.1` and `docs-0.3.1`;
-  the acceptance record; the final tag; delivery verified.
+- [x] The cycle's slices through candidate 2, each merged to `main` before the
+  next candidate tag; all three candidate-gating bug records closed on
+  candidates. Slices 1 and 2 reached `main` through PR #14 (`8c5a4723`) and
+  shipped in candidate 1 (`v0.3.1-rc1`, closing the Eclipse libsoup bug, PR #10,
+  and adding the web console's Files page, PR #12 / PR #13). Slices 3 to 6 —
+  whole-file legacy test retirement and 4-file refurbishment (PR #18 / PR #19,
+  `b84b06e9`), launcher-delivered `devcapsule_webconsole` and source-or-opt-in
+  self-hosting override (`D-0017`, PR #16 / PR #17, `f2bae5cb`), Codex npm
+  abbreviated metadata (PR #20, `eb8ff8cf`), and Codex `0.167.0` + Claude Code
+  `2.1.321` freshness (`embedded-33`, PR #21, `3ea05e68`) — reached `main`
+  through PR #22 (`aabace3c`) and shipped in candidate 2 (`v0.3.1-rc2`, closing
+  both the web-console delivery bug and the Codex npm cap bug).
+- [ ] The gates before the final tag: any slice from the remaining owner
+  rulings; the documentation describing the accepted candidate; `notes.md` with
+  the *End-to-end tests run* section, Release Policy rule 10;
+  `release-docs.py promote 0.3.1` and `docs-0.3.1`; the acceptance record; the
+  final tag; delivery verified.
 
 ## Candidates
+
+### RC2 — tagged 2026-11-10
+
+- Tag `v0.3.1-rc2` on `be0140ca19b426cc9eea4dafa1a8958826d20c56`, the release
+  branch's tip at the pre-candidate merge (PR #22 from the throwaway copy
+  `4PR-3-release-0.3.1`, merged by the owner at
+  `aabace3cce7e3560e302e1cc04ee2b0987e08847`). Carries whole-file legacy test
+  retirement and 4-file refurbishment (PR #18, reviewed by PR #19),
+  launcher-delivered `devcapsule_webconsole` and source-only/opt-in self-hosting
+  override (`D-0017`, PR #16, reviewed by PR #17), Codex npm abbreviated
+  metadata (`Accept: application/vnd.npm.install-v1+json` on `NpmChannel.check()`,
+  PR #20), and Codex `0.167.0` + Claude Code `2.1.321` freshness across
+  `linux-amd64` and `linux-arm64` (`embedded-33`, PR #21).
+- Pre-candidate integration run on `3ea05e68` (`40` passed, `3` skipped in
+  `39.65s`, recorded in [`test-runs.json`](test-runs.json)); candidate gate
+  before the push: method `mainline`, no unintegrated commits, version
+  `0.3.1rc2`.
+- Backend run [42734994462](https://github.com/mycodespace-ai/devcapsule/actions/runs/42734994462)
+  passed in `5m57s`: `2929` unit tests passed, `66` deselected, `1` xfailed,
+  `1` xpassed on the hosted runner; packaging integration `40` passed, `3`
+  skipped in `54.14s` against the built PEX (recorded in
+  [`test-runs.json`](test-runs.json)). The
+  [prerelease](https://github.com/mycodespace-ai/devcapsule/releases/tag/v0.3.1-rc2)
+  is public, non-draft, with the three assets.
+- Downloaded over HTTPS into `/home/devcapsule/.cache/devcapsule-releases/v0.3.1-rc2`:
+  the checksum file verifies `devcapsule.pex`, SHA-256
+  `2c3ace0f2f5b94ef4dfce9f568a09cf00ce045964fbbf6bf90ff06b1fe54a5d4`; the
+  manifest records tag `v0.3.1-rc2`, branch `release-0.3.1`, source revision
+  `be0140ca19b426cc9eea4dafa1a8958826d20c56`, `mainline` disposition, CPython
+  `3.12.14` and recipe-11 `linux-amd64` base `d7047ced…`; `devcapsule.pex
+  version --json` from an empty directory reports `0.3.1rc2`, build
+  `v0.3.1-rc2`, at `be0140ca…`.
+- **Codex npm metadata bug and `embedded-33` agent pins verified**, closing
+  [`2026-11-08-codex-npm-metadata-exceeds-16-mib.md`](../../bugs/devcapsule/2026-11-08-codex-npm-metadata-exceeds-16-mib.md):
+  `origin/component-status` (`0bc31c64`, generated `2026-11-10T00:58:45Z` from
+  `aabace3c`) reports `codex / codex-v1` with `"result": "ok"`,
+  `"consecutive_failures": 0`, and `"candidates": ["0.167.0"]` (resetting 45
+  consecutive `inconclusive` runs since `2026-10-01`). With the downloaded
+  `v0.3.1-rc2` executable and an empty `DEVCAPSULE_CONFIG_HOME`, `project init
+  --ide python-ide --require python --require codex-agent --require
+  claude-code-agent` on a fresh repository locked `codex 0.167.0` and
+  `claude-code 2.1.321` (`embedded-33`), and `project versions check` succeeded
+  live (`codex 0.167.0: available`, `claude-code 2.1.321: available`).
+- **Launcher-delivered web console and self-hosting override verified**, closing
+  [`2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md`](../../bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md):
+  extracting `_webconsole_bundle.zip` from the downloaded `v0.3.1-rc2`
+  `devcapsule.pex` and serving it on the pre-PR-#12 base interpreter
+  (`/opt/devcapsule-webconsole/venv/bin/python -m devcapsule_webconsole`)
+  against that non-DevCapsule project answered `200 OK` on `GET /files`,
+  `GET /api/project/tree`, and `GET /api/project/raw?path=hello.txt`, and `307`
+  (`Location: /files`) on `GET /filetree`; `is_built_distribution()` inside the
+  downloaded PEX returned `True`, leaving `console_development_source()` empty
+  by default on a DevCapsule checkout and honoring
+  `DEVCAPSULE_DEV_WEBCONSOLE=1`.
+- Not in rc2: a macOS or arm64 published executable and the compatibility
+  feed's website path, both waiting for the owner's ruling; Antigravity CLI
+  held at `1.4.12` (vendor `1.5.3` blocked on whole-file refurbishment of
+  legacy `tests/test_project_init.py`, surfaced to the owner).
+- Next: the owner's rulings; end-to-end test run on the accepted candidate
+  (*Release Policy* rule 10); the documentation round, `notes.md`,
+  `release-docs.py promote 0.3.1`, and the final `v0.3.1` tag.
 
 ### RC1 — tagged 2026-11-08
 
@@ -220,7 +285,7 @@ decision here, never a silent replacement.
   `console_development_source()` unconditionally overrides the console on
   DevCapsule checkouts. Filed as
   [blocking for 0.3.1](../../bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md);
-  being fixed on `ws-maintenance/webconsole-delivery` before candidate 2.
+  fixed via PRs #18/#16 and closed on candidate 2.
 - Not in rc1: a macOS or arm64 executable and the compatibility feed's
   home, both waiting for the owner's ruling; the agent and IDE freshness
   upgrade; the Files-page proposals left by the review.

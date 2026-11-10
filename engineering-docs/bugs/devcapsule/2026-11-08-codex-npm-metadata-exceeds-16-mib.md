@@ -1,5 +1,5 @@
 ---
-status: fixed
+status: closed
 severity: major
 target: 0.3.1
 owner: maintenance
@@ -101,6 +101,15 @@ Fixed on `ws-maintenance/codex-npm-metadata` (2026-11-09):
   and `CodexComponent().distribution_channel().check("0.166.0", ...)` returned
   `0.166.0` `available` with candidate `0.167.0` `available` on both
   `linux-amd64` and `linux-arm64`.
-- Close once verified via `project versions check` on the downloaded
-  `v0.3.1-rc2` executable and once the next `component-status` publication from
-  `main` reports Codex `ok`.
+- Closed on 2026-11-10 after merging to `release-0.3.1` via PR #20 (`eb8ff8cf`)
+  and to `main` via pre-candidate PR #22 (`aabace3c`):
+  - Published compatibility feed (`origin/component-status` at `0bc31c64`,
+    generated `2026-11-10T00:58:45Z` from `aabace3c`) reports row
+    `codex / codex-v1` with `"result": "ok"`, `"consecutive_failures": 0`, and
+    `"candidates": ["0.167.0"]`, resetting the 45-run `inconclusive` streak
+    since `2026-10-01`.
+  - Downloaded `v0.3.1-rc2` executable (`devcapsule.pex` SHA-256 `2c3ace0f…`,
+    source revision `be0140ca19b426cc9eea4dafa1a8958826d20c56`) initialized a
+    fresh Codex project (`embedded-33`, `codex 0.167.0`) with an empty
+    configuration home and passed `devcapsule.pex project versions check` live
+    against `https://registry.npmjs.org/@openai%2Fcodex` (`codex 0.167.0: available`).
