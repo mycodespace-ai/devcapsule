@@ -1,0 +1,24 @@
+# The inputs of the hosted Python job: a pull request that changes none of
+# these paths skips it. dorny/paths-filter v3 reads this file with its
+# default quantifier, so one changed file under one entry selects the route.
+#
+# An entry is a file path or DIRECTORY/**, nothing else: tests/conftest.py
+# reads this same list and fails any unit test that opens or lists a
+# repository path outside it, so a path left out here is one no counted test
+# can depend on. A new directory needs no entry until a test reads it, and
+# then the failing test says so. See RepositoryInputGuard in that file.
+python:
+  - 'devcapsule-src/**'
+  # The console is a second distribution with its own local gate; its changes
+  # conservatively run the hosted Python suite, as before this file existed.
+  - 'devcapsule-webconsole/**'
+  # The workflows and these filters: tests read them, and a change to how the
+  # job runs is verified by running it.
+  - '.github/**'
+  # Read by unit tests that predate Unit Tests rule 2 of WORKFLOW-LOCAL.md.
+  # Each entry leaves when its reader builds its own input.
+  - '.devcapsule/**'  # tests/test_base_contract.py, tests/test_repository_manifest_compatibility.py
+  - 'component-status/**'  # tests/test_component_status.py
+  - 'docs/**'  # the [docs] case of tests/unit/devcapsule/legacy_refactoring/test_home.py walks all of docs/;
+               # tests/test_release_docs.py reads docs/versions.yaml
+  - 'engineering-docs/releases/v0.2.14/notes.md'  # tests/test_release_docs.py
