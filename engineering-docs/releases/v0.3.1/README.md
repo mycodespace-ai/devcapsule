@@ -1,6 +1,6 @@
 # DevCapsule 0.3.1 — Release Work
 
-Updated: 2026-11-09. Stage: **candidate 1 published; the libsoup bug closed on it; web-console delivery (`D-0017`) merged in PRs #18 and #16; Codex npm abbreviated-metadata fix green in PR #20 (`ws-maintenance/codex-npm-metadata`) and Codex `0.167.0` + Claude Code `2.1.321` freshness pins (`embedded-33`) stacked on `ws-maintenance/0.3.1-agent-freshness` for candidate 2; two rulings open**.
+Updated: 2026-11-10. Stage: **candidate 1 published; the libsoup bug closed on it; web-console delivery (`D-0017`, #18/#16), Codex npm abbreviated metadata (#20), and Codex `0.167.0` + Claude Code `2.1.321` freshness (`embedded-33`, #21) merged on `release-0.3.1`, pre-candidate `nox -s integration` green (`40` passed, `3` skipped), ready for `main` merge (`4PR-3-release-0.3.1`) and `v0.3.1-rc2` tag; two rulings open**.
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
 [Changelog since 0.3.0](changelog.md) ·
