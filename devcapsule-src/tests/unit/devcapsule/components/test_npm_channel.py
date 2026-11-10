@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import base64
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
+from email.message import Message
 import io
 import json
-from typing import BinaryIO, Iterator
+from typing import BinaryIO
+from urllib.error import HTTPError
 from urllib.request import Request
 
 import pytest
@@ -64,6 +66,8 @@ def recording_opener(responses: Mapping[str, bytes]) -> tuple[UrlOpener, list[tu
             url = target
             headers = {}
         calls.append((url, headers, timeout))
+        if url != REGISTRY_URL and headers.get("accept") == ABBREVIATED_METADATA_ACCEPT:
+            raise HTTPError(url, 406, "Not Acceptable", Message(), None)
         yield io.BytesIO(responses[url])
 
     return open_url, calls
@@ -135,8 +139,8 @@ def test_check_refuses_response_exceeding_sixteen_mib_cap() -> None:
         channel.check("0.166.0", "linux-amd64")
 
 
-def test_select_fetches_full_single_version_documents_without_abbreviated_accept_header() -> None:
-    """``select`` fetches per-version documents without the install-v1 ``Accept`` header so ``engines`` remains intact."""
+def test_select_fetches_single_version_documents_without_abbreviated_accept_header() -> None:
+    """``select`` omits the install-v1 ``Accept`` header on per-version URLs, where ``registry.npmjs.org`` returns ``406 Not Acceptable``."""
     meta = {
         "name": PACKAGE,
         "version": "0.167.0",
@@ -169,9 +173,7 @@ def test_select_fetches_full_single_version_documents_without_abbreviated_accept
 
     selection = channel.select("0.167.0", "linux-amd64")
 
-    assert calls == [
-        (meta_url, {}, METADATA_TIMEOUT_SECONDS),
-        (binary_url, {}, METADATA_TIMEOUT_SECONDS),
-    ]
+    assert [url for url, _headers, _timeout in calls] == [meta_url, binary_url]
+    assert all(headers.get("accept") != ABBREVIATED_METADATA_ACCEPT for _url, headers, _timeout in calls)
     assert selection.metadata["version"] == "0.167.0"
     assert selection.metadata["artifacts"]["linux-amd64"]["npm-package"] == "@openai/codex-linux-x64"

@@ -80,7 +80,9 @@ with no network and no patching of project modules. Verification on a
 downloaded candidate: `project versions check` on a Codex project reports
 the pinned version's status and the registry's latest; and the first feed
 published from `main` after the merge shows Codex `ok` with the failure
-count reset. ## Fix and verification
+count reset. The 0.3.0 executable stays affected; 0.3.1 is the remedy.
+
+## Fix and verification
 
 Fixed on `ws-maintenance/codex-npm-metadata` (2026-11-09):
 
