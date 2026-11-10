@@ -4,17 +4,50 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`
+State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, no fix started
 
-Definition read: WORKFLOW.md@d9a8103606fa, WORKFLOW-LOCAL.md@d92bdcbb0a01
+Definition read: WORKFLOW.md@e83f22a20701, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
 Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/pile-of-ideas` from release-0.3.1 c4bd458b, PR #23 open, the owner merges; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## The pile of ideas, a workflow rule for 0.3.1 — 2026-11-10
+
+Owner direction of 2026-11-10: a directory, `engineering-docs/pile-of-ideas/`,
+holds one file per idea nobody has triaged, and `project-management` triages
+it. The rule is topic 12.13 of `WORKFLOW.md` with its glossary entry, file
+role, one sentence in topic 7.3, the 0.3.1 changes entry and the humane
+paragraph; the packaged definition carries the same rules under *Pile Of
+Ideas*, so adopters get it with 0.3.1. The owner chose to ship it in the
+definition before it has been used here. Two ideas open the pile: the
+recursive test machinery out of the adopter's executable, and a tiling
+desktop with the IDE on the side. Branch `ws-maintenance/pile-of-ideas` from
+`release-0.3.1` at `c4bd458b`; PR #23 to `release-0.3.1` is open for the
+owner, and the merge to `main` follows it.
+
+Finding, not caused by this slice and not diagnosed: `nox -s tests` in the
+owner's capsule on this branch gives 17 failed, 2893 passed, and the same 17
+fail on the untouched `v0.3.1-rc2` tree in the same environment. They are in
+`tests/test_run_flow.py` (8), `tests/test_trust.py` (3),
+`tests/configuration/test_contract.py` (2),
+`tests/test_ide_requirement_override.py` (2),
+`tests/test_capability_policy.py` (1) and `tests/test_owner_commands.py`
+(1). None is among the tests marked expected to fail on 2026-11-04.
+
+Diagnosed the same day: the capsule's read-only mount of the host's launcher
+settings, where `devcapsule-base` and `vscode` were accepted on 2026-11-08;
+all 17 pass with the mount hidden. Filed at the owner's direction as
+[blocking for 0.3.1](../../bugs/devcapsule/2026-11-10-unit-tests-read-the-capsules-mounted-launcher-settings.md).
+Next action: make the isolation fixture a private home; no fix started.
+
+Also filed the same day, reported by the owner:
+[Markdown-only changes run the whole Python unit suite](../../bugs/devcapsule/2026-11-10-markdown-only-changes-run-the-python-unit-suite.md),
+minor, no target. Next action: the owner chooses among the fix notes.
 
 ## Candidate 2 (`v0.3.1-rc2`) published and verified — 2026-11-10
 

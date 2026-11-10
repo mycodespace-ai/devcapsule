@@ -176,7 +176,9 @@ decision here, never a silent replacement.
   `2.1.321` freshness (`embedded-33`, PR #21, `3ea05e68`) — reached `main`
   through PR #22 (`aabace3c`) and shipped in candidate 2 (`v0.3.1-rc2`, closing
   both the web-console delivery bug and the Codex npm cap bug).
-- [ ] The gates before the final tag: any slice from the remaining owner
+- [ ] The gates before the final tag: the blocking record of 2026-11-10,
+  [unit tests read the capsule's mounted launcher settings](../../bugs/devcapsule/2026-11-10-unit-tests-read-the-capsules-mounted-launcher-settings.md),
+  closed; any slice from the remaining owner
   rulings; the documentation describing the accepted candidate; `notes.md` with
   the *End-to-end tests run* section, Release Policy rule 10;
   `release-docs.py promote 0.3.1` and `docs-0.3.1`; the acceptance record; the
