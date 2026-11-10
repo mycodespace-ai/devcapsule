@@ -82,7 +82,7 @@ class ResolutionError(ProjectConfigurationError):
     """
 
 
-_MATRIX_VERSION = "embedded-32"
+_MATRIX_VERSION = "embedded-33"
 
 
 # --------------------------------------------------------------------------
@@ -1355,6 +1355,48 @@ _ANTIGRAVITY_CLI_1_4_12 = _ComponentPin(
 )
 
 
+# 2026-11-09 0.3.1 agent freshness refresh: complete downloads verified against vendor integrity.
+_CODEX_0_167_0 = _ComponentPin(
+    component_id="codex",
+    version="0.167.0",
+    lock_table={
+        "version": "0.167.0",
+        "delivery-policy": "local-materialization",
+        "license": "Apache-2.0",
+        "npm-package": "@openai/codex",
+        "url": "https://registry.npmjs.org/@openai/codex/-/codex-0.167.0.tgz",
+        "sha256": "e858522a37b85b5bbe695919190cfb0974aee5ae739d84d8d629c39735fb03a9",
+        "artifacts": {
+            "linux-amd64": {
+                "npm-package": "@openai/codex-linux-x64",
+                "url": "https://registry.npmjs.org/@openai/codex/-/codex-0.167.0-linux-x64.tgz",
+                "sha256": "2dc9aa871abb513c3539d20d025f701faf1974c46ee906bda3a1e1f5026d4434"
+            }
+        }
+    },
+)
+
+
+_CLAUDE_CODE_2_1_321 = _ComponentPin(
+    component_id="claude-code",
+    version="2.1.321",
+    lock_table={
+        "version": "2.1.321",
+        "delivery-policy": "local-materialization",
+        "acquisition-authorization": "claude-code-download",
+        "license": "Proprietary",
+        "terms-url": "https://www.anthropic.com/legal/commercial-terms",
+        "distribution": "user-acquired-not-redistributed",
+        "artifacts": {
+            "linux-amd64": {
+                "url": "https://downloads.claude.ai/claude-code-releases/2.1.321/linux-x64/claude",
+                "sha256": "426c33815ca6645a772f722fbff10dbf2cbdb124a8aeab733c1365dbf8bbf61f"
+            }
+        }
+    },
+)
+
+
 # 2026-10-31 stable IDE updates; prior pins remain readable by existing locks.
 _PYCHARM_2026_2_4 = _ComponentPin(
     component_id="pycharm",
@@ -1442,7 +1484,15 @@ _LINUX_AMD64_MATRIX = ResolutionMatrix(
         "playwright": (_ComponentPin("playwright", str(PLAYWRIGHT_PIN["version"]), PLAYWRIGHT_PIN),),
         "codium": (_CODIUM_1_126_04524, _CODIUM_1_143_17232),
         "vscode": (_VSCODE_1_143_1, _VSCODE_1_144_0),
-        "codex": (_CODEX_0_145_0, _CODEX_0_153_0, _CODEX_0_153_4, _CODEX_0_157_1, _CODEX_0_163_0, _CODEX_0_166_0),
+        "codex": (
+            _CODEX_0_145_0,
+            _CODEX_0_153_0,
+            _CODEX_0_153_4,
+            _CODEX_0_157_1,
+            _CODEX_0_163_0,
+            _CODEX_0_166_0,
+            _CODEX_0_167_0,
+        ),
         "claude-code": (
             _CLAUDE_CODE_2_1_227,
             _CLAUDE_CODE_2_1_236,
@@ -1450,6 +1500,7 @@ _LINUX_AMD64_MATRIX = ResolutionMatrix(
             _CLAUDE_CODE_2_1_283,
             _CLAUDE_CODE_2_1_302,
             _CLAUDE_CODE_2_1_314,
+            _CLAUDE_CODE_2_1_321,
         ),
         "antigravity-cli": (_ANTIGRAVITY_CLI_1_1_24, _ANTIGRAVITY_CLI_1_2_12, _ANTIGRAVITY_CLI_1_4_2, _ANTIGRAVITY_CLI_1_4_12),
         "postgresql-client": (_POSTGRESQL_CLIENT_16,),
@@ -1491,6 +1542,20 @@ _LINUX_AMD64_MATRIX = ResolutionMatrix(
             "verified; pinned v0.3.0-rc6 recipe-11 startup/configuration smoke passed; "
             "interactive "
             "provider acceptance awaits the downloaded candidate",
+        ),
+        _VerifiedEdge(
+            "claude-code", "2.1.321", _BASE_FAMILY_UBUNTU_24_04,
+            "provisional: owner-directed 0.3.1 agent freshness refresh 2026-11-09; "
+            "vendor checksums verified; offline startup and seeded-configuration "
+            "smoke passed on pinned v0.3.0-base-20261031 recipe-11 base; "
+            "interactive provider acceptance awaits the downloaded candidate",
+        ),
+        _VerifiedEdge(
+            "codex", "0.167.0", _BASE_FAMILY_UBUNTU_24_04,
+            "provisional: owner-directed 0.3.1 agent freshness refresh 2026-11-09; "
+            "vendor checksums verified; offline npm materialization, startup and "
+            "seeded-configuration smoke passed on pinned v0.3.0-base-20261031 "
+            "recipe-11 base; interactive provider acceptance awaits the downloaded candidate",
         ),
         _VerifiedEdge(
             "claude-code", "2.1.314", _BASE_FAMILY_UBUNTU_24_04,
