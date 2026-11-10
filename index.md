@@ -308,6 +308,7 @@ history; record current decisions in the active documents above.
 
 ## Bugs
 
+- [Unit tests read the developer's real launcher settings inside a capsule: the consent and trust tests fail or prove nothing there](engineering-docs/bugs/devcapsule/2026-11-10-unit-tests-read-the-capsules-mounted-launcher-settings.md)
 - [Web console changes in `v0.3.1-rc1` do not reach capsules: the PEX omits the console package and the self-hosting override shadows it](engineering-docs/bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md)
 - [Codex status and version checks fail: the npm registry document exceeds the channel's 16 MiB cap](engineering-docs/bugs/devcapsule/2026-11-08-codex-npm-metadata-exceeds-16-mib.md)
 - [Eclipse cannot be acquired from scratch on amd64: the libsoup package URLs return 404](engineering-docs/bugs/devcapsule/2026-11-07-eclipse-amd64-libsoup-urls-return-404.md)
