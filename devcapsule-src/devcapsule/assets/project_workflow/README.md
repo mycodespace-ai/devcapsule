@@ -35,3 +35,8 @@ The 0.3.0 packaged workflow includes the Pair Review Loop under its own
 heading, matching root topic 9.11. The rest of the packaged document keeps
 its existing organization; this terminology slice does not refresh the
 whole definition. The root humane companion explains the same loop rules.
+
+The 0.3.1 packaged workflow gains the pile of ideas the same way: its own
+heading, *Pile Of Ideas*, with the rules of root topic 12.13, the glossary
+entry, the directory's role, and one sentence under the reserved
+`project-management` workstream.

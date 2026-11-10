@@ -137,6 +137,11 @@ status file; internal WIP/archive documents use the local index in that status.
 - [DevCapsule V1 state and persistence](engineering-docs/specifications/product/state-and-persistence.md)
 - [Project workflow bootstrap](engineering-docs/specifications/product/project-workflow-bootstrap.md)
 
+## Pile Of Ideas
+
+- [The pile of ideas](engineering-docs/pile-of-ideas/README.md): untriaged
+  ideas, one file each; the files themselves are not listed here.
+
 ## Work Orders
 
 - [Wrapped projects: a foreign repository as a submodule, three commands](engineering-docs/work-orders/2026-11-02-wrapped-projects.md)
