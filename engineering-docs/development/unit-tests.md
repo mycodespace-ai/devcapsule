@@ -42,19 +42,31 @@ replaced on every run and the author's text around it is never touched. A pull
 request from a fork gets a read-only token, so its description is left alone;
 the job summary and the uploaded coverage reports still carry the figures.
 
-The hosted `tests.yml` workflow selects the existing serial unit suite when
-runtime, test, build or unclassified inputs change. It runs no Docker.
-Planning/status-only PRs skip heavy jobs; website inputs run the website's
-own tests and build. The filters live in `.github/ci-paths.yml`: each route
-lists the paths proven not to be its inputs, and any other changed path runs
-the job. Root README, journal entries and release notes are website inputs,
-while packaged Markdown under `devcapsule-src/` remains a runtime input, and
-so do `docs/versions.yaml` and the published release notes, which the unit
-suite reads as fixtures. A pull request with more than 3000 changed files
-runs everything, because GitHub's changed-file listing stops there. Console
-changes conservatively run the hosted Python suite, but its runtime coverage
-does not measure the separate console distribution; the local
-`nox -s webconsole` gate still applies.
+The hosted `tests.yml` workflow routes each pull request by the paths it
+changes, and runs no Docker. The two routes are decided differently.
+
+The Python route runs the serial unit suite when a changed file is one of
+its inputs, listed in `.github/ci-python-inputs.yml`: the package and its
+tests under `devcapsule-src/`, the console, the workflows, and a few files
+that legacy tests still read from the repository, each named with its
+reader. Any other change skips the suite, a new directory included. That is
+sound because the suite is held to the same list: the repository-input guard
+in `tests/conftest.py` fails a test that opens or lists a repository path
+outside it (see Fixtures). A dependency on an unlisted file can only arrive
+in a change to a test or to the package, which runs the suite, where the
+guard refuses it. An entry is a file path or `DIRECTORY/**` and nothing
+else, so the filter and the guard read it the same way.
+
+The docs route builds the website unless every changed file is a listed
+non-input in `.github/ci-paths.yml`; an unclassified path builds it. Root
+README, journal entries and release notes are website inputs.
+
+A pull request with more than 3000 changed files runs everything, because
+GitHub's changed-file listing stops there. Console changes conservatively
+run the hosted Python suite, but its runtime coverage does not measure the
+separate console distribution; the local `nox -s webconsole` gate still
+applies. The routing itself, the route script and both filter files, is
+tested by `tests/integration/test_ci_workflow.py`.
 
 Main pushes, merge-queue checks and manual runs use full applicable verification.
 PRs into `main` and `release-*` test the PR head SHA. The advisory diff report
@@ -152,6 +164,22 @@ so prefer the existing laws and an acceptance step for what the user sees.
   root under `/tmp`, because a Unix socket path there is limited to 104
   bytes. A session whose tests all passed removes it; a failed one keeps it
   and prints its path.
+- The repository-input guard, `RepositoryInputGuard`, started by
+  `pytest_configure`: an audit hook on the interpreter's `open`,
+  `os.listdir` and `os.scandir` events. A test that opens or lists a
+  repository path outside `.github/ci-python-inputs.yml` fails at that
+  access, with a message naming the test, the path and the two ways out:
+  build the input in the test, or list the path with its reader named.
+  `.git` is exempt. A read while modules are imported counts. A test does
+  not count when the hosted job does not run it, the integration and
+  end-to-end suites, or passes whatever it does: an expected-to-fail mark
+  with no condition and no `strict`. A mark with a condition, such as the
+  ones that hold only inside a capsule, leaves the test counted, because
+  the hosted runner runs it for real. `pytest_sessionfinish` lists every
+  breach and fails a session that recorded one, in case something caught
+  the failure. The guard does not see a file read by a program a test
+  starts, nor a path whose existence alone is tested; every push to `main`
+  runs the whole suite and is the backstop.
 
 Everything else is local to its module: fakes for Docker and vendor
 services, temporary XDG roots, and the `tmp_path` pytest provides.

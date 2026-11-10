@@ -77,6 +77,38 @@ Markdown changes only, and on an extract of the tag `v0.3.1-rc2`.
   environment, whose installed metadata still says 0.2.15; the gate run used
   the environment Nox built. The 17 failures are from the gate run.
 
+### A unit test downloads vendor artifacts
+
+Found on 2026-11-10 while running the suite for another change.
+`test_offered_agent_still_needs_consent_and_can_be_omitted`, in
+`tests/unit/devcapsule/legacy_refactoring/test_capability_minimums.py`, runs
+`project run --print-command` and expects it to stop for consent to the
+Claude Code channel. In the owner's capsule the mounted settings have
+accepted that channel, so the launch preparation goes on to acquire the
+project's artifacts from the network, into the test's own cache under its
+temporary directory:
+
+- 1,490 MB in that one test's directory after the run, among them four
+  files of 326, 205, 187 and 114 MB under
+  `user/cache/devcapsule/artifacts/sha256/`. The largest carries the digest
+  `426c3381…bf61f`, the Claude Code 2.1.321 `linux-x64` build pinned for
+  0.3.1.
+- The test process was observed in that test for more than ten minutes,
+  with a download file growing and an HTTPS connection open. The whole run
+  took 727 s without coverage; the gate run of the same day took 733 s with
+  it. A run with the mounted settings hidden took 70 s, though 41 of its
+  tests ended early for an unrelated reason, a temporary path too long for
+  a Unix socket.
+- The test is marked expected to fail inside a capsule, so it reports as an
+  expected failure after the download and nothing looks wrong.
+- pytest keeps the temporary roots of its last three runs under
+  `/tmp/pytest-of-<user>`. Inside a capsule `/tmp` is a 2 GB tmpfs, so the
+  second or third run of the suite fills it; it did on 2026-11-10, with
+  `No space left on device`.
+
+So the twelve minutes of the local unit gate, and the overflow of `/tmp`
+that `WORKFLOW-LOCAL.md` warns about, come largely from this cause.
+
 ## Cause
 
 `settings_source` in `devcapsule/configuration/storage.py` returns the
@@ -116,6 +148,9 @@ The owner's rating of 2026-11-10: this is fixed before 0.3.1 ships.
   failures, and the release procedure's own gate cannot pass from a capsule.
 - It grows without anyone touching the code: each channel a developer
   accepts changes which tests fail.
+- It makes a unit test download more than a gigabyte of vendor software on
+  every run, which is most of the local gate's twelve minutes and what
+  fills the capsule's `/tmp`.
 
 This supersedes, for this cause, the disposition in the 0.3.1 bug table
 that the tests expected to fail inside a capsule are not a release gate.
@@ -163,6 +198,7 @@ Not in this record:
    same counts.
 3. No expected-to-fail mark remains whose reason is the mounted settings:
    each such test passes unmarked or is rewritten under rule 5.
+   No unit test opens a network connection in that run.
 4. `engineering-docs/development/unit-tests.md` describes
    `private_user_directories` as a private home without the exception.
 

@@ -48,13 +48,21 @@ jobs:
         with:
           predicate-quantifier: every
           filters: .github/ci-paths.yml
-      # tests/test_ci_reporting.py runs this script with each kind of input.
+      # The Python route is a list of inputs, read with the default quantifier:
+      # one changed file under one entry selects it. tests/conftest.py holds
+      # the unit suite to the same list.
+      - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
+        if: github.event_name == 'pull_request'
+        id: python-inputs
+        with:
+          filters: .github/ci-python-inputs.yml
+      # tests/integration/test_ci_workflow.py runs this script with each kind of input.
       - name: Validate route or select full verification
         id: route
         env:
           EVENT_NAME: ${{ github.event_name }}
           CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
-          PYTHON_CHANGED: ${{ steps.filter.outputs.python }}
+          PYTHON_CHANGED: ${{ steps.python-inputs.outputs.python }}
           DOCS_CHANGED: ${{ steps.filter.outputs.docs }}
         run: |
           if [[ "$EVENT_NAME" != "pull_request" ]]; then
