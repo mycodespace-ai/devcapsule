@@ -292,6 +292,7 @@ history; record current decisions in the active documents above.
 
 ## Bugs
 
+- [A video opened from the web console's Files page does not play: the raw route's policy blocks the browser's own player](engineering-docs/bugs/devcapsule/2026-11-10-console-video-opened-from-files-does-not-play.md)
 - [Workstation-scoped commands live under `project config` and need a project](engineering-docs/bugs/devcapsule/2026-10-25-workstation-commands-live-under-project-config.md)
 - [Console link printed on a base without the console](engineering-docs/bugs/devcapsule/2026-10-18-console-link-printed-on-a-base-without-the-console.md)
 - [No test proves old projects launch with new releases](engineering-docs/bugs/devcapsule/2026-10-18-no-test-proves-old-projects-launch-with-new-releases.md)

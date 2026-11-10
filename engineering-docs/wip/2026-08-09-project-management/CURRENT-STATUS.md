@@ -591,6 +591,17 @@ the owner had asked to be written to the user; moved into Part 5 at
 
 ## Open Threads
 
+- Bug filed while paused, 2026-11-10, at the owner's direction; no other
+  project-management work was resumed. The record
+  [a video opened from the Files page does not play](../../bugs/devcapsule/2026-11-10-console-video-opened-from-files-does-not-play.md)
+  is committed on this branch with `owner: maintenance` and was mailed to
+  `maintenance` in full as
+  `2026-11-10-project-management-console-video-does-not-play-from-files.md`.
+  This branch is 283 commits behind `main`. If `maintenance` places the
+  record on its own branch first, take `main`'s copy of the record and of
+  the `index.md` entry at the next synchronization. The five mail items
+  waiting on 2026-11-10 were not taken.
+
 - Paused at owner direction, 2026-10-30: PR #311 awaits the human merge.
   Maintenance implementation and its Claude Fable 5.1 Pair Review are next.
   The previous release questions remain open; no further PM work is implied.
