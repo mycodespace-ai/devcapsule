@@ -70,8 +70,12 @@ Judgments taken, for the owner's review:
    and never a private one; the conforming tests merged on 2026-11-04 and
    2026-11-05 do the same (`status.read_metadata`,
    `runtime_artifact.current_build_info`).
-2. `current_build_info` keeps its three parameters: the stamped record lies
-   inside the installed package, where a test cannot build it.
+2. `current_build_info` keeps its three parameters. The reason first
+   recorded here, that a test cannot build the stamped record where the
+   function looks for it, was wrong, and the review showed it: its test
+   builds a package directory and replaces `files` at its lookup site. The
+   parameters stay because the authored `pyproject.toml` is found through a
+   private constant, which a test does not patch.
    `console_decisions_command` keeps the four it had before PR #18; its
    defaults are now run by the tests of `run_console_decisions`.
 3. `commands/project.py` gets no mirror test: a mirror would oblige its
@@ -80,21 +84,48 @@ Judgments taken, for the owner's review:
    delegates is run by the integration file only.
 4. The target is `release-0.3.1`, as it was for PR #18.
 
-Evidence: 26 faults planted one at a time in a scratch copy of the tree and
-run against the touched unit files. 24 are caught there, among them the five
-that PR #18 had lost. One, the command dropping its arguments, is caught by
-the integration file only. One survives both, as it did before PR #18: a
-built executable that never finds its stamped record; the gate's smoke runs
-`version --json` and reads only its exit status.
+Pair Review (`Codex + GPT-6 Astra`,
+[brief](evidence/2026-11-11-host-inputs-at-source/review-brief.md)) opened
+[PR #27](https://github.com/mycodespace-ai/devcapsule/pull/27) (`PR26.1`),
+accepted at `1b5d3fc7` without a round and merged at `60ad2c5a`. The review
+started only after the hosted run of PR #26 was green, and read it again
+before reporting. It found that the new sentence in `images/contract.py`
+claimed more than the launcher enforces, since `_launcher.py` plans a
+console when no label result is supplied, and reworded it; ended each
+process-wide patch (`os.environ`, `os.geteuid`, `os.chown`,
+`socket.create_connection`) with the action it serves; made the environment
+test read the environment when the supervisor is made and assert the
+graphics defaults; asserted the runtime directory under `/tmp` and not under
+the constant the code reads; kept the console tools mirror to its own unit;
+isolated the fake interpreter from Python startup settings; and added the
+test of the default build-record lookup. Its own 13 planted faults were all
+caught. GitHub runs no check on a pull request into a slice branch, so the
+hosted run of PR #26 after the merge is the one that counts.
 
-Validation at `8274a546`, in the owner's capsule: `nox -s tests` gives 17
-failed and 2913 passed, the 17 of the
+Evidence: 26 faults planted one at a time in a scratch copy of the tree and
+run against the touched unit files. On the merged branch 25 are caught
+there, among them the five that PR #18 had lost and the one no unit test
+had ever caught, a built executable that never finds its stamped record.
+The last, the command dropping its arguments, is caught by the integration
+file only.
+
+Validation in the owner's capsule, on the merged branch at `60ad2c5a`:
+`nox -s tests` gives 17 failed and 2914 passed, the 17 of the
 [blocking record](../../bugs/devcapsule/2026-11-10-unit-tests-read-the-capsules-mounted-launcher-settings.md)
-and no other; the convention check counts 103 legacy files with 1372 legacy
-tests and 49 conforming files, 0 breaches; mypy is clean over 330 files; the
-integration file gives 10 passed. The gate as a whole cannot pass in this
-capsule while those 17 stand, so the hosted run is the authority for the
-suite.
+and no other, as before the review at `8274a546` with 2913 passed; the
+convention check counts 103 legacy files with 1372 legacy tests and 49
+conforming files, 0 breaches; mypy is clean over 336 files; the CLI smoke
+passes; the executable builds and its smoke passes; the documentation
+contract holds over 249 pages; the console session gives 458 passed; the
+integration file gives 10 passed. `nox -s build` as one session cannot pass
+in this capsule while those 17 stand, so its parts were run one by one. Hosted run of PR #26: 2949 passed at
+`9dc4acfe` before the review, 2950 passed at the merge `60ad2c5a`, none
+failed in either. The commit of these records after it changes no input of
+the suite.
+
+Next action: the owner's review of PR #26 and of the four judgments. The
+review partner's worktree, `~/worktrees/maintenance-review`, is kept until
+the owner has decided.
 
 Proposals not implemented, for the owner:
 
@@ -104,7 +135,13 @@ Proposals not implemented, for the owner:
 - *Pair Review Loop*: a review is accepted, and a slice recorded as
   validated, only on a green hosted run of the head; the brief asks for it.
 - The gate's smoke compares `version --json` of the built executable with
-  the stamp the build wrote.
+  the stamp the build wrote; today it reads the exit status only. The
+  review's unit test proves the lookup, not the contents of a built
+  executable.
+- From the review: test the delegation of `project checkout decisions` in
+  the gate when the owner orders the refurbishment of
+  `tests/test_project.py`; decide whether the launcher's low-level default,
+  a console planned without labels read, should stand.
 - `WORKFLOW-LOCAL.md`, *Pair Review Loop In This Checkout*, rule 3 still
   names `/opt/devcapsule-gate` as the review partner's scratch, which the
   owner retired on 2026-11-04.
