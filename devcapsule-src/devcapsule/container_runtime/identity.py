@@ -9,12 +9,7 @@ from .contract import Identity
 __all__ = ["foreground_command"]
 
 
-def foreground_command(
-    command: tuple[str, ...],
-    identity: Identity,
-    *,
-    caller_uid: int | None = None,
-) -> tuple[str, ...]:
+def foreground_command(command: tuple[str, ...], identity: Identity) -> tuple[str, ...]:
     """Wrap ``command`` so it runs as the capsule user when the caller is root.
 
     Named for its first use; every supervised child, infrastructure included,
@@ -23,7 +18,6 @@ def foreground_command(
 
     if not command:
         raise ValueError("foreground command must not be empty")
-    effective_uid = os.geteuid() if caller_uid is None else caller_uid
-    if effective_uid == 0:
+    if os.geteuid() == 0:
         return ("gosu", f"{identity.uid}:{identity.gid}", *command)
     return command

@@ -597,13 +597,6 @@ class NotificationsGroup(Group):
         }
 
 
-@dataclass(frozen=True)
-class _DecisionsInvocation:
-    environ: Mapping[str, str] | None = None
-    console_python: Path | None = None
-    runtime_plan_path: Path | None = None
-
-
 class CheckoutDecisionsCommand(Command):
     """``project checkout decisions ...``: the web console's decision tools, from one CLI.
 
@@ -627,34 +620,10 @@ class CheckoutDecisionsCommand(Command):
                                  "`python -m devcapsule_webconsole.decisions` takes them.")
 
     @classmethod
-    def invoke(
-        cls,
-        prog: str,
-        argv: Sequence[str],
-        context: object | None = None,
-        *,
-        environ: Mapping[str, str] | None = None,
-        console_python: Path | None = None,
-        runtime_plan_path: Path | None = None,
-    ) -> int:
-        invocation = (
-            _DecisionsInvocation(environ=environ, console_python=console_python, runtime_plan_path=runtime_plan_path)
-            if environ is not None or console_python is not None or runtime_plan_path is not None
-            else context
-        )
-        return super().invoke(prog, argv, invocation)
-
-    @classmethod
     def run(cls, arguments: argparse.Namespace, context: object | None) -> int:
         from devcapsule.console_tools import run_console_decisions
 
-        invocation = context if isinstance(context, _DecisionsInvocation) else _DecisionsInvocation()
-        return run_console_decisions(
-            arguments.arguments,
-            environ=invocation.environ,
-            console_python=invocation.console_python,
-            runtime_plan_path=invocation.runtime_plan_path,
-        )
+        return run_console_decisions(arguments.arguments)
 
 
 class CheckoutGroup(Group):

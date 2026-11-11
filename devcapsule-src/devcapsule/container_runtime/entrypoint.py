@@ -19,27 +19,22 @@ from dataclasses import replace
 import os
 from pathlib import Path
 import sys
-from typing import Callable, MutableMapping, Protocol, Sequence
+from typing import Sequence
 
 from . import contract as rtcontract
 from .. import logs
 
 from .components import eclipse, jetbrains, vscode
-from .console import CommandWrapper, console_child
+from .console import console_child
 from .contract import RuntimePlan, RuntimePlanError
-from .display import ContainedDisplay, prepare_contained_display
+from .display import prepare_contained_display
 from .filesystem import plan_filesystem, prepare_filesystem
 from .graphics import environment as graphics_environment
 from .identity import foreground_command
 from .supervisor import SupervisedChild, Supervisor, SupervisorError
 
 __all__ = [
-    "ConsoleBuilder",
-    "DisplayPreparer",
-    "LogConfigurer",
     "SUPERVISOR_LOG_COMPONENT",
-    "SupervisorFactory",
-    "SupervisorRunner",
     "USAGE",
     "log_rotation",
     "logged_children",
@@ -56,57 +51,20 @@ USAGE = (
 SUPERVISOR_LOG_COMPONENT = "supervisor"
 
 
-class SupervisorRunner(Protocol):
-    def run(self) -> int: ...
-
-
-SupervisorFactory = Callable[..., SupervisorRunner]
-LogConfigurer = Callable[..., Path | None]
-DisplayPreparer = Callable[[RuntimePlan, str, CommandWrapper], ContainedDisplay]
-ConsoleBuilder = Callable[[RuntimePlan, CommandWrapper], SupervisedChild | None]
-
-
-def run(
-    plan: rtcontract.RuntimePlan,
-    job: tuple[str, ...] | None = None,
-    *,
-    environ: MutableMapping[str, str] | None = None,
-    runtime_root: Path | None = None,
-    caller_uid: int | None = None,
-    configure_logs: LogConfigurer | None = None,
-    prepare_display: DisplayPreparer | None = None,
-    build_console_child: ConsoleBuilder | None = None,
-    supervisor_factory: SupervisorFactory | None = None,
-) -> int:
-    target_env: MutableMapping[str, str] = os.environ if environ is None else environ
-    setup_logs: LogConfigurer = logs.configure if configure_logs is None else configure_logs
-    make_display = prepare_contained_display if prepare_display is None else prepare_display
-    make_console = console_child if build_console_child is None else build_console_child
-    make_supervisor: SupervisorFactory = Supervisor if supervisor_factory is None else supervisor_factory
-
+def run(plan: rtcontract.RuntimePlan, job: tuple[str, ...] | None = None) -> int:
     owner = (plan.identity.uid, plan.identity.gid)
     log_directory = None if plan.logs is None else plan.logs.directory
     segment_bytes, rotations = log_rotation(plan)
-    setup_logs(
-        SUPERVISOR_LOG_COMPONENT,
-        log_directory,
-        environ=target_env,
-        owner=owner,
-        segment_bytes=segment_bytes,
-        rotations=rotations,
-    )
-    filesystem = plan_filesystem(plan) if runtime_root is None else plan_filesystem(plan, runtime_root=runtime_root)
-    if caller_uid is None:
-        prepare_filesystem(filesystem, plan.identity)
-    else:
-        prepare_filesystem(filesystem, plan.identity, caller_uid=caller_uid)
-    target_env.update(filesystem.environment)
-    target_env.update(plan.component_environment())
-    target_env.update(graphics_environment(target_env))
+    logs.configure(SUPERVISOR_LOG_COMPONENT, log_directory, owner=owner, segment_bytes=segment_bytes, rotations=rotations)
+    filesystem = plan_filesystem(plan)
+    prepare_filesystem(filesystem, plan.identity)
+    os.environ.update(filesystem.environment)
+    os.environ.update(plan.component_environment())
+    os.environ.update(graphics_environment(os.environ))
     if plan.component.adapter == "jetbrains":
         launch = jetbrains.plan(plan)
         Path(launch.properties_path).write_text(launch.properties, encoding="utf-8")
-        target_env[launch.properties_environment_variable] = launch.properties_path
+        os.environ[launch.properties_environment_variable] = launch.properties_path
         command = launch.command
     elif plan.component.adapter == "vscode":
         command = vscode.plan(plan).command
@@ -115,23 +73,21 @@ def run(
     else:
         raise RuntimePlanError(f"unsupported component adapter: {plan.component.adapter}")
 
-    def wrap_for_user(child_command: tuple[str, ...]) -> tuple[str, ...]:
-        if caller_uid is None:
-            return foreground_command(child_command, plan.identity)
-        return foreground_command(child_command, plan.identity, caller_uid=caller_uid)
+    def as_capsule_user(child_command: tuple[str, ...]) -> tuple[str, ...]:
+        return foreground_command(child_command, plan.identity)
 
     infrastructure: tuple[SupervisedChild, ...] = ()
     if job is None and plan.display is not None and plan.display.is_contained:
-        contained = make_display(plan, filesystem.environment["XDG_RUNTIME_DIR"], wrap_for_user)
-        target_env.update(contained.environment)
+        contained = prepare_contained_display(plan, filesystem.environment["XDG_RUNTIME_DIR"], as_capsule_user)
+        os.environ.update(contained.environment)
         infrastructure = contained.children
-    console = make_console(plan, wrap_for_user)
+    console = console_child(plan, as_capsule_user)
     if console is not None:
         infrastructure = (*infrastructure, console)
     if job is None:
         child = SupervisedChild(
             name=plan.component.id,
-            command=wrap_for_user(command),
+            command=foreground_command(command, plan.identity),
             foreground=True,
         )
     else:
@@ -139,13 +95,13 @@ def run(
         # in the project it was launched against, not the image's workdir.
         child = SupervisedChild(
             name="job",
-            command=wrap_for_user(job),
+            command=foreground_command(job, plan.identity),
             foreground=True,
             working_directory=plan.project_path,
         )
     guard = jetbrains.session_lock(plan) if plan.component.adapter == "jetbrains" and job is None else nullcontext()
     with guard:
-        return make_supervisor(
+        return Supervisor(
             logged_children((*infrastructure, child), log_directory),
             log_owner=owner, segment_bytes=segment_bytes, rotations=rotations,
         ).run()

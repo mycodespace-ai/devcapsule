@@ -8,10 +8,12 @@ import sys
 
 import pytest
 
+from devcapsule import recursive_dogfood
 from devcapsule.compat import CliError
 from devcapsule.components.pycharm import runtime_template as pycharm_runtime_template
 from devcapsule.configuration.file_formats import ProjectConfigurationError
 from devcapsule.console_tools import DECISIONS_MODULE, console_decisions_command, run_console_decisions
+from devcapsule.container_runtime import console
 from devcapsule.container_runtime.console import console_child
 from devcapsule.container_runtime.contract import ConsolePlan, Identity, RuntimePlan
 
@@ -33,6 +35,14 @@ def launcher_bundle(path: Path) -> Path:
     pkg.mkdir(parents=True)
     (pkg / "__init__.py").write_text("", encoding="utf-8")
     return path
+
+
+def enter_capsule(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, console_python: Path) -> None:
+    """Make the process a capsule's: its name in the environment, ``console_python`` as the base's console interpreter, no runtime plan and no launcher console package."""
+    monkeypatch.setenv(recursive_dogfood.CONTAINER_NAME_ENV, "capsule-fixture")
+    monkeypatch.setattr(console, "CONSOLE_PYTHON", str(console_python))
+    monkeypatch.setattr(console, "LAUNCHER_CONSOLE_SOURCE", str(tmp_path / "absent-launcher-webconsole"))
+    monkeypatch.setattr(recursive_dogfood, "RUNTIME_PLAN_PATH", tmp_path / "no-plan.json")
 
 
 @pytest.mark.parametrize("environ", [{}, {"DEVCAPSULE_CONTAINER_NAME": ""}])
@@ -114,7 +124,9 @@ def test_decisions_command_uses_launcher_package_when_plan_sets_no_checkout_sour
     )
 
 
-def test_mounted_source_uses_same_pythonpath_prefix_as_console_child_ahead_of_launcher_package(tmp_path: Path) -> None:
+def test_mounted_source_uses_same_pythonpath_prefix_as_console_child_ahead_of_launcher_package(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """When ``console.source_path`` is set, ``console_decisions_command`` matches ``console_child`` and overrides ``launcher_console_source``."""
     python = tmp_path / "python"
     python.touch()
@@ -122,8 +134,10 @@ def test_mounted_source_uses_same_pythonpath_prefix_as_console_child_ahead_of_la
     plan = runtime_plan("/workspace/project with spaces/devcapsule-webconsole")
     plan_path = tmp_path / "plan.json"
     plan_path.write_text(plan.to_json(), encoding="utf-8")
+    monkeypatch.setattr(console, "CONSOLE_PYTHON", str(python))
+    monkeypatch.setattr(console, "LAUNCHER_CONSOLE_SOURCE", str(bundled))
 
-    child = console_child(plan, lambda command: command, console_python=python, launcher_source=bundled)
+    child = console_child(plan, lambda command: command)
     command = console_decisions_command(
         ["check", "x.json"],
         environ={"DEVCAPSULE_CONTAINER_NAME": "c"},
@@ -142,9 +156,9 @@ def test_mounted_source_uses_same_pythonpath_prefix_as_console_child_ahead_of_la
 
 @pytest.mark.parametrize("status", [0, 3])
 def test_run_console_decisions_preserves_arguments_streams_and_exit_status(
-    tmp_path: Path, capfd: pytest.CaptureFixture[str], status: int,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capfd: pytest.CaptureFixture[str], status: int,
 ) -> None:
-    """``run_console_decisions`` passes argv verbatim to ``console_python``, streams output, and returns its exit code."""
+    """Inside a capsule, ``run_console_decisions`` passes argv verbatim to the base's console interpreter, streams its output, and returns its exit code."""
     fake = tmp_path / "fake-console-python"
     fake.write_text(
         f"#!{sys.executable}\nimport json, sys\nprint(json.dumps(sys.argv[1:]))\n"
@@ -153,14 +167,9 @@ def test_run_console_decisions_preserves_arguments_streams_and_exit_status(
     )
     fake.chmod(0o755)
     arguments = ["from-table", "table with spaces.md", "--id", "pass", "--title", "A title", "--context", "a\nb", "", "--"]
+    enter_capsule(tmp_path, monkeypatch, fake)
 
-    result = run_console_decisions(
-        arguments,
-        environ={"DEVCAPSULE_CONTAINER_NAME": "capsule-fixture"},
-        console_python=fake,
-        runtime_plan_path=tmp_path / "no-plan.json",
-        launcher_console_source=tmp_path / "absent-launcher-webconsole",
-    )
+    result = run_console_decisions(arguments)
 
     assert result == status
     output = capfd.readouterr()
@@ -168,18 +177,15 @@ def test_run_console_decisions_preserves_arguments_streams_and_exit_status(
     assert output.err == "console diagnostic\n"
 
 
-def test_run_console_decisions_raises_cli_error_naming_an_interpreter_that_cannot_start(tmp_path: Path) -> None:
-    """When executing ``console_python`` raises ``OSError``, ``run_console_decisions`` wraps it in a ``CliError`` that names the interpreter."""
+def test_run_console_decisions_raises_cli_error_naming_an_interpreter_that_cannot_start(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """When the base's console interpreter cannot be executed, ``run_console_decisions`` raises a ``CliError`` that names it."""
     python = tmp_path / "not-executable"
     python.touch(mode=0o600)
+    enter_capsule(tmp_path, monkeypatch, python)
 
     with pytest.raises(CliError, match="cannot run the console's decision tools") as caught:
-        run_console_decisions(
-            ["check", "x.json"],
-            environ={"DEVCAPSULE_CONTAINER_NAME": "capsule-fixture"},
-            console_python=python,
-            runtime_plan_path=tmp_path / "no-plan.json",
-            launcher_console_source=tmp_path / "absent-launcher-webconsole",
-        )
+        run_console_decisions(["check", "x.json"])
 
     assert str(python) in str(caught.value)

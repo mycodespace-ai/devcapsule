@@ -75,22 +75,9 @@ def console_decisions_command(
     return command
 
 
-def run_console_decisions(
-    arguments: Sequence[str],
-    *,
-    environ: Mapping[str, str] | None = None,
-    console_python: Path | None = None,
-    runtime_plan_path: Path | None = None,
-    launcher_console_source: Path | None = None,
-) -> int:
+def run_console_decisions(arguments: Sequence[str]) -> int:
     """Execute ``devcapsule_webconsole.decisions`` in the capsule's console interpreter."""
-    command = console_decisions_command(
-        arguments,
-        environ=environ,
-        console_python=console_python,
-        runtime_plan_path=runtime_plan_path,
-        launcher_console_source=launcher_console_source,
-    )
+    command = console_decisions_command(arguments)
     try:
         return subprocess.run(command, check=False).returncode
     except OSError as error:

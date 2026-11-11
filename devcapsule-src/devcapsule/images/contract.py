@@ -64,8 +64,9 @@ def web_console_availability(labels: Mapping[str, str]) -> WebConsoleAvailabilit
 
     Available when the base labels the console's root and its recipe is
     ``WEBCONSOLE_RECIPE`` or later. A missing label, a recipe below it, or no
-    recipe labels at all mean no console; the runtime's own check at start
-    remains the backstop for a base the launcher could not inspect.
+    recipe labels at all mean no console. The runtime at start checks only
+    that the console interpreter exists, not its recipe, so these labels are
+    the one gate against a base too old for the launcher's console package.
     """
 
     family = labels.get(FAMILY_LABEL)

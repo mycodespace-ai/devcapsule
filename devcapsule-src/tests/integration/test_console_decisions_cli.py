@@ -7,9 +7,9 @@ import sys
 
 import pytest
 
-from devcapsule import cli
-from devcapsule.commands.project import CheckoutDecisionsCommand
+from devcapsule import cli, recursive_dogfood
 from devcapsule.components.pycharm import runtime_template as pycharm_runtime_template
+from devcapsule.container_runtime import console
 from devcapsule.container_runtime.contract import ConsolePlan, Identity, RuntimePlan
 
 pytestmark = pytest.mark.integration
@@ -31,8 +31,9 @@ def runtime_plan_with_source(source: Path) -> RuntimePlan:
 def test_wrapper_help_succeeds_without_running_console_interpreter(
     tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, inside: bool, flag: str,
 ) -> None:
-    """``devcapsule project checkout decisions -h/--help`` prints wrapper help without requiring a console interpreter."""
+    """``devcapsule project checkout decisions -h/--help`` prints wrapper help on a base that has no console interpreter."""
     monkeypatch.setenv("DEVCAPSULE_CONTAINER_NAME", "capsule-fixture" if inside else "")
+    monkeypatch.setattr(console, "CONSOLE_PYTHON", str(tmp_path / "absent"))
     monkeypatch.chdir(tmp_path)
 
     assert cli.main([*CLI_PREFIX, flag]) == 0
@@ -53,22 +54,21 @@ def test_wrapper_help_succeeds_without_running_console_interpreter(
 def test_decisions_module_owns_empty_arguments_and_subcommand_help(
     tmp_path: Path,
     capfd: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
     arguments: list[str],
     status: int,
     expected: str,
 ) -> None:
-    """``CheckoutDecisionsCommand`` delegates subcommand ``--help`` and empty-argument errors to ``devcapsule_webconsole.decisions``."""
+    """Inside a capsule, ``project checkout decisions`` leaves subcommand ``--help`` and empty-argument errors to ``devcapsule_webconsole.decisions``."""
     source = Path(__file__).resolve().parents[3] / "devcapsule-webconsole"
     plan = tmp_path / "plan.json"
     plan.write_text(runtime_plan_with_source(source).to_json(), encoding="utf-8")
+    monkeypatch.setenv("DEVCAPSULE_CONTAINER_NAME", "capsule-fixture")
+    monkeypatch.setattr(console, "CONSOLE_PYTHON", sys.executable)
+    monkeypatch.setattr(recursive_dogfood, "RUNTIME_PLAN_PATH", plan)
+    monkeypatch.chdir(tmp_path)
 
-    result = CheckoutDecisionsCommand.invoke(
-        "devcapsule project checkout decisions",
-        arguments,
-        environ={"DEVCAPSULE_CONTAINER_NAME": "capsule-fixture"},
-        console_python=Path(sys.executable),
-        runtime_plan_path=plan,
-    )
+    result = cli.main([*CLI_PREFIX, *arguments])
 
     assert result == status
     output = capfd.readouterr()

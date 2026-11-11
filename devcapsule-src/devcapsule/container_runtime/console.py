@@ -16,7 +16,6 @@ and ``D-0017``.
 
 from __future__ import annotations
 
-from contextlib import AbstractContextManager
 from pathlib import Path
 import socket
 import sys
@@ -33,7 +32,6 @@ __all__ = [
     "CONSOLE_READY_TIMEOUT_SECONDS",
     "CONSOLE_ROOT",
     "CommandWrapper",
-    "ConnectionProbe",
     "LAUNCHER_CONSOLE_SOURCE",
     "RUNTIME_CLI",
     "console_child",
@@ -53,17 +51,9 @@ RUNTIME_CLI = "/opt/devcapsule/bin/devcapsule.pex"
 CONSOLE_READY_TIMEOUT_SECONDS = 60.0
 
 CommandWrapper = Callable[[tuple[str, ...]], tuple[str, ...]]
-ConnectionProbe = Callable[[tuple[str, int], float], AbstractContextManager[object]]
 
 
-def console_child(
-    plan: RuntimePlan,
-    run_as_identity: CommandWrapper,
-    *,
-    console_python: Path | None = None,
-    launcher_source: Path | None = None,
-    connect: ConnectionProbe | None = None,
-) -> SupervisedChild | None:
+def console_child(plan: RuntimePlan, run_as_identity: CommandWrapper) -> SupervisedChild | None:
     """The console child for ``plan``, or ``None`` when there is none to start.
 
     ``None`` when the plan carries no console section, and, announced, when
@@ -71,15 +61,12 @@ def console_child(
     launcher-supplied and runs on any base carrying the display label, so an
     absent console is a known degradation rather than a failed start. The
     package the child imports is :func:`console_package_path`'s choice.
-    ``console_python``, ``launcher_source``, and ``connect`` replace the
-    installed paths and TCP readiness probe.
     """
 
     console = plan.console
     if console is None:
         return None
-    python = Path(CONSOLE_PYTHON) if console_python is None else console_python
-    if not python.is_file():
+    if not Path(CONSOLE_PYTHON).is_file():
         print(
             f"devcapsule console: this base has no web console (base recipe 10 adds it at {CONSOLE_ROOT}); "
             "the capsule runs without one",
@@ -88,15 +75,14 @@ def console_child(
         )
         return None
     command: tuple[str, ...] = (
-        str(python), "-m", PACKAGE_NAME,
+        CONSOLE_PYTHON, "-m", PACKAGE_NAME,
         "--project", plan.project_path,
         "--cli", RUNTIME_CLI,
         "--token-file", console.token_path,
         "--listen", console.listen_address,
         "--port", str(console.port),
     )
-    bundled = Path(LAUNCHER_CONSOLE_SOURCE) if launcher_source is None else launcher_source
-    package_path = console_package_path(console.source_path, bundled)
+    package_path = console_package_path(console.source_path, Path(LAUNCHER_CONSOLE_SOURCE))
     if package_path:
         # ``env`` replaces any ambient PYTHONPATH: the same interpreter and
         # dependencies, the selected package ahead of the base's installed copy.
@@ -111,7 +97,7 @@ def console_child(
     return SupervisedChild(
         name=CONSOLE_CHILD,
         command=run_as_identity(command),
-        ready=lambda: _accepts_connections(probe_address, console.port, connect=connect),
+        ready=lambda: _accepts_connections(probe_address, console.port),
         ready_timeout_seconds=CONSOLE_READY_TIMEOUT_SECONDS,
     )
 
@@ -132,19 +118,9 @@ def console_package_path(source_path: str, launcher_source: Path) -> str:
     return ""
 
 
-def _accepts_connections(
-    address: str,
-    port: int,
-    *,
-    connect: ConnectionProbe | None = None,
-) -> bool:
-    open_connection: ConnectionProbe = (
-        (lambda target, timeout: socket.create_connection(target, timeout=timeout))
-        if connect is None
-        else connect
-    )
+def _accepts_connections(address: str, port: int) -> bool:
     try:
-        with open_connection((address, port), 0.2):
+        with socket.create_connection((address, port), timeout=0.2):
             return True
     except OSError:
         return False

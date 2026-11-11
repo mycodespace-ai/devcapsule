@@ -1,12 +1,17 @@
-"""Unit tests of ``devcapsule/container_runtime/entrypoint.py``: console child placement across launch modes."""
+"""Unit tests of ``devcapsule/container_runtime/entrypoint.py``: the children ``run`` supervises and the environment it gives them."""
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 import os
 from pathlib import Path
 
+import pytest
+
+from devcapsule import logs
 from devcapsule.components.pycharm import runtime_template as pycharm_runtime_template
-from devcapsule.container_runtime.console import CONSOLE_CHILD, CommandWrapper, console_child
+from devcapsule.container_runtime import console, entrypoint, filesystem
+from devcapsule.container_runtime.console import CONSOLE_CHILD, CommandWrapper
 from devcapsule.container_runtime.contract import (
     CONTAINED_DISPLAY_TRANSPORT,
     ConsolePlan,
@@ -15,47 +20,70 @@ from devcapsule.container_runtime.contract import (
     RuntimePlan,
 )
 from devcapsule.container_runtime.display import ContainedDisplay, NOVNC_CHILD, XVNC_CHILD
-from devcapsule.container_runtime.entrypoint import ConsoleBuilder, SupervisorFactory, run
+from devcapsule.container_runtime.entrypoint import run
 from devcapsule.container_runtime.supervisor import SupervisedChild
 
-
-class RecordingSupervisor:
-    """Supervisor stand-in that records supervised children and returns a fixed status."""
-
-    def __init__(self, children: tuple[SupervisedChild, ...], **_kwargs: object) -> None:
-        self.children = children
-
-    def run(self) -> int:
-        return 42
+SUPERVISOR_STATUS = 42
 
 
-def recording_supervisor_factory() -> tuple[SupervisorFactory, list[RecordingSupervisor]]:
-    """A supervisor factory for ``run`` and the list it appends each supervisor it makes to."""
-    recorded: list[RecordingSupervisor] = []
+@dataclass
+class SessionHost:
+    """What ``run`` reads from and leaves on the host, as one test built and observes it."""
 
-    def make_supervisor(children: tuple[SupervisedChild, ...], **kwargs: object) -> RecordingSupervisor:
-        instance = RecordingSupervisor(children, **kwargs)
-        recorded.append(instance)
-        return instance
-
-    return make_supervisor, recorded
+    environ: dict[str, str] = field(default_factory=dict)
+    supervised: list[tuple[SupervisedChild, ...]] = field(default_factory=list)
 
 
-def noop_log_configurer(*_args: object, **_kwargs: object) -> Path | None:
-    """Stand-in for ``logs.configure`` so unit tests never mutate the process root logger."""
-    return None
+def fake_display(_plan: RuntimePlan, _runtime_dir: str, as_user: CommandWrapper) -> ContainedDisplay:
+    """Stand-in for ``prepare_contained_display``: two infrastructure children and their environment, no X server."""
+    return ContainedDisplay(
+        children=(
+            SupervisedChild(name=XVNC_CHILD, command=as_user(("Xvnc",))),
+            SupervisedChild(name=NOVNC_CHILD, command=as_user(("websockify",))),
+        ),
+        environment={"DISPLAY": ":99", "XAUTHORITY": "/tmp/Xauthority"},
+        display_number=99,
+        xauthority_path="/tmp/Xauthority",
+        rfb_socket_path="/tmp/rfb.sock",
+        openbox_configuration_path="/tmp/openbox.xml",
+        panel_configuration_path="/tmp/tint2rc",
+    )
 
 
-def console_builder_with_interpreter(tmp_path: Path) -> ConsoleBuilder:
-    """A console builder whose base interpreter is an empty file under ``tmp_path``, so a console child is made."""
-    python = tmp_path / "python"
+@pytest.fixture
+def host(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> SessionHost:
+    """A host built for one ``run``.
+
+    The process environment is an empty mapping, the caller is not root, and
+    the image's fixed locations lie under ``tmp_path``: the runtime root, a
+    console interpreter, no launcher console package. The display, the
+    supervisor and the log setup are stand-ins, so no program starts and the
+    root logger stays as it was.
+    """
+    session = SessionHost()
+
+    class RecordingSupervisor:
+        def __init__(self, children: tuple[SupervisedChild, ...], **_settings: object) -> None:
+            session.supervised.append(children)
+
+        def run(self) -> int:
+            return SUPERVISOR_STATUS
+
+    python = tmp_path / "base-python"
     python.touch()
-    absent_bundle = tmp_path / "absent-launcher-webconsole"
-    return lambda plan, as_user: console_child(plan, as_user, console_python=python, launcher_source=absent_bundle)
+    monkeypatch.setattr(os, "environ", session.environ)
+    monkeypatch.setattr(os, "geteuid", lambda: 1000)
+    monkeypatch.setattr(filesystem, "RUNTIME_ROOT", str(tmp_path / "runtime"))
+    monkeypatch.setattr(console, "CONSOLE_PYTHON", str(python))
+    monkeypatch.setattr(console, "LAUNCHER_CONSOLE_SOURCE", str(tmp_path / "absent-launcher-webconsole"))
+    monkeypatch.setattr(entrypoint, "prepare_contained_display", fake_display)
+    monkeypatch.setattr(entrypoint, "Supervisor", RecordingSupervisor)
+    monkeypatch.setattr(logs, "configure", lambda *_arguments, **_settings: None)
+    return session
 
 
 def make_plan(tmp_path: Path, *, with_display: bool) -> RuntimePlan:
-    """Construct a ``RuntimePlan`` whose project, home, state slots, and properties file all live under ``tmp_path``."""
+    """Construct a ``RuntimePlan`` with a console whose project, home, state slots, and properties file all live under ``tmp_path``."""
     base = RuntimePlan.for_component(
         pycharm_runtime_template(),
         project_path=str(tmp_path / "project"),
@@ -82,105 +110,48 @@ def make_plan(tmp_path: Path, *, with_display: bool) -> RuntimePlan:
     return RuntimePlan.from_mapping(document)
 
 
-def fake_display(_plan: RuntimePlan, _runtime_dir: str, as_user: CommandWrapper) -> ContainedDisplay:
-    return ContainedDisplay(
-        children=(
-            SupervisedChild(name=XVNC_CHILD, command=as_user(("Xvnc",))),
-            SupervisedChild(name=NOVNC_CHILD, command=as_user(("websockify",))),
-        ),
-        environment={"DISPLAY": ":99", "XAUTHORITY": "/tmp/Xauthority"},
-        display_number=99,
-        xauthority_path="/tmp/Xauthority",
-        rfb_socket_path="/tmp/rfb.sock",
-        openbox_configuration_path="/tmp/openbox.xml",
-        panel_configuration_path="/tmp/tint2rc",
-    )
-
-
-def test_run_places_console_after_contained_display_and_before_foreground_surface(tmp_path: Path) -> None:
+def test_run_places_console_after_contained_display_and_before_foreground_surface(
+    tmp_path: Path, host: SessionHost,
+) -> None:
     """With a contained display and console, ``run`` orders display children, ``console``, and foreground IDE."""
-    make_supervisor, recorded = recording_supervisor_factory()
+    status = run(make_plan(tmp_path, with_display=True))
 
-    status = run(
-        make_plan(tmp_path, with_display=True),
-        environ={},
-        runtime_root=tmp_path / "runtime",
-        caller_uid=1000,
-        configure_logs=noop_log_configurer,
-        prepare_display=fake_display,
-        build_console_child=console_builder_with_interpreter(tmp_path),
-        supervisor_factory=make_supervisor,
-    )
-
-    assert status == 42
-    children = recorded[0].children
+    assert status == SUPERVISOR_STATUS
+    (children,) = host.supervised
     assert [child.name for child in children] == [XVNC_CHILD, NOVNC_CHILD, CONSOLE_CHILD, "pycharm"]
     assert all(not child.foreground for child in children[:-1])
     assert children[-1].foreground is True
 
 
-def test_run_places_console_before_foreground_surface_without_display(tmp_path: Path) -> None:
+def test_run_places_console_before_foreground_surface_without_display(tmp_path: Path, host: SessionHost) -> None:
     """Without a contained display, ``run`` starts ``console`` in background and the surface in foreground."""
-    make_supervisor, recorded = recording_supervisor_factory()
+    status = run(make_plan(tmp_path, with_display=False))
 
-    status = run(
-        make_plan(tmp_path, with_display=False),
-        environ={},
-        runtime_root=tmp_path / "runtime",
-        caller_uid=1000,
-        configure_logs=noop_log_configurer,
-        build_console_child=console_builder_with_interpreter(tmp_path),
-        supervisor_factory=make_supervisor,
-    )
-
-    assert status == 42
-    children = recorded[0].children
+    assert status == SUPERVISOR_STATUS
+    (children,) = host.supervised
     assert [child.name for child in children] == [CONSOLE_CHILD, "pycharm"]
     assert children[0].foreground is False and children[1].foreground is True
 
 
-def test_run_suppresses_contained_display_and_keeps_console_in_job_mode(tmp_path: Path) -> None:
+def test_run_suppresses_contained_display_and_keeps_console_in_job_mode(tmp_path: Path, host: SessionHost) -> None:
     """In headless ``job`` mode, ``run`` omits display children even if declared and supervises ``[console, job]``."""
-    make_supervisor, recorded = recording_supervisor_factory()
+    status = run(make_plan(tmp_path, with_display=True), job=("pytest", "-q"))
 
-    status = run(
-        make_plan(tmp_path, with_display=True),
-        job=("pytest", "-q"),
-        environ={},
-        runtime_root=tmp_path / "runtime",
-        caller_uid=1000,
-        configure_logs=noop_log_configurer,
-        prepare_display=fake_display,
-        build_console_child=console_builder_with_interpreter(tmp_path),
-        supervisor_factory=make_supervisor,
-    )
-
-    assert status == 42
-    children = recorded[0].children
+    assert status == SUPERVISOR_STATUS
+    (children,) = host.supervised
     assert [child.name for child in children] == [CONSOLE_CHILD, "job"]
     assert children[0].foreground is False and children[1].foreground is True
+    assert children[1].command == ("pytest", "-q")
+    assert children[1].working_directory == str(tmp_path / "project")
 
 
-def test_run_writes_the_session_environment_into_the_given_mapping_only(tmp_path: Path) -> None:
-    """``run`` with ``environ`` and ``runtime_root`` confines session paths and variables to ``tmp_path`` and ``environ``."""
-    make_supervisor, _recorded = recording_supervisor_factory()
-    environ: dict[str, str] = {}
-    process_environment_before = dict(os.environ)
+def test_run_gives_the_session_its_environment_before_the_children_start(tmp_path: Path, host: SessionHost) -> None:
+    """``run`` puts the session's runtime directory, the display's variables and the IDE's properties file in the process environment."""
+    run(make_plan(tmp_path, with_display=True))
 
-    run(
-        make_plan(tmp_path, with_display=True),
-        environ=environ,
-        runtime_root=tmp_path / "runtime",
-        caller_uid=1000,
-        configure_logs=noop_log_configurer,
-        prepare_display=fake_display,
-        build_console_child=console_builder_with_interpreter(tmp_path),
-        supervisor_factory=make_supervisor,
-    )
-
-    assert environ["DISPLAY"] == ":99"
-    assert environ["XAUTHORITY"] == "/tmp/Xauthority"
-    assert environ["XDG_RUNTIME_DIR"] == str(tmp_path / "runtime" / "devcapsule-runtime-1000")
-    assert environ["PYCHARM_PROPERTIES"] == str(tmp_path / "jetbrains.properties")
+    assert host.environ["HOME"] == str(tmp_path / "home")
+    assert host.environ["XDG_RUNTIME_DIR"] == str(tmp_path / "runtime" / "devcapsule-runtime-1000")
+    assert host.environ["DISPLAY"] == ":99"
+    assert host.environ["XAUTHORITY"] == "/tmp/Xauthority"
+    assert host.environ["PYCHARM_PROPERTIES"] == str(tmp_path / "jetbrains.properties")
     assert (tmp_path / "jetbrains.properties").is_file()
-    assert dict(os.environ) == process_environment_before
