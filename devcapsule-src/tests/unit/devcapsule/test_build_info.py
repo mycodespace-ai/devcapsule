@@ -8,6 +8,7 @@ from zipfile import ZipFile
 
 import pytest
 
+from devcapsule import build_info
 from devcapsule.build_info import (
     BuildInfo,
     BuildInfoError,
@@ -16,6 +17,25 @@ from devcapsule.build_info import (
     is_built_distribution,
     read_pex_build_info,
 )
+
+
+def test_current_build_info_reads_the_default_package_record(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Without record paths, ``current_build_info`` reads the stamp from the devcapsule package resources."""
+    package = tmp_path / "devcapsule"
+    package.mkdir()
+    stamped = BuildInfo(2, "1.2.3", "unknown", "unknown", "unknown", "v1.2.3")
+    (package / "_build_info.json").write_text(build_info_json(stamped), encoding="utf-8")
+
+    def package_resources(anchor: str) -> Path:
+        return tmp_path / anchor
+
+    monkeypatch.setattr(build_info, "files", package_resources)
+
+    info = current_build_info(pyproject_path=tmp_path / "absent.toml", installed_version="9.9.9")
+
+    assert info == stamped
 
 
 def test_public_build_identity_requires_matching_github_commit_url() -> None:

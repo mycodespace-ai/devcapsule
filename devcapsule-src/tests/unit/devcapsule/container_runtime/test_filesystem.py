@@ -10,7 +10,7 @@ import pytest
 
 from devcapsule.components.pycharm import runtime_template as pycharm_runtime_template
 from devcapsule.container_runtime.contract import Identity, RuntimePlan
-from devcapsule.container_runtime.filesystem import RUNTIME_ROOT, FilesystemPlan, plan_filesystem, prepare_filesystem
+from devcapsule.container_runtime.filesystem import FilesystemPlan, plan_filesystem, prepare_filesystem
 
 DEVELOPER = Identity(1000, 1001, "developer")
 
@@ -51,12 +51,12 @@ def record_ownership_changes(monkeypatch: pytest.MonkeyPatch) -> list[tuple[Path
 def test_plan_filesystem_derives_the_session_directories_from_the_home_the_user_and_the_slots(
     tmp_path: Path,
 ) -> None:
-    """``plan_filesystem`` names the runtime directory after the uid under ``RUNTIME_ROOT`` and lists it, the home and every state slot."""
+    """``plan_filesystem`` names the runtime directory after the uid under /tmp and lists it, the home and every state slot."""
     runtime = sandboxed_plan(tmp_path)
 
     plan = plan_filesystem(runtime)
 
-    runtime_directory = f"{RUNTIME_ROOT}/devcapsule-runtime-1000"
+    runtime_directory = "/tmp/devcapsule-runtime-1000"
     assert plan.environment["HOME"] == str(tmp_path / "home")
     assert plan.environment["XDG_RUNTIME_DIR"] == runtime_directory
     assert {str(tmp_path / "home"), runtime_directory} <= set(plan.directories)
@@ -68,10 +68,10 @@ def test_prepare_filesystem_creates_every_directory_and_keeps_ssh_and_runtime_pr
 ) -> None:
     """For a caller that is not root, ``prepare_filesystem`` creates each directory, sets ``0700`` on ``.ssh`` and the runtime directory, and changes no owner."""
     filesystem = filesystem_under(tmp_path)
-    monkeypatch.setattr(os, "geteuid", lambda: 1000)
-    changes = record_ownership_changes(monkeypatch)
-
-    prepare_filesystem(filesystem, DEVELOPER)
+    with monkeypatch.context() as process:
+        process.setattr(os, "geteuid", lambda: 1000)
+        changes = record_ownership_changes(process)
+        prepare_filesystem(filesystem, DEVELOPER)
 
     assert all(Path(directory).is_dir() for directory in filesystem.directories)
     assert stat.S_IMODE((tmp_path / "home" / ".ssh").stat().st_mode) == 0o700
@@ -85,10 +85,10 @@ def test_prepare_filesystem_gives_the_capsule_user_only_the_directories_it_creat
     """For root, ``prepare_filesystem`` hands each directory it created to the capsule user, outermost first, and leaves an existing one alone."""
     filesystem = filesystem_under(tmp_path)
     (tmp_path / "home").mkdir()
-    monkeypatch.setattr(os, "geteuid", lambda: 0)
-    changes = record_ownership_changes(monkeypatch)
-
-    prepare_filesystem(filesystem, DEVELOPER)
+    with monkeypatch.context() as process:
+        process.setattr(os, "geteuid", lambda: 0)
+        changes = record_ownership_changes(process)
+        prepare_filesystem(filesystem, DEVELOPER)
 
     assert changes == [
         (tmp_path / "home" / ".ssh", 1000, 1001),

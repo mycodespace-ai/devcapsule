@@ -14,7 +14,6 @@ from devcapsule.components.pycharm import runtime_template as pycharm_runtime_te
 from devcapsule.configuration.file_formats import ProjectConfigurationError
 from devcapsule.console_tools import DECISIONS_MODULE, console_decisions_command, run_console_decisions
 from devcapsule.container_runtime import console
-from devcapsule.container_runtime.console import console_child
 from devcapsule.container_runtime.contract import ConsolePlan, Identity, RuntimePlan
 
 
@@ -38,7 +37,11 @@ def launcher_bundle(path: Path) -> Path:
 
 
 def enter_capsule(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, console_python: Path) -> None:
-    """Make the process a capsule's: its name in the environment, ``console_python`` as the base's console interpreter, no runtime plan and no launcher console package."""
+    """Set capsule detection and the paths that the wrapper reads by default.
+
+    The caller supplies the interpreter. The plan and launcher package are
+    absent, so execution uses that interpreter without a PYTHONPATH prefix.
+    """
     monkeypatch.setenv(recursive_dogfood.CONTAINER_NAME_ENV, "capsule-fixture")
     monkeypatch.setattr(console, "CONSOLE_PYTHON", str(console_python))
     monkeypatch.setattr(console, "LAUNCHER_CONSOLE_SOURCE", str(tmp_path / "absent-launcher-webconsole"))
@@ -124,20 +127,16 @@ def test_decisions_command_uses_launcher_package_when_plan_sets_no_checkout_sour
     )
 
 
-def test_mounted_source_uses_same_pythonpath_prefix_as_console_child_ahead_of_launcher_package(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+def test_mounted_source_takes_precedence_over_launcher_package(
+    tmp_path: Path,
 ) -> None:
-    """When ``console.source_path`` is set, ``console_decisions_command`` matches ``console_child`` and overrides ``launcher_console_source``."""
+    """``console_decisions_command`` selects the plan's checkout source ahead of the launcher package, preserving spaces."""
     python = tmp_path / "python"
     python.touch()
     bundled = launcher_bundle(tmp_path / "launcher-webconsole")
     plan = runtime_plan("/workspace/project with spaces/devcapsule-webconsole")
     plan_path = tmp_path / "plan.json"
     plan_path.write_text(plan.to_json(), encoding="utf-8")
-    monkeypatch.setattr(console, "CONSOLE_PYTHON", str(python))
-    monkeypatch.setattr(console, "LAUNCHER_CONSOLE_SOURCE", str(bundled))
-
-    child = console_child(plan, lambda command: command)
     command = console_decisions_command(
         ["check", "x.json"],
         environ={"DEVCAPSULE_CONTAINER_NAME": "c"},
@@ -146,8 +145,7 @@ def test_mounted_source_uses_same_pythonpath_prefix_as_console_child_ahead_of_la
         launcher_console_source=bundled,
     )
 
-    assert child is not None
-    assert command[:2] == child.command[:2] == (
+    assert command[:2] == (
         "env",
         "PYTHONPATH=/workspace/project with spaces/devcapsule-webconsole",
     )
@@ -161,13 +159,15 @@ def test_run_console_decisions_preserves_arguments_streams_and_exit_status(
     """Inside a capsule, ``run_console_decisions`` passes argv verbatim to the base's console interpreter, streams its output, and returns its exit code."""
     fake = tmp_path / "fake-console-python"
     fake.write_text(
-        f"#!{sys.executable}\nimport json, sys\nprint(json.dumps(sys.argv[1:]))\n"
+        f"#!{sys.executable} -I\nimport json, sys\nprint(json.dumps(sys.argv[1:]))\n"
         f"print('console diagnostic', file=sys.stderr)\nsys.exit({status})\n",
         encoding="utf-8",
     )
     fake.chmod(0o755)
     arguments = ["from-table", "table with spaces.md", "--id", "pass", "--title", "A title", "--context", "a\nb", "", "--"]
     enter_capsule(tmp_path, monkeypatch, fake)
+    # The fixture interpreter ignores Python startup settings from the host.
+    monkeypatch.setenv("PYTHONHOME", str(tmp_path / "not-a-python-installation"))
 
     result = run_console_decisions(arguments)
 

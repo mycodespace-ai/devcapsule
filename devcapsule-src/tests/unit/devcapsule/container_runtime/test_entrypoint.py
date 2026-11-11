@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 import os
 from pathlib import Path
@@ -32,6 +34,15 @@ class SessionHost:
 
     environ: dict[str, str] = field(default_factory=dict)
     supervised: list[tuple[SupervisedChild, ...]] = field(default_factory=list)
+    environment_at_start: dict[str, str] = field(default_factory=dict)
+
+    @contextmanager
+    def process(self) -> Iterator[None]:
+        """Replace process inputs only during the action, before pytest resumes."""
+        with pytest.MonkeyPatch.context() as process:
+            process.setattr(os, "environ", self.environ)
+            process.setattr(os, "geteuid", lambda: 1000)
+            yield
 
 
 def fake_display(_plan: RuntimePlan, _runtime_dir: str, as_user: CommandWrapper) -> ContainedDisplay:
@@ -54,9 +65,9 @@ def fake_display(_plan: RuntimePlan, _runtime_dir: str, as_user: CommandWrapper)
 def host(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> SessionHost:
     """A host built for one ``run``.
 
-    The process environment is an empty mapping, the caller is not root, and
-    the image's fixed locations lie under ``tmp_path``: the runtime root, a
-    console interpreter, no launcher console package. The display, the
+    Within ``host.process()``, the environment is an empty mapping and the
+    caller is not root. The image paths lie under ``tmp_path``: a runtime
+    root, an empty interpreter file, and an absent launcher package. The display, the
     supervisor and the log setup are stand-ins, so no program starts and the
     root logger stays as it was.
     """
@@ -65,14 +76,13 @@ def host(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> SessionHost:
     class RecordingSupervisor:
         def __init__(self, children: tuple[SupervisedChild, ...], **_settings: object) -> None:
             session.supervised.append(children)
+            session.environment_at_start = dict(os.environ)
 
         def run(self) -> int:
             return SUPERVISOR_STATUS
 
     python = tmp_path / "base-python"
     python.touch()
-    monkeypatch.setattr(os, "environ", session.environ)
-    monkeypatch.setattr(os, "geteuid", lambda: 1000)
     monkeypatch.setattr(filesystem, "RUNTIME_ROOT", str(tmp_path / "runtime"))
     monkeypatch.setattr(console, "CONSOLE_PYTHON", str(python))
     monkeypatch.setattr(console, "LAUNCHER_CONSOLE_SOURCE", str(tmp_path / "absent-launcher-webconsole"))
@@ -114,7 +124,9 @@ def test_run_places_console_after_contained_display_and_before_foreground_surfac
     tmp_path: Path, host: SessionHost,
 ) -> None:
     """With a contained display and console, ``run`` orders display children, ``console``, and foreground IDE."""
-    status = run(make_plan(tmp_path, with_display=True))
+    plan = make_plan(tmp_path, with_display=True)
+    with host.process():
+        status = run(plan)
 
     assert status == SUPERVISOR_STATUS
     (children,) = host.supervised
@@ -125,7 +137,9 @@ def test_run_places_console_after_contained_display_and_before_foreground_surfac
 
 def test_run_places_console_before_foreground_surface_without_display(tmp_path: Path, host: SessionHost) -> None:
     """Without a contained display, ``run`` starts ``console`` in background and the surface in foreground."""
-    status = run(make_plan(tmp_path, with_display=False))
+    plan = make_plan(tmp_path, with_display=False)
+    with host.process():
+        status = run(plan)
 
     assert status == SUPERVISOR_STATUS
     (children,) = host.supervised
@@ -135,7 +149,9 @@ def test_run_places_console_before_foreground_surface_without_display(tmp_path: 
 
 def test_run_suppresses_contained_display_and_keeps_console_in_job_mode(tmp_path: Path, host: SessionHost) -> None:
     """In headless ``job`` mode, ``run`` omits display children even if declared and supervises ``[console, job]``."""
-    status = run(make_plan(tmp_path, with_display=True), job=("pytest", "-q"))
+    plan = make_plan(tmp_path, with_display=True)
+    with host.process():
+        status = run(plan, job=("pytest", "-q"))
 
     assert status == SUPERVISOR_STATUS
     (children,) = host.supervised
@@ -146,12 +162,17 @@ def test_run_suppresses_contained_display_and_keeps_console_in_job_mode(tmp_path
 
 
 def test_run_gives_the_session_its_environment_before_the_children_start(tmp_path: Path, host: SessionHost) -> None:
-    """``run`` puts the session's runtime directory, the display's variables and the IDE's properties file in the process environment."""
-    run(make_plan(tmp_path, with_display=True))
+    """Before supervision, ``run`` sets session paths and display variables, supplies graphics defaults, and preserves graphics overrides."""
+    plan = make_plan(tmp_path, with_display=True)
+    host.environ["LIBGL_ALWAYS_SOFTWARE"] = "0"
+    with host.process():
+        run(plan)
 
-    assert host.environ["HOME"] == str(tmp_path / "home")
-    assert host.environ["XDG_RUNTIME_DIR"] == str(tmp_path / "runtime" / "devcapsule-runtime-1000")
-    assert host.environ["DISPLAY"] == ":99"
-    assert host.environ["XAUTHORITY"] == "/tmp/Xauthority"
-    assert host.environ["PYCHARM_PROPERTIES"] == str(tmp_path / "jetbrains.properties")
+    assert host.environment_at_start["HOME"] == str(tmp_path / "home")
+    assert host.environment_at_start["XDG_RUNTIME_DIR"] == str(tmp_path / "runtime" / "devcapsule-runtime-1000")
+    assert host.environment_at_start["DISPLAY"] == ":99"
+    assert host.environment_at_start["XAUTHORITY"] == "/tmp/Xauthority"
+    assert host.environment_at_start["PYCHARM_PROPERTIES"] == str(tmp_path / "jetbrains.properties")
+    assert host.environment_at_start["NO_AT_BRIDGE"] == "1"
+    assert host.environment_at_start["LIBGL_ALWAYS_SOFTWARE"] == "0"
     assert (tmp_path / "jetbrains.properties").is_file()

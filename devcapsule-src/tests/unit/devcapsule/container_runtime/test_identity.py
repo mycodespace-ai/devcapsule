@@ -16,9 +16,9 @@ def test_foreground_command_drops_to_the_capsule_user_when_the_caller_is_root(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Called as root, ``foreground_command`` prefixes the command with ``gosu`` and the capsule user's ``uid:gid``."""
-    monkeypatch.setattr(os, "geteuid", lambda: 0)
-
-    command = foreground_command(("ide", "--wait"), DEVELOPER)
+    with monkeypatch.context() as process:
+        process.setattr(os, "geteuid", lambda: 0)
+        command = foreground_command(("ide", "--wait"), DEVELOPER)
 
     assert command == ("gosu", "1000:1001", "ide", "--wait")
 
@@ -27,9 +27,9 @@ def test_foreground_command_leaves_the_command_alone_when_the_caller_is_not_root
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Called as any user but root, ``foreground_command`` returns the command unchanged."""
-    monkeypatch.setattr(os, "geteuid", lambda: 1000)
-
-    command = foreground_command(("ide", "--wait"), DEVELOPER)
+    with monkeypatch.context() as process:
+        process.setattr(os, "geteuid", lambda: 1000)
+        command = foreground_command(("ide", "--wait"), DEVELOPER)
 
     assert command == ("ide", "--wait")
 

@@ -46,7 +46,11 @@ def launcher_bundle(path: Path) -> Path:
 
 @pytest.fixture
 def base_python(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """A base image built under ``tmp_path``: a console interpreter at ``CONSOLE_PYTHON`` and no launcher package."""
+    """Set the image paths to an empty interpreter file and an absent package.
+
+    Child construction only checks that the interpreter file exists; these
+    tests never execute it.
+    """
     python = tmp_path / "base-python"
     python.touch()
     monkeypatch.setattr(console, "CONSOLE_PYTHON", str(python))
@@ -195,12 +199,13 @@ def test_console_readiness_probes_loopback_of_listener_address_family(
         events.append((address, timeout))
         return Connection()
 
-    monkeypatch.setattr(socket, "create_connection", accept)
     plan = runtime_plan(tmp_path, console=ConsolePlan(listen, 45678, "/run/devcapsule-console-token"))
     child = console_child(plan, lambda command: command)
     assert child is not None and child.ready is not None
 
-    ready = child.ready()
+    with monkeypatch.context() as network:
+        network.setattr(socket, "create_connection", accept)
+        ready = child.ready()
 
     assert ready is True
     assert events == [((expected_probe, 45678), 0.2), "closed"]
@@ -214,12 +219,13 @@ def test_console_readiness_returns_false_when_probe_connection_fails(
     def refuse(address: tuple[str, int], timeout: float | None = None) -> socket.socket:
         raise ConnectionRefusedError("connection refused")
 
-    monkeypatch.setattr(socket, "create_connection", refuse)
     plan = runtime_plan(tmp_path, console=ConsolePlan("127.0.0.1", 45678, "/run/devcapsule-console-token"))
     child = console_child(plan, lambda command: command)
     assert child is not None and child.ready is not None
 
-    ready = child.ready()
+    with monkeypatch.context() as network:
+        network.setattr(socket, "create_connection", refuse)
+        ready = child.ready()
 
     assert ready is False
 
