@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, no fix started; one major bug in fixing, the Python route and its guard, on `ws-maintenance/python-route-guard`
+State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, no fix started; one major bug in fixing, the Python route and its guard, merged through #25 with the local gate's routing open; a follow-up to PR #18 on `ws-maintenance/host-inputs-at-source`, by Pair Review, for the owner's review
 
 Definition read: WORKFLOW.md@e83f22a20701, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
@@ -12,9 +12,102 @@ Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/python-route-guard` from release-0.3.1 137c4591, PR #25 open, the owner merges; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/host-inputs-at-source` from release-0.3.1 2f1109db, PR #26 open, the owner merges; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## PR #18's test-only parameters removed; the tests set the host at its source — 2026-11-11
+
+On 2026-11-10 the owner asked for an independent assessment of
+[PR #18](https://github.com/mycodespace-ai/devcapsule/pull/18), then asked
+for its shortcomings to be fixed, by Pair Review with Codex and GPT-6 Astra
+as the review partner. The assessment's findings, each measured on the tree
+at the merge `b84b06e9`:
+
+- PR #18 gave eight production signatures twenty keyword parameters that no
+  production caller passes, so that no new test would patch a `devcapsule.*`
+  attribute. Each test passed the parameter, so the branch that ships, the
+  default, was run by no new test. Of six production faults planted in those
+  defaults, the four retired legacy files had caught five; the whole unit
+  suite after PR #18 caught none of the six.
+- `entrypoint.run` forwarded `caller_uid` and `runtime_root` only when given,
+  so that two legacy tests' `lambda *args: None` stand-in for
+  `prepare_filesystem` kept working.
+- `VersionCommand` and `CheckoutDecisionsCommand` carried test inputs through
+  the command framework's group-context argument and told them apart by type.
+- The hosted run was red on five consecutive pushes while the slice was
+  reviewed, accepted and recorded as validated; both pairs had validated
+  inside a capsule, where `/ide-config` exists.
+
+Delivered on `ws-maintenance/host-inputs-at-source`, from `release-0.3.1` at
+`2f1109db`, as [PR #26](https://github.com/mycodespace-ai/devcapsule/pull/26):
+
+- `entrypoint.run`, `console_child`, `plan_filesystem`, `prepare_filesystem`,
+  `foreground_command`, `VersionCommand`, `CheckoutDecisionsCommand` and
+  `run_console_decisions` have their signatures of before PR #18 again:
+  seventeen of the twenty parameters, the type aliases that served them and
+  the private `_DecisionsInvocation` are gone, and `console_child` loses the
+  `launcher_source` parameter PR #16 added in the same style. `run`'s body is
+  the one 0.3.0 shipped. The one addition is a name for a fact,
+  `filesystem.RUNTIME_ROOT`, `/tmp`.
+- The mirror tests set each host input where the code reads it:
+  the caller's uid, ownership changes and the readiness connection through
+  `os.geteuid`, `os.chown` and `socket.create_connection`; the image's fixed
+  locations through the public constants `CONSOLE_PYTHON`,
+  `LAUNCHER_CONSOLE_SOURCE`, `RUNTIME_ROOT` and `RUNTIME_PLAN_PATH`; the
+  environment with `monkeypatch`; and, for `run` alone, the supervisor, the
+  display and the log setup by stand-ins. The code a test runs is the code
+  that ships.
+- `identity.py` has its mirror file. `images/contract.py` no longer calls the
+  runtime's check at start a backstop for the recipe. The integration test of
+  the wrapper's help builds a base without a console interpreter again.
+
+Judgments taken, for the owner's review:
+
+1. A production signature has a parameter only when production passes it.
+   This reverses the choice recorded on 2026-11-08, that no refurbished test
+   patches a `devcapsule.*` attribute. The tests patch public names only,
+   and never a private one; the conforming tests merged on 2026-11-04 and
+   2026-11-05 do the same (`status.read_metadata`,
+   `runtime_artifact.current_build_info`).
+2. `current_build_info` keeps its three parameters: the stamped record lies
+   inside the installed package, where a test cannot build it.
+   `console_decisions_command` keeps the four it had before PR #18; its
+   defaults are now run by the tests of `run_console_decisions`.
+3. `commands/project.py` gets no mirror test: a mirror would oblige its
+   public surface to be declared and `tests/test_project.py` to be retired
+   in the same change. The one line by which `project checkout decisions`
+   delegates is run by the integration file only.
+4. The target is `release-0.3.1`, as it was for PR #18.
+
+Evidence: 26 faults planted one at a time in a scratch copy of the tree and
+run against the touched unit files. 24 are caught there, among them the five
+that PR #18 had lost. One, the command dropping its arguments, is caught by
+the integration file only. One survives both, as it did before PR #18: a
+built executable that never finds its stamped record; the gate's smoke runs
+`version --json` and reads only its exit status.
+
+Validation at `8274a546`, in the owner's capsule: `nox -s tests` gives 17
+failed and 2913 passed, the 17 of the
+[blocking record](../../bugs/devcapsule/2026-11-10-unit-tests-read-the-capsules-mounted-launcher-settings.md)
+and no other; the convention check counts 103 legacy files with 1372 legacy
+tests and 49 conforming files, 0 breaches; mypy is clean over 330 files; the
+integration file gives 10 passed. The gate as a whole cannot pass in this
+capsule while those 17 stand, so the hosted run is the authority for the
+suite.
+
+Proposals not implemented, for the owner:
+
+- *Unit Tests*, rule 2 or its companion: a parameter is added to production
+  code for a test only when production passes it, and the default a release
+  ships stays under a test of the gate.
+- *Pair Review Loop*: a review is accepted, and a slice recorded as
+  validated, only on a green hosted run of the head; the brief asks for it.
+- The gate's smoke compares `version --json` of the built executable with
+  the stamp the build wrote.
+- `WORKFLOW-LOCAL.md`, *Pair Review Loop In This Checkout*, rule 3 still
+  names `/opt/devcapsule-gate` as the review partner's scratch, which the
+  owner retired on 2026-11-04.
 
 ## The Python route becomes a list of inputs the suite is held to — 2026-11-10
 
@@ -44,8 +137,9 @@ breach; the flip at `3bd6cc27`, 2947 passed, the new filter matching the 11
 changed files under `devcapsule-src/` and `.github/` and none of the 5 under
 `engineering-docs/`.
 
-Next action: the owner's review of PR #25. Then, on the owner's word, the
-local gate's routing and the retirement of the `docs/` scan.
+PR #25 is merged into `release-0.3.1` at `2f1109db`. Next action, on the
+owner's word: the local gate's routing and the retirement of the `docs/`
+scan.
 
 ## The pile of ideas, a workflow rule for 0.3.1 — 2026-11-10
 
@@ -4959,6 +5053,7 @@ Earlier open-thread history (read against the current scope above):
 
 - [PR #16 Pair Review brief (PR16.1)](evidence/2026-11-08-webconsole-delivery/review-brief.md), [D-0017](../../decisions/product/d-0017-launcher-delivers-web-console-package.md), and [0.3.1rc1 web console delivery bug](../../bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md): launcher-delivered web console slice (`ws-maintenance/webconsole-delivery`, stacked on PR #18).
 
+- [PR #26 Pair Review brief (PR26.1)](evidence/2026-11-11-host-inputs-at-source/review-brief.md): brief for `Codex + GPT-6 Astra` on the removal of PR #18's test-only parameters and the tests that set the host at its source.
 - [PR #18 Pair Review brief (PR18.1)](evidence/2026-11-08-webconsole-legacy-tests/review-brief.md): brief for `Claude Code + Claude Fable 5.1` on whole-file legacy test retirement and 4-file refurbishment (`ws-maintenance/webconsole-legacy-tests`).
 
 - [RC9 preparation and component verification](evidence/2026-10-31-rc9/README.md).
