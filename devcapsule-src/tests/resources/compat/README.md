@@ -30,6 +30,16 @@ action for a project, checkout, or platform lock created by an earlier one.
   checkout path and its resulting checkout-input digest are templated, as
   above. `test_upgrade_recovery.py` exercises unchanged-client inputs and
   separately introduces project-side changes into copies of these artifacts.
+- `repository-2026-10-25/` is this repository's own project, copied on
+  2026-11-12 from `.devcapsule/` at commit `c53f4f94`, byte for byte: Git
+  blobs `1ebb222f` (manifest) and `8ea6c67a` (lock). The manifest is the
+  schema-1 one last changed in commit `3dbe4cb9` of 2026-10-04. The lock was
+  regenerated in commit `dedb485b` of 2026-10-25 from the resolution matrix
+  `embedded-28`, by the source that became `v0.3.0-rc7`; it pins PyCharm and
+  the three agents on the recipe-11 base. It is here because the suite used
+  to read the live files, which change whenever a launcher rewrites them.
+  `tests/unit/devcapsule/configuration/test_capability_commands.py` reads
+  this copy, with `v026.2/` and `v0.2.11/`.
 
 When a release changes what these artifacts would contain, add a new
 directory for that release; do not update these.

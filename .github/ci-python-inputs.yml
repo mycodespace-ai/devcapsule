@@ -17,7 +17,7 @@ python:
   - '.github/**'
   # Read by unit tests that predate Unit Tests rule 2 of WORKFLOW-LOCAL.md.
   # Each entry leaves when its reader builds its own input.
-  - '.devcapsule/**'  # tests/test_base_contract.py, tests/test_repository_manifest_compatibility.py
+  - '.devcapsule/**'  # tests/test_base_contract.py
   - 'component-status/**'  # tests/test_component_status.py
   - 'docs/**'  # the [docs] case of tests/unit/devcapsule/legacy_refactoring/test_home.py walks all of docs/;
                # tests/test_release_docs.py reads docs/versions.yaml
