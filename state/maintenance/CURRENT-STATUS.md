@@ -175,6 +175,36 @@ one table changed. Its docstring now says so.
 The standing failures are 5, in four files, and all five drive `cli.main`.
 No call in them can be handed a value.
 
+**The console-channel holding-pen test, rewritten, 2026-11-12.** The one
+test of `tests/unit/devcapsule/legacy_refactoring/test_console_channel.py`
+was three tests in one, and an integration test by nature: the launcher
+answers each request by running `project config` as a process. Inside a
+capsule it failed, behind its mark, on its last claim, that the vendors'
+consents stay pending. It is now:
+
+- in memory, in `test_derivation.py`: five tests of a checkout's selection,
+  the provider chosen for an IDE, the refusal where one component supplies
+  a capability, the refusal for a capability not selected, `default`, and
+  the IDE change that forgets the old provider;
+- in memory, in `test_launch_review.py`: a checkout that adds the Claude
+  Code agent and chooses Visual Studio Code ends pending on both vendors'
+  channels;
+- as processes, in the new `tests/integration/test_console_channel_cli.py`:
+  four tests that send requests through a real channel directory, let the
+  launcher sweep it in a process whose environment the test builds, with a
+  named home, and read the record, the results and `config show`.
+
+The mirror of `commands/_console_channel.py` and of
+`configuration/console_channel.py` would both be named
+`test_console_channel.py`, which the gate pairs with the legacy file of
+that name; so no test of those two modules could be added, and none was
+needed. The holding-pen file and its empty target module are deleted; the
+command-line debt list has 6 files. Five planted faults, three in the
+channel and two in the selection, are each caught. `nox -s tests` in the
+capsule: 3095 passed, 9 expected to fail, 10 unexpectedly passed. The
+integration tests that need no Docker: 128 passed, 3 skipped, and the one
+standing failure.
+
 **`project run --print-command` fetches nothing, 2026-11-12.** Owner
 direction: whoever asks for the command to be printed did not ask for the
 environment to be downloaded. Until now `--print-command` did all a launch
@@ -233,7 +263,8 @@ and the network guard no longer fails the session. `nox -s tests` passes
 inside the owner's capsule for the first time since 2026-11-03: 3083 passed,
 10 expected to fail, 11 unexpectedly passed, 175 seconds. The blocking bug's
 record has a progress section and is `fixing`, not closed: the shared
-fixture is unchanged and 14 marks remain.
+fixture is unchanged and the expected-to-fail marks remain; the record
+counts them.
 
 **`tests/test_ide_requirement_override.py`, ordered retired whole. It is not
 yet.** Of its 26 test functions, 12 now have a form that needs no file, no
