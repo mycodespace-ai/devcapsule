@@ -47,17 +47,6 @@ from tests.test_upgrade_recovery import (
 pytestmark = pytest.mark.legacy
 
 
-@pytest.fixture(autouse=True)
-def named_home(tmp_path, monkeypatch):
-    """Name each test's home, before the imported ``checkout`` fixture places the record in it.
-
-    A home that is only implied by HOME and the XDG variables, with no settings of its own yet, reads the
-    launcher's mounted settings when the suite runs inside a capsule, and then what the developer accepted
-    there answers the consents these tests expect to be pending.
-    """
-    monkeypatch.setenv("DEVCAPSULE_CONFIG_HOME", str(tmp_path / "devcapsule-home"))
-
-
 def declare_values(project, extra=''):
     path = project / '.devcapsule/devcapsule.toml'
     path.write_text(path.read_text() + '''

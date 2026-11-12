@@ -38,10 +38,6 @@ def declaration(**capabilities: Any) -> dict[str, Any]:
 @pytest.fixture
 def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
-    # Name the home. A home that is only implied by HOME and the XDG variables, with no settings of its
-    # own yet, reads the launcher's mounted settings when the suite runs inside a capsule, and then what the
-    # developer accepted there answers the consents these tests expect to be pending.
-    monkeypatch.setenv("DEVCAPSULE_CONFIG_HOME", str(tmp_path / "devcapsule-home"))
     root = tmp_path / "project"
     (root / ".devcapsule").mkdir(parents=True)
     manifest = declaration(need=["python", "python-ide"])

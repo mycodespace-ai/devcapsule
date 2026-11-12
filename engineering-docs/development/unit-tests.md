@@ -174,10 +174,16 @@ so prefer the existing laws and an acceptance step for what the user sees.
   stays open. Tests of the heavier suites are not held to it. It cannot see
   the network use of a program a test starts.
 - `private_user_directories`, autouse: moves `HOME` and every XDG directory
-  under the test's `tmp_path` for non-Docker tests. Inside a capsule this is
-  not yet a private home: a home with no settings of its own reads the
-  launcher's mounted settings, so tests that assume no accepted vendor
-  channel fail there. Recorded on 2026-11-03 for the 0.3.1 fixture slice.
+  under the test's `tmp_path` for non-Docker tests, and makes the test's
+  machine no capsule. The product knows a capsule by two fixed paths, the
+  launch context and the configuration channel, `CONTEXT_PATH` and
+  `CHANNEL_PATH` of `devcapsule.runtime_configuration`; the fixture sets
+  both to places that do not exist. So a test's home is private inside a
+  capsule too: it does not read the launcher's mounted settings, and a
+  command does not read the live channel. A test of the capsule's side
+  builds its own capsule by setting the paths after the fixture. The
+  fixture does not reach a program that a test starts; such a test builds
+  that program's environment, with a named home.
 - `built_pex`: the executable under test, `DEVCAPSULE_PEX_UNDER_TEST` when
   set, otherwise `dist/devcapsule-local.pex`; it fails with the Nox session
   to run when the file is missing. The integration and end-to-end suites use

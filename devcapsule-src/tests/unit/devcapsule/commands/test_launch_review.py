@@ -543,3 +543,39 @@ def test_with_no_provider_chosen_the_same_saving_launch_is_planned_with_the_defa
 
     assert review.selected.resolution["runtime"]["component"] == "codium"
     assert memory_size_bytes(str(review.record.values["memory"])) == 6 * 1024 ** 3
+
+
+def adding_claude_code() -> CheckoutState:
+    """The order's checkout after its developer added the Claude Code agent, which the project neither requires nor offers."""
+    state = checkout_of(REQUIRING_PYCHARM)
+    selection = Selection(LocalCapabilities.read(state.checkout), state.surfaces)
+    selection.extra.add("claude-code-agent")
+    state.checkout = state.with_selection(selection)
+    return state
+
+
+def test_an_agent_the_developer_added_waits_for_its_vendors_channel_and_names_both_ways_to_accept() -> None:
+    """An agent added on the checkout brings its vendor's channel with it: the launch ends pending on Anthropic's,
+    and the message names the flag for this launch and the ``home trust accept`` command."""
+    with pytest.raises(DecisionPending) as pending:
+        review_launch(adding_claude_code(), RunFlags(), ask=None, announce=never_announced)
+
+    message = str(pending.value)
+    assert "trust claude-code: Trust Anthropic to supply Claude Code" in message
+    assert "--trust claude-code  |  devcapsule home trust accept claude-code" in message
+
+
+def test_the_checkouts_own_authorization_of_a_vendors_download_settles_it_without_the_home() -> None:
+    """When the checkout's record authorizes the Claude Code download itself, the launch is planned with Claude
+    Code in its lock. No channel is accepted for the home, and the home's settings are as they were."""
+    state = adding_claude_code()
+    record = CheckoutRecord.staged(RECORD, state.checkout)
+    download = authorization_declarations(state.manifest, state.composed_lock())["claude-code-download"]
+    record.authorize(download, normalize_authorization_value(download, "true"))
+    state.checkout = record.export()
+
+    review = review_launch(state, RunFlags(), ask=None, announce=never_announced)
+
+    assert review.selected.lock["components"]["claude-code"]["version"]
+    assert review.accepted == []
+    assert review.state.home == {}

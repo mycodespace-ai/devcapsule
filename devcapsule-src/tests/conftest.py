@@ -154,9 +154,13 @@ def inherited_cache_home() -> Path:
     return Path(os.environ.get("XDG_CACHE_HOME") or Path(os.environ.get("HOME", "~")).expanduser() / ".cache")
 
 
+CAPSULE_PATHS = ("CONTEXT_PATH", "CHANNEL_PATH")
+"""The names in ``devcapsule.runtime_configuration`` of the fixed paths by which the product knows it is in a capsule."""
+
+
 @pytest.fixture(autouse=True)
 def private_user_directories(request: pytest.FixtureRequest, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Give non-Docker tests private user-directory paths under their tmp_path.
+    """Give non-Docker tests private user-directory paths under their tmp_path, on a machine that is no capsule.
 
     Override HOME and each XDG directory: changing HOME alone leaves exported
     XDG paths active. This keeps artifact retention and restoration, config,
@@ -165,6 +169,14 @@ def private_user_directories(request: pytest.FixtureRequest, tmp_path: Path, mon
     real artifact cache. A test or function-scoped fixture can set its own
     paths after this autouse fixture runs. Leave directory creation to the
     tested code so refusal tests can still assert that nothing was written.
+
+    The suite is often run inside a capsule. There the product finds the
+    launch's context and its configuration channel at two fixed paths, and a
+    home with no settings of its own then reads the launcher's settings,
+    mounted beside them: what the developer has accepted would answer the
+    consents a test expects to be pending. So both paths are moved to places
+    that do not exist, and the test runs as on a plain host. A test of the
+    capsule's side builds its own capsule by setting them after this fixture.
     """
 
     if any(request.node.get_closest_marker(marker) for marker in DOCKER_MARKERS):
@@ -188,6 +200,12 @@ def private_user_directories(request: pytest.FixtureRequest, tmp_path: Path, mon
         ("XDG_RUNTIME_DIR", "runtime"),
     ):
         monkeypatch.setenv(variable, str(tmp_path / "user" / leaf))
+    # The product reads these two as attributes of the module at each call, so setting them here reaches every
+    # reader. HOME_PATH stays: it is read only once CONTEXT_PATH is found, and it is also the place where the
+    # launcher mounts the settings in a capsule that it starts, which tests of the launcher expect unchanged.
+    from devcapsule import runtime_configuration
+    for name in CAPSULE_PATHS:
+        monkeypatch.setattr(runtime_configuration, name, tmp_path / "no-capsule" / name.lower())
 
 
 @pytest.fixture

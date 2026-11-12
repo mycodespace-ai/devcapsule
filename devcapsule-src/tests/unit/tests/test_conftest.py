@@ -330,3 +330,15 @@ def test_the_network_guard_in_force_is_not_replaced_by_a_later_one() -> None:
     another returns the one in force: an audit hook cannot be removed, so a process keeps its first."""
     in_force = install_network_guard(NetworkGuard())
     assert install_network_guard(NetworkGuard()) is in_force
+
+
+def test_a_test_runs_on_no_capsule_wherever_the_suite_runs(tmp_path: Path) -> None:
+    """Under the suite's fixture, each fixed path by which the product knows a capsule lies under the test's own
+    directory and does not exist. So the product finds no launcher's settings to read, in a capsule as on a
+    plain host."""
+    from devcapsule import runtime_configuration
+
+    for name in conftest.CAPSULE_PATHS:
+        path = getattr(runtime_configuration, name)
+        assert path.is_relative_to(tmp_path) and not path.exists(), name
+    assert runtime_configuration.mounted_settings_path() is None
