@@ -20,7 +20,9 @@ from devcapsule.commands._launch_review import RunFlags, review_launch, stage_tr
 from devcapsule.compat import DecisionPending
 from devcapsule.configuration.authorization import authorization_declarations, normalize_authorization_value
 from devcapsule.configuration.bindings import HostDirectory
-from devcapsule.configuration.capabilities import IDE_REQUIREMENT, CapabilityPolicy, LocalCapabilities, RequirementDeparture
+from devcapsule.configuration.capabilities import (
+    IDE_REQUIREMENT, CapabilityPolicy, LocalCapabilities, RequirementDeparture, resolution_recommendations,
+)
 from devcapsule.configuration.capability_selection import generate_lock
 from devcapsule.configuration.derivation import CheckoutState, Host, Selection
 from devcapsule.configuration.file_formats import ProjectConfigurationError, canonical_digest, render_checkout, render_toml
@@ -64,12 +66,15 @@ def a_host(*, variables: tuple[str, ...] = (), directories: tuple[str, ...] = ()
 
 
 def checkout_of(required: tuple[str, ...], *, ide: str = "python-ide", host: Host | None = None,
-                manifest_tables: dict[str, Any] | None = None, offered: tuple[str, ...] = ()) -> CheckoutState:
+                manifest_tables: dict[str, Any] | None = None, offered: tuple[str, ...] = (),
+                recommended: dict[str, str] | None = None) -> CheckoutState:
     """A registered checkout of a project that requires ``required``, in a home that has accepted nothing.
 
     Its host is ``a_host()`` unless ``host`` is given. ``manifest_tables`` are
     further tables of the manifest, ``environment`` for instance. ``offered``
-    are capabilities the project offers and does not require.
+    are capabilities the project offers and does not require. ``recommended``
+    are the components the project recommends, by capability, as ``config
+    recommend`` records them.
 
     It is what ``project init --require ... --ide IDE --authorize base-image
     default`` leaves, built with the operations that command uses and no file:
@@ -79,13 +84,15 @@ def checkout_of(required: tuple[str, ...], *, ide: str = "python-ide", host: Hos
     manifest: dict[str, Any] = {
         "devcapsule-schema-version": 2,
         "project": {"name": "order", "slug": "order", "creator": "mailto:owner@example.test", "mount": "/workspace/order"},
-        "capabilities": {"required": sorted(required), **({"optional": sorted(offered)} if offered else {})},
+        "capabilities": {"required": sorted(required), **({"optional": sorted(offered)} if offered else {}),
+                         **({"resolution": dict(recommended)} if recommended else {})},
         **(manifest_tables or {}),
     }
     state = CheckoutState(
         root=ROOT, manifest=manifest, platform=Platform.LINUX_AMD64,
         lock_path=ROOT / ".devcapsule" / "devcapsule.linux-amd64.lock",
-        shared_lock=generate_lock(CapabilityPolicy.read(manifest), MATRICES[Platform.LINUX_AMD64]),
+        shared_lock=generate_lock(CapabilityPolicy.read(manifest), MATRICES[Platform.LINUX_AMD64],
+                                  recommendations=resolution_recommendations(manifest)),
         home={}, home_path=HOME, input_path=RECORD, registered=True,
         host=host or a_host(),
         checkout=tomllib.loads(render_checkout(manifest, ROOT, {}, {})),
@@ -492,3 +499,47 @@ def test_choosing_an_agent_and_a_vendors_ide_accepts_neither_vendors_channel() -
     assert "trust claude-code: Trust Anthropic to supply Claude Code" in str(pending.value)
     assert "trust vscode: Trust Microsoft to supply Visual Studio Code" in str(pending.value)
 
+
+
+def recommended_by_the_project() -> tuple[CheckoutState, RunFlags]:
+    """The project recommends Visual Studio Code for ``frontend-ide``; the checkout selects that IDE and chooses nothing."""
+    return checkout_of(("python",), ide="frontend-ide", recommended={"frontend-ide": "vscode"}), RunFlags(memory="6g", save=True)
+
+
+def chosen_on_the_checkout() -> tuple[CheckoutState, RunFlags]:
+    """The checkout's record chooses Visual Studio Code for ``frontend-ide``, as ``config use`` leaves it."""
+    state = checkout_of(("python",), ide="frontend-ide")
+    selection = Selection(LocalCapabilities.read(state.checkout), state.surfaces)
+    selection.use(state.matrix, CapabilityPolicy.read(state.manifest), Recommendations.read(state.manifest), "frontend-ide", "vscode")
+    state.checkout = state.with_selection(selection)
+    return state, RunFlags(memory="6g", save=True)
+
+
+def named_for_this_run() -> tuple[CheckoutState, RunFlags]:
+    """Neither the project nor the checkout chooses; ``--provider frontend-ide=vscode`` does, on the command line."""
+    return checkout_of(("python",), ide="frontend-ide"), RunFlags(providers=(("frontend-ide", "vscode"),), memory="6g", save=True)
+
+
+@pytest.mark.parametrize("chosen", [recommended_by_the_project, chosen_on_the_checkout, named_for_this_run])
+def test_a_provider_choice_accepts_no_channel_and_a_pending_save_stages_nothing(chosen: Any) -> None:
+    """Visual Studio Code, whether the project recommends it, the checkout chose it or the command line names it,
+    leaves a launch with ``--memory 6g --save`` pending on Microsoft's channel: choosing a provider accepts
+    nothing. The state's record and home are as they were, the memory included, so there is no part of the save
+    to write."""
+    state, flags = chosen()
+    before = deepcopy((state.checkout, state.home))
+
+    with pytest.raises(DecisionPending, match="trust vscode: Trust Microsoft to supply Visual Studio Code"):
+        review_launch(state, flags, ask=None, announce=never_announced)
+
+    assert (state.checkout, state.home) == before
+
+
+def test_with_no_provider_chosen_the_same_saving_launch_is_planned_with_the_default_one() -> None:
+    """With no recommendation, choice or flag, ``frontend-ide`` is VSCodium, which waits for no channel: the
+    launch with ``--memory 6g --save`` is planned and the memory is staged on the record."""
+    review = review_launch(checkout_of(("python",), ide="frontend-ide"), RunFlags(memory="6g", save=True),
+                           ask=None, announce=never_announced)
+
+    assert review.selected.resolution["runtime"]["component"] == "codium"
+    assert memory_size_bytes(str(review.record.values["memory"])) == 6 * 1024 ** 3

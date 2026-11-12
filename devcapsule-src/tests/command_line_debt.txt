@@ -9,6 +9,5 @@
 tests/unit/devcapsule/commands/test_images.py
 tests/unit/devcapsule/configuration/test_owner_commands.py
 tests/unit/devcapsule/configuration/test_storage.py
-tests/unit/devcapsule/legacy_refactoring/test_capability_commands_v2.py
 tests/unit/devcapsule/legacy_refactoring/test_project_init.py
 tests/unit/devcapsule/legacy_refactoring/test_trust.py
