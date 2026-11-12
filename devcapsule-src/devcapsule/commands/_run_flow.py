@@ -24,85 +24,28 @@ for during an earlier run, kept until applied or discarded here.
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass, field
 import getpass
 from pathlib import Path
-import shlex
 import sys
-from typing import Any, Callable, Mapping, TextIO
+from typing import Any, Callable, TextIO
 
+from devcapsule.commands._launch_review import (
+    LaunchReview, Prepared, RunFlags, capability, channel_for, refuse_contradictory_flags, render_pending,
+    requested_ide, review_launch, stage_trust,
+)
 from devcapsule.compat import DecisionPending
 from devcapsule.configuration.authorization import HOME_CAPABILITY_DEFAULTS, authorization_declarations, normalize_authorization_value
-from devcapsule.configuration.capabilities import IDE_REQUIREMENT, CapabilityPolicy, LocalCapabilities, RequirementDeparture
-from devcapsule.configuration.derivation import CheckoutState, Selection, derive_plan, load_state, register_checkout
-from devcapsule.configuration.docker_arguments import arguments_path, read_environment, update_environment, validate_name, validate_value
-from devcapsule.configuration.file_formats import ProjectConfigurationError, render_toml
-from devcapsule.configuration.manifest_document import Recommendations
+from devcapsule.configuration.capabilities import LocalCapabilities
+from devcapsule.configuration.console_requests import deferred_rows
+from devcapsule.configuration.derivation import CheckoutState, Selection, load_state, register_checkout
+from devcapsule.configuration.docker_arguments import arguments_path, read_environment, update_environment, validate_value
+from devcapsule.configuration.file_formats import render_toml
 from devcapsule.configuration.listing import Decision
 from devcapsule.configuration.operations import CheckoutRecord, apply_configuration_answers, ProvidedAnswer
 from devcapsule.configuration.storage import ResolvedProject, atomic_write, checkout_name_for, manifest_for, write_settings
-from devcapsule.configuration.trust import Channel, HomeTrust, channels_for
-from devcapsule.configuration.values import legacy_memory_names, memory_size_bytes, normalize_launcher_value
+from devcapsule.configuration.trust import Channel, HomeTrust
 
 __all__ = ["Prepared", "RunFlags", "prepare_launch"]
-
-BLOCKING_KINDS = {"ide", "env", "renew", "trust", "consent", "value", "secret"}
-
-
-@dataclass(frozen=True)
-class RunFlags:
-    """Run-once choices unless ``save``; trust is saved after the complete review, even without ``save``."""
-
-    ide: str | None = None
-    capabilities: tuple[str, ...] = ()
-    providers: tuple[tuple[str, str], ...] = ()
-    memory: str | None = None
-    cpus: str | None = None
-    environment: tuple[str, ...] = ()  # NAME=VALUE saved for this run, or NAME taken from the host
-    authorize: tuple[tuple[str, str], ...] = ()  # (node, value)
-    trust: tuple[str, ...] = ()  # channel ids, recorded only after every blocking decision is settled
-    save: bool = False
-    allow_unverified: bool = False
-    # Launch with the IDE given by ``ide`` although the project requires
-    # another: one named departure from the project's contract, for this
-    # launch only, warned and recorded, never saved (work order of 2026-10-28).
-    force: bool = False
-
-
-@dataclass
-class Prepared:
-    """What the launch runs with: the derived plan and this run's overrides."""
-
-    selected: ResolvedProject
-    host_overrides: dict[str, Any] = field(default_factory=dict)
-    memory_override: int | None = None
-    cpus_override: int | None = None
-    environment_tokens: list[str] = field(default_factory=list)
-    notes: list[str] = field(default_factory=list)
-    home: dict[str, Any] = field(default_factory=dict)
-
-
-def load_launch_state(start: Path, flags: RunFlags) -> CheckoutState:
-    """Load the launch inputs and reject invalid IDE requests before any approval review.
-
-    Departures are applied in memory. The staged launch review still checks
-    consent, trust, dependencies and host access for the requested environment.
-    """
-    if flags.force and flags.ide is None:
-        raise ProjectConfigurationError(
-            "--force names no departure; give the IDE to run instead of the project's required one: --ide IDE --force."
-        )
-    if flags.force and flags.save:
-        # The owner requires a choice: save an allowed IDE or depart for one launch.
-        raise ProjectConfigurationError(
-            "--force applies to one launch and cannot be combined with --save. Launch without --save, "
-            "or save a choice the project allows without --force."
-        )
-    root, manifest = manifest_for(start)
-    state = load_state(root, manifest)
-    if flags.ide is not None:
-        _requested_ide(state, flags)
-    return state
 
 
 def prepare_launch(
@@ -115,189 +58,91 @@ def prepare_launch(
     print_only: bool = False,
     check_display: bool = True,
 ) -> Prepared:
-    """Review in memory, then save answers and the plan after every blocking decision.
+    """Prepare a launch in three phases: read, decide in memory, write.
 
     ``print_only`` never asks or writes. Without a terminal, an unanswered
     blocking decision raises :class:`DecisionPending` before any write.
     """
+    # A command line that contradicts itself is refused before anything is read.
+    refuse_contradictory_flags(flags)
+
+    # Phase 1, read: the project, the home and the checkout's record, and what the terminal is.
+    state = read_launch_state(start)
     interactive = sys.stdin.isatty() if interactive is None else interactive
-    output = output_stream if output_stream is not None else sys.stdout
-    state = load_launch_state(start, flags)
-    root, manifest = state.root, state.manifest
-    input_path = register_checkout(state, write=False)
-    record = CheckoutRecord.staged(input_path, state.checkout)
-    original = deepcopy(record.document)
-    from devcapsule.configuration.capabilities import capability_notes
-    notes: list[str] = list(capability_notes(manifest))
-    # Channels accepted for this home, by flag or at the terminal:
-    # staged on the state's home document, written with the record.
-    accepted: list[str] = []
-    host_overrides: dict[str, Any] = {}
-    environment: dict[str, str | None] = {}
-    environment_tokens: list[str] = []
-    memory_override = None if flags.memory is None else memory_size_bytes(str(normalize_launcher_value("memory", flags.memory)))
-    cpus_override = None if flags.cpus is None else int(normalize_launcher_value("cpus", flags.cpus))
-    for item in flags.environment:
-        name, separator, value = item.partition("=")
-        validate_name(name)
-        if separator:
-            validate_value(value)
-        state.saved_environment[name] = value if separator else None
-        environment_tokens.extend(["--env", item])
-        if flags.save:
-            environment[name] = value if separator else None
-    if flags.save:
-        record.document = _selected_checkout(state, record.export(), flags)
-        record = CheckoutRecord.staged(input_path, record.document)
-        _resource_answers(record, manifest, flags)
-    for node, value in flags.authorize:
-        declaration = authorization_declarations(manifest, state.composed_lock(record.document)).get(node)
-        if declaration is None or (declaration.required and not flags.save):
-            raise ProjectConfigurationError(f"Authorization {node!r} cannot be answered for one run; the host accesses can.")
-        normalized = normalize_authorization_value(declaration, value)
-        if flags.save:
-            record.authorize(declaration, normalized)
-        else:
-            host_overrides[node] = normalized
-            print(f"Run-once authorization: {node} = {value}", file=sys.stderr)
-
-    def launch_checkout() -> dict[str, Any]:
-        saved = record.export()
-        document = _selected_checkout(state, saved, flags) if not flags.save else saved
-        local = Selection(LocalCapabilities.read(document), state.surfaces)
-        recommended_ide = Recommendations.read(manifest).ide
-        # A lock that still pins an IDE (written when the project required
-        # one) stands for every checkout that chose none; the recommended IDE
-        # is the default only when the lock is project-only.
-        pinned_surface = state.composed_lock(document).get("components", {}).get("interactive-surface")
-        if (local.ide is None and recommended_ide is not None and pinned_surface is None
-                and not (set(CapabilityPolicy.read(manifest).required) & set(state.surfaces))):
-            local.ide = recommended_ide
-            document = state.with_selection(local, checkout=document, allow_unverified=flags.allow_unverified)
-        transient = CheckoutRecord.staged(input_path, document)
-        if not flags.save:
-            _resource_answers(transient, manifest, flags)
-        declarations = authorization_declarations(manifest, state.composed_lock(document))
-        for name, value in host_overrides.items():
-            transient.authorize(declarations[name], value)
-        return transient.export()
-
-    asked: set[tuple[str, str]] = set()
     reader = input_stream.readline if input_stream is not None else lambda: sys.stdin.readline()
-    while True:
-        checkout = launch_checkout()
-        for channel_id in flags.trust:
-            if channel_id not in accepted:
-                _stage_trust(state, checkout, channel_id, accepted)
-        decisions = list(state.listing(checkout, check_display=check_display).decisions)
-        blocking = [d for d in decisions if d.kind in BLOCKING_KINDS]
-        if blocking and (print_only or not interactive):
-            raise DecisionPending(_render_pending(blocking, root))
-        pending = [d for d in decisions if (d.kind, d.name) not in asked]
-        if not pending or print_only or not interactive:
-            if blocking:
-                raise DecisionPending(_render_pending(blocking, root))
-            for decision in decisions:
-                if decision.kind == "console":
-                    notes.append(
-                        f"The console's request {decision.name} of {decision.reason} awaits your confirmation: "
-                        f"{decision.description}. Apply or discard: {decision.command}"
-                    )
-                else:
-                    notes.append(
-                        f"The project asks for {decision.description} ({decision.reason}); not granted this run. "
-                        f"Allow or deny: {decision.command}"
-                    )
-            break
-        decision = pending[0]
-        asked.add((decision.kind, decision.name))
+    output = output_stream if output_stream is not None else sys.stdout
+
+    # Phase 2, decide: from the state and the flags alone. Nothing is written.
+    def ask_at_terminal(
+        state: CheckoutState, record: CheckoutRecord, checkout: dict[str, Any], decision: Decision,
+        host_overrides: dict[str, Any], environment: dict[str, str | None], accepted: list[str], flags: RunFlags,
+    ) -> None:
         _settle(state, record, checkout, decision, host_overrides, environment, accepted, flags, reader, output)
 
-    # Validation can still refuse (for example, an invalid binding). Derive
-    # first so neither --save nor a terminal answer escapes on that path.
-    selected = derive_plan(state, checkout, write=False)
-    for row in state.listing(checkout, check_display=check_display).rows:
-        if row.kind == "access" and "(kept;" in row.source:
-            notes.append(f"Host access {row.name}: {row.effective}; {row.source}.")
-    if not print_only:
-        if environment:
-            read_environment(arguments_path(input_path))  # Refuse ambiguous saved tokens before any write.
-        if not state.registered:
-            notes.append(f"Registered this checkout: {checkout_name_for(manifest, input_path)} ({root}).")
-        if not state.registered or record.document != original:
-            record.write()
-        for name, saved_value in environment.items():
-            update_environment(arguments_path(input_path), name, saved_value, from_host=saved_value is None)
-        atomic_write(selected.resolution_path, render_toml(selected.resolution))
-        if accepted:
-            write_settings({"trust": HomeTrust.read(state.home).document()})
-            notes.extend(f"Accepted the channel {channel_id} for this home." for channel_id in accepted)
-        if flags.save:
-            notes.insert(0, "Recorded the flags given for this checkout.")
-            environment_tokens = []
-            memory_override = cpus_override = None
-    return Prepared(selected, host_overrides, memory_override, cpus_override, environment_tokens, notes, state.home)
+    review = review_launch(state, flags, ask=ask_at_terminal if interactive else None,
+                           print_only=print_only, check_display=check_display)
+
+    # Phase 3, write: what the review staged.
+    return review.prepared() if print_only else save_launch(review)
 
 
-def _resource_answers(record: CheckoutRecord, manifest: Mapping[str, Any], flags: RunFlags) -> None:
-    for name, value in (("memory", flags.memory), ("cpus", flags.cpus)):
-        if value is not None:
-            record.set_value(name, normalize_launcher_value(name, value))
-            if name == "memory":
-                for alias in legacy_memory_names(manifest):
-                    record.values.pop(alias, None)
-                    record.omitted_values.discard(alias)
+def read_launch_state(start: Path) -> CheckoutState:
+    """Phase 1 of a launch's preparation: read the project at ``start``, the home and the checkout's record.
 
-
-def _selected_checkout(state: CheckoutState, document: dict[str, Any], flags: RunFlags) -> dict[str, Any]:
-    if flags.ide is None and not flags.capabilities and not flags.providers:
-        return document
-    selection = Selection(LocalCapabilities.read(document), state.surfaces)
-    if flags.ide is not None:
-        selection.ide = _requested_ide(state, flags)
-    for capability in flags.capabilities:
-        name = state.matrix.canonical_name(capability)
-        if state.matrix.is_ide(name):
-            raise ProjectConfigurationError(f"Choose an IDE with '--ide {name}'.")
-        selection.without = {item for item in selection.without if state.matrix.canonical_name(item) != name}
-        selection.extra.add(name)
-    for capability, component in flags.providers:
-        selection.use(state.matrix, CapabilityPolicy.read(state.manifest), Recommendations.read(state.manifest), capability, component)
-    return state.with_selection(selection, checkout=document, allow_unverified=flags.allow_unverified)
-
-
-def _requested_ide(state: CheckoutState, flags: RunFlags) -> str:
-    """The IDE capability ``--ide`` names, checked against the project's required IDE.
-
-    A component name (``codium``) or a capability name (``frontend-ide``)
-    selects the same surface. Another IDE than the project requires is
-    refused with the explicit override named; with ``--force`` it is one
-    named departure of this launch (:data:`IDE_REQUIREMENT`), and the plan
-    derives from the policy without that requirement. ``--force`` with
-    nothing to set aside is refused: it never selects a replacement itself.
+    A checkout that has no record yet is given the path its record will have,
+    which can mean looking for a free name among the project's checkouts.
+    Nothing is written.
     """
-    assert flags.ide is not None
-    requested = _capability(flags.ide, state.surfaces, "IDE")
-    required = state.required_ide()
-    conflicts = required is not None and state.matrix.canonical_name(required) != state.matrix.canonical_name(requested)
-    if conflicts:
-        assert required is not None
-        required_component = state.shared_lock.get("components", {}).get("interactive-surface") or state.surfaces[required]
-        if not flags.force:
-            override = shlex.join(["devcapsule", "project", "--path", str(state.root), "run", "--ide", flags.ide.strip(), "--force"])
-            raise ProjectConfigurationError(
-                f"The project requires {required} ({required_component}); {requested} ({state.surfaces[requested]}) is "
-                f"another IDE. To launch it once, setting the requirement aside for that launch only: {override}. "
-                "The project's requirement and this checkout's saved IDE stay as they are."
-            )
-        state.depart(RequirementDeparture(IDE_REQUIREMENT, required, requested))
-    elif flags.force:
-        raise ProjectConfigurationError(
-            f"--force has nothing to set aside: {requested} is the project's required IDE."
-            if required is not None else
-            f"--force has nothing to set aside: the project requires no IDE; '--ide {flags.ide.strip()}' alone launches {requested}."
-        )
-    return requested
+    root, manifest = manifest_for(start)
+    state = load_state(root, manifest)
+    register_checkout(state, write=False)
+    return state
+
+
+def save_launch(review: LaunchReview) -> Prepared:
+    """Phase 3 of a launch's preparation: write what the review staged, and say what was written.
+
+    The checkout's record, when new or changed; the variables saved with its
+    Docker arguments; the derived plan; the home's trust, when a channel was
+    accepted. With ``--save`` the flags are now the checkout's answers, so the
+    launch carries no run-once overrides of its own.
+    """
+    state, record, selected = review.state, review.record, review.selected
+    notes = list(review.notes)
+    environment_tokens, memory_override, cpus_override = review.environment_tokens, review.memory_override, review.cpus_override
+    if review.environment:
+        read_environment(arguments_path(record.input_path))  # Refuse ambiguous saved tokens before any write.
+    if not state.registered:
+        notes.append(f"Registered this checkout: {checkout_name_for(state.manifest, record.input_path)} ({state.root}).")
+    if not state.registered or record.document != review.original:
+        record.write()
+        state.registered = True
+    for name, saved_value in review.environment.items():
+        update_environment(arguments_path(record.input_path), name, saved_value, from_host=saved_value is None)
+    atomic_write(selected.resolution_path, render_toml(selected.resolution))
+    if review.accepted:
+        write_settings({"trust": HomeTrust.read(state.home).document()})
+        notes.extend(f"Accepted the channel {channel_id} for this home." for channel_id in review.accepted)
+    if review.saved:
+        notes.insert(0, "Recorded the flags given for this checkout.")
+        environment_tokens = []
+        memory_override = cpus_override = None
+    return Prepared(selected, review.host_overrides, memory_override, cpus_override, environment_tokens, notes, state.home)
+
+
+def load_launch_state(start: Path, flags: RunFlags) -> CheckoutState:
+    """Read the launch's inputs and refuse an invalid IDE request, before any approval is reviewed.
+
+    For the command that offers software approvals ahead of the launch: the
+    same refusals :func:`prepare_launch` gives first, given early. A departure
+    is noted on the returned state, in memory.
+    """
+    refuse_contradictory_flags(flags)
+    root, manifest = manifest_for(start)
+    state = load_state(root, manifest)
+    if flags.ide is not None:
+        requested_ide(state, flags)
+    return state
 
 
 def launch_listing_document(selected: ResolvedProject) -> dict[str, Any]:
@@ -327,17 +172,7 @@ def launch_listing_document(selected: ResolvedProject) -> dict[str, Any]:
 def project_channel(root: Path, manifest: dict[str, Any], channel_id: str) -> Channel:
     """The channel ``channel_id`` of this project's lock; refused with the project's channels when unknown."""
     state = load_state(root, manifest)
-    return _channel_for(state.composed_lock(), channel_id)
-
-
-def _channel_for(lock: Mapping[str, Any], channel_id: str) -> Channel:
-    channels = channels_for(lock)
-    channel = channels.get(channel_id)
-    if channel is None:
-        raise ProjectConfigurationError(
-            f"No channel {channel_id!r} on this project; its channels: " + (", ".join(sorted(channels)) or "none") + "."
-        )
-    return channel
+    return channel_for(state.composed_lock(), channel_id)
 
 
 def accept_channel(root: Path, manifest: dict[str, Any], channel_id: str) -> Path:
@@ -347,43 +182,18 @@ def accept_channel(root: Path, manifest: dict[str, Any], channel_id: str) -> Pat
     return write_settings({"trust": HomeTrust.read(load_trust()).with_channel(channel).document()})
 
 
-def _stage_trust(state: CheckoutState, checkout: Mapping[str, Any], channel_id: str, accepted: list[str]) -> None:
-    """Stage the acceptance of ``channel_id`` on the state's home document; written with the answers."""
-    channel = _channel_for(state.composed_lock(checkout), channel_id)
-    trust = HomeTrust.read(state.home).with_channel(channel)
-    state.home = {**state.home, "trust": trust.document()}
-    if channel_id not in accepted:
-        accepted.append(channel_id)
-
-
-def _capability(value: str, names: Mapping[str, str], kind: str) -> str:
-    candidate = value.strip()
-    by_component = {component: name for name, component in names.items()}
-    candidate = by_component.get(candidate, candidate)
-    if candidate not in names:
-        raise ProjectConfigurationError(f"Unknown {kind} {value!r}; choose one of {', '.join(sorted(names))}.")
-    return candidate
-
-
-def _render_pending(decisions: list[Decision], root: Path) -> str:
-    """The status-3 text: every answer is still staged, including trust."""
-    lines = ["the launch of this checkout needs answers:"]
-    for decision in decisions:
-        flag = {"ide": "--ide IDE", "env": f"--env {decision.name}=VALUE", "consent": f"--authorize {decision.name} {decision.value}" if decision.name == "host-x11" else "",
-                "access": f"--authorize {decision.name} {decision.value}", "renew": f"--authorize {decision.name} {decision.value}",
-                "trust": f"--trust {decision.name}", "value": "", "secret": "", "console": ""}[decision.kind]
-        lines.append(f"  {decision.kind} {decision.name}: {decision.description}" + (f"  ({decision.reason})" if decision.reason else ""))
-        lines.append("      " + (f"{flag}  |  " if flag else "") + decision.command)
-    lines.append("Nothing was written. Answer on the command line or in a terminal.")
-    return "\n".join(lines)
-
-
 def _settle(
     state: CheckoutState, record: CheckoutRecord, checkout: dict[str, Any], decision: Decision,
     host_overrides: dict[str, Any], environment: dict[str, str | None], accepted: list[str], flags: RunFlags,
     reader: Callable[[], str], output: TextIO,
 ) -> None:
-    """Stage one answer. Reassess before the next question; an IDE can add consents."""
+    """Put one decision to the developer at the terminal and stage the answer.
+
+    The review assesses again before the next question, since an IDE can add
+    consents. Everything is staged in memory, with one exception: applying or
+    discarding a console request runs that command now, which writes, and the
+    state is then brought up to date with what the command left.
+    """
     root, manifest = state.root, state.manifest
     if decision.kind == "ide":
         output.write("The project leaves the IDE to you. Choose one:\n")
@@ -391,7 +201,7 @@ def _settle(
             output.write(f"  {index}. {name:<13} {version}\n")
         choice = _ask(output, reader, f"IDE [1-{len(decision.choices)}]: ")
         names = [name for name, _ in decision.choices]
-        picked = names[int(choice) - 1] if choice.isdecimal() and 1 <= int(choice) <= len(names) else _capability(choice, state.surfaces, "IDE")
+        picked = names[int(choice) - 1] if choice.isdecimal() and 1 <= int(choice) <= len(names) else capability(choice, state.surfaces, "IDE")
         selection = Selection(LocalCapabilities.read(record.document), state.surfaces)
         selection.ide = picked
         selected = state.with_selection(selection, checkout=record.document, allow_unverified=flags.allow_unverified)
@@ -435,8 +245,11 @@ def _settle(
                 state.checkout = record.export()
                 state.home = changed(state.home, before.home, after.home)
                 state.saved_environment = {**after.saved_environment, **environment}
+                # The state is a snapshot; the command just changed what it was read from.
+                state.registered, state.deferred = after.registered, after.deferred
         elif answer in {"d", "discard"}:
             discard_deferred(record.input_path, decision.name)
+            state.deferred = tuple(deferred_rows(state.input_path, state.root))
             output.write("Discarded.\n")
         else:
             output.write(f"Kept. Apply or discard later: {decision.command}\n")
@@ -446,12 +259,12 @@ def _settle(
             output.write(f"  {decision.reason}\n")
         answer = _ask(output, reader, "Accept for this DevCapsule home? [y/N]: ").lower()
         if answer in {"y", "yes"}:
-            _stage_trust(state, checkout, decision.name, accepted)
+            stage_trust(state, checkout, decision.name, accepted)
             output.write(f"Accepted for this review. Trust will be saved when all required answers are complete. "
                          f"Withdraw: devcapsule home trust withdraw {decision.name}\n")
         else:
             output.write(f"Not accepted. Accept later: {decision.command}\n")
-            raise DecisionPending(_render_pending([decision], root))
+            raise DecisionPending(render_pending([decision], root))
     elif decision.kind in {"access", "renew", "consent"}:
         declaration = authorization_declarations(manifest, state.composed_lock(checkout))[decision.name]
         if decision.kind in {"access", "renew"}:
@@ -474,7 +287,7 @@ def _settle(
         elif decision.kind == "access":
             output.write(f"Not now; the secure default applies. Allow or deny later: {decision.command}\n")
         else:
-            raise DecisionPending(_render_pending([decision], root))
+            raise DecisionPending(render_pending([decision], root))
     elif decision.kind == "value":
         value = _ask(output, reader, f"{decision.name} ({decision.description}): ")
         apply_configuration_answers((ProvidedAnswer("set", decision.name, value),), manifest, state.composed_lock(checkout), record)
@@ -485,7 +298,7 @@ def _settle(
             apply_configuration_answers((ProvidedAnswer("bind", decision.name, f"host-environment:{decision.variable}"),),
                                         manifest, state.composed_lock(checkout), record)
         else:
-            raise DecisionPending(_render_pending([decision], root))
+            raise DecisionPending(render_pending([decision], root))
 
 
 def _ask(output: TextIO, reader: Callable[[], str], prompt: str) -> str:

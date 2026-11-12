@@ -14,11 +14,19 @@ yet, composes the checkout's selection (with a run-once IDE or agent laid
 over it when asked), derives and writes the resolution, and hands the
 launch a :class:`ResolvedProject`. Asking the developer is the command's
 job; the structured decisions come from the listing.
+
+Reading and deciding are apart here. :func:`load_state` reads: it is the only
+place that opens the project's lock, the home's settings and the checkout's
+record. :class:`CheckoutState` holds what was read and answers from it, in
+memory. A test of a decision builds a state from documents it writes as
+values and never calls :func:`load_state`.
 """
 
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import dataclass, field
+from functools import cached_property
 from pathlib import Path
 import tomllib
 import shlex
@@ -26,6 +34,7 @@ from typing import Any, Mapping
 
 from devcapsule.compat import DecisionPending
 from devcapsule.materialization import validate_base_image
+from devcapsule.platforms import Platform
 from devcapsule.project import sanitize_name
 from devcapsule.resolution_matrix import MATRICES, ResolutionMatrix, known_base_image
 
@@ -35,7 +44,7 @@ from .capability_commands import pin_selection, release_deselected
 from .capability_selection import compose_lock, effective_lock, local_pins, inspection_capabilities, inspection_providers, known_policy_names
 from .console_requests import deferred_rows
 from .file_formats import ProjectConfigurationError, canonical_digest, render_checkout, render_toml
-from .listing import Listing, assess_checkout
+from .listing import Listing, ListingRow, assess_checkout
 from .model import Configuration
 from .manifest_document import Recommendations
 from .trust import HomeTrust
@@ -102,44 +111,55 @@ class Selection:
             self.providers[name] = component
 
 
+@dataclass
 class CheckoutState:
-    """One checkout's documents as loaded for a launch, registered or not, writing nothing on load."""
+    """One checkout's documents and surroundings, in memory.
 
-    def __init__(self, root: Path, manifest: dict[str, Any]) -> None:
-        self.root = root
-        self.manifest = manifest
-        self.platform = project_platform(root)
-        self.matrix = MATRICES[self.platform]
-        self.surfaces = {name: self.matrix.resolve_provider(name) or name for name in self.matrix.ide_capabilities()}
-        self.lock_path, self.shared_lock = recommendation_lock_for(root, manifest)
-        self.home = load_settings()
-        # The named departures of this launch from the project's contract
-        # (``project run --ide IDE --force``). In memory only: the manifest,
-        # the lock and the record are never written with them.
-        self.departures: tuple[RequirementDeparture, ...] = ()
-        record = find_checkout_record(manifest, root)
-        self.input_path: Path | None = record
-        self.checkout: dict[str, Any] = load_checkout(record, manifest, root) if record is not None else tomllib.loads(
-            render_checkout(manifest, root, {}, {})
-        )
-        if record is None:
-            try:
-                self.input_path, _ = checkout_record_paths(manifest, root)
-            except ProjectConfigurationError:
-                self.input_path = None  # the default record belongs to another checkout of this project
-        self.saved_environment: dict[str, str | None] = {}
-        if record is not None:
-            read_arguments(arguments_path(record))  # Malformed storage is a refusal.
-            try:
-                self.saved_environment = read_environment(arguments_path(record))
-            except ProjectConfigurationError:
-                # Ambiguous Docker tokens remain literal passthrough. They
-                # cannot establish answers to declared environment inputs.
-                self.saved_environment = {}
+    Nothing here opens a file or reads the environment. :func:`load_state`
+    does that and builds a state; a test builds one from values. The review
+    of a launch changes the state as answers are staged: the home's trust,
+    the saved environment, the departures.
+    """
+
+    root: Path
+    """The project's directory."""
+    manifest: dict[str, Any]
+    platform: Platform
+    """The capsule platform this host runs the project as."""
+    lock_path: Path
+    shared_lock: dict[str, Any]
+    """The project's committed lock for ``platform``, as ``lock_path`` holds it."""
+    home: dict[str, Any]
+    """The home's settings document."""
+    home_path: Path
+    """The home's directory, which the listing names in what it tells the developer."""
+    input_path: Path | None
+    """The checkout's record: the one found, or the default one it would get.
+
+    None when the checkout has no record and the default one belongs to
+    another checkout of the project; :func:`register_checkout` then names one.
+    """
+    registered: bool
+    """Whether the record at ``input_path`` exists."""
+    checkout: dict[str, Any]
+    """The record's document; for an unregistered checkout, the empty record it would start with."""
+    saved_environment: dict[str, str | None] = field(default_factory=dict)
+    """The variables saved with the checkout's Docker arguments; None for one taken from the host."""
+    deferred: tuple[ListingRow, ...] = ()
+    """The console's requests that await the developer's confirmation, as listing rows."""
+    departures: tuple[RequirementDeparture, ...] = ()
+    """The named departures of this launch from the project's contract
+    (``project run --ide IDE --force``). In memory only: the manifest, the
+    lock and the record are never written with them."""
 
     @property
-    def registered(self) -> bool:
-        return self.input_path is not None and self.input_path.is_file()
+    def matrix(self) -> ResolutionMatrix:
+        return MATRICES[self.platform]
+
+    @cached_property
+    def surfaces(self) -> dict[str, str]:
+        """Each IDE capability of the platform with the component that provides it."""
+        return {name: self.matrix.resolve_provider(name) or name for name in self.matrix.ide_capabilities()}
 
     @property
     def policy(self) -> CapabilityPolicy:
@@ -178,14 +198,14 @@ class CheckoutState:
         providers = inspection_providers(self.manifest, lock, document)
         listing = assess_checkout(
             self.manifest, self.shared_lock, lock, document,
-            home_path=config_root(), home=self.home, saved_environment=self.saved_environment,
+            home_path=self.home_path, home=self.home, saved_environment=self.saved_environment,
             surfaces=self.surfaces, project=self.root, registered=self.registered,
             access_lock=access_lock, capability_versions=versions,
             capability_providers=providers,
             base_display=base.contract.display if check_display and base is not None else None,
             departures=self.departures,
         )
-        return Listing(listing.rows + tuple(deferred_rows(self.input_path, self.root)), listing.notes, listing.departures)
+        return Listing(listing.rows + self.deferred, listing.notes, listing.departures)
 
     def with_selection(self, selection: Selection, *, allow_unverified: bool = False,
                        checkout: Mapping[str, Any] | None = None) -> dict[str, Any]:
@@ -213,7 +233,41 @@ class CheckoutState:
 
 
 def load_state(root: Path, manifest: dict[str, Any]) -> CheckoutState:
-    return CheckoutState(root, manifest)
+    """Read one checkout's documents and surroundings into memory. Nothing is written.
+
+    This is the reading half of every command that works on a checkout: the
+    platform and its committed lock from the project, the settings from the
+    home, the checkout's record or the path it would get, the environment
+    saved with its Docker arguments, and the console's deferred requests.
+    """
+    platform = project_platform(root)
+    lock_path, shared_lock = recommendation_lock_for(root, manifest)
+    home = load_settings()
+    record = find_checkout_record(manifest, root)
+    input_path: Path | None = record
+    if record is not None:
+        checkout = load_checkout(record, manifest, root)
+    else:
+        checkout = tomllib.loads(render_checkout(manifest, root, {}, {}))
+        try:
+            input_path, _ = checkout_record_paths(manifest, root)
+        except ProjectConfigurationError:
+            input_path = None  # the default record belongs to another checkout of this project
+    saved_environment: dict[str, str | None] = {}
+    if record is not None:
+        read_arguments(arguments_path(record))  # Malformed storage is a refusal.
+        try:
+            saved_environment = read_environment(arguments_path(record))
+        except ProjectConfigurationError:
+            # Ambiguous Docker tokens remain literal passthrough. They
+            # cannot establish answers to declared environment inputs.
+            saved_environment = {}
+    return CheckoutState(
+        root=root, manifest=manifest, platform=platform, lock_path=lock_path, shared_lock=shared_lock,
+        home=home, home_path=config_root(), input_path=input_path, registered=record is not None,
+        checkout=checkout, saved_environment=saved_environment,
+        deferred=tuple(deferred_rows(input_path, root)),
+    )
 
 
 def register_checkout(state: CheckoutState, *, write: bool = True) -> Path:
@@ -222,6 +276,10 @@ def register_checkout(state: CheckoutState, *, write: bool = True) -> Path:
     Answer 14 of the work order: ``run`` registers a second checkout of the
     same project by itself, with a name derived from its path; each checkout
     keeps its own record and inherits nothing.
+
+    With ``write=False`` this only names the record on the state. Finding a
+    free name looks at the project's other records, so this belongs with the
+    reading, before any decision.
     """
     if state.registered:
         assert state.input_path is not None
@@ -238,6 +296,7 @@ def register_checkout(state: CheckoutState, *, write: bool = True) -> Path:
     assert state.input_path is not None
     if write:
         atomic_write(state.input_path, render_toml(state.checkout))
+        state.registered = True
     return state.input_path
 
 
