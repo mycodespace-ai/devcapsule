@@ -6,12 +6,10 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 
-from .contract import Identity, RuntimePlan
+from .contract import RuntimePlan
+from .identity import CapsuleUser
 
-__all__ = ["FilesystemPlan", "RUNTIME_ROOT", "plan_filesystem", "prepare_filesystem"]
-
-RUNTIME_ROOT = "/tmp"
-"""Where a session's ``XDG_RUNTIME_DIR`` is made: the image's temporary directory."""
+__all__ = ["FilesystemPlan", "create_directories", "plan_filesystem", "prepare_filesystem"]
 
 
 @dataclass(frozen=True)
@@ -29,14 +27,22 @@ def plan_filesystem(runtime: RuntimePlan) -> FilesystemPlan:
         "XDG_DATA_HOME": str(home / ".local" / "share"),
         "XDG_STATE_HOME": str(home / ".local" / "state"),
         "XDG_CACHE_HOME": str(home / ".cache"),
-        "XDG_RUNTIME_DIR": str(Path(RUNTIME_ROOT) / f"devcapsule-runtime-{runtime.identity.uid}"),
+        "XDG_RUNTIME_DIR": f"/tmp/devcapsule-runtime-{runtime.identity.uid}",
     }
     directories = (str(home), str(home / ".ssh"), str(home / "xtras" / "bin"),
                    *environment.values(), *slots)
     return FilesystemPlan(tuple(dict.fromkeys(directories)), environment)
 
 
-def prepare_filesystem(plan: FilesystemPlan, identity: Identity) -> None:
+def create_directories(plan: FilesystemPlan) -> tuple[Path, ...]:
+    """Create every directory of ``plan``; keep ``.ssh`` and the runtime directory private.
+
+    Returns the directories this call created, a parent before its child.
+    A directory that existed is not among them, so its owner stays as the
+    volume or the image set it.
+    """
+
+    created: list[Path] = []
     for directory in plan.directories:
         path = Path(directory)
         missing: list[Path] = []
@@ -45,8 +51,18 @@ def prepare_filesystem(plan: FilesystemPlan, identity: Identity) -> None:
             missing.append(cursor)
             cursor = cursor.parent
         path.mkdir(parents=True, exist_ok=True)
-        if os.geteuid() == 0:
-            for created in reversed(missing):
-                os.chown(created, identity.uid, identity.gid)
+        created.extend(reversed(missing))
     Path(plan.environment["XDG_RUNTIME_DIR"]).chmod(0o700)
     Path(plan.environment["HOME"], ".ssh").chmod(0o700)
+    return tuple(created)
+
+
+def prepare_filesystem(plan: FilesystemPlan, user: CapsuleUser) -> None:
+    """Create the session's directories and give the new ones to the capsule user.
+
+    Which owners change is :meth:`CapsuleUser.owner_changes`' decision; this
+    only performs it.
+    """
+
+    for path, uid, gid in user.owner_changes(create_directories(plan)):
+        os.chown(path, uid, gid)

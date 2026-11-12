@@ -24,12 +24,71 @@ from devcapsule.container_runtime.display import (
     x_socket_path,
 )
 from devcapsule.container_runtime.entrypoint import run
-
-from tests.test_runtime_entrypoint import SupervisorCapture, captured_supervisor, runtime_document
+from devcapsule.container_runtime.supervisor import SupervisedChild
 
 pytestmark = pytest.mark.legacy
 
-_ = captured_supervisor  # re-exported fixture
+
+# The three helpers below came with ``tests/test_runtime_entrypoint.py``, which
+# was refurbished into the mirror; this file is their last user.
+
+
+def runtime_document(tmp_path: Path) -> dict[str, object]:
+    return {
+        "version": 1,
+        "project_path": "/workspace/project",
+        "home": str(tmp_path / "home"),
+        "identity": {"uid": 1000, "gid": 1001, "user": "developer"},
+        "state_slots": [
+            {"name": "jetbrains/config", "path": str(tmp_path / "config")},
+            {"name": "jetbrains/system", "path": str(tmp_path / "system")},
+            {"name": "jetbrains/plugins", "path": str(tmp_path / "plugins")},
+            {"name": "jetbrains/log", "path": str(tmp_path / "log")},
+        ],
+        "component": {
+            "id": "jetbrains",
+            "adapter": "jetbrains",
+            "configuration": {
+                "installation_path": "/opt/jetbrains/pycharm",
+                "launcher": "bin/pycharm.sh",
+                "properties_path": str(tmp_path / "idea.properties"),
+                "properties_environment_variable": "PYCHARM_PROPERTIES",
+                "state_slot_mapping": {
+                    "config": "config",
+                    "system": "system",
+                    "plugins": "plugins",
+                    "log": "log",
+                },
+            },
+        },
+    }
+
+
+class SupervisorCapture:
+    """Stands in for the Supervisor to observe what the entrypoint declares."""
+
+    instances: list["SupervisorCapture"] = []
+
+    def __init__(
+        self, children: tuple[SupervisedChild, ...], *, log_owner: tuple[int, int] | None = None,
+        segment_bytes: int = 10 * 1024 * 1024, rotations: int = 4,
+    ) -> None:
+        self.children = children
+        self.log_owner = log_owner
+        self.segment_bytes = segment_bytes
+        self.rotations = rotations
+        SupervisorCapture.instances.append(self)
+
+    def run(self) -> int:
+        return 42
+
+
+@pytest.fixture()
+def captured_supervisor(monkeypatch: pytest.MonkeyPatch) -> type[SupervisorCapture]:
+    SupervisorCapture.instances = []
+    monkeypatch.setattr("devcapsule.container_runtime.entrypoint.Supervisor", SupervisorCapture)
+    monkeypatch.setattr("devcapsule.container_runtime.entrypoint.os.geteuid", lambda: 1000)
+    return SupervisorCapture
 
 
 def contained_document(tmp_path: Path, token: str = "a1b2c3") -> dict[str, object]:

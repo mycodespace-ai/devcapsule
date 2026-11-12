@@ -150,10 +150,6 @@ def private_user_directories(request: pytest.FixtureRequest, tmp_path: Path, mon
         return
     monkeypatch.delenv("DEVCAPSULE_CONFIG_HOME", raising=False)
     monkeypatch.delenv("DEVCAPSULE_DEV_WEBCONSOLE", raising=False)
-    monkeypatch.setattr(
-        "devcapsule.container_runtime.console.LAUNCHER_CONSOLE_SOURCE",
-        str(tmp_path / "user" / "absent-launcher-webconsole"),
-    )
     # The build tools' caches are content-addressed and shared by the
     # developer's own builds: pex's under PEX_ROOT, and the scie launcher's
     # unpacked Python under SCIE_BASE. Moving them under the scratch made every

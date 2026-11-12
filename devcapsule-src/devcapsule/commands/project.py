@@ -621,9 +621,16 @@ class CheckoutDecisionsCommand(Command):
 
     @classmethod
     def run(cls, arguments: argparse.Namespace, context: object | None) -> int:
-        from devcapsule.console_tools import run_console_decisions
+        from devcapsule.console_tools import DecisionTools
+        from devcapsule.container_runtime.console import ConsoleInstallation
+        from devcapsule.recursive_dogfood import CONTAINER_NAME_ENV, RUNTIME_PLAN_PATH
 
-        return run_console_decisions(arguments.arguments)
+        tools = DecisionTools(
+            in_capsule=bool(os.environ.get(CONTAINER_NAME_ENV)),
+            console=ConsoleInstallation.of_image(),
+            runtime_plan_path=RUNTIME_PLAN_PATH,
+        )
+        return tools.run(arguments.arguments)
 
 
 class CheckoutGroup(Group):

@@ -1,91 +1,80 @@
-"""Integration tests of ``devcapsule project checkout decisions`` against ``devcapsule_webconsole.decisions``."""
+"""Integration tests of ``devcapsule project checkout decisions``: the real command line, in a process whose environment the test builds.
+
+What the command does inside a capsule depends on two fixed paths of the
+image, the console interpreter and the runtime plan, which a test cannot
+build. ``tests/unit/devcapsule/test_console_tools.py`` covers those
+decisions from values, and ``tests/e2e/test_console_answers.py`` runs the
+command in a real capsule.
+"""
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
+import subprocess
 import sys
 
 import pytest
 
-from devcapsule import cli, recursive_dogfood
-from devcapsule.components.pycharm import runtime_template as pycharm_runtime_template
-from devcapsule.container_runtime import console
-from devcapsule.container_runtime.contract import ConsolePlan, Identity, RuntimePlan
-
 pytestmark = pytest.mark.integration
 
-CLI_PREFIX = ["project", "checkout", "decisions"]
+
+def checkout_decisions(
+    tmp_path: Path, *arguments: str, container_name: str | None,
+) -> subprocess.CompletedProcess[str]:
+    """Run ``devcapsule project checkout decisions`` in a new process.
+
+    The process gets a search path, a home and a DevCapsule configuration
+    home under ``tmp_path``, and ``DEVCAPSULE_CONTAINER_NAME`` only when
+    ``container_name`` is given; nothing of the caller's environment.
+    """
+    environment = {
+        "PATH": os.defpath,
+        "HOME": str(tmp_path / "home"),
+        "DEVCAPSULE_CONFIG_HOME": str(tmp_path / "config"),
+    }
+    if container_name is not None:
+        environment["DEVCAPSULE_CONTAINER_NAME"] = container_name
+    return subprocess.run(
+        [sys.executable, "-m", "devcapsule", "project", "checkout", "decisions", *arguments],
+        cwd=tmp_path, env=environment, capture_output=True, text=True, timeout=120, check=False,
+    )
 
 
-def runtime_plan_with_source(source: Path) -> RuntimePlan:
-    return RuntimePlan.for_component(
-        pycharm_runtime_template(),
-        project_path="/workspace/p",
-        home="/home/devcapsule",
-        identity=Identity(1000, 1000, "developer"),
-    ).with_console(ConsolePlan("0.0.0.0", 6081, "/run/devcapsule-console-token", source_path=str(source)))
-
-
-@pytest.mark.parametrize("inside", [False, True])
+@pytest.mark.parametrize("container_name", [None, "capsule-fixture"], ids=["on a host", "in a capsule"])
 @pytest.mark.parametrize("flag", ["-h", "--help"])
 def test_wrapper_help_succeeds_without_running_console_interpreter(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, inside: bool, flag: str,
+    tmp_path: Path, container_name: str | None, flag: str,
 ) -> None:
-    """``devcapsule project checkout decisions -h/--help`` prints wrapper help on a base that has no console interpreter."""
-    monkeypatch.setenv("DEVCAPSULE_CONTAINER_NAME", "capsule-fixture" if inside else "")
-    monkeypatch.setattr(console, "CONSOLE_PYTHON", str(tmp_path / "absent"))
-    monkeypatch.chdir(tmp_path)
+    """``project checkout decisions -h/--help`` prints the wrapper's help and exits 0, on a host and in a capsule alike."""
+    completed = checkout_decisions(tmp_path, flag, container_name=container_name)
 
-    assert cli.main([*CLI_PREFIX, flag]) == 0
-    output = capsys.readouterr()
-    assert "from-table, check or hand-off" in output.out
-    assert output.err == ""
+    assert completed.returncode == 0
+    assert "from-table, check or hand-off" in completed.stdout
+    assert completed.stderr == ""
 
 
-@pytest.mark.parametrize(
-    ("arguments", "status", "expected"),
-    [
-        ([], 2, "the following arguments are required: command"),
-        (["from-table", "--help"], 0, "--asked-by"),
-        (["check", "--help"], 0, "decision"),
-        (["hand-off", "--help"], 0, "--token-file"),
-    ],
-)
-def test_decisions_module_owns_empty_arguments_and_subcommand_help(
-    tmp_path: Path,
-    capfd: pytest.CaptureFixture[str],
-    monkeypatch: pytest.MonkeyPatch,
-    arguments: list[str],
-    status: int,
-    expected: str,
-) -> None:
-    """Inside a capsule, ``project checkout decisions`` leaves subcommand ``--help`` and empty-argument errors to ``devcapsule_webconsole.decisions``."""
-    source = Path(__file__).resolve().parents[3] / "devcapsule-webconsole"
-    plan = tmp_path / "plan.json"
-    plan.write_text(runtime_plan_with_source(source).to_json(), encoding="utf-8")
-    monkeypatch.setenv("DEVCAPSULE_CONTAINER_NAME", "capsule-fixture")
-    monkeypatch.setattr(console, "CONSOLE_PYTHON", sys.executable)
-    monkeypatch.setattr(recursive_dogfood, "RUNTIME_PLAN_PATH", plan)
-    monkeypatch.chdir(tmp_path)
-
-    result = cli.main([*CLI_PREFIX, *arguments])
-
-    assert result == status
-    output = capfd.readouterr()
-    assert "devcapsule-webconsole decisions" in output.out + output.err
-    assert expected in (output.err if status else output.out)
-    assert (output.out if status else output.err) == ""
-
-
-@pytest.mark.parametrize("arguments", [[], ["check", "x.json"]])
+@pytest.mark.parametrize("container_name", [None, ""], ids=["no variable", "empty variable"])
+@pytest.mark.parametrize("arguments", [(), ("check", "x.json")], ids=["no arguments", "check"])
 def test_cli_reports_outside_capsule_refusal_with_usage_exit_code(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, arguments: list[str],
+    tmp_path: Path, container_name: str | None, arguments: tuple[str, ...],
 ) -> None:
-    """Outside a capsule, ``cli.main`` prints the ``runs inside a capsule`` refusal on stderr and returns exit code 2."""
-    monkeypatch.setenv("DEVCAPSULE_CONTAINER_NAME", "")
-    monkeypatch.chdir(tmp_path)
+    """Without a container name in the environment, the command prints the ``runs inside a capsule`` refusal on stderr and exits 2."""
+    completed = checkout_decisions(tmp_path, *arguments, container_name=container_name)
 
-    assert cli.main([*CLI_PREFIX, *arguments]) == 2
-    output = capsys.readouterr()
-    assert output.out == ""
-    assert "runs inside a capsule" in output.err
+    assert completed.returncode == 2
+    assert completed.stdout == ""
+    assert "runs inside a capsule" in completed.stderr
+
+
+def test_cli_does_not_give_the_hosts_refusal_inside_a_capsule(tmp_path: Path) -> None:
+    """With a container name in the environment, the command gets past the refusal that belongs to a host.
+
+    What it does next depends on the image: without a console it names the
+    missing base, with one it runs the console's own ``check``. Either way
+    ``x.json`` is not checked, so it fails, and not with the host's words.
+    """
+    completed = checkout_decisions(tmp_path, "check", "x.json", container_name="capsule-fixture")
+
+    assert completed.returncode != 0
+    assert "runs inside a capsule" not in completed.stderr
