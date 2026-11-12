@@ -81,7 +81,7 @@ from devcapsule.configuration.nodes import (
     build_node_registry,
 )
 from devcapsule.environment_realization import realize_environment, required_local_image, omit_unavailable_optional
-from devcapsule.materialization import ArtifactUnavailable
+from devcapsule.materialization import ArtifactUnavailable, NotOnThisMachine
 from devcapsule.display_client import select_display_transport
 from devcapsule.images.contract import WebConsoleAvailability, web_console_availability
 from devcapsule.materialization import ImageDetails, validate_base_image
@@ -2180,7 +2180,9 @@ class ProjectRunCommand(Command):
         parser.add_argument("--no-update-check", action="store_true",
                             help="Skip the daily interactive distribution refresh; cached critical notices still allow a decision.")
         parser.add_argument("--print-command", action="store_true",
-                            help="Prepare and print the Docker command without launching; inline extra environment values are redacted and comments identify transient dependencies.")
+                            help="Print the launch's Docker command without launching. Nothing is pulled, downloaded, built or "
+                                 "saved: an environment that is not on this machine yet is named, not fetched. Inline extra "
+                                 "environment values are redacted and comments identify transient dependencies.")
         parser.add_argument("--force", action="store_true",
                             help="Launch with the IDE given by --ide although the project requires another IDE: this launch only, "
                                  "warned and recorded as a departure from the project's contract; the requirement and the saved IDE "
@@ -2302,13 +2304,23 @@ class ProjectRunCommand(Command):
         if isinstance(lock.get("base"), dict) and isinstance(lock.get("materialization"), dict):
             while True:
                 try:
-                    if command_report is not None and flags.trust:
+                    if command_report is not None:
+                        # Printing the command brings nothing to this machine: the environment is looked
+                        # for here, and what a launch would pull, download or build is named instead.
                         from devcapsule.configuration.trust import HomeTrust
+                        # A channel accepted with --trust for this printing is in the review's home, not on disk.
+                        staged_trust = HomeTrust.read(prepared.home) if flags.trust else None
                         realized = realize_environment(selected, report=print, prepare_base=prepare_display,
-                                                       trust=HomeTrust.read(prepared.home))
+                                                       trust=staged_trust, fetch=False)
                     else:
                         realized = realize_environment(selected, report=print, prepare_base=prepare_display)
                     break
+                except NotOnThisMachine as missing:
+                    launch = shlex.join(["devcapsule", "project", "--path", str(root), "run"])
+                    raise CliError(
+                        f"{missing} --print-command prints the command of an environment that is already here. "
+                        f"Launch once with {launch}, then print."
+                    ) from missing
                 except ArtifactUnavailable as exc:
                     smaller = omit_unavailable_optional(selected, exc.url)
                     if smaller is None:
