@@ -28,6 +28,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from functools import cached_property
+import os
 from pathlib import Path
 import tomllib
 import shlex
@@ -40,6 +41,7 @@ from devcapsule.project import sanitize_name
 from devcapsule.resolution_matrix import MATRICES, ResolutionMatrix, known_base_image
 
 from .authorization import authorized_base_selection
+from .bindings import DirectoryLookup, host_directory
 from .capabilities import CapabilityPolicy, LocalCapabilities, RequirementDeparture, resolution_recommendations
 from .capability_commands import pin_selection, release_deselected
 from .capability_selection import compose_lock, effective_lock, local_pins, inspection_capabilities, inspection_providers, known_policy_names
@@ -82,6 +84,10 @@ class Host:
     """The Docker daemon's details of the local image with this reference; it refuses when there is none."""
     now: Callable[[], datetime]
     """The current time, with its time zone."""
+    environment: Mapping[str, str]
+    """The environment of the developer's shell. A decision asks whether a variable is set, never for its value."""
+    directory: DirectoryLookup
+    """What the host says of a directory the developer named: its path and whether it exists."""
 
 
 class Selection:
@@ -222,6 +228,7 @@ class CheckoutState:
             capability_providers=providers,
             base_display=base.contract.display if check_display and base is not None else None,
             departures=self.departures,
+            host_environment=self.host.environment, directory=self.host.directory,
         )
         return Listing(listing.rows + self.deferred, listing.notes, listing.departures)
 
@@ -258,7 +265,8 @@ def _this_host() -> Host:
         from . import operations
         return operations.required_local_image(reference)
 
-    return Host(local_image=local_image, now=lambda: datetime.now(timezone.utc))
+    return Host(local_image=local_image, now=lambda: datetime.now(timezone.utc),
+                environment=dict(os.environ), directory=host_directory)
 
 
 def load_state(root: Path, manifest: dict[str, Any]) -> CheckoutState:
@@ -353,7 +361,8 @@ def derive_plan(state: CheckoutState, checkout: Mapping[str, Any] | None = None,
         ) from exc
     if not lock.get("components", {}).get("interactive-surface"):
         raise ProjectConfigurationError("Choose your IDE for this checkout: devcapsule project config ide IDE.")
-    configuration = Configuration(state.manifest, lock, document, state.home, departures=state.departures)
+    configuration = Configuration(state.manifest, lock, document, state.home, departures=state.departures,
+                                  directory=state.host.directory)
     configuration.review().require_ready(state.root)
     resolution = configuration.resolve()
     trust = HomeTrust.read(state.home)

@@ -19,6 +19,7 @@ import pytest
 from devcapsule.commands._launch_review import RunFlags, review_launch, stage_trust
 from devcapsule.compat import DecisionPending
 from devcapsule.configuration.authorization import authorization_declarations, normalize_authorization_value
+from devcapsule.configuration.bindings import HostDirectory
 from devcapsule.configuration.capabilities import IDE_REQUIREMENT, CapabilityPolicy, LocalCapabilities, RequirementDeparture
 from devcapsule.configuration.capability_selection import generate_lock
 from devcapsule.configuration.derivation import CheckoutState, Host, Selection
@@ -46,11 +47,26 @@ def no_local_image(reference: str) -> Any:
     pytest.fail(f"the review asked the Docker daemon for {reference}")
 
 
-def checkout_of(required: tuple[str, ...], *, ide: str = "python-ide", host: Host | None = None) -> CheckoutState:
+def a_host(*, variables: tuple[str, ...] = (), directories: tuple[str, ...] = (), local_image: Any = no_local_image) -> Host:
+    """A host whose shell sets ``variables``, on which ``directories`` exist, and whose clock shows ``ACCEPTED_AT``.
+
+    A directory resolves to its name under ``/resolved``, so that a test can
+    tell the resolved path from the name the developer gave. Asked for a local
+    image, the host fails the test unless ``local_image`` is given.
+    """
+    def directory(name: str) -> HostDirectory:
+        return HostDirectory(Path(name), Path("/resolved") / name.lstrip("~/"), name in directories)
+
+    return Host(local_image=local_image, now=lambda: ACCEPTED_AT,
+                environment={name: "a value no decision reads" for name in variables}, directory=directory)
+
+
+def checkout_of(required: tuple[str, ...], *, ide: str = "python-ide", host: Host | None = None,
+                manifest_tables: dict[str, Any] | None = None) -> CheckoutState:
     """A registered checkout of a project that requires ``required``, in a home that has accepted nothing.
 
-    Its host tells the time ``ACCEPTED_AT`` and fails the test when asked for
-    a local image, unless ``host`` is given.
+    Its host is ``a_host()`` unless ``host`` is given. ``manifest_tables`` are
+    further tables of the manifest, ``environment`` for instance.
 
     It is what ``project init --require ... --ide IDE --authorize base-image
     default`` leaves, built with the operations that command uses and no file:
@@ -61,13 +77,14 @@ def checkout_of(required: tuple[str, ...], *, ide: str = "python-ide", host: Hos
         "devcapsule-schema-version": 2,
         "project": {"name": "order", "slug": "order", "creator": "mailto:owner@example.test", "mount": "/workspace/order"},
         "capabilities": {"required": sorted(required)},
+        **(manifest_tables or {}),
     }
     state = CheckoutState(
         root=ROOT, manifest=manifest, platform=Platform.LINUX_AMD64,
         lock_path=ROOT / ".devcapsule" / "devcapsule.linux-amd64.lock",
         shared_lock=generate_lock(CapabilityPolicy.read(manifest), MATRICES[Platform.LINUX_AMD64]),
         home={}, home_path=HOME, input_path=RECORD, registered=True,
-        host=host or Host(local_image=no_local_image, now=lambda: ACCEPTED_AT),
+        host=host or a_host(),
         checkout=tomllib.loads(render_checkout(manifest, ROOT, {}, {})),
     )
     selection = Selection(LocalCapabilities.read(state.checkout), state.surfaces)
@@ -269,7 +286,7 @@ def test_a_local_base_image_is_looked_up_on_the_host_by_its_reference() -> None:
         asked.append(reference)
         raise ProjectConfigurationError(f"no local image {reference}")
 
-    state = checkout_of(REQUIRING_PYCHARM, host=Host(local_image=no_such_image, now=lambda: ACCEPTED_AT))
+    state = checkout_of(REQUIRING_PYCHARM, host=a_host(local_image=no_such_image))
     record = CheckoutRecord.staged(RECORD, state.checkout)
     base_image = authorization_declarations(state.manifest, state.composed_lock())["base-image"]
     record.authorize(base_image, "local/devcapsule-base:work", image_identity="sha256:" + "a" * 64)
@@ -279,3 +296,56 @@ def test_a_local_base_image_is_looked_up_on_the_host_by_its_reference() -> None:
         review_launch(state, RunFlags(), ask=None, announce=never_announced)
 
     assert asked == ["local/devcapsule-base:work"]
+
+
+NEEDING_A_TOKEN: dict[str, Any] = {"environment": {"required": {"SERVICE_TOKEN": {"reason": "the service's API"}}}}
+"""A manifest table that makes the project need the variable ``SERVICE_TOKEN``."""
+
+
+def test_a_variable_taken_from_the_host_must_be_set_in_the_developers_shell() -> None:
+    """A required variable that the checkout takes from the host, on a host whose shell does not set it, leaves
+    the review pending on that variable."""
+    state = checkout_of(REQUIRING_PYCHARM, host=a_host(variables=()), manifest_tables=NEEDING_A_TOKEN)
+    state.saved_environment = {"SERVICE_TOKEN": None}
+
+    with pytest.raises(DecisionPending, match="env SERVICE_TOKEN: The bound host variable is missing in this shell"):
+        review_launch(state, RunFlags(), ask=None, announce=never_announced)
+
+
+def test_a_variable_taken_from_the_host_is_settled_when_the_shell_sets_it() -> None:
+    """The same checkout on a host whose shell sets the variable is planned without a question."""
+    state = checkout_of(REQUIRING_PYCHARM, host=a_host(variables=("SERVICE_TOKEN",)), manifest_tables=NEEDING_A_TOKEN)
+    state.saved_environment = {"SERVICE_TOKEN": None}
+
+    review = review_launch(state, RunFlags(), ask=None, announce=never_announced)
+
+    assert review.selected.resolution["runtime"]["component"] == "pycharm"
+
+
+def bound_home(directory: str, host: Host) -> CheckoutState:
+    """The order's checkout with its ``home`` state bound to a directory of the host, as ``config bind`` records it."""
+    state = checkout_of(REQUIRING_PYCHARM, host=host)
+    record = CheckoutRecord.staged(RECORD, state.checkout)
+    record.directory_bindings["home"] = directory
+    state.checkout = record.export()
+    return state
+
+
+def test_a_bound_directory_the_host_does_not_have_refuses_the_plan() -> None:
+    """A checkout bound to a directory that does not exist on the host is refused, naming the path as the host
+    resolved it."""
+    state = bound_home("~/capsule-home", a_host(directories=()))
+
+    with pytest.raises(ProjectConfigurationError, match="binding 'home' is not an existing directory: /resolved/capsule-home"):
+        review_launch(state, RunFlags(), ask=None, announce=never_announced)
+
+
+def test_a_bound_directory_the_host_has_is_planned_by_its_resolved_path() -> None:
+    """A checkout bound to a directory that exists on the host is planned with the path as the host resolved it,
+    and the launch's checkout keeps the name the developer gave."""
+    state = bound_home("~/capsule-home", a_host(directories=("~/capsule-home",)))
+
+    review = review_launch(state, RunFlags(), ask=None, announce=never_announced)
+
+    assert review.selected.resolution["state"]["bindings"] == {"home": "/resolved/capsule-home"}
+    assert review.selected.checkout["configuration"]["bindings"]["host-directory"] == {"home": "~/capsule-home"}

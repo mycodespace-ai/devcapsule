@@ -15,20 +15,12 @@ A test of a decision builds a state from documents it writes as values, calls
 :func:`review_launch`, and reads the result. It needs no project directory and
 no home.
 
-What a decision needs of the machine reaches it as a value or as a function
-it is given: the state's :class:`~devcapsule.configuration.derivation.Host`
-looks up a local base image and tells the time, ``ask`` puts a decision to
-the developer, and ``announce`` shows a line at once.
-
-Two reads of the machine are still made below this phase, by code it calls:
-
-- the listing asks ``os.environ`` whether a host variable is set, and the
-  file system whether a bound directory exists;
-- the configuration review resolves a bound directory's path and asks the
-  file system whether it exists.
-
-Both are in functions that legacy tests call, ``assess_checkout`` and
-``Configuration``. They become values when those tests are retired.
+Nothing in this phase reads the machine it runs on. What a decision needs of
+it is a value or a function the phase is given: the state's
+:class:`~devcapsule.configuration.derivation.Host` carries the shell's
+environment, looks up a bound directory and a local base image, and tells
+the time; ``ask`` puts a decision to the developer; ``announce`` shows a
+line at once.
 """
 
 from __future__ import annotations

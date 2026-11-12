@@ -17,6 +17,7 @@ from typing import Any, Mapping
 
 from devcapsule.components.catalog import INTERACTIVE_SURFACES
 
+from .bindings import DirectoryLookup
 from .capabilities import RequirementDeparture
 from .authorization import locked_base_reference
 from .file_formats import ConfigurationFileKind, ProjectConfigurationError, canonical_digest, validate_file_format, table
@@ -36,7 +37,11 @@ class Configuration:
 
     def __init__(self, manifest: Mapping[str, Any], lock: Mapping[str, Any],
                  checkout: Mapping[str, Any], home: Mapping[str, Any] | None = None, *,
-                 departures: tuple[RequirementDeparture, ...] = ()) -> None:
+                 departures: tuple[RequirementDeparture, ...] = (),
+                 directory: DirectoryLookup | None = None) -> None:
+        # ``directory`` tells what the host says of a bound directory. Left out,
+        # the review asks this machine: owner ruling of 2026-11-12, until the
+        # legacy tests that construct a Configuration are retired.
         # The manifest as given is the file's own schema; a checkpoint from
         # before scoped digests recorded its whole digest, kept for freshness.
         self._manifest = current_manifest(manifest, Path("manifest")).document()
@@ -63,7 +68,7 @@ class Configuration:
         LocalCapabilities.read(self._checkout).validate(policy)
         if policy.minimums and table(self._checkout, "authorization", "base-image").get("image-id"):
             raise ProjectConfigurationError("A local base override cannot establish the project's minimum-version guarantee; select the pinned project base.")
-        self._review = review_configuration(self._manifest, self._lock, self._checkout, self._home)
+        self._review = review_configuration(self._manifest, self._lock, self._checkout, self._home, directory=directory)
 
     def review(self) -> ConfigurationReview:
         return deepcopy(self._review)
