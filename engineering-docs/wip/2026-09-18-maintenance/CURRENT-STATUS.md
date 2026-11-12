@@ -57,7 +57,7 @@ slice, on `ws-maintenance/launch-phases`, stacked on PR #26.
   `read_launch_state`, `review_launch`, `save_launch`. The terminal dialogue
   stays here and is passed to the review as `ask`.
 
-**The tests.** `tests/unit/devcapsule/commands/test_launch_review.py`, 18
+**The tests.** `tests/unit/devcapsule/commands/test_launch_review.py`, 20
 tests, none with a project directory, a home, `tmp_path` or a patch. Each
 builds its checkout in memory with the operations `project init` uses:
 `generate_lock` for the lock, `with_selection` and `authorize` for the
@@ -69,9 +69,8 @@ where their legacy forms are 2 of the 17.
 **Evidence.** The whole unit suite, 3008 tests before, passes as before
 with the 17 standing failures; with the fallback to the mounted settings
 switched off by a diagnostic plugin, it fails only the two tests of the
-fallback itself, before and after. 22 faults planted in the changed code: 3
-caught by the new tests, two of them after an assertion was added for each,
-14 by legacy tests, 5 by nothing:
+fallback itself, before and after. 27 faults planted in the changed code: 6
+caught by the new tests, 15 by legacy tests, 6 by nothing:
 
 - the refusal of contradictory flags before the reading, which the review
   repeats; only the order of two refusals could show it;
@@ -82,14 +81,33 @@ caught by the new tests, two of them after an assertion was added for each,
   the console's storage reads the home from the environment, so no test can
   reach them from values yet;
 - the saved environment not loaded: the reading is unchanged, and no unit
-  test covers it.
+  test covers it;
+- the clock that `load_state` binds, one line that names the real one.
 
-**What the decision phase still takes from the host**, named in the new
-module's docstring: the listing asks `os.environ` whether a host variable is
-set and the file system whether a bound directory exists; `derive_plan`
-asks the Docker daemon for a local base image; accepting a channel reads the
-clock; a run-once authorization is printed to standard error; the answer to
-a console request runs a command that writes.
+**What the decision phase asked of the host, and what it asks now.** The
+first commit of the slice left five. The owner asked why. Three had no
+caller among the legacy tests and are closed in the second commit: the state
+carries a `Host` of two functions, bound by `load_state`; `derive_plan` asks
+it for a local base image and `stage_trust` asks it for the time; a run-once
+authorization goes to a function the review is given, `announce`. A fourth,
+the dialogue with the developer, is `ask`, a function the review is given
+too. One is left, in two places below the review:
+
+- the listing asks `os.environ` whether a host variable is set, and the file
+  system whether a bound directory exists, in `assess_checkout`;
+- the configuration review resolves a bound directory's path and asks
+  whether it exists, in `Configuration`.
+
+Making these values means a new required argument on `assess_checkout` and
+on `Configuration`. Five legacy files call them: `tests/test_listing.py`
+three times, and `tests/configuration/test_adt.py`,
+`tests/test_ide_requirement_override.py`, `tests/test_capability_policy.py`
+and `tests/test_trust.py` sixteen times between them. Rule 5 of *Unit Tests*
+makes an edited call in a legacy test the retirement of its file, and rule 2
+of *Host Inputs* forbids the other way, an optional argument whose default
+reads the host. So this last read waits for one of three rulings: the five
+files are retired first; rule 5 lets a call site in a legacy test follow a
+signature; or the argument is optional until they are retired.
 
 **Differences in behaviour.** Two orders of refusal: a checkout that cannot
 be given a free record name is now refused before a wrong IDE is, and the
