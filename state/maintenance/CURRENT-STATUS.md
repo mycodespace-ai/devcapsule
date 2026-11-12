@@ -151,6 +151,30 @@ Of the 7 that remain, one calls `prepare_launch` and takes the same fix
 (`tests/test_trust.py`); five go through `cli.main` and one calls
 `write_settings`, which reads the mounted settings itself before it merges.
 
+**`tests/test_trust.py`: two of its three failures fixed in memory,
+2026-11-12.** One test calls `prepare_launch` and now passes `home={}`. The
+other tests the atomic write of the settings file and first accepts a
+channel through the file's helper `accept`; inside a capsule the launcher's
+mounted settings already hold that channel, so nothing was written and the
+test found no file. `accept_channel` now takes the home's settings as
+`home`, and `write_settings` takes the document it merges onto as
+`current`; the test passes `home={}` to the helper. Three new tests of
+`write_settings` in the storage mirror. Three planted faults: the mirror
+tests catch the writer ignoring `current`; the legacy test catches
+`accept_channel` ignoring `home`, inside a capsule only; nothing catches
+`accept_channel` not passing `current` on, because the file it then writes
+differs only in tables the test does not read. `accept_channel` has no
+caller in the product; it is the tests' helper.
+
+One finding for the owner in the product: `write_settings` reads the
+settings it merges onto, and inside a capsule with no settings file of its
+own that read is of the launcher's mounted settings. So the first write in
+a capsule copies the launcher's home into the capsule's own file, with the
+one table changed. Its docstring now says so.
+
+The standing failures are 5, in four files, and all five drive `cli.main`.
+No call in them can be handed a value.
+
 **`tests/test_ide_requirement_override.py`, ordered retired whole. It is not
 yet.** Of its 26 test functions, 12 now have a form that needs no file, no
 home and no patch: 10 in `test_launch_review.py`, 1 as three tests in the
