@@ -104,6 +104,28 @@ Left out, this process and this machine are asked, as before. The launch
 passes them from the `Host`. The rule's text is not amended; each default
 names the ruling in its docstring.
 
+**The owner's second ruling, 2026-11-12: option 2 as well.** Rule 5 of
+*Unit Tests* now lets a call in a legacy test gain or lose keyword
+arguments when the function's signature changes in the same pull request,
+and nothing else. The checker holds the form: it compares the two versions
+of the test as syntax and accepts a difference only in which keyword
+arguments calls in the body name; a change of layout alone is still
+refused. That the signature changed is the reviewer's to see. The optional
+arguments of option 3 stay, and rule 2 of *Host Inputs* names the two
+functions that keep them. No legacy call was changed under the allowance
+yet.
+
+**`tests/test_ide_requirement_override.py` passes in the capsule.** Its own
+`home` fixture now names the home, `DEVCAPSULE_CONFIG_HOME` under the
+test's directory. A named home is the product's own way to say that a home
+is the whole truth, so the fallback to the mounted settings does not apply.
+No test function changed and no product code. All 33 cases pass; the
+capsule's standing failures are 15. The earlier trial of the same variable
+in the suite's shared fixture broke 31 tests that assert the XDG layout;
+none of them is in this file. By that trial's log, the same line in the
+other five files would turn 14 of the 15 green; one test of
+`tests/test_run_flow.py` asserts the layout.
+
 **`tests/test_ide_requirement_override.py`, ordered retired whole. It is not
 yet.** Of its 26 test functions, 12 now have a form that needs no file, no
 home and no patch: 10 in `test_launch_review.py`, 1 as three tests in the
@@ -126,8 +148,7 @@ product, because each reaches something the code takes from a global:
 5. One tests `realize_environment`, whose mirror file has a legacy twin of 9
    tests; adding a test there retires that twin too.
 
-Until then rule 5 keeps the legacy file whole, the 12 tests stand twice, and
-2 of the capsule's 17 failures stay.
+Until then rule 5 keeps the legacy file whole and the 12 tests stand twice.
 
 **Differences in behaviour.** Two orders of refusal: a checkout that cannot
 be given a free record name is now refused before a wrong IDE is, and the
