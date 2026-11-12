@@ -205,6 +205,45 @@ capsule: 3095 passed, 9 expected to fail, 10 unexpectedly passed. The
 integration tests that need no Docker: 128 passed, 3 skipped, and the one
 standing failure.
 
+**The shared fixture fixed and the last two failing marked cases
+rewritten, 2026-11-12.** Owner direction: go at the first item of the
+debt list.
+
+- `private_user_directories` in `tests/conftest.py` now makes the test's
+  machine no capsule: it sets `CONTEXT_PATH` and `CHANNEL_PATH` of
+  `devcapsule.runtime_configuration` to places that do not exist. The
+  product reads both as attributes of the module at each call. `HOME_PATH`
+  is left: it is read only behind `CONTEXT_PATH`, and it is also where the
+  launcher mounts the settings in a capsule it starts, which a launcher
+  test expects unchanged; setting it failed that test. Naming the home in
+  the fixture instead breaks 31 tests that assert the layout.
+- The five per-file fixtures that named the home, added earlier the same
+  day, are removed: one mechanism. The ten `home={}` calls stay.
+- `test_realize_environment_requires_explicit_claude_download_authorization`
+  became four tests of `review_authorizations`, where the decision is
+  taken, in `tests/unit/devcapsule/configuration/test_authorization.py`:
+  unanswered, answered by the home's trust, denied by the checkout over
+  the home's trust, granted by the checkout alone. It could not go to the
+  mirror of `environment_realization.py`: the legacy twin stands, and
+  retiring it breaks `tests/test_trust.py`, one of whose tests imports a
+  helper from it. That `realize_environment` refuses before it obtains
+  anything is still held by the legacy test of the base authorization.
+- `test_a_selected_agent_brings_its_own_acquisition_gate` became two tests
+  of the launch review: an added agent waits for its vendor's channel and
+  the message names both ways to accept; the checkout's own authorization
+  of the download settles it without the home.
+- Both holding-pen files and their empty target modules are deleted; the
+  command-line debt list has 4 files.
+- Five planted faults are each caught. With the fixture's lines removed,
+  its own test and the seven command-line tests fail in the capsule.
+- `nox -s typecheck tests` in the capsule: 3112 passed, 1 expected to
+  fail, 10 unexpectedly passed, 146 seconds.
+
+The blocking bug stays `fixing`. What is left is six stale marks on nine
+passing cases in two holding-pen files, `test_trust.py` (five tests that
+drive the command line) and `test_home.py` (a walk of the repository for a
+retired word). The owner decides whether the second is worth keeping.
+
 **The two `test_repository_manifest_compatibility.py` files, replaced by
 one, 2026-11-12.** Owner direction: delete what tests nothing real,
 consolidate the rest in one properly written file.
