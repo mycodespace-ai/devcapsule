@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, no fix started; one major bug in fixing, the Python route and its guard, merged through #25 with the local gate's routing open; a follow-up to PR #18 on `ws-maintenance/host-inputs-at-source`, by Pair Review, for the owner's review; rewritten 2026-11-12 on the owner's direction so that host inputs are values and no touched test patches; the rule *Host Inputs* written into `WORKFLOW-LOCAL.md` on the owner's word and the rewrite reviewed by the partner through #28, merged at `83d238b8`; the owner's reading of #26 and rulings on the rule's open readings are next
+State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, no fix started; one major bug in fixing, the Python route and its guard, merged through #25 with the local gate's routing open; a follow-up to PR #18 on `ws-maintenance/host-inputs-at-source`, by Pair Review, for the owner's review; rewritten 2026-11-12 on the owner's direction so that host inputs are values and no touched test patches; the rule *Host Inputs* written into `WORKFLOW-LOCAL.md` on the owner's word and the rewrite reviewed by the partner through #28, merged at `83d238b8`; the owner's reading of #26 and rulings on the rule's open readings are next; *Unit Tests* rules 8 and 9 added on the owner's word and held by machine, the command line only in `test_cli.py` with eight files in a debt list, and no network in a unit test
 
 Definition read: WORKFLOW.md@e83f22a20701, WORKFLOW-LOCAL.md@d0a571433a6c
 
@@ -15,6 +15,85 @@ Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-on
 Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/host-inputs-at-source` from release-0.3.1 2f1109db, PR #26 open, the owner merges; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## Two rules held by machine: no network in a unit test, the command line only in `test_cli.py` — 2026-11-12
+
+The owner asked why the capsule's 17 unit tests fail and when that began,
+then ruled twice. This section records the answers and the two checks.
+
+**The 17, dated.** The cause is in the blocking bug record of 2026-11-10.
+The dates: the isolation fixture is from 2026-10-10 (`93c83d4b`), when
+settings lived under the XDG directories. On 2026-10-28, in the home slice
+of 0.3.0 (PR #299), `21472b9d` made the fixture delete
+`DEVCAPSULE_CONFIG_HOME` and `36bec846` added the fallback to the mounted
+settings; together they opened the hole, and 0.3.0 shipped with it. The
+owner accepted `claude-code` on 2026-11-01 and the first thirteen failures
+of this cause appeared on 2026-11-03; `1c00b940` of 2026-11-05 marked them
+expected to fail and left the fixture. The owner accepted `devcapsule-base`
+and `vscode` on 2026-11-08, which turned today's 17 red with no change to
+the code.
+
+**Measured.** With every connection and name lookup but loopback refused in
+the test process, the unit suite gave the same 17 failed and 2961 passed, in
+78 seconds where the ordinary run takes thirteen and a half minutes. One
+test in the whole suite tried to use the network:
+`test_offered_agent_still_needs_consent_and_can_be_omitted`, which calls
+`cli.main` four times and, its consent already given, downloads 1.5 GB.
+
+**The rulings.** A unit test opens nothing on the network. Unless a test is
+in `test_cli.py`, the mirror of `cli.py`, it has no business invoking the
+command line. They are rules 9 and 8 of *Unit Tests* in `WORKFLOW-LOCAL.md`,
+with the companion paragraph and the guide.
+
+**The checks.**
+
+- Rule 8, by reading imports, in
+  `scripts/validate_unittests_follow_conventions.py`, which already runs
+  before pytest in `nox -s tests`, `nox -s build` and the hosted workflow.
+  A file that is not legacy is refused when it imports `devcapsule.cli` or
+  `devcapsule.__main__`, directly or through a module under `tests`; a
+  `conftest.py` is refused too. It is not in the legacy
+  `tests/configuration/test_architecture.py`, because rule 5 and the gate
+  refuse a test added to a legacy file.
+- Eight mirror files breach rule 8 today: three ordinary ones and five under
+  `legacy_refactoring/`. They are listed in
+  `devcapsule-src/tests/command_line_debt.txt`. The check refuses a line
+  whose file no longer needs it, and a line the base's list does not have.
+  32 of the 102 legacy files reach the command line too; they meet the rule
+  when they are retired.
+- Rule 9, at run time, in `tests/conftest.py`: `NetworkGuard`, on the
+  interpreter's audit hook, beside the repository-input guard. While a unit
+  test runs, a connect or a send to another machine, or a lookup of anything
+  but this machine, fails the test before anything is sent, with an
+  exception that `except Exception` does not catch; the session then ends
+  with a failing status and a list of the attempts. Loopback stays open.
+  Tests of the heavier suites are not held to it.
+
+**Evidence.** 27 faults planted in the new code, one at a time, in a scratch
+copy: 23 caught by the unit tests of the checker and of the guard, 4 by the
+new integration file `tests/integration/test_network_guard.py`, none
+uncaught. The four are the wiring: the hook's installation, attending and
+leaving a test, and failing a session whose breach failed no test. The
+hosted pull-request gate does not run integration tests, so it does not
+catch a break in that wiring.
+
+**Validation, in the capsule.** `nox -s typecheck`: mypy over 342 files
+passes. `nox -s tests`: 17 failed, the standing ones by file and count, 3008
+passed, in 170 seconds with coverage; the guard names the one downloading
+test, which now ends at once as the expected failure it is marked to be.
+The convention check: 102 legacy files, 1350 legacy tests, 54 conforming
+files, 0 breaches, 8 files in command-line debt. Five integration files, 94
+tests, pass.
+
+**Limits.** The import check does not see a test that starts the program as
+a process; that is what an integration test does, and a unit test that did
+it would breach rule 2 unseen. The network guard does not see the network
+use of a program a test starts. `prepare_launch` reaches the same settings
+and the same download without the command line; no rule names it yet. The
+17 failures and their cause are untouched.
+
+**Next action.** The owner's: whether the eight files in debt are fixed
+before 0.3.1, and the fix of the blocking bug.
 
 ## The rule *Host Inputs*, and the partner's review of the rewrite — 2026-11-12
 
