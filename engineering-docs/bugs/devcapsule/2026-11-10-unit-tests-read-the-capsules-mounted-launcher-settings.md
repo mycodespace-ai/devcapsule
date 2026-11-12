@@ -219,18 +219,25 @@ What changed is that the tests which failed now say what their home is.
   the launch review in memory: a provider the project recommends, the
   checkout chose or the command line names accepts no channel, and a
   pending save stages nothing.
-- `nox -s tests` passes inside the owner's capsule: 3099 passed, 6 expected
-  to fail, 10 unexpectedly passed, in 173 seconds where it took 815.
+- The three marked tests of `test_repository_manifest_compatibility.py`
+  never failed for this cause. They read this repository's own
+  `.devcapsule` files and failed wherever a launcher had rewritten them,
+  in a capsule or not. They are deleted with their legacy file, on the
+  owner's word, and replaced by
+  `tests/unit/devcapsule/configuration/test_capability_commands.py`, which
+  reads frozen copies.
+- `nox -s tests` passes inside the owner's capsule: 3105 passed, 3 expected
+  to fail, 10 unexpectedly passed, in 170 seconds where it took 815.
 
 Against the close criteria: 1 holds for the owner's capsule as it is today.
-2 and 3 do not. Eleven marks remain, on 14 cases, in five files. Nine
+2 and 3 do not. Eight marks remain, on 11 cases, in four files. Nine
 cases pass now. Two still fail inside the capsule for this cause, behind
 their mark, because they take fixtures from legacy files that were not
 changed: one in `test_environment_realization.py`, one in
-`test_project_init.py`. Three fail for another cause, the repository's own
-manifest. They are in mirror files whose legacy twins stand, so the gate
-refuses a change to them until those twins are retired; it accepts the
-deletion of a whole holding-pen file whose tests are rewritten elsewhere. 4 does not hold:
+`test_project_init.py`. They are in mirror files whose legacy twins stand,
+so the gate refuses a change to them until those twins are retired; it
+accepts the deletion of a whole holding-pen file whose tests are rewritten
+elsewhere. 4 does not hold:
 `private_user_directories` is unchanged, and a test that uses neither a
 named home nor a handed-in one still reads the mount. The next channel the
 developer accepts can turn other tests red.

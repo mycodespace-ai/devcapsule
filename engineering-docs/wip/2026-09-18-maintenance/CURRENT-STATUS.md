@@ -205,6 +205,44 @@ capsule: 3095 passed, 9 expected to fail, 10 unexpectedly passed. The
 integration tests that need no Docker: 128 passed, 3 skipped, and the one
 standing failure.
 
+**The two `test_repository_manifest_compatibility.py` files, replaced by
+one, 2026-11-12.** Owner direction: delete what tests nothing real,
+consolidate the rest in one properly written file.
+
+The three marked tests did not fail because of the capsule. They read this
+repository's own `.devcapsule` files, and the owner's working tree holds the
+schema-2 files a 0.3 launcher wrote; each test ended in a `KeyError` of its
+own. The hosted run passed because the commit still holds the schema-1
+files. Of the four tests in the two files:
+
+- three compared the repository's manifest and lock with vocabulary copied
+  by hand from v0.2.15. That is the 2026-10-04 rule, one frozen release must
+  read every shared declaration, which the owner superseded on 2026-10-05
+  in *Keep The Development Checkout Launchable*. They tested no code.
+- one, `test_repository_lock_is_launchable_by_this_launcher`, had a real
+  claim, that the launch still reads a lock an earlier matrix wrote, on a
+  live input.
+
+Both files and the empty target module are deleted. The new
+`tests/unit/devcapsule/configuration/test_capability_commands.py` tests
+`check_documents`, the work of `project config check`, on frozen projects
+under `tests/resources/compat`: `v026.2`, `v0.2.11`, and
+`repository-2026-10-25`, a byte copy of this repository's manifest and lock
+as committed. Seven cases: the three captures pass with no warning and are
+left as given; a locked component this launcher does not know and nothing
+needs is passed over; an unknown needed capability, an unknown
+`runtime-effect` and a locked component without its version are each
+refused by name. `capability_commands.py` gained `__all__`, which *Unit
+Tests* rule 4 requires before a module is tested. Seven planted faults are
+each caught.
+
+`nox -s typecheck tests` in the capsule: 3105 passed, 3 expected to fail,
+10 unexpectedly passed. The holding pen has four files with 8 marks on 11
+cases: 9 pass, 2 fail for the mounted settings. The open record of
+2026-10-18 says what is still missing: captures written by 0.2.14, 0.2.15
+and 0.3.0. One observation there for the owner: the `v026-formation`
+capture does not pass the check.
+
 **The capability-commands holding-pen test, rewritten, 2026-11-12.** The
 one test of
 `tests/unit/devcapsule/legacy_refactoring/test_capability_commands_v2.py`
