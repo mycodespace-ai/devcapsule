@@ -233,7 +233,8 @@ and the network guard no longer fails the session. `nox -s tests` passes
 inside the owner's capsule for the first time since 2026-11-03: 3083 passed,
 10 expected to fail, 11 unexpectedly passed, 175 seconds. The blocking bug's
 record has a progress section and is `fixing`, not closed: the shared
-fixture is unchanged and 14 marks remain.
+fixture is unchanged and the expected-to-fail marks remain; the record
+counts them.
 
 **`tests/test_ide_requirement_override.py`, ordered retired whole. It is not
 yet.** Of its 26 test functions, 12 now have a form that needs no file, no

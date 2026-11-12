@@ -216,8 +216,10 @@ What changed is that the tests which failed now say what their home is.
   to fail, 10 unexpectedly passed, in 175 seconds where it took 815.
 
 Against the close criteria: 1 holds for the owner's capsule as it is today.
-2 and 3 do not. Thirteen marks of this cause remain; ten of their tests
-now pass. They are in mirror files whose legacy twins stand, so the gate
+2 and 3 do not. Thirteen marks remain, on 18 cases. Nine
+cases pass now. Six still fail inside the capsule for this cause, behind
+their mark, because they take fixtures from legacy files that were not
+changed; three fail for another cause, the repository's own manifest. They are in mirror files whose legacy twins stand, so the gate
 refuses a change to them until those twins are retired. 4 does not hold:
 `private_user_directories` is unchanged, and a test that uses neither a
 named home nor a handed-in one still reads the mount. The next channel the
