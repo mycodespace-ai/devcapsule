@@ -9,7 +9,6 @@ from typing import Callable
 
 import pytest
 
-from devcapsule.components.pycharm import runtime_template as pycharm_runtime_template
 from devcapsule.container_runtime.contract import (
     ComponentRuntimeTemplate,
     ConsolePlan,
@@ -56,13 +55,14 @@ def tool_template(*slots: dict[str, object]) -> dict[str, object]:
 
 def base_runtime_document(tmp_path: Path) -> dict[str, object]:
     """Construct a valid ``RuntimePlan`` mapping rooted under ``tmp_path``."""
-    plan = RuntimePlan.for_component(
-        pycharm_runtime_template(),
-        project_path="/workspace/project",
-        home=str(tmp_path / "home"),
-        identity=Identity(1000, 1000, "developer"),
-    )
-    return plan.to_mapping()
+    return {
+        "version": 1,
+        "project_path": "/workspace/project",
+        "home": str(tmp_path / "home"),
+        "identity": {"uid": 1000, "gid": 1000, "user": "developer"},
+        "component": {"id": "fixture", "adapter": "fixture", "configuration": {}},
+        "state_slots": [{"name": "fixture/config", "path": str(tmp_path / "config")}],
+    }
 
 
 def test_runtime_plan_round_trips_console_section_with_and_without_source_path(tmp_path: Path) -> None:
@@ -150,8 +150,9 @@ def test_runtime_plan_parses_a_versioned_document(tmp_path: Path) -> None:
 
     assert plan.identity == Identity(1000, 1000, "developer")
     assert plan.home == str(tmp_path / "home")
-    assert plan.component.adapter == "jetbrains"
-    assert plan.slots_by_name()["pycharm/config"] == "/ide-config"
+    assert plan.component.adapter == "fixture"
+    assert plan.state_slots[0].name == "fixture/config"
+    assert plan.state_slots[0].path == str(tmp_path / "config")
 
 
 def test_component_template_parses_its_persistence_declaration() -> None:

@@ -11,8 +11,11 @@ bridge); see ``display.py``. A headless job declares no display at all. When
 the plan carries a console section, the web console runs beside either; see
 ``console.py``.
 
-What a session needs and which children it runs is decided in ``session.py``,
-from values alone. This module reads the host and performs those decisions.
+``session.py`` plans the session from its inputs, with console discovery
+delegated to the installation. This module configures logs, prepares and owns
+directories, sets session variables, writes launch files, then sets launch
+variables. It prepares the display and sets its variables last. It assembles
+children, takes the selected profile lock, and runs the supervisor.
 """
 
 from __future__ import annotations
@@ -69,6 +72,7 @@ def run(plan: RuntimePlan, job: tuple[str, ...] | None = None) -> int:
     os.environ.update(session.environment(os.environ))
     for path, text in session.launch.files.items():
         Path(path).write_text(text, encoding="utf-8")
+    os.environ.update(session.launch.environment)
     display_children: tuple[SupervisedChild, ...] = ()
     if session.shows_contained_display:
         display = prepare_contained_display(

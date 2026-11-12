@@ -1,9 +1,9 @@
 """Integration tests of the runtime entrypoint: real sessions, in a process whose environment the test builds.
 
 ``run`` is the layer that reads the process and acts on the host. These
-tests start it as the program it is, with a plan whose every path lies under
-the test's directory and a stand-in program where the IDE or the job would
-be, and observe what that program was given and what the session left.
+tests start it with private home, slot, log and launch paths, and a stand-in
+IDE or job. The runtime directory remains the product's shared
+``/tmp/devcapsule-runtime-<uid>``. These tests never remove that directory.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import stat
+import signal
 import subprocess
 import sys
 from typing import Sequence
@@ -70,7 +71,7 @@ def write_plan(tmp_path: Path, logs: dict[str, object]) -> Path:
         "version": 1,
         "project_path": str(tmp_path / "project"),
         "home": str(tmp_path / "home"),
-        "identity": {"uid": os.getuid(), "gid": os.getgid(), "user": "developer"},
+        "identity": {"uid": os.geteuid(), "gid": os.getegid(), "user": "developer"},
         "state_slots": [{"name": f"jetbrains/{name}", "path": str(tmp_path / "slots" / name)} for name in SLOTS],
         "component": {
             "id": "jetbrains",
@@ -95,12 +96,14 @@ def run_entrypoint(tmp_path: Path, plan: Path, job: Sequence[str]) -> subprocess
     The process starts in ``tmp_path`` with a search path and one graphics
     setting, and nothing else of the caller's environment.
     """
-    if os.getuid() == 0:
+    if not hasattr(signal, "sigwaitinfo") or not hasattr(signal, "sigtimedwait"):
+        pytest.skip("the capsule supervisor requires POSIX sigwaitinfo and sigtimedwait")
+    if os.geteuid() == 0:
         pytest.skip("root starts each child through gosu, which a test host need not have")
     return subprocess.run(
         [sys.executable, "-m", "devcapsule.container_runtime.entrypoint", str(plan), *(("--", *job) if job else ())],
         cwd=tmp_path,
-        env={"PATH": os.defpath, "LIBGL_ALWAYS_SOFTWARE": "0"},
+        env={"PATH": os.defpath, "PYTHONDONTWRITEBYTECODE": "1", "LIBGL_ALWAYS_SOFTWARE": "0"},
         capture_output=True, text=True, timeout=120, check=False,
     )
 
@@ -138,7 +141,7 @@ def test_the_job_runs_in_the_project_with_the_sessions_environment(tmp_path: Pat
     """The job starts in the plan's project and finds the session's home, runtime directory and properties variable in its environment."""
     assert headless.directory == str(tmp_path / "project")
     assert headless.environment["HOME"] == str(tmp_path / "home")
-    assert headless.environment["XDG_RUNTIME_DIR"] == f"/tmp/devcapsule-runtime-{os.getuid()}"
+    assert headless.environment["XDG_RUNTIME_DIR"] == f"/tmp/devcapsule-runtime-{os.geteuid()}"
     assert headless.environment["PYCHARM_PROPERTIES"] == str(tmp_path / "idea.properties")
 
 
@@ -194,3 +197,79 @@ def test_an_interactive_jetbrains_session_takes_the_profile_lock(tmp_path: Path,
 def test_a_headless_session_takes_no_profile_lock(tmp_path: Path, headless: FinishedSession) -> None:
     """With a job in place of the IDE, the session leaves no lock file in the profile."""
     assert not (tmp_path / "slots" / "config" / ".devcapsule-session.lock").exists()
+
+
+@pytest.mark.parametrize("failure", ["properties-is-directory", "unknown-adapter"])
+def test_session_variables_precede_launch_failure_but_launch_variables_do_not(
+    tmp_path: Path, failure: str,
+) -> None:
+    """A failed launch leaves session variables set and preserves the previous properties variable, as in 0.3.0."""
+    plan = write_plan(tmp_path, {"directory": str(tmp_path / "logs")})
+    if failure == "properties-is-directory":
+        (tmp_path / "idea.properties").mkdir()
+    else:
+        document = json.loads(plan.read_text(encoding="utf-8"))
+        document["component"]["adapter"] = "unknown"
+        plan.write_text(json.dumps(document), encoding="utf-8")
+    program = """
+import json, os, sys
+from devcapsule.container_runtime.contract import RuntimePlan, RuntimePlanError
+from devcapsule.container_runtime.entrypoint import run
+try:
+    run(RuntimePlan.from_file(sys.argv[1]))
+except (OSError, RuntimePlanError):
+    print(json.dumps({key: os.environ.get(key) for key in
+                     ('HOME', 'NO_AT_BRIDGE', 'PYCHARM_PROPERTIES')}))
+else:
+    sys.exit('the launch unexpectedly succeeded')
+"""
+
+    completed = subprocess.run(
+        [sys.executable, "-c", program, str(plan)], cwd=tmp_path,
+        env={"PATH": os.defpath, "PYTHONDONTWRITEBYTECODE": "1", "HOME": "previous-home", "PYCHARM_PROPERTIES": "previous-properties"},
+        capture_output=True, text=True, timeout=120, check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(completed.stdout) == {
+        "HOME": str(tmp_path / "home"), "NO_AT_BRIDGE": "1", "PYCHARM_PROPERTIES": "previous-properties",
+    }
+
+
+def test_filesystem_applies_distinct_user_and_group_ids_to_new_directories(tmp_path: Path) -> None:
+    """The real chown gives new directories the requested uid and gid and leaves existing directory ownership intact."""
+    uid = os.geteuid()
+    groups = [gid for gid in os.getgroups() if gid != uid]
+    if uid == 0:
+        gid = 1
+    elif groups:
+        gid = groups[0]
+    else:
+        pytest.skip("distinct uid/gid ownership needs root or a supplementary group different from the uid")
+    existing = tmp_path.stat()
+    program = """
+import sys
+from pathlib import Path
+from devcapsule.container_runtime.contract import Identity
+from devcapsule.container_runtime.filesystem import FilesystemPlan, prepare_filesystem
+from devcapsule.container_runtime.identity import CapsuleUser
+root = Path(sys.argv[1])
+plan = FilesystemPlan(
+    (str(root), str(root / 'home' / '.ssh'), str(root / 'runtime')),
+    {'HOME': str(root / 'home'), 'XDG_RUNTIME_DIR': str(root / 'runtime')},
+)
+prepare_filesystem(plan, CapsuleUser(Identity(int(sys.argv[2]), int(sys.argv[3])), 0))
+"""
+
+    completed = subprocess.run(
+        [sys.executable, "-c", program, str(tmp_path), str(uid), str(gid)],
+        cwd=tmp_path, env={"PATH": os.defpath, "PYTHONDONTWRITEBYTECODE": "1"},
+        capture_output=True, text=True, timeout=120, check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    for path in (tmp_path / "home", tmp_path / "home" / ".ssh", tmp_path / "runtime"):
+        actual = path.stat()
+        assert (actual.st_uid, actual.st_gid) == (uid, gid)
+    after = tmp_path.stat()
+    assert (after.st_uid, after.st_gid) == (existing.st_uid, existing.st_gid)
