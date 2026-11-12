@@ -110,6 +110,10 @@ The unit phase stopped at
 [maintenance-owned mounted-settings bug](../../bugs/devcapsule/2026-11-10-unit-tests-read-the-capsules-mounted-launcher-settings.md).
 The full gate is not green; later build phases did not run. The log is local
 scratch at `.git/pm-resume-20261112-build.log`. No unrelated fix is made here.
+All 37 local links in this handoff resolve, the prior handoff is byte-identical
+to its preserved record, and whitespace checks pass. The final mailbox take
+found no waiting messages. Release the setup claim when this checkpoint is
+published; this checkout remains selected on project management.
 
 The owner's saved edits remain outside project-management commits:
 
@@ -120,6 +124,8 @@ The owner's saved edits remain outside project-management commits:
   `pm-switch-2026-11-12-preserve-website`, holds its tracked and untracked edits
   from branch `website-retro-blueprint-styling-and-dual-nav` at `5560f90e`.
   Its original parent gitlink was `91309a7a`.
+  The stash was consumed during concurrent website work; its original object
+  was stored again as the same named stash without changing the website files.
 - Local recovery metadata is `.git/pm-switch-2026-11-12.json`. Do not apply
   either stash to this workstream. The website returned to its styling branch
   with new edits during resumption; those concurrent edits remain untouched,
