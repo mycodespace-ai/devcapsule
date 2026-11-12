@@ -115,7 +115,7 @@ product, because each reaches something the code takes from a global:
    materialization replaced by patches on `commands.project`. The command's
    body, `ProjectCommand._run`, is some 300 lines that read files, settings
    and those two module names. It must take them as values first.
-2. Four more go through `cli.main` for a refusal and need no stand-in. They
+2. Three more go through `cli.main` for a refusal and need no stand-in. They
    become integration tests that start the program.
 3. Three read or write the launch's files: the listing of a departed launch,
    the plan file of the launch after it, and `config show`. The last one
