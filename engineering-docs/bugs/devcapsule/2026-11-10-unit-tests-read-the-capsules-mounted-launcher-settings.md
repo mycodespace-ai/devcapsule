@@ -1,5 +1,5 @@
 ---
-status: confirmed
+status: fixing
 severity: blocking
 target: 0.3.1
 owner: maintenance
@@ -188,6 +188,35 @@ Not in this record:
   `tests/conftest.py`, not in the 17 tests.
 - A guard worth adding: one test that builds a mounted settings file with an
   accepted channel and asserts that a default test home does not see it.
+
+## Progress, 2026-11-12
+
+On `ws-maintenance/launch-phases`, pull request #29, not merged. The cause
+stands: the shared fixture still gives a home that falls back to the mount.
+What changed is that the tests which failed now say what their home is.
+
+- The 17 failing tests pass inside the owner's capsule. Seven, which call
+  `prepare_launch` or the file's `accept` helper, hand in the home's
+  settings as a value, `home={}`. `load_state`, `prepare_launch`,
+  `accept_channel` and `write_settings` take that value; left out, they
+  read the home as before. Ten, which drive the command line, get a named
+  home from their own file's fixture, `DEVCAPSULE_CONFIG_HOME` under the
+  test's directory, in five legacy files.
+- The test that downloaded vendor artifacts uses a fixture of
+  `tests/test_capability_minimums.py`, which names its home too. It stops at
+  the consent it expects and opens no connection. The network guard of
+  `tests/conftest.py`, new in pull request #26, now fails any unit test that
+  tries.
+- `nox -s tests` passes inside the owner's capsule: 3083 passed, 10 expected
+  to fail, 11 unexpectedly passed, in 175 seconds where it took 815.
+
+Against the close criteria: 1 holds for the owner's capsule as it is today.
+2 and 3 do not. Fourteen marks of this cause remain; eleven of their tests
+now pass. They are in mirror files whose legacy twins stand, so the gate
+refuses a change to them until those twins are retired. 4 does not hold:
+`private_user_directories` is unchanged, and a test that uses neither a
+named home nor a handed-in one still reads the mount. The next channel the
+developer accepts can turn other tests red.
 
 ## Verification target and close criteria
 
