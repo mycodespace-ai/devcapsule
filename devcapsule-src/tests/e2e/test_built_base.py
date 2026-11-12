@@ -7,6 +7,8 @@ import subprocess
 
 import pytest
 
+pytestmark = pytest.mark.legacy
+
 
 @pytest.mark.e2e
 @pytest.mark.base_build_e2e

@@ -37,6 +37,8 @@ from devcapsule.recursive_host import (
 )
 from tests.e2e.test_recursive_local_clone import LocalCloneProtocol, OwnedWorkspace
 
+pytestmark = pytest.mark.legacy
+
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PLATFORM_LOCK = REPO_ROOT / ".devcapsule/devcapsule.linux-amd64.lock"

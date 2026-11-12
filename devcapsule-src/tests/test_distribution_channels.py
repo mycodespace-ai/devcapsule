@@ -15,6 +15,8 @@ from devcapsule.components.catalog import COMPONENTS
 from devcapsule.components.npm_channel import NpmChannel
 from devcapsule.materialization import ArtifactSpec, acquire_artifact
 
+pytestmark = pytest.mark.legacy
+
 
 @pytest.fixture
 def channel(monkeypatch):

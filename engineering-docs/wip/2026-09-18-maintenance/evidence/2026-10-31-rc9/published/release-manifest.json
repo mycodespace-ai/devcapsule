@@ -1,0 +1,38 @@
+{
+  "artifacts": {
+    "devcapsule.pex": "413b1d45bac9c39b6fa5fab68090e43550c9e255108de48b387c50a715c4fcf2"
+  },
+  "base-references": [
+    "docker.io/mycodespaceai/devcapsule-base@sha256:d7047ced8556cd35964fcc058a1101cf2b5b202f7a5daa2fdd434dcda5ed82c9"
+  ],
+  "frozen-inputs": {
+    "distributions": {
+      "annotated_types-0.7.0-py3-none-any.whl": "0266aff6ccf0882a4174e6e6a78b55166637f07d8f9cac1fb37e6a893d5bbc7a",
+      "pydantic-2.13.4-py3-none-any.whl": "25cebe815e819db0792fa7d04367035fcac696b03388e57c0a2a4c553f700429",
+      "pydantic_core-2.46.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": "a38810a1fc628ea053ad53c16ddaadbe6a87c15ddd66884428ed2d8652453462",
+      "python_on_whales-0.81.0-py3-none-any.whl": "599c82ffb08ca10c655ac95eb4369ded0c07ffb96a14293fa010b576c40d2b6c",
+      "typing_extensions-4.16.0-py3-none-any.whl": "9804846b9fd8a78a061cd71e718cb1bebeb66083ed04e6f44b8fa5d64fe6f569",
+      "typing_inspection-0.4.2-py3-none-any.whl": "99fc01324dbf9249637799994497d65831118f1ba48f220561939dafacf8a1bc"
+    },
+    "files": {
+      "dev-requirements.txt": "d4ca1922d75b6730117488500283078cc6dcc428201dad9cc666ce55c7905685",
+      "pyproject.toml": "2ecbecb9867d6c2fc1fe2db5ce543dbb013e73fa1370f308a45b70332342cf39",
+      "requirements.txt": "1863b864ffbb44010d53a159231c45ded63c675a156ad3908a56b0ced98c4c72",
+      "scripts/build-pex.sh": "b3db63185ec330a1515e8f16b1b2802a32f2dccbec5fc18e83062673e6c2d13f"
+    },
+    "python": {
+      "hash": "5acfa3e9ba26b51ae161c83aff278da915b590d22373a424b2ba55b8afe91fcc",
+      "name": "cpython-3.12.14+20260814-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+    }
+  },
+  "integration": {
+    "method": "mainline",
+    "unintegrated-commits": []
+  },
+  "prerelease": true,
+  "release-branch": "release-0.3.0",
+  "schema-version": 2,
+  "source-revision": "475427da033633ff5ee0e44e09face700630bf36",
+  "tag": "v0.3.0-rc9",
+  "version": "0.3.0rc9"
+}

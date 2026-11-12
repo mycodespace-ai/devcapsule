@@ -16,6 +16,8 @@ from devcapsule.configuration.manifest_schemas import ManifestV1, ManifestV2, Ne
 from devcapsule.configuration.storage import load_toml, manifest_for
 from tests.test_upgrade_recovery import checkout, invoke  # noqa: F401  (the released v0.2.11 fixture)
 
+pytestmark = pytest.mark.legacy
+
 PROJECT = {"name": "Sample", "slug": "sample", "creator": "mailto:owner@example.test", "mount": "/workspace/sample"}
 
 

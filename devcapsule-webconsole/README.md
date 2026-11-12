@@ -11,10 +11,16 @@ imports none of the runtime's internals. Its API is the runtime CLI's
 ## Boundaries
 
 - Every request carries the run token or is refused. The token arrives once
-  in the URL the launcher prints, and the console answers with a cookie so
-  the pages' links and requests carry it from then on.
+  in the URL the launcher prints, and the console answers with a port-scoped
+  cookie (`devcapsule-console-token-<port>`, or `devcapsule-console-token`
+  when the origin carries no explicit port) so the pages' links and requests
+  carry it from then on without colliding across concurrent capsules on
+  `127.0.0.1`.
 - File reads resolve inside the project mount only. A path that escapes
   it, by `..`, by an absolute path or by a symbolic link, is refused.
+  Directory listings use the same confinement and descriptor walk, list every
+  entry including dotfiles and `.git` without hiding anything, and inspect
+  entries without following symbolic links.
 - The console writes only into the capsule's state: the answer to a
   decision page, one file in the capsule's decisions directory (see
   [DECISIONS.md](DECISIONS.md)); a notification marked read or
@@ -32,9 +38,11 @@ imports none of the runtime's internals. Its API is the runtime CLI's
   both vendored under `devcapsule_webconsole/static/vendor/` with their
   provenance in `VENDORED.md`; no build step, no Node in the capsule. Raw
   HTML in a record is not rendered. Raw files carry a sandbox policy and
-  `nosniff`; an opened SVG cannot use the console origin. DOT output is an
-  image, so its links are inactive. Record headings have fragment targets;
-  relative URL paths are decoded before resolution inside the project.
+  `nosniff`; an opened SVG cannot use the console origin. The raw route streams
+  from the confined descriptor, honours single byte-range requests for seeking,
+  and adds an attachment disposition only when `download=1` is requested. DOT
+  output is an image, so its links are inactive. Record headings have fragment
+  targets; relative URL paths are decoded before resolution inside the project.
 
 ## Running it on a host
 
@@ -57,4 +65,11 @@ package's type check and tests in their own environment, built from
 
 `requirements.txt` and `requirements-dev.txt` are hash-pinned with
 `pip-compile --generate-hashes` from the `.in` files beside them; the base
-image recipe installs the runtime set from them.
+image recipe installs the runtime dependency set from them under
+`/opt/devcapsule-webconsole/venv`. `devcapsule-src/scripts/build-pex.sh`
+embeds `devcapsule_webconsole` inside `devcapsule.pex`, and environment
+materialization installs that package read-only at `/opt/devcapsule/webconsole`
+so CLI and console releases travel together (`D-0017`). Unbuilt source launches
+mount the checkout's `devcapsule-webconsole/` automatically; set
+`DEVCAPSULE_DEV_WEBCONSOLE=1` on the host to mount checkout edits when
+launching with a built `devcapsule` binary.

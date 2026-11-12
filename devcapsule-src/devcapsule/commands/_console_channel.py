@@ -52,6 +52,9 @@ SWEEP_INTERVAL_SECONDS = 1.0
 
 
 def _config_command(root: Path, arguments: Sequence[str]) -> list[str]:
+    if tuple(arguments[:2]) in (("trust", "accept"), ("trust", "withdraw")):
+        confirmation = ["--yes"] if arguments[1] == "accept" else []
+        return [sys.executable, "-m", "devcapsule", "home", *arguments, *confirmation]
     return [sys.executable, "-m", "devcapsule", "project", "--path", str(root), "config", *arguments]
 
 
@@ -60,7 +63,7 @@ def run_config(root: Path, arguments: Sequence[str], *, host_confirmed: bool = F
     # The child needs the host record locations, not credentials, Python
     # injection settings, or the launcher's controlling terminal.
     environment = {key: value for key, value in os.environ.items()
-                   if key in {"HOME", "PATH", "LANG", "TMPDIR", "XDG_CONFIG_HOME", "XDG_DATA_HOME",
+                   if key in {"HOME", "PATH", "LANG", "TMPDIR", "DEVCAPSULE_CONFIG_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME",
                               "XDG_STATE_HOME", "XDG_CACHE_HOME", "XDG_RUNTIME_DIR"} or key.startswith("LC_")}
     if host_confirmed:
         # The human's explicit host command keeps their Docker context and

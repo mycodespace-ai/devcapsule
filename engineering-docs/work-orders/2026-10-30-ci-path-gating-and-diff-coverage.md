@@ -2,7 +2,10 @@
 
 Origin: product-owner draft composed outside the capsule, reviewed against
 the repository on 2026-10-30; owner decisions 1B and 2B the same day.
-Status: assigned; implementation and acceptance remain outstanding.
+Status: implemented and Pair Reviewed in PR #312/#314; local and hosted
+acceptance passed; merged into release-0.3.0 through #312. Required-check
+configuration and propagation to main remain open.
+Evidence: [maintenance acceptance record](../wip/2026-09-18-maintenance/evidence/2026-10-30-ci-gating/acceptance.md).
 Coordination owner: `project-management`. Implementation owner: `maintenance`.
 Target: **0.3.0**. This is repository engineering work, not an adopter feature.
 No new workstream is opened and no 0.4.0 product commitment is made.

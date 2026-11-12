@@ -19,6 +19,8 @@ import pytest
 
 from devcapsule import logs
 
+pytestmark = pytest.mark.legacy
+
 
 @pytest.fixture(autouse=True)
 def clean_logging() -> Iterator[None]:

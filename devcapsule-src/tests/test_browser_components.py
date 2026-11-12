@@ -16,6 +16,8 @@ from devcapsule.materialization import parse_locked_environment, _ancillary_cont
 from devcapsule.platforms import Platform
 from devcapsule.resolution_matrix import MATRICES
 
+pytestmark = pytest.mark.legacy
+
 
 def test_intellij_selects_its_own_surface_and_browser() -> None:
     lock = tomllib.loads(MATRICES[Platform.LINUX_AMD64].resolve(["java-ide", "java", "browser-automation"]).render_lock())

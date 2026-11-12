@@ -21,6 +21,8 @@ from devcapsule.notifications import (
     store_in_environment,
 )
 
+pytestmark = pytest.mark.legacy
+
 DOCUMENT = {
     "format": 1, "id": "20261009t120000-abc123", "kind": "gate", "title": "Gate failed on main",
     "summary": "Two unit cases; see the **log**.", "link": "/records/engineering-docs/README.md",

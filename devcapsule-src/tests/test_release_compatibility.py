@@ -20,6 +20,9 @@ from devcapsule import cli
 from devcapsule.configuration.file_formats import (
     canonical_digest,
 )
+import pytest
+
+pytestmark = pytest.mark.legacy
 
 
 FIXTURES = Path(__file__).parent / "resources" / "compat"

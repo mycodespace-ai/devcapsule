@@ -1,0 +1,1 @@
+devcapsule: The project requires python-ide (pycharm); frontend-ide (codium) is another IDE. To launch it once, setting the requirement aside for that launch only: devcapsule project --path /home/devcapsule/.local/share/devcapsule/e2e-workspaces/e2e-ide-required-7fa4db67 run --ide codium --force. The project's requirement and this checkout's saved IDE stay as they are.

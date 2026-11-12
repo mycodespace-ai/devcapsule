@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import socket
+import sys
 
 import pytest
 
@@ -21,6 +22,8 @@ from devcapsule.recursive_orchestrator import (
     RecursiveE2EError,
     prepare_recursive_e2e_dry_run,
 )
+
+pytestmark = pytest.mark.legacy
 
 
 @dataclass
@@ -150,6 +153,7 @@ def test_normal_project_launch_derives_only_a_downgradable_readiness_marker(
     assert unauthorized == {RECURSIVE_E2E_ENABLED_ENV: "0"}
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="the recursive dogfood flow is Linux-only")
 def test_public_dry_run_is_unique_redacted_and_cleans_owned_staging(
     recursive_fixture: RecursiveFixture,
 ) -> None:
@@ -178,6 +182,7 @@ def test_public_dry_run_is_unique_redacted_and_cleans_owned_staging(
     assert not (workspace / second.run_id).exists()
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="the recursive dogfood flow is Linux-only")
 def test_public_dry_run_cleans_after_preparation_failure(
     recursive_fixture: RecursiveFixture,
 ) -> None:
@@ -201,6 +206,7 @@ def test_public_dry_run_cleans_after_preparation_failure(
     assert not run_root.exists()
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="the recursive dogfood flow is Linux-only")
 def test_keep_on_failure_preserves_only_the_owned_run(
     recursive_fixture: RecursiveFixture,
 ) -> None:
@@ -226,6 +232,7 @@ def test_keep_on_failure_preserves_only_the_owned_run(
     assert run_root.is_dir()
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="the recursive dogfood flow is Linux-only")
 def test_contained_display_dry_run_forwards_no_host_x11(
     recursive_fixture: RecursiveFixture, tmp_path: Path
 ) -> None:

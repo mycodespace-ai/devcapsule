@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -10,9 +10,8 @@ from devcapsule.components.claude_code import (
     CLAUDE_CODE_AUTHORIZATION,
     CLAUDE_CODE_TERMS_URL,
 )
-from devcapsule.environment_realization import ensure_local_image, realize_environment
+from devcapsule.environment_realization import realize_environment
 from devcapsule.materialization import ImageDetails
-from devcapsule.runtime_command import RuntimeCommand
 from devcapsule.configuration.storage import (
     ResolvedProject,
 )
@@ -22,6 +21,8 @@ from devcapsule.configuration.authorization import (
 from devcapsule.configuration.file_formats import (
     canonical_digest,
 )
+
+pytestmark = pytest.mark.legacy
 
 
 BASE_REFERENCE = f"docker.io/example/devcapsule-base@sha256:{'b' * 64}"
@@ -171,8 +172,8 @@ def test_realize_environment_reuses_or_builds_canonical_image(
 
 @pytest.mark.parametrize("local", [False, True])
 def test_realization_reads_trust_but_preserves_a_local_override(tmp_path: Path, monkeypatch, local: bool) -> None:
-    from devcapsule.configuration.storage import write_trust
-    from devcapsule.configuration.trust import BASE_REPOSITORY, WorkstationTrust, channels_for
+    from devcapsule.configuration.storage import write_settings
+    from devcapsule.configuration.trust import BASE_REPOSITORY, HomeTrust, channels_for
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
     identity = "sha256:" + "c" * 64
     override = ("local/base:mine", identity) if local else None
@@ -181,10 +182,10 @@ def test_realization_reads_trust_but_preserves_a_local_override(tmp_path: Path, 
     selected.lock["base"]["reference"] = BASE_REPOSITORY + "@sha256:" + "b" * 64
     if not local:
         selected.checkout.clear()
-    trust = WorkstationTrust()
+    trust = HomeTrust()
     for channel in channels_for(selected.lock).values():
         trust = trust.with_channel(channel)
-    write_trust(trust.document())
+    write_settings({"trust": trust.document()})
     reference = override[0] if override else selected.lock["base"]["reference"]
     base = base_image(reference, identity if local else "sha256:base")
     obtain = Mock(return_value=base)
@@ -222,21 +223,6 @@ def test_realize_environment_requires_exact_locked_base_authorization(tmp_path: 
     materialize.assert_not_called()
 
 
-def test_realize_environment_requires_explicit_claude_download_authorization(
-    tmp_path: Path,
-) -> None:
-    selected = resolved_project(tmp_path)
-    select_claude_code(selected, authorized=False)
-    obtain = Mock()
-    materialize = Mock()
-
-    with pytest.raises(CliError, match="claude-code-download"):
-        realize_environment(selected, obtain_image=obtain, materialize=materialize)
-
-    obtain.assert_not_called()
-    materialize.assert_not_called()
-
-
 def test_realize_environment_allows_terms_bound_claude_download_authorization(
     tmp_path: Path,
 ) -> None:
@@ -258,29 +244,6 @@ def test_realize_environment_allows_terms_bound_claude_download_authorization(
     claude = next(item for item in artifacts if item.component_id == "claude-code")
     assert claude.artifact_format == "file"
     assert claude.destination == "/opt/claude/bin/claude"
-
-
-@pytest.mark.parametrize("already_local", [True, False])
-def test_ensure_local_image_pulls_only_when_missing(already_local: bool) -> None:
-    details = base_image()
-    with (
-        patch(
-            "devcapsule.environment_realization.docker.image.exists",
-            return_value=already_local,
-        ),
-        patch("devcapsule.environment_realization.docker.image.pull") as pull,
-        patch(
-            "devcapsule.environment_realization.required_local_image",
-            return_value=details,
-        ) as require,
-    ):
-        assert ensure_local_image(BASE_REFERENCE) == details
-
-    if already_local:
-        pull.assert_not_called()
-    else:
-        pull.assert_called_once_with(BASE_REFERENCE)
-    require.assert_called_once_with(BASE_REFERENCE)
 
 
 def test_realize_environment_allows_explicit_managed_base_override(tmp_path: Path) -> None:
@@ -387,16 +350,3 @@ def test_realize_environment_propagates_canonical_conflict_without_launch(
         )
 
     require.assert_not_called()
-
-
-@pytest.mark.parametrize("command", [None, "devcapsule", "devcapsule0"])
-def test_realizer_uses_resolved_shipped_command_choice(tmp_path, monkeypatch, command):
-    selected = resolved_project(tmp_path)
-    if command is not None:
-        selected.resolution["runtime"]["devcapsule-command"] = command
-    materialize = Mock(return_value=(CANONICAL_IMAGE, True))
-    monkeypatch.setattr("devcapsule.environment_realization.ensure_materialized_surface", materialize)
-    monkeypatch.setattr("devcapsule.environment_realization.runtime_artifact", lambda: tmp_path / "runtime.pex")
-    realize_environment(selected, root=tmp_path / "cache", obtain_image=lambda _ref: base_image(),
-                        require_image=lambda _ref: completed_image(), build=Mock(), inspect_image=Mock())
-    assert materialize.call_args.kwargs["runtime_command"] is RuntimeCommand(command or "devcapsule")

@@ -23,6 +23,8 @@ from devcapsule.container_runtime.contract import DisplayPlan, Identity, Runtime
 from devcapsule.images.build import render_build_context
 from devcapsule.materialization import ArtifactSpec, ImageDetails, ensure_materialized_surface
 
+pytestmark = pytest.mark.legacy
+
 DEFAULT_BASE_IMAGE = str(tomllib.loads(
     (Path(__file__).resolve().parents[3] / ".devcapsule/devcapsule.linux-amd64.lock").read_text()
 )["base"]["reference"])

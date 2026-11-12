@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: release-pex-${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
@@ -52,6 +53,15 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r dev-requirements.txt
           python -m pip install -e . --no-deps
+
+      - name: Verify the documentation obligations
+        if: env.RELEASE_PRERELEASE == 'false'
+        working-directory: .
+        run: |
+          version="${RELEASE_TAG#v}"
+          python devcapsule-src/scripts/release-docs.py check "$version"
+          git fetch origin "refs/heads/docs-$version"
+          git diff --quiet FETCH_HEAD "$RELEASE_TAG" -- docs/
 
       - name: Run source tests and type checks
         run: python -m nox -s syntax tests typecheck
@@ -115,7 +125,7 @@ jobs:
         env:
           DEVCAPSULE_PEX_UNDER_TEST: ${{ github.workspace }}/devcapsule-src/dist/devcapsule.pex
           DEVCAPSULE_EXPECTED_BUILD_MNEMONIC: ${{ env.RELEASE_TAG }}
-        run: python -m pytest --no-cov -m integration tests/integration
+        run: python -m pytest --no-cov -m "integration and not docker" tests/integration
 
       # No step here runs Docker. A hosted runner is an environment nobody
       # controls, and a proof that depends on it gates the candidate on the
@@ -123,7 +133,11 @@ jobs:
       # v0.2.14-rc2 failed on a Docker build the rc1 run had passed hours
       # earlier). The clean-machine proof, component-cache reuse and
       # runtime-session checks run in the local acceptance campaign against
-      # the downloaded assets; see the operator guide.
+      # the downloaded assets; see the operator guide. Integration tests
+      # marked docker run where a daemon is known, before the tag, and
+      # Release Policy rule 9 in WORKFLOW-LOCAL.md requires their run
+      # record on main, read as the acceptance record is; the check is the
+      # next slice of the maintenance workstream.
 
       - name: Retain the backend build
         uses: actions/upload-artifact@v4
@@ -137,13 +151,23 @@ jobs:
           retention-days: 30
 
       - name: Stage the verified release
-        if: steps.recover.outputs.exists != 'true'
+        if: steps.recover.outputs.exists != 'true' && env.RELEASE_PRERELEASE == 'true'
         run: |
           gh release create "$RELEASE_TAG" \
             "dist/devcapsule.pex#Self-contained Linux x86-64 CLI" \
             "dist/devcapsule.pex.sha256#SHA-256 checksum" \
             "dist/release-manifest.json#Release inputs and artifact checksums" \
             --verify-tag --generate-notes --draft --prerelease="$RELEASE_PRERELEASE" --latest=false
+
+      - name: Stage the verified final release
+        if: steps.recover.outputs.exists != 'true' && env.RELEASE_PRERELEASE == 'false'
+        run: |
+          python scripts/release-docs.py notes "${RELEASE_TAG#v}" > "$RUNNER_TEMP/release-notes.md"
+          gh release create "$RELEASE_TAG" \
+            "dist/devcapsule.pex#Self-contained Linux x86-64 CLI" \
+            "dist/devcapsule.pex.sha256#SHA-256 checksum" \
+            "dist/release-manifest.json#Release inputs and artifact checksums" \
+            --verify-tag --notes-file "$RUNNER_TEMP/release-notes.md" --draft --prerelease="$RELEASE_PRERELEASE" --latest=false
 
       - name: Download and verify the published assets
         run: |
@@ -174,6 +198,20 @@ jobs:
             gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" \
               -F draft=false -F prerelease="$RELEASE_PRERELEASE" -f make_latest="$latest" >/dev/null
           fi
+
+      - name: Build the test website
+        if: env.RELEASE_PRERELEASE == 'false'
+        shell: bash
+        run: |
+          gh workflow run website.yml --ref main -f mode=production \
+            -f site_origin=https://test-devcapsule.mycodespace.ai -f base_path=/ \
+            | tee "$RUNNER_TEMP/website-dispatch.txt"
+          {
+            echo "### Test website dispatch"
+            echo "Dispatched Website (website.yml) on main, mode production, for $RELEASE_TAG."
+            echo 'Origin: https://test-devcapsule.mycodespace.ai; base path: /.'
+            cat "$RUNNER_TEMP/website-dispatch.txt"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Summarize the release
         run: |

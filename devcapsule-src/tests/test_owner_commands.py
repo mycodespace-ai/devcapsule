@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import tomllib
+from typing import Any
 
 import pytest
 
@@ -16,6 +18,8 @@ from devcapsule.configuration.storage import load_toml
 from devcapsule.configuration.storage import checkout_record_paths
 from devcapsule.platforms import Platform
 from devcapsule.resolution_matrix import MATRICES
+
+pytestmark = pytest.mark.legacy
 
 MATRIX = MATRICES[Platform.LINUX_AMD64]
 
@@ -217,8 +221,6 @@ def test_an_unrelated_command_never_rewrites_a_legacy_manifest(legacy_project: P
     assert manifest_text(legacy_project) == before
 
 
-
-
 def test_drop_offered_tool_removes_only_its_declaration_and_reason(project: Path) -> None:
     owner_commands.require_tools(project, ["python"], because="backend")
     owner_commands.offer_tools(project, ["playwright"], because="browser tests")
@@ -349,3 +351,73 @@ def test_owner_help_discloses_schema_two_compatibility(capsys, command) -> None:
     assert cli.main(["project", *command, "--help"]) == 0
     help_text = " ".join(capsys.readouterr().out.split())
     assert "rc3 and older launchers cannot read" in help_text
+
+
+def test_declare_source_writes_the_table_and_leaves_the_lock_bytes_alone(project: Path, capsys) -> None:
+    lock_before = paths(project)[1].read_bytes()
+    assert cli.main(["project", "--path", str(project), "config", "show"]) == 0
+    capsys.readouterr()
+    text = owner_commands.declare_source(project, "RobotCode2025Public", java="17")
+    assert text.splitlines()[0] == "Declared source RobotCode2025Public; the manifest is updated."
+    assert "learn from it" in text and "Java 17" in text
+    manifest = load_toml(paths(project)[0])
+    assert manifest["sources"] == {"RobotCode2025Public": {"java": "17"}}
+    assert paths(project)[1].read_bytes() == lock_before
+    assert cli.main(["project", "--path", str(project), "config", "show"]) == 0
+    assert "source      RobotCode2025Public  java 17" in capsys.readouterr().out.replace("  ", "  ")
+
+
+def test_declare_source_again_replaces_known_keys_and_keeps_unknown_ones(project: Path) -> None:
+    owner_commands.declare_source(project, "robot", upstream="https://example.test/up", java="17")
+    manifest_path = paths(project)[0]
+    manifest_path.write_text(manifest_path.read_text().replace('java = "17"', 'java = "17"\nfuture = "kept"'))
+    text = owner_commands.declare_source(project, "robot", java="21")
+    assert text.splitlines()[0] == "Redeclared source robot; the manifest is updated."
+    assert load_toml(manifest_path)["sources"] == {"robot": {"java": "21", "future": "kept"}}
+
+
+def test_declare_source_preview_and_refusals_write_nothing(project: Path) -> None:
+    before = manifest_text(project)
+    assert owner_commands.declare_source(project, "robot", java="17", preview=True).startswith("Preview; nothing written.")
+    with pytest.raises(ProjectConfigurationError, match="source path"):
+        owner_commands.declare_source(project, "../robot")
+    with pytest.raises(ProjectConfigurationError, match="Java line"):
+        owner_commands.declare_source(project, "robot", java="17.0")
+    with pytest.raises(ProjectConfigurationError, match="upstream"):
+        owner_commands.declare_source(project, "robot", upstream="  ")
+    assert manifest_text(project) == before
+
+
+@pytest.mark.parametrize("fields", [
+    {"path": ""}, {"path": "../escape"}, {"path": 3},
+    {"upstream": 3}, {"upstream": "bad\x00url"}, {"upstream": " "},
+    {"java": 17}, {"java": "0"}, {"java": "17\n"},
+])
+def test_declare_source_refuses_malformed_inputs_without_touching_files(project: Path, fields: dict[str, Any]) -> None:
+    manifest_path, lock_path, _ = paths(project)
+    before = manifest_path.read_bytes(), lock_path.read_bytes()
+    with pytest.raises(ProjectConfigurationError):
+        owner_commands.declare_source(project, **{"path": "vendor/robot", **fields})
+    assert (manifest_path.read_bytes(), lock_path.read_bytes()) == before
+
+
+def test_sources_survive_other_owner_edits_and_do_not_change_pending_decisions(project: Path, capsys) -> None:
+    assert cli.main(["project", "--path", str(project), "config", "show", "--json"]) == 0
+    baseline = json.loads(capsys.readouterr().out)
+    owner_commands.declare_source(project, 'vendor/robot.code', upstream="https://example.test/up", java="17")
+    owner_commands.declare_source(project, "notes")
+    manifest_path, lock_path, _ = paths(project)
+    manifest_path.write_text(manifest_path.read_text().replace('java = "17"', 'java = "17"\nfuture = { extra = true }'))
+    sources = load_toml(manifest_path)["sources"]
+    owner_commands.recommend(project, "memory", "4g")
+    assert load_toml(manifest_path)["sources"] == sources
+    lock = lock_path.read_bytes()
+    owner_commands.declare_source(project, "notes", preview=True)
+    assert lock_path.read_bytes() == lock
+    assert cli.main(["project", "--path", str(project), "config", "show", "--json"]) == 0
+    document = json.loads(capsys.readouterr().out)
+    assert document["pending"] == baseline["pending"]
+    assert [row for row in document["rows"] if row["kind"] == "source"] == [
+        {"kind": "source", "name": "notes", "effective": "no toolchain declared", "source": "project: upstream, read-only", "pending": "", "command": ""},
+        {"kind": "source", "name": "vendor/robot.code", "effective": "java 17", "source": "project: fork of https://example.test/up", "pending": "", "command": ""},
+    ]

@@ -35,6 +35,8 @@ from tests.e2e.scenario_recorder import (
     write_json_atomically,
 )
 
+pytestmark = pytest.mark.legacy
+
 
 def test_eclipse_hello_time_debug_scenario_is_registered_and_valid(tmp_path: Path) -> None:
     assert "eclipse-hello-time-debug" in list_scenarios()

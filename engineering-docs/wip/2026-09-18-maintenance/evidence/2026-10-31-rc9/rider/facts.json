@@ -1,0 +1,22 @@
+{
+  "surface": "rider",
+  "needs": [
+    "dotnet-ide",
+    "browser-automation"
+  ],
+  "container": "devcapsule-e2e-ide-rider-f7650f8f",
+  "desktop_url_port": "50019",
+  "console_url_port": "56489",
+  "console_answers": 200,
+  "ide_window": {
+    "id": 6291533,
+    "class": "jetbrains-rider jetbrains-rider",
+    "name": "splash"
+  },
+  "pixels": {
+    "width": 1600,
+    "height": 1000,
+    "distinctColours": 1471,
+    "video": "desktop.webm"
+  }
+}

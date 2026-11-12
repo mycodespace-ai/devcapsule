@@ -31,6 +31,8 @@ from tests.test_recursive_successor_plan import (
     matching_inspection,
 )
 
+pytestmark = pytest.mark.legacy
+
 
 RUN_ID = "b2093d85912fa34ac1324e1da26a9dcd"
 CONTAINER_ID = "7e" * 32

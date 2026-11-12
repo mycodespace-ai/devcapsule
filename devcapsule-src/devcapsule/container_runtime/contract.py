@@ -8,6 +8,24 @@ from pathlib import Path
 import re
 from typing import Any, Mapping
 
+__all__ = [
+    "CONTAINED_DISPLAY_TRANSPORT",
+    "Component",
+    "ComponentRuntimeTemplate",
+    "ConsolePlan",
+    "DISPLAY_TRANSPORTS",
+    "DisplayPlan",
+    "HOST_X11_DISPLAY_TRANSPORT",
+    "INFRASTRUCTURE_FAILURE_EXIT_CODE",
+    "Identity",
+    "LogsPlan",
+    "PersistenceContract",
+    "RuntimePlan",
+    "RuntimePlanError",
+    "StateSlot",
+    "StateSlotDeclaration",
+]
+
 
 INFRASTRUCTURE_FAILURE_EXIT_CODE = 70
 """The capsule's exit code when a supervised component died, not the IDE.

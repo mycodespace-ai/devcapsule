@@ -1,87 +1,117 @@
 ---
-description: See which host access a project recommends, allow exactly what your work needs, allow it for one run only, and take it back.
+description: Inspect recommended host access, grant only what your checkout needs, allow access for a single launch, or deny and forget saved answers.
 weight: 2
-updated: 2026-10-24
+updated: 2026-10-30
 ---
 # Granting and withdrawing access
 
-All commands run in your computer's terminal, from the project folder. A
-change applies to the next launch: stop the capsule, change, launch.
+Run these commands from your project directory on the host. Authorization
+changes apply to the **next** launch—exit any running capsule, update your
+choices, and start `devcapsule project run`.
 
-## See what is recommended and what is pending
-
-```bash
-~/.local/bin/devcapsule project config show
-```
-
-The listing shows each access, its effective value and its source.
-The source can be the project, the lock, your checkout answer or the secure default.
-Pending rows give the commands that settle them. A recorded denial is shown
-as your decision.
-
-## Allow one thing
+## See what is recommended and pending
 
 ```bash
-~/.local/bin/devcapsule project config authorize network host
-~/.local/bin/devcapsule project run
+devcapsule project config show
 ```
 
-`authorize` records the exact value and a digest of the recommendation it
-answers. When you run without having answered, `run` asks at the terminal,
-with the project's reason and DevCapsule's own description of what the
-access opens: allow for this checkout, allow once, deny for this checkout,
-or not now, which launches with the secure default and asks again next
-time. If the project later changes its recommendation, your answer is kept
-and never asked again; `config show` says what changed beside it, and a
-committed change never widens access on its own. To review every
-recommendation and accept all of them at once, interactively:
+`config show` lists every authorization row with its effective value, where
+that value came from (`checkout`, `home trust`, `secure default`), and whether
+a project recommendation is awaiting your answer. Each pending row prints the
+exact command that settles it.
+
+## Grant access for this checkout
 
 ```bash
-~/.local/bin/devcapsule project config authorize --all-recommended
+devcapsule project config authorize network host
+devcapsule project run
 ```
 
-It prints every value and reason first and writes only when you press `y`.
+`config authorize` saves your answer in this checkout's record alongside a
+digest of the recommendation you answered.
+
+If you run `devcapsule project run` interactively before answering a project
+host-access recommendation, the launcher displays the project's `--because`
+reason and DevCapsule's boundary warning and lets you:
+
+- **allow for this checkout** (saved),
+- **allow once** (this launch only),
+- **deny for this checkout** (saved), or
+- **skip for now** (launches with the secure default and asks again next time).
+
+Without an interactive terminal, unanswered host-access recommendations fall
+back to their secure defaults during `project run`, while `devcapsule project
+config check` exits with status `3` so scripts can detect unanswered rows. If
+the project later changes a host recommendation's reason, your previously saved
+allowance or denial stays in force and `config show` notes what changed—a
+committed manifest edit never widens access behind your back.
+
+To preview every host-access recommendation declared by the project and accept
+all of them interactively:
+
+```bash
+devcapsule project config authorize --all-recommended
+```
+
+The command prints every recommended value and reason first and writes only
+when you press `y`. (It never enables host capabilities that the project did
+not recommend.)
 
 ## Allow for one run only
 
 ```bash
-~/.local/bin/devcapsule project run --authorize host-browser true
+devcapsule project run --authorize host-browser true
 ```
 
-Without `--save`, these flags apply only to this launch.
-Add `--save` to record the answers for the checkout.
-The launcher provides `network`, `docker-daemon`, `development-sudo`,
-`host-browser` and `host-x11` on every project. They need no project
-recommendation. `config show` lists the available authorizations.
-Everything after `--` goes verbatim to `docker run`; the options the
-launcher composes itself, such as `--network` and `--memory`, are refused
-with an alternative named when one exists. Shared-memory size has no user setting.
+Without `--save`, `--authorize` applies to that single launch and leaves your
+checkout record unchanged; add `--save` to persist the answer once launch
+checks succeed.
+
+The five host-access nodes—`network`, `docker-daemon`, `development-sudo`,
+`host-browser`, and `host-x11`—are available on every project whether or not
+the manifest recommends them. Extra `docker run` flags can also follow `--` (or
+be saved via `config docker-args set`), except options owned by the launcher
+such as `--network`, `--memory`, `--cpus`, `--privileged`, and `--shm-size`,
+which are refused with a reason or a supported alternative. `--shm-size` has
+no user setting; the IDE component declares it. Extra flags such as mounts
+and added Linux capabilities can widen access, so inspect saved flags with
+`devcapsule project config docker-args list`.
 
 ## Deny and forget
 
 ```bash
-~/.local/bin/devcapsule project config deny host-x11
-~/.local/bin/devcapsule project config forget network
+devcapsule project config deny host-x11
+devcapsule project config forget network
 ```
 
-A denial is a recorded decision, kept until you change it. `forget` removes
-your answer: the secure default applies, and a recommendation asks again.
-Neither reconfigures a running capsule; the next launch runs without the
-access.
+- `config deny NAME` records an explicit denial on any of the five host-access
+  nodes (`network`, `docker-daemon`, `development-sudo`, `host-browser`,
+  `host-x11`). To deny a vendor download on one checkout (overriding home
+  channel trust), use `devcapsule project config authorize claude-code-download
+  false` (or `none`).
+- `config forget NAME` deletes your saved answer for a host access or software
+  consent so the secure default (or home trust / project prompt) applies on the
+  next launch.
 
-## The values, in one place
+## Authorization values at a glance
 
-| Access | Values |
-|---|---|
-| `network` | `host`, `bridge`; `bridge` is the default when unanswered; available on every project |
-| `docker-daemon` | `host-socket`, `none`; `none` denies host-daemon access |
-| `development-sudo` | `true`, `false` |
-| `host-browser` | `true`, `false` |
-| `host-x11` | `true`, `false`; never recommended by a project; the contained desktop is the default, and a base without one asks for your explicit consent |
-| `base-image` | `default` or the exact digest currently pinned by the lock; a local image tag or ID selects a local base |
+Every authorization below accepts `default` to select its recommended or pinned
+value. **This is not the secure fallback:** `authorize network default` grants
+`host`, and `authorize docker-daemon default` grants `host-socket`, even without
+a project recommendation. Use the deny values below to withhold access.
+`none` selects a node's deny value; `base-image` has no deny value.
 
-Workstation trust can cover vendor downloads and DevCapsule's published bases.
-Per-checkout consents remain supported. See
-[Vendor software and trust](../configuration/software-approvals.md). What
-each access opens is on [The boundary](the-boundary.md); the full node list
-is in [Configuration nodes](../reference/configuration-nodes.md).
+| Authorization | Grant value | Deny value | Notes |
+|---|---|---|---|
+| `network` | `host` | `bridge` (`none` stores `bridge`) | `bridge` is the secure default when unanswered |
+| `docker-daemon` | `host-socket` | `none` | Exposes `/var/run/docker.sock` when set to `host-socket` |
+| `development-sudo` | `true` | `false` (`none` stores `false`) | Passwordless `sudo` inside the container only |
+| `host-browser` | `true` | `false` (`none` stores `false`) | Opens `http(s)` links in your host browser |
+| `host-x11` | `true` | `false` (`none` stores `false`) | Exposes your host X11 display session; never recommended by a manifest |
+| `vscode-download`, `claude-code-download`, `antigravity-download` | `true` | `false` (`none` stores `false`) | Per-checkout vendor consent (or denial overriding home channel trust) |
+| `base-image` | `default`, pinned `<reference>`, or local `<tag-or-id>` | *(mandatory; no deny state)* | Covered across projects by `home trust accept devcapsule-base`, or per checkout here ([Build and select a local base](../configuration/local-base.md)) |
+
+See [Vendor software and trust](../configuration/software-approvals.md) for
+home-wide channel trust, [The boundary](the-boundary.md) for what each grant
+exposes, and [Configuration nodes](../reference/configuration-nodes.md) for the
+full node reference.

@@ -46,6 +46,8 @@ the canonical operator guide based on v0.2.11.
   directory name.
 - `bugs/` — active or recently investigated defect evidence and closure
   criteria.
+- `pile-of-ideas/` — one file per idea nobody has triaged yet;
+  `project-management` triages the pile and removes what it decides.
 - `completed-tasks/` — retrospective evidence for completed or retired work.
 - `session-records/` — explicitly requested, sanitized historical session
   captures that supplement rather than replace canonical artifacts.

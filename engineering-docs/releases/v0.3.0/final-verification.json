@@ -1,0 +1,33 @@
+{
+  "verified_at": "2026-10-31T09:25:44.494947+00:00",
+  "release_url": "https://github.com/ccozianu/devcapsule/releases/tag/v0.3.0",
+  "workflow_url": "https://github.com/ccozianu/devcapsule/actions/runs/41188312058",
+  "identity": {
+    "build_mnemonic": "v0.3.0",
+    "schema_version": 2,
+    "source_repository": "https://github.com/ccozianu/devcapsule",
+    "source_revision": "475427da033633ff5ee0e44e09face700630bf36",
+    "source_url": "https://github.com/ccozianu/devcapsule/commit/475427da033633ff5ee0e44e09face700630bf36",
+    "version": "0.3.0"
+  },
+  "sha256": "f59e05cdbb5ab157641aae5a27f269f963400a650c1ae3db1650e1881a6df714",
+  "download_directory": "/home/devcapsule/.cache/devcapsule-release-prep/0.3.0/published",
+  "checksum_verified": true,
+  "accepted_candidate": "v0.3.0-rc9",
+  "promotion_record_matches_main": true,
+  "base_and_frozen_inputs_match_candidate": true,
+  "acceptance_main_revision": "31d44fa473a86f608110caa53ee38c6aef40a717",
+  "publication_result": "success",
+  "release_is_draft": false,
+  "release_is_prerelease": false,
+  "assets": [
+    "devcapsule.pex",
+    "devcapsule.pex.sha256",
+    "release-manifest.json"
+  ],
+  "test_website_run": "https://github.com/ccozianu/devcapsule/actions/runs/41188626026",
+  "test_website_result": "success; deployed content and candidate metadata verified",
+  "production_website_promotion": "completed by owner; live production metadata matches verified website candidate",
+  "website_candidate": "website-candidate-41188626026-1",
+  "website_candidate_url": "https://github.com/ccozianu/devcapsule/releases/tag/website-candidate-41188626026-1"
+}

@@ -6,6 +6,8 @@ from devcapsule.compat import CliError
 from devcapsule.components.catalog import COMPONENTS, selected_component_definitions
 from devcapsule.components.postgresql_client import DEFINITION, runtime_template
 
+pytestmark = pytest.mark.legacy
+
 
 def lock_metadata(**overrides: object) -> dict[str, object]:
     metadata: dict[str, object] = {

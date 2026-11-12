@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
-import os
 from pathlib import Path
 from typing import Any, Mapping
 from devcapsule.components.catalog import ComponentCatalogError, selected_component_definitions, selected_runtime_templates
 
 from .file_formats import ProjectConfigurationError
 from devcapsule.project import project_namespace
+from devcapsule.platforms import XdgHomes
 
 
 @dataclass(frozen=True)
@@ -32,15 +32,12 @@ class SecretInputMetadata:
     exposure: str
 
 
-def managed_binding_path(root: Path, declaration: ConfigurationBindingDeclaration) -> Path:
+def managed_binding_path(root: Path, declaration: ConfigurationBindingDeclaration,
+                         env: Mapping[str, str] | None = None) -> Path:
     """Default storage location, without creating directories or reading secrets."""
-    home = Path(os.environ.get("HOME", "~")).expanduser()
-    roots = {
-        "durable": Path(os.environ.get("XDG_DATA_HOME") or home / ".local" / "share"),
-        "state": Path(os.environ.get("XDG_STATE_HOME") or home / ".local" / "state"),
-        "cache": Path(os.environ.get("XDG_CACHE_HOME") or home / ".cache"),
-    }
-    namespace = roots[declaration.kind] / "devcapsule" / "projects" / "by-path" / project_namespace(root)
+    homes = XdgHomes.from_environment(env)
+    roots = {"durable": homes.data, "state": homes.state, "cache": homes.cache}
+    namespace = roots[declaration.kind] / "projects" / "by-path" / project_namespace(root)
     if declaration.name == "home":
         return namespace / "home"
     return namespace / "components" / str(declaration.component_id) / str(declaration.slot_name)

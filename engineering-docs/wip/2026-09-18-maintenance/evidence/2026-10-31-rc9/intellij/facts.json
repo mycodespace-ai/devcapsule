@@ -1,0 +1,23 @@
+{
+  "surface": "intellij",
+  "needs": [
+    "java-ide",
+    "java",
+    "browser-automation"
+  ],
+  "container": "devcapsule-e2e-ide-intellij-68b09c65",
+  "desktop_url_port": "35083",
+  "console_url_port": "33427",
+  "console_answers": 200,
+  "ide_window": {
+    "id": 6291533,
+    "class": "jetbrains-idea jetbrains-idea",
+    "name": "splash"
+  },
+  "pixels": {
+    "width": 1600,
+    "height": 1000,
+    "distinctColours": 1435,
+    "video": "desktop.webm"
+  }
+}

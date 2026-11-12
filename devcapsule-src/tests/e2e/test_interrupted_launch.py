@@ -32,6 +32,8 @@ from tests.e2e.ide_session import (
     workspace_root,
 )
 
+pytestmark = pytest.mark.legacy
+
 EVIDENCE_ROOT = Path(__file__).resolve().parents[2] / "dist" / "e2e-evidence" / "ide-smoke"
 CODIUM = next(surface for surface in SURFACES if surface.name == "codium")
 EXIT_TIMEOUT = 120.0

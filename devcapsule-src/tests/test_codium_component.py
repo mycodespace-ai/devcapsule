@@ -20,6 +20,8 @@ from devcapsule.container_runtime.contract import (
     RuntimePlanError,
 )
 
+pytestmark = pytest.mark.legacy
+
 
 def component_runtime() -> RuntimePlan:
     return RuntimePlan.for_component(

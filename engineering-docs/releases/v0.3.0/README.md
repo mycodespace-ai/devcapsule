@@ -1,8 +1,9 @@
 # DevCapsule 0.3.0 — Release Work
 
-Updated: 2026-10-26. Stage: **candidate 8 in preparation: the manifest's two schemas as classes and `init --regenerate` migrating to schema 2, the owner's gate of 2026-10-26; the pre-candidate merge into `main` is the owner's; then the diagnostics snapshot, image cleanup and C20**.
+Updated: 2026-10-31. Stage: **0.3.0 complete: final downloads and production website verified**.
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
+[Release notes](notes.md) ·
 [Changelog since 0.2.15](changelog.md) ·
 [Bug table](bugs.md) ·
 [Work order](../../work-orders/2026-10-18-release-0-3-0.md) ·
@@ -14,12 +15,159 @@ and questions; the bug records remain authoritative for individual status,
 ownership and technical evidence; the maintenance status file links here
 for resumption.
 
+## Production handoff complete — 2026-10-31
+
+The owner confirmed "All done". Independently checked
+[production build-info](https://devcapsule.mycodespace.ai/build-info.json):
+current 0.3.0, content 31d44fa4, and the exact reviewed candidate
+website-candidate-41188626026-1 with archive digest feb14cb499782540f4d7b051122201650d787bb89cb76c217547702b60ab90ca.
+[Verification record](website-verification.json). CLI and production website
+delivery are complete. Earlier pending-promotion statements are historical.
+
+## Final delivery — 2026-10-31
+
+[DevCapsule v0.3.0](https://github.com/ccozianu/devcapsule/releases/tag/v0.3.0)
+was published at 09:25:15 UTC after owner merge of acceptance PR #332 at
+main `31d44fa473a86f608110caa53ee38c6aef40a717`.
+[Publication run 41188312058](https://github.com/ccozianu/devcapsule/actions/runs/41188312058)
+passed all gates, packaged tests, staging and download verification.
+The final tag points to accepted RC9 source
+`475427da033633ff5ee0e44e09face700630bf36`, not the acceptance PR commit.
+
+The three public assets were downloaded independently into a fresh directory.
+Checksum, `0.3.0` version, `v0.3.0` mnemonic, source SHA and embedded acceptance
+record all match. Base references and frozen dependencies/Python match RC9.
+Final PEX SHA-256:
+`f59e05cdbb5ab157641aae5a27f269f963400a650c1ae3db1650e1881a6df714`.
+[Verification facts](final-verification.json) and [final manifest](final-manifest.json).
+
+The workflow dispatched [test website run 41188626026](https://github.com/ccozianu/devcapsule/actions/runs/41188626026).
+Build, deploy and candidate publication all passed. Live build-info names
+main 31d44fa4, docs-0.3.0 at 7a813b80 and current version 0.3.0; the home,
+current guides, versioned guides and release-note pages return HTTP 200.
+[Website verification](website-verification.json). The public candidate is
+[website-candidate-41188626026-1](https://github.com/ccozianu/devcapsule/releases/tag/website-candidate-41188626026-1),
+with bundle SHA-256 feb14cb499782540f4d7b051122201650d787bb89cb76c217547702b60ab90ca.
+The owner reviews [the test site](https://test-devcapsule.mycodespace.ai/)
+and selects that candidate in **Publish production website** in
+ccozianu/devcapsule-website. Production promotion was not performed here.
+The release branch is closed and retained; corrections to released guides
+belong on docs-0.3.0. Maintenance resumes on
+`ws-maintenance/0.3.1-preparation` from the acceptance merge on main.
+
+## Final acceptance — 2026-10-31
+
+Costin Cozianu answered "Yes to both questions, let's move ahead" after
+requesting final publication. Exact RC9 is accepted with the documented
+provider/editor verification limits. This does not claim unobserved
+provider actions or editor flows. C17 and the nine undecided September 28
+documentation proposals move to **0.3.1 planning**, retaining their owners
+and item-level decisions; they no longer gate 0.3.0. This supersedes the
+older explicit gates and pending questions below. October 25's separate
+work order remains scheduled for 0.3.1 as already decided.
+
+[The promotion record](../v0.3.0.json) binds source
+`475427da033633ff5ee0e44e09face700630bf36` and candidate SHA-256
+`413b1d45bac9c39b6fa5fab68090e43550c9e255108de48b387c50a715c4fcf2`.
+The six fixed maintenance records close on their RC9 verification and owner
+acceptance; the cookie fix was already verified on the rebuilt published base.
+All required downloaded-executable checks pass. The notes, documentation
+manifest and docs branch match the candidate. Claude 2.1.316 is held for a
+0.3.1 review; the accepted source retains tested 2.1.314.
+
+Next: owner merges [acceptance PR #332](https://github.com/ccozianu/devcapsule/pull/332) to main, then publish v0.3.0 from
+RC9's source, verify final assets and the test-site deployment. No new
+publication approval is needed. The owner promotes the site to production.
+Main remains 0.3.1.dev0; preparation for 0.3.1 follows final delivery.
+
+## RC9 verification — 2026-10-31
+
+[#331](https://github.com/ccozianu/devcapsule/pull/331) merged at main
+`4b59b10d`. [RC9](https://github.com/ccozianu/devcapsule/releases/tag/v0.3.0-rc9)
+is published from release `475427da`; its three assets, checksum and embedded
+identity agree. Downloaded PEX verification passes eight ordinary E2E tests
+and the shared-browser authentication regression. The blocking cookie bug
+is closed, including delivery through the rebuilt default base.
+[Evidence and limits](../../wip/2026-09-18-maintenance/evidence/2026-10-31-rc9/README.md#downloaded-rc9-verification).
+
+Next: owner acceptance of this candidate and completion of the remaining
+release obligations, then the formal acceptance record and promotion under
+the runbook. These smoke results do not authorize the final tag.
+
+## Final promotion audit — 2026-10-31
+
+The owner requests 0.3.0 publication and then 0.3.1 preparation. The restarted
+capsule now uses the verified fixed base after removing its saved local-base
+override. Runtime inspection, attached recursive lifecycle, 18 packaged
+cache/network cases and a real fresh-project run-once network launch pass.
+[Audit evidence](../../wip/2026-09-18-maintenance/evidence/2026-10-31-rc9/README.md#final-promotion-audit--2026-10-31).
+Final vendor recheck found Claude 2.1.316; retain tested RC9's 2.1.314 for
+this promotion and review the new version in 0.3.1. Other agent feeds match.
+
+The October 27 scope record still explicitly gates C17 and the nine
+September 28 proposal decisions. The owner has been asked to move these to
+0.3.1 planning or keep them before 0.3.0, and to confirm provider acceptance
+or accept its documented limits. No disposition is inferred. On resolution,
+commit the formal acceptance record and obtain its mainline PR merge before
+tagging the exact RC9 source. The published executable remains unchanged.
+
 ## Headline
 
 The capsule web console, persistent session diagnostics, and a launcher
 that is honest about what it skips.
 
 ## Scope And Owner Decisions
+
+- **0.3.0 user documentation CLI alignment, full stub authoring, and prose review, 2026-10-30.**
+  The owner merged [PR #316](https://github.com/ccozianu/devcapsule/pull/316) on
+  `main` (`ebab228a`) and assigned
+  [the work order](../../work-orders/2026-10-30-user-docs-0-3-0-cli-alignment.md)
+  to `maintenance` on `release-0.3.0` (`write-full-pages`,
+  `combine-with-language`, `direct-wo-pair-batches`), closing final-tag gate
+  **C16** and the October 24 language-review booking in one pass. All `49`
+  `docs/*.md` files on `release-0.3.0` (including authoring all `12`
+  `status: planned` stubs in full, without inventing `0.3.1`-deferred commands)
+  are audited and rewritten in five coherent pull-request batches of `<= 10`
+  `docs/*.md` files each using Pair Review: Antigravity (`Gemini 4 Argon
+  (High)`) implements and Codex (`gpt-6-astra`) reviews.
+- **CI path gating and advisory diff coverage, 2026-10-30.** The owner
+  assigned the [reviewed work order](../../work-orders/2026-10-30-ci-path-gating-and-diff-coverage.md)
+  to maintenance for 0.3.0. Decisions 1B and 2B mean advisory coverage with
+  no percentage gate and serial execution; parallelism is deferred beyond
+  0.3.0 without a later release target. PR #312 implements the slice with
+  GPT-6 Codex and Claude Code / Claude Fable 5.1 Pair Review. Review #314 is accepted and the final local/hosted gates passed.
+  Integration is complete through #312 and #317. The `ci-gate` required-check
+  setting remains open: the live main rules on 2026-10-31 prevent deletion
+  and non-fast-forward pushes, but require no status check.
+- **October 25 documentation proposals, retargeted 2026-10-29.** Parts A
+  and B of that work order belong to 0.3.1, still owned by maintenance.
+  They no longer gate 0.3.0. The separate language review, accurate candidate
+  documentation (C16) and C20 remain 0.3.0 obligations.
+- **Pair Review Loop name, 2026-10-30.** The owner requires the terminology
+  and packaged-definition change in 0.3.0. Main PR #309 is merged; maintenance
+  has accepted the release-adapted patch for a separate slice after CI review.
+
+- **The explicit IDE requirement override, 2026-10-29.** The owner brought
+  the [work order of 2026-10-28](../../work-orders/2026-10-28-explicit-ide-requirement-override.md)
+  from `main` into 0.3.0 and assigned it to `maintenance`: a project may
+  require an IDE, and `project run --ide IDE --force` launches another one
+  for one session, warned, recorded in the plan and never saved
+  ([D-0016](../../decisions/product/d-0016-explicit-launch-departure-from-a-required-ide.md),
+  R-CONFIG-001's one explicit launch exception). Claude Code, Claude
+  Fable 5.1, implements on `ws-maintenance/0.3.0-ide-override` with the
+  recorded acceptance session; the review partner is the owner's choice.
+  The `--save` combination is refused until the owner defines it.
+- **C20, release documentation automation, 2026-10-27.** The owner approved
+  the release documentation work order on `main`. Codex, GPT-6 Astra,
+  implements it; Claude Code, Claude Fable 5.1, reviews it.
+  Before the last candidate, write `notes.md`, run `release-docs.py promote 0.3.0`,
+  commit both, push `docs-0.3.0` at that commit, and merge to `main`.
+  Validate and accept that candidate. Integrate its acceptance record.
+  Run `release-docs.py check 0.3.0`, then tag the accepted source.
+  The final job verifies the documentation, publishes the PEX with the
+  notes as its body, and dispatches the test website. The owner reads the
+  test site and promotes it to production. Both website modes refuse a
+  listed release without its published download.
 
 - **Cut now**, decided 2026-10-18 after the inventory of what the plan still
   had unimplemented: a candidate of what exists is worth validating, and
@@ -241,12 +389,73 @@ replacement.
 - [x] The shared lock regenerated on 2026-10-22 by `project config capabilities` on a fresh clone inside the capsule, where the command runs for any project but the capsule's own; committed on the release branch at `0c1a555`, gated (1672 unit tests), proven by the recursive attached launch from a fresh clone; merges to `main` with the next pre-candidate merge.
 - [x] `v0.3.0-rc0` tagged on the release branch at `53ebc17`; backend run
   passed; the three assets downloaded, checksum and version verified.
-- [ ] Local proofs against the download: clean machine, component cache,
-  runtime session on the pinned base.
+- [x] Local proofs against downloaded RC9: clean machine, component cache,
+  runtime session on the pinned base; see the acceptance record.
 - [ ] The dogfooding slices, each merged to `main` before the next
   candidate tag; the bug records closed on candidates.
 - [ ] The gates before the final tag; `notes.md`; the acceptance record;
   the final tag; delivery verified; `docs/versions.yaml` promoted on `main`.
+
+## RC9 preparation — 2026-10-31
+
+**Cookie fix merged:** PR #330 is on `release-0.3.0` at `36b5e660`,
+carrying fix `3af21584`. PR #329 incorporates it; the only merge conflict
+was the maintenance status State line, resolved while retaining both sessions'
+records. Console cookies now use the browser-facing port in their name.
+noVNC authenticates through its WebSocket token URL, not this console cookie.
+
+The owner selected **base-first** in `2026-10-31-rc9-base-refresh` at
+02:14:16 UTC. It is complete: the strict public-source builder at `12a30fa6`
+produced `mycodespaceai/devcapsule-base:v0.3.0-base-20261031`, published and
+pinned at `sha256:d7047ced8556cd35964fcc058a1101cf2b5b202f7a5daa2fdd434dcda5ed82c9`.
+The installed console matches the fix, and only its layer changed from rc6.
+Catalog embedded-31 retains old pins and selects the fixed base for new
+resolutions. Existing locks require an explicit base refresh.
+
+Two ordinary fresh-project capsules on the new default pin passed one shared
+browser context: tokenless console navigation/reload, noVNC reload/reconnect,
+and refusal of each other's console and desktop credentials. Both test
+containers were removed. Full local gate passes (2,645 unit, 18 packaging,
+374 console tests, type/syntax/CLI/PEX/docs), as do 112 focused tests and the
+website check. The base/concurrency hold is resolved. Owner release/main
+merges, the candidate gate and downloaded-RC9 acceptance remain.
+
+The owner requested the intended final release candidate after all open PRs
+merged. PR #317 is on main at `ce08ebad`; documentation batches #319, #321,
+#323, #325 and #327 are on release tip `338f94ab` but not yet on main.
+All 49 guides were reviewed; all 12 planned stubs were authored. The next
+unused tag is `v0.3.0-rc9`; it has not been created.
+
+Preparation: write the adopter notes, promote docs/versions.yaml with the
+C20 helper, establish docs-0.3.0, run the full local gate and website build,
+and integrate the resulting release source into main before tagging.
+`docs-0.3.0` was published at promotion commit `68b21a18`; docs-only commit
+`7a813b80` now includes #330's three guide corrections for hosted PR checks.
+The owner merges the integration PR. No final release or candidate acceptance
+is claimed by this preparation.
+
+Freshness recheck, 2026-10-31: vendor latest pointers offer Codex 0.166.0,
+Claude Code 2.1.314 and Antigravity CLI 1.4.12, compared with the existing
+pins 0.163.0, 2.1.302 and 1.4.2. Sources are the same vendor endpoints in
+the freshness table. The owner selected **upgrade** in decision `2026-10-31-rc9-agent-pins`
+(answered 2026-10-31 at 00:50:18 UTC) and additionally requested IDE updates
+because of security fixes. Stable vendor feeds select PyCharm, IntelliJ IDEA
+and Rider 2026.2.4, VSCodium 1.143.17232 and VS Code 1.144.0; Eclipse Java
+2026-09-R is unchanged. All nine full artifacts passed vendor integrity checks. All three agents
+and five updated IDEs passed startup checks on the pinned recipe-11 base;
+JetBrains editor/account acceptance remains beyond the first-use dialogs.
+The full build gate and website checks pass. See the maintenance
+[evidence ledger](../../wip/2026-09-18-maintenance/evidence/2026-10-31-rc9/README.md).
+Existing pins remain available for old locks.
+Do not claim a particular security fix from version age alone; the vendor
+security table did not return usable advisory rows during this check.
+
+Final acceptance still needs downloaded-artifact verification, the remaining
+fixed-bug/provider checks, and an explicit disposition of the C17 generic
+half and nine documentation proposal decisions left open in the October 27
+scope record. Candidate preparation does not silently close those items.
+Automated cleanup and empty-cache IDE reuse are out by that record, despite
+older historical candidate plans below.
 
 ## Candidates
 
@@ -578,10 +787,35 @@ How the candidate was prepared:
 - Not in rc7: the diagnostics snapshot, image cleanup, C20; the gaps the
   candidate-5 changelog lists under *Not in candidate 5*.
 
-### RC8 — in preparation, 2026-10-26
+### RC8 — tagged 2026-10-26
 
-- Tag `v0.3.0-rc8` on the release branch's tip after the pre-candidate
-  merge (PR from the throwaway copy `4PR-9-release-0.3.0`, the owner's).
+- Tag `v0.3.0-rc8` on `8d41fabe9f7ecc439e6854a0e89e9a9586fd4edf`, the release
+  branch's tip at the pre-candidate merge (PR #291 from the throwaway copy
+  `4PR-9-release-0.3.0`, merged by the owner at `8afa5f6`).
+- Candidate gate from a detached checkout of the tag before the push:
+  method `mainline`, no unintegrated commits, version `0.3.0rc8`; record at
+  `/opt/devcapsule-gate/rc8-release-protocol.json`.
+- Backend run [40271738816](https://github.com/ccozianu/devcapsule/actions/runs/40271738816)
+  passed; the [prerelease](https://github.com/ccozianu/devcapsule/releases/tag/v0.3.0-rc8)
+  is public, non-draft, with the three assets.
+- Downloaded over HTTPS into `/home/devcapsule/.cache/devcapsule-releases/v0.3.0-rc8`:
+  the checksum file verifies the executable, SHA-256
+  `5f1f8429351f0acf4a86bcaf92eb1cccaf6e26b0bb281a28c66c93d546ac8e6a`; the
+  manifest records the tag, the branch, the source revision, the
+  `mainline` disposition and, as its base reference, the published
+  recipe-11 digest `8c97d308…`; `devcapsule version` from an empty
+  directory reports `0.3.0rc8`, build `v0.3.0-rc8`, at `8d41fab…`. With
+  the downloaded executable, `project init --regenerate` on a copy of the
+  trading sample reported *Migrated ... to schema 2* and wrote the
+  `required` form with the IDE as the recommendation; the same command
+  with rc7 had left the file at schema 1.
+- Next: the owner's regeneration of this repository's, the website's and
+  the samples' manifests; then the diagnostics snapshot, image cleanup
+  and C20 for the next candidate; the documentation round before the
+  final tag.
+
+How the candidate was prepared:
+
 - Carries, beyond rc7: the manifest's two schemas as classes (PR #289,
   reviewed by PR #290, accepted without a round): `ManifestV1`,
   `ManifestV2`, `read_manifest` and `upgrade` in one module, every

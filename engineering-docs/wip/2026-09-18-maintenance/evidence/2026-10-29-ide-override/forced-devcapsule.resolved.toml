@@ -1,0 +1,26 @@
+"devcapsule-resolved-schema-version" = 1
+
+["authorization"]
+"network" = "host"
+
+["authorization"."base-image"]
+"lock-digest" = "57f509f18af63bb8ff51ca1be1f495de7c402c9f21ea84db96865e7c89df9e9b"
+"reference" = "docker.io/mycodespaceai/devcapsule-base@sha256:8c97d308b4ac8172ce91ef4f96406063bfcd85a55efb09d4a23e795b10a834a3"
+
+["departures"]
+
+["departures"."ide-requirement"]
+"launched" = "frontend-ide"
+"required" = "python-ide"
+
+["runtime"]
+"component" = "codium"
+"project-mount" = "/workspace/e2e-ide-required-7fa4db67"
+
+["sources"]
+"capability-baseline" = "82edd7462dc52c1bb3fd57f000c4bafcd2fe0020e48abecfc0c37c9416fbedc8"
+"checkout-input" = "da13a2138befbff526d528583ffe532052e24de5b68117f8d1d6da17c4560057"
+"home-config" = "absent"
+"manifest" = "63768aa3d623f186c30ba2860b92f2779d5bc86c68dba2b8138e14f4636b5dfd"
+"manifest-scope" = "configuration-v1"
+"platform-lock" = "57f509f18af63bb8ff51ca1be1f495de7c402c9f21ea84db96865e7c89df9e9b"

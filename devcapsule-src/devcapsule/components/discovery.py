@@ -5,10 +5,12 @@ pointer establishes availability, never the support/security state of old builds
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import date
 import json
 import re
 from typing import Any
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 from devcapsule.compat import CliError
@@ -144,6 +146,30 @@ class CodiumDiscovery(VendorDiscovery):
         if not any(asset.get("name") == name for asset in release["assets"]):
             raise ValueError("platform archive missing")
         return _available(self.source, current, latest)
+
+
+class VscodeDiscovery(VendorDiscovery):
+    source = "https://update.code.visualstudio.com/api/update/"
+
+    def _check(self, current: str, platform: str) -> ChannelReport:
+        arch = "linux-x64" if platform == "linux-amd64" else "linux-arm64"
+        source = f"{self.source}{arch}/stable/latest"
+        release = read_json(source)
+        if not isinstance(release, Mapping):
+            raise ValueError("expected a release object")
+        url = release.get("url")
+        sha256 = release.get("sha256hash")
+        if not isinstance(url, str) or not isinstance(sha256, str):
+            raise ValueError("platform archive/checksum missing")
+        parsed = urlparse(url)
+        if (any(character.isspace() for character in url)
+                or parsed.scheme != "https" or not parsed.hostname or parsed.port == 0
+                or parsed.username is not None or parsed.password is not None
+                or not parsed.path.endswith(".tar.gz") or parsed.query or parsed.fragment
+                or re.fullmatch(r"[0-9a-fA-F]{64}", sha256) is None):
+            raise ValueError("platform archive/checksum missing")
+        latest = exact_version(release["productVersion"])
+        return _available(source, current, latest)
 
 
 class ClaudeDiscovery(VendorDiscovery):

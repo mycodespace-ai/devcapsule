@@ -22,6 +22,8 @@ from typing import Any, Mapping, Sequence
 
 import pytest
 
+pytestmark = pytest.mark.legacy
+
 
 EMBEDDED_PEX = Path("/opt/devcapsule/bin/devcapsule.pex")
 OWNER_MARKER = ".devcapsule-e2e-owner.json"

@@ -12,10 +12,12 @@ from devcapsule.configuration.capabilities import CapabilityPolicy
 from devcapsule.configuration.file_formats import render_toml
 from devcapsule.configuration.listing import assess_checkout
 from devcapsule.configuration.launcher_values import launcher_value_sources
-from devcapsule.configuration.workstation import WorkstationDefaults, render_workstation
+from devcapsule.configuration.home import HomeDefaults
 from devcapsule.configuration.file_formats import ProjectConfigurationError
 from devcapsule.platforms import Platform
 from devcapsule.resolution_matrix import MATRICES
+
+pytestmark = pytest.mark.legacy
 
 MATRIX = MATRICES[Platform.LINUX_AMD64]
 
@@ -28,11 +30,11 @@ def manifest(**extra) -> dict:
             "capabilities": {"required": ["node"], "optional": ["browser-automation"]}, **extra}
 
 
-def listing(document: dict, checkout: dict | None = None, *, workstation: dict | None = None, saved=None):
+def listing(document: dict, checkout: dict | None = None, *, home: dict | None = None, saved=None):
     shared = generate_lock(CapabilityPolicy.read(document), MATRIX)
     checkout = checkout or {"devcapsule-checkout-schema-version": 1}
     composed = compose_lock(document, shared, checkout)
-    return assess_checkout(document, shared, composed, checkout, workstation=workstation, saved_environment=saved,
+    return assess_checkout(document, shared, composed, checkout, home=home, saved_environment=saved,
                            surfaces=SURFACES, project=Path("/p"), base_display="contained")
 
 
@@ -64,12 +66,12 @@ def test_capabilities_show_their_scope_and_omission() -> None:
 
 def test_launcher_values_follow_the_precedence_and_name_their_source() -> None:
     document = manifest(recommendations={"memory": "6g"})
-    workstation = {"defaults": {"memory": "4GiB", "cpus": 2}}
-    result = listing(document, workstation=workstation)
+    home = {"defaults": {"memory": "4GiB", "cpus": 2}}
+    result = listing(document, home=home)
     assert rows(result, "memory")["memory"].effective == "6GiB" and rows(result, "memory")["memory"].source == "project recommendation"
-    assert rows(result, "cpus")["cpus"].effective == "2" and rows(result, "cpus")["cpus"].source == "workstation default"
+    assert rows(result, "cpus")["cpus"].effective == "2" and rows(result, "cpus")["cpus"].source == "home default"
     checkout = {"devcapsule-checkout-schema-version": 1, "configuration": {"values": {"memory": "8GiB"}}}
-    result = listing(document, checkout, workstation=workstation)
+    result = listing(document, checkout, home=home)
     assert rows(result, "memory")["memory"].source == "checkout"
     assert rows(result, "memory")["memory"].effective == "8GiB"
     none = listing(manifest())
@@ -155,23 +157,20 @@ def test_render_and_document_carry_every_column() -> None:
     assert result.render_pending().startswith("Pending decisions:")
 
 
-def test_workstation_defaults_validate_and_render() -> None:
-    defaults = WorkstationDefaults.read({"defaults": {"memory": "4g", "cpus": 2}})
+def test_home_defaults_validate_and_render() -> None:
+    defaults = HomeDefaults.read({"defaults": {"memory": "4g", "cpus": 2}})
     assert defaults.values == {"memory": "4GiB", "cpus": 2}
-    assert tomllib.loads(render_workstation(defaults)) == {"devcapsule-workstation-schema-version": 1,
-                                                           "defaults": {"cpus": 2, "memory": "4GiB"}}
+    assert tomllib.loads(render_toml(defaults.document())) == {"defaults": {"cpus": 2, "memory": "4GiB"}}
     assert defaults.with_value("cpus", None).values == {"memory": "4GiB"}
     with pytest.raises(ProjectConfigurationError, match="owns memory, cpus"):
-        WorkstationDefaults.read({"defaults": {"swap": "1g"}})
+        HomeDefaults.read({"defaults": {"swap": "1g"}})
     with pytest.raises(ProjectConfigurationError, match="positive integer"):
-        WorkstationDefaults.read({"defaults": {"cpus": 0}})
-    with pytest.raises(ProjectConfigurationError, match="schema version"):
-        WorkstationDefaults.read({"devcapsule-workstation-schema-version": 2})
+        HomeDefaults.read({"defaults": {"cpus": 0}})
 
 
 @pytest.mark.parametrize("source,checkout,recommended,defaults,expected", [
     ("none", {}, {}, {}, (None, None)),
-    ("workstation default", {}, {}, {"memory": "2g", "cpus": 2}, ("2GiB", 2)),
+    ("home default", {}, {}, {"memory": "2g", "cpus": 2}, ("2GiB", 2)),
     ("project recommendation", {}, {"memory": "3g", "cpus": 3}, {"memory": "2g", "cpus": 2}, ("3GiB", 3)),
     ("checkout", {"memory": "4g", "cpus": 4}, {"memory": "3g", "cpus": 3}, {"memory": "2g", "cpus": 2}, ("4GiB", 4)),
 ])
@@ -179,10 +178,10 @@ def test_launcher_sources_and_runtime_effects_agree(source, checkout, recommende
     from devcapsule.configuration.launcher_values import resolve_launcher_values
     document = manifest(recommendations=recommended)
     local = {"configuration": {"values": checkout}}
-    workstation = {"defaults": defaults}
-    sources = launcher_value_sources(document, local, workstation)
+    home = {"defaults": defaults}
+    sources = launcher_value_sources(document, local, home)
     assert sources == {"memory": (expected[0], source), "cpus": (expected[1], source)}
-    values, effects = resolve_launcher_values(document, local, workstation)
+    values, effects = resolve_launcher_values(document, local, home)
     if expected[0] is None:
         assert values == effects == {}
     else:

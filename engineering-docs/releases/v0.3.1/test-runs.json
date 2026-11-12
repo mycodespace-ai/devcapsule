@@ -1,0 +1,56 @@
+{
+  "schema-version": 1,
+  "release": "0.3.1",
+  "runs": [
+    {
+      "kind": "integration",
+      "source-revision": "3aa21dc0e579d8635dd2d18d2565feb299dc7abb",
+      "tests": "nox -s integration: pytest --no-cov -m integration tests/integration, 27 tests: test_build_pex.py (12, one skipped by design: the untagged build has no tag version to install), test_pex_runtime.py (8) and test_webconsole_install.py (7); no test carries the docker marker yet, so nothing was left out",
+      "environment": "the maintenance capsule on the owner's workstation, Linux x86-64, Python 3.12.3, pytest 9.1.1; Docker 28.5.1 present, not used by these tests",
+      "operator": "Claude Code, Claude Fable 5.1, for maintenance",
+      "date": "2026-11-07",
+      "result": "passed: 26 passed, 1 skipped in 37.18s",
+      "evidence": "The first run, on c449342f, failed 3 of 18: test_clean_revision_build_and_tag_derived_version[None], [v98.7.6] and [v98.7.6-rc0], because the fixture repository lacked component-status/policy-v1.json, which scripts/build-pex.sh requires since PR #3. The fixture was corrected at 7570b14e and 18 passed; the conventions gate then refused the change to a legacy file, so the test moved to tests/integration/test_build_pex.py as four tests of one contract each, this run's source revision. A run between them failed on a full /tmp, the session's own scratch; freed and rerun. The logs are in the session's scratchpad; the release overview records the find."
+    },
+    {
+      "kind": "integration",
+      "source-revision": "8bcee1d04ce80e29853692e745476de4d8862386",
+      "tests": "pytest --no-cov -m \"integration and not docker\" tests/integration against the built candidate PEX, the step 'Run packaging integration tests against the release PEX' of release-pex.yml",
+      "environment": "GitHub-hosted runner of workflow run 42424847709, Linux x86-64, the workflow's Python",
+      "operator": "the candidate workflow on tag v0.3.1-rc0, pushed by Claude Code, Claude Fable 5.1, for maintenance",
+      "date": "2026-11-07",
+      "result": "passed: 26 passed, 1 skipped in 33.09s",
+      "evidence": "https://github.com/mycodespace-ai/devcapsule/actions/runs/42424847709"
+    },
+    {
+      "kind": "integration",
+      "source-revision": "accdec5bb36626875b0564afbcbf20f67f9d961b",
+      "tests": "pytest --no-cov -m \"integration and not docker\" tests/integration against the built candidate PEX, the step 'Run packaging integration tests against the release PEX' of release-pex.yml",
+      "environment": "GitHub-hosted runner of workflow run 42436425955, Linux x86-64, the workflow's Python",
+      "operator": "the candidate workflow on tag v0.3.1-rc1, pushed by Claude Code, Claude Fable 5.1, for maintenance",
+      "date": "2026-11-08",
+      "result": "passed: 26 passed, 1 skipped in 45.13s",
+      "evidence": "https://github.com/mycodespace-ai/devcapsule/actions/runs/42436425955"
+    },
+    {
+      "kind": "integration",
+      "source-revision": "3ea05e68352a1d587c228058c29f974bcb9eee4b",
+      "tests": "nox -s integration: pytest --no-cov -m integration tests/integration, 43 tests: test_build_pex.py (18, three skipped by design: untagged tag-install check and two duplicate dirty-webconsole copies), test_console_decisions_cli.py (10), test_pex_runtime.py (8) and test_webconsole_install.py (7); no test carries the docker marker yet",
+      "environment": "the maintenance capsule on the owner's workstation, Linux x86-64, Python 3.12.3, pytest 9.1.1; Docker present, not used by these tests",
+      "operator": "Antigravity, Gemini 4 Argon (High), for maintenance",
+      "date": "2026-11-10",
+      "result": "passed: 40 passed, 3 skipped in 39.65s",
+      "evidence": "Pre-rc2 integration run on release-0.3.1 after merging PR #18 (b84b06e9), PR #16 (f2bae5cb), PR #20 (eb8ff8cf) and PR #21 (3ea05e68)."
+    },
+    {
+      "kind": "integration",
+      "source-revision": "be0140ca19b426cc9eea4dafa1a8958826d20c56",
+      "tests": "pytest --no-cov -m \"integration and not docker\" tests/integration against the built candidate PEX, the step 'Run packaging integration tests against the release PEX' of release-pex.yml",
+      "environment": "GitHub-hosted runner of workflow run 42734994462, Linux x86-64, the workflow's Python",
+      "operator": "the candidate workflow on tag v0.3.1-rc2, pushed by Antigravity, Gemini 4 Argon (High), for maintenance",
+      "date": "2026-11-10",
+      "result": "passed: 40 passed, 3 skipped in 54.14s",
+      "evidence": "https://github.com/mycodespace-ai/devcapsule/actions/runs/42734994462"
+    }
+  ]
+}

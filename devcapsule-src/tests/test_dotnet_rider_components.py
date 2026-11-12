@@ -16,6 +16,8 @@ from devcapsule.materialization import parse_locked_environment, _ancillary_cont
 from devcapsule.platforms import Platform
 from devcapsule.resolution_matrix import MATRICES
 
+pytestmark = pytest.mark.legacy
+
 
 def lock(needs):
     return tomllib.loads(MATRICES[Platform.LINUX_AMD64].resolve(needs).render_lock())

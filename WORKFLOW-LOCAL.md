@@ -52,19 +52,46 @@ source of the packaged one, not an installed copy. See *Exceptions*.
    *Documentation Is Part Of The Release* names the obligations. Documentation
    is published per [the content–website contract, version 1](engineering-docs/specifications/product/content-website-contract.md).
    `docs/versions.yaml` on `main` is the authored list of documented versions.
-   Promote it after every final tag.
+   Promote it on the release branch before the final tag and merge it to `main`.
 8. Merge the release branch into `main` through a throwaway copy. Create
    the copy at the release branch's tip, named `4PR-NNN-release-X.Y.Z`, for
    one pull request. NNN counts from 1 within the release. Commit nothing to
    the copy. Point no tag into it. The candidate workflow checks tags against
    `release-X.Y.Z` alone. Owner decision, 2026-10-18.
+9. The integration tests run before a candidate is produced. The
+   candidate workflow runs the ones that need no Docker against the
+   release executable. The ones marked `docker` run where a daemon is
+   known, and their run is recorded in the test-run record,
+   `engineering-docs/releases/vX.Y.Z/test-runs.json` on `main`, which the
+   gate reads as it reads the acceptance record: the kind, the source
+   revision, the tests, the environment, the operator, the date, the
+   result and the evidence. The candidate workflow refuses a candidate
+   when the record has no run on the candidate's source revision or that
+   run reports a failure. Owner direction, 2026-11-06.
+10. At least one end-to-end test runs for every release, against the
+   accepted candidate's bytes, and its run is recorded in the test-run
+   record with the candidate's checksum. The final tag points at the
+   accepted candidate's commit, so the final is the candidate's source
+   and frozen inputs rebuilt under the final version, and the candidate's
+   bytes are the ones the end-to-end tests saw. The release notes carry a section
+   *End-to-end tests run*, rendered from the record, naming each test
+   that ran; when fewer than all end-to-end tests ran, the record and the
+   section give the argument for the selection. The final-tag job
+   refuses the release when the record has no end-to-end run on the
+   accepted candidate, names a test the revision does not have, omits the
+   argument for a subset, or when the notes' section differs from the
+   rendering. Owner direction, 2026-11-06.
 
 ## Documentation Refs
 
 Owner grant of 2026-09-28, exercised by `project-management`.
 
 1. The project declares one ref kind of its own: `docs-<version>`.
-2. Fork a `docs-<version>` branch from the final tag `v<version>`.
+2. Fork a `docs-<version>` branch from the release branch at the promotion
+   commit, before the final tag. Push it with
+   `git push origin HEAD:refs/heads/docs-X.Y.Z` immediately after that commit.
+   Keep its `docs/` tree equal to the final tag's documentation.
+   The final-tag job verifies this equality.
 3. Commit only documentation changes to it: changes under `docs/` and nothing
    else.
 4. Never merge it anywhere. Never rebase it.
@@ -114,13 +141,25 @@ in [`INFORMATION-MODEL.md`](devcapsule-src/devcapsule/assets/project_workflow/de
 - **Unit tests**: `.venv/bin/python -m nox -s tests`, with coverage. One
   module while working: `.venv/bin/python -m pytest -q tests/<module>.py`.
   See [unit tests](engineering-docs/development/unit-tests.md).
-- **Integration tests**: `.venv/bin/python -m nox -s integration`. It runs
-  the built executable and subprocesses without Docker. `nox -s typecheck`
-  and `nox -s docs-contract` are integration checks too. See
+- **Advisory diff coverage**: from `devcapsule-src`, run
+  `.venv/bin/python -m pytest tests/ --cov-report=xml:coverage.xml`, then
+  `.venv/bin/diff-cover coverage.xml --compare-branch=origin/main`.
+  Fetch and name the actual target branch. Keep execution serial. Do not
+  apply a failing coverage percentage. See [unit tests](engineering-docs/development/unit-tests.md).
+- **Integration tests**: `.venv/bin/python -m nox -s integration`. An
+  integration test runs a subsystem with the real external things it
+  uses, the built executable, a subprocess, git or the Docker daemon, and
+  fakes the services it does not test. Run it on demand, as the
+  end-to-end suites are run; the gate and the unit selection do not run
+  it. A test that needs the Docker daemon carries the `docker` marker.
+  `nox -s typecheck` and `nox -s docs-contract` are checks of the gate,
+  not tests. See
   [integration tests](engineering-docs/development/integration-tests.md).
 - **End-to-end tests**: `.venv/bin/python -m nox -s e2e`, plus
-  `pex_clean_machine`, `recursive_dogfood_e2e`, and `ide-smoke`. Each needs
-  Docker and is opt-in. Evidence lands under
+  `pex_clean_machine`, `recursive_dogfood_e2e`, and `ide-smoke`. An
+  end-to-end test drives the product through its user entry point, fakes
+  nothing, and reads the result from outside. Each needs Docker and is
+  opt-in. At least one runs for every release. Evidence lands under
   `devcapsule-src/dist/e2e-evidence/`. See
   [end-to-end tests](engineering-docs/development/e2e-tests.md).
 - **Smoke test**: `.venv/bin/python -m nox -s smoke` starts the built
@@ -141,10 +180,60 @@ in [`INFORMATION-MODEL.md`](devcapsule-src/devcapsule/assets/project_workflow/de
   shares the runtime's environment. See its [README](devcapsule-webconsole/README.md).
 - **Gate**: `.venv/bin/python -m nox -s build`, before a checkpoint and
   before integration: distribution version, Python and shell syntax, type
-  check, unit tests, CLI smoke, the executable built and smoked, packaging
-  tests, the documentation contract, then the web console session. The
-  end-to-end suites are not in it. The [developer brief](DEVELOPING.md) says
-  when they run.
+  check, unit tests, CLI smoke, the executable built and smoked, the
+  documentation contract, then the web console session. The integration
+  and end-to-end suites are not in it. The [developer brief](DEVELOPING.md)
+  says when they run.
+
+## Unit Tests
+
+Owner direction, 2026-11-03, after eighteen tests failed in the owner's
+capsule for reasons that were not bugs.
+
+1. A unit test file mirrors the module it tests:
+   `tests/unit/<path>/test_<name>.py` tests `<path>/<name>.py` or
+   `<path>/_<name>.py` under `devcapsule-src`. The unit under test is that
+   module. A test of a heavier suite lives outside the mirror and carries
+   that suite's marker at module level.
+2. A test is a Hoare triple. It establishes its precondition in its own
+   fixtures or asserts it first; a precondition inherited from the
+   repository's checkout, the host or the capsule that runs the test is not
+   a precondition. It performs one action: a call to one public operation
+   of the unit, or the raise it expects. It verifies a postcondition the
+   unit promises, never a value copied from a run. Release identifiers,
+   version strings and digests are not assertions of the unit suite.
+   The outcome of a unit test is a function of the inputs the test
+   constructs. The clock, another process, a service on any host, the
+   network, the environment and the state of the host are inputs: the
+   test sets them, or the unit does not read them. A unit that needs the
+   time takes it as a parameter, and the test passes the instant. A unit
+   test starts another program only when running that program is the
+   unit's contract, and then with inputs the test controls. A test
+   computes in its own process what it can compute there. A test that
+   needs a program for what the program does is an integration test.
+3. Every test function has a docstring stating, in plain English, the
+   contract or the part of it under test. One line is enough when the body
+   is already plain; the reviewer decides that, not the author.
+4. A unit with no declared public surface is not testable under rule 2
+   until it declares one: `__all__`, or a module docstring that names the
+   public operations and leaves the rest private.
+5. Existing test files carry `pytestmark = pytest.mark.legacy`. Do not
+   add, change or delete individual test functions in a legacy file. The
+   mirror of a legacy file `tests/test_<name>.py` is every
+   `tests/unit/<path>/test_<name>.py`; the gate pairs them by file name
+   alone. When a change edits a test in a legacy file or adds, changes or
+   deletes a test in its mirror, refurbish the entire legacy file to
+   rules 1 to 4, move its tests to their mirrors, and delete the legacy
+   file. Fix or replace a legacy test that a legitimate change breaks;
+   never mark it expected to fail or deselect it. Add no marker other
+   than `legacy` to a legacy file.
+6. The gate holds rules 1, 3 and 5: `scripts/validate_unittests_follow_conventions.py` runs in
+   the `tests` and `build` sessions and in `tests.yml`, comparing legacy
+   files with the pull request's base. Its summary line counts the legacy
+   files and tests; the count goes down and never up.
+7. In a Pair Review Loop, the brief instructs the reviewer to verify rules
+   1 to 4 on every new or changed test, and to name for each what would
+   make it fail for a reason that is not a bug.
 
 ## Reasoning And Code Navigation
 
@@ -299,14 +388,17 @@ stands until the GitHub CLI is a DevCapsule component.
 4. After the check passes, the agent may create, update and consult pull
    requests and post reviews on this repository with the CLI. Post a review
    as a comment, `gh pr review --comment`. The human merges into `main` and
-   into a release branch.
+   into a release branch. Before opening or updating a pull request, run
+   the unit session on the branch as it will be pushed, and open or update
+   none whose gate is likely to fail. A change to records alone is not an
+   exception. Owner direction, 2026-11-06.
 5. When the file is absent, the human does GitHub: opening, updating and
    merging pull requests; dispatching workflows; changing repository or
    publication settings. Prepare and validate the change, commit and push
    the branch over SSH, and give the human the compare link:
 
    ```text
-   https://github.com/ccozianu/devcapsule/compare/<base>...<head>?expand=1
+   https://github.com/mycodespace-ai/devcapsule/compare/<base>...<head>?expand=1
    ```
 
    `<base>` is the branch the pull request targets. `<head>` is the pushed
@@ -344,6 +436,12 @@ of `WORKFLOW.md`, in this checkout.
    - Antigravity: `antigravity --model <model> --dangerously-skip-permissions -p '<one-line instruction to follow the brief on standard input>' < <brief>`;
      the model flag goes before `-p`, which takes the prompt as its own argument. A round continues the
      same conversation with `-c` before `-p`.
+   Owner direction, 2026-10-28: every form adds the engine's streaming
+   output, so the log carries one event per step while the partner runs
+   and not only its final report: Antigravity `--output-format stream-json`,
+   Claude Code `--output-format stream-json --verbose`, Codex `--json`.
+   The first loop after this direction proves each form and records it in
+   the development document.
    Establish any other form with the human and record it here before use.
 5. The review partner uses the GitHub CLI as *GitHub Integration* says; the
    brief repeats the activation line. Label the assessment comment
@@ -356,6 +454,13 @@ of `WORKFLOW.md`, in this checkout.
    the loops run are in
    [the development document](engineering-docs/development/review-partner-loop.md).
    Keep it current with every loop.
+8. Owner direction, 2026-10-28. When two agents cooperate on a task, the
+   one connected to the human pushes progress to where the human reads,
+   the chat or the terminal of that session: at least when the partner
+   starts, at each commit or gate it makes, and when it ends. The
+   partner's own log is evidence, not a report.
+9. Owner direction, 2026-11-03. The brief carries the reviewer's duty under
+   *Unit Tests*, rule 7, for every loop.
 
 ## Commit Authorship
 
@@ -393,7 +498,10 @@ by merging `main` in. The hosting platform allows merge commits only. It
 deletes the head branch on merge. It refuses force pushes to `main` and
 deletion of `main`. The merge commit is the record of the branch: its second
 parent is the merged head and its message names the source branch. Delete a
-merged branch.
+merged branch. Owner setting, 2026-11-04: the merge commit's title is the
+pull request's title and its message is the pull request's description, so
+the description an agent writes, and the coverage block CI appends to it,
+are the merge commit's detail as they stand at merge time.
 The earlier ruling that `ws-workflow-improvements/v1` rebases onto `main` is
 retired. That branch merges like the others. The engineering source is
 [merge strategy and commit identity](engineering-docs/implementation-notes/workflow/2026-08-17-merge-strategy-and-commit-identity.md).

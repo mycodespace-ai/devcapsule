@@ -1,19 +1,21 @@
 ---
-description: Check your computer, download the DevCapsule executable for this version, verify its checksum and install it in your own home directory.
+description: Check prerequisites, download the DevCapsule executable for this release, verify its SHA-256 checksum, and install it under ~/.local/bin.
 weight: 1
-updated: 2026-09-28
+updated: 2026-11-03
 ---
 # Install DevCapsule
 
-DevCapsule is one executable for **Linux, Intel/AMD 64-bit**. It needs a web
-browser and Docker running on the same computer. It does not run natively on
-macOS, on Windows, or on ARM. **On Windows, read
-[Windows via WSL2](../platforms/windows-wsl2.md) before installing** and run
-every command below in your Linux terminal.
+DevCapsule ships as a single executable for **Linux (`x86_64` / Intel-AMD
+64-bit)**. It requires a web browser and a working Docker daemon on the same
+machine. It does not run natively on macOS, Windows, or ARM. **On Windows, read
+[Windows via WSL2](../platforms/windows-wsl2.md) first** and run every command
+below inside your WSL2 Linux terminal. On an Apple Silicon Mac, read
+[macOS](../platforms/macos.md) for the experimental launcher you build from
+source; the steps below do not apply.
 
 ## Check your computer
 
-In a terminal:
+In a Linux terminal:
 
 ```bash
 uname -sm
@@ -21,21 +23,19 @@ docker info
 docker buildx version
 ```
 
-Expect `Linux x86_64`, Docker server information, and a Buildx version. If
-Docker is missing or reports a connection or permission error, complete
-[Docker's installation instructions](https://docs.docker.com/engine/install/)
-first. Docker must work as your ordinary user; never run DevCapsule with
-`sudo`.
+Expect `Linux x86_64`, Docker server details, and a Buildx version. If Docker
+is missing or prints a connection or permission error, complete [Docker Engine
+installation](https://docs.docker.com/engine/install/) first. Docker must work
+for your ordinary user account—never run `devcapsule` with `sudo`.
 
-You also need `curl` and `sha256sum`. The first launch downloads a base image
-and an IDE: allow several GB of disk space and some minutes. Later launches
-reuse them.
+You also need `curl` and `sha256sum`. Allow several gigabytes of free disk
+space for the base image and IDE on your first launch; subsequent launches
+reuse those cached layers.
 
 ## Download, verify, install
 
-Paste this block into the same terminal. It checks the download against its
-published checksum before installing the executable in your own
-`~/.local/bin`:
+Paste this block into your terminal to download the release executable, check
+its SHA-256 digest, and install it to `~/.local/bin/devcapsule`:
 
 ```bash
 (
@@ -51,16 +51,23 @@ published checksum before installing the executable in your own
 )
 ```
 
-You should see `devcapsule.pex: OK`. If the block reports an error, stop and
-retry the failed download; do not continue with an unverified file.
+Expect `devcapsule.pex: OK`. If checksum verification fails, delete the
+temporary file and retry—never install an unverified binary.
+
+Check the installed version:
 
 ```bash
 ~/.local/bin/devcapsule version
 ```
 
-Expect `{{tag}}`. The guides use the full path `~/.local/bin/devcapsule` so
-they work even when `~/.local/bin` is not on your shell's search path. No
-Python, pip, or source checkout is needed. The release page for this version
-is [{{tag}}]({{release_url}}).
+Expect `{{tag}}` (release notes: [{{tag}}]({{release_url}})). The release
+executable includes its own Python runtime. You do not need host Python, a
+virtual environment, `pip`, or a source checkout.
+
+The onboarding walkthroughs spell out `~/.local/bin/devcapsule` so they work
+immediately even before `~/.local/bin` is on your shell's `PATH`. Add
+`$HOME/.local/bin` to `PATH` in your shell profile (`export
+PATH="$HOME/.local/bin:$PATH"`) to run `devcapsule` directly as shown in the
+rest of the documentation.
 
 **Next: [your first session](first-session.md).**

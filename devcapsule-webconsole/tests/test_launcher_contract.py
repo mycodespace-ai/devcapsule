@@ -17,6 +17,7 @@ from pathlib import Path
 import pytest
 
 from devcapsule import cli as launcher_cli
+from devcapsule.commands._console_channel import _config_command
 from devcapsule.configuration import console_channel as launcher_channel
 from devcapsule.configuration.listing import ListingRow
 from devcapsule_webconsole import configuration as console_channel
@@ -26,16 +27,16 @@ CONTRACT = Path(__file__).resolve().parents[1] / "CONFIGURATION-CHANNEL.md"
 
 
 def _help(*arguments: str) -> tuple[int, str]:
-    """The launcher's parser on ``project ARGUMENTS --help``: status and the help text."""
+    """The launcher's parser on ``ARGUMENTS --help``: status and the help text."""
     out = io.StringIO()
     with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
-        status = launcher_cli.main(["project", *arguments, "--help"])
+        status = launcher_cli.main([*arguments, "--help"])
     return status, out.getvalue()
 
 
 @pytest.mark.parametrize("name", sorted(READ_COMMANDS))
 def test_every_command_the_console_runs_exists_and_takes_json(name: str) -> None:
-    status, text = _help(*READ_COMMANDS[name])
+    status, text = _help("project", *READ_COMMANDS[name])
     assert status == 0, f"the launcher no longer has 'project {' '.join(READ_COMMANDS[name])}'"
     assert "--json" in text, f"'project {' '.join(READ_COMMANDS[name])}' no longer takes --json"
 
@@ -57,14 +58,16 @@ def test_the_console_names_the_same_widenings_and_secure_values() -> None:
     (*launcher_channel.APPLIED_VERBS, *launcher_channel.DEFERRED_VERBS, *launcher_channel.READ_ONLY_VERBS),
 ))
 def test_every_classified_verb_is_a_config_command(verb: str) -> None:
-    assert _help("config", verb)[0] == 0, f"'config {verb}' is classified but the launcher has no such command"
+    assert _help("project", "config", verb)[0] == 0, f"'config {verb}' is classified but the launcher has no such command"
 
 
 @pytest.mark.parametrize("pair", sorted(
     (*launcher_channel.APPLIED_SUBVERBS, *launcher_channel.DEFERRED_SUBVERBS, *launcher_channel.READ_ONLY_SUBVERBS),
 ))
-def test_every_classified_subverb_is_a_config_command(pair: tuple[str, str]) -> None:
-    assert _help("config", *pair)[0] == 0, f"'config {' '.join(pair)}' is classified but the launcher has no such command"
+def test_every_classified_subverb_routes_to_a_launcher_command(pair: tuple[str, str]) -> None:
+    # The wire tokens stay stable when a command moves from project to home.
+    arguments = _config_command(Path("/project"), pair)[3:]  # Strip Python, -m, devcapsule.
+    assert _help(*arguments)[0] == 0, f"request {' '.join(pair)!r} routes to a missing launcher command"
 
 
 def _tokens(bullet: str) -> set[str]:

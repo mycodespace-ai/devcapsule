@@ -1,64 +1,82 @@
 ---
-description: Exactly what a capsule and the agents inside it can reach on your computer by default, what they cannot, and the few things you can choose to grant.
+description: What a capsule and its coding agents can reach on your computer by default, what stays isolated, and which permissions you can grant or withdraw.
 role: containment
 weight: 1
-updated: 2026-09-28
+updated: 2026-10-30
 ---
 # The boundary
 
-A capsule is a container that runs your IDE and your agents. This page says
-what crosses its boundary. The short version: your project folder and the
-capsule's own persistent state cross; nothing else does unless you grant it,
-and every grant is a recorded decision you can withdraw.
+A capsule runs your IDE and coding agents inside a container. By default,
+it mounts your project directory and managed state, but not your host home
+directory or display session. It also has outbound network access.
+You can inspect and withdraw saved authorizations.
 
 ## Shared by default
 
-| What | How | Why |
+| What crosses | How it works | Why |
 |---|---|---|
-| The project folder | Mounted read/write at the same content | That is the work; edits are real, and Git is your undo |
-| The capsule's persistent home and state | DevCapsule-managed directories on your computer, mounted into the capsule | So IDE settings, extensions, agent sign-ins and installed extras survive; see [What persists](../sessions/what-persists.md) |
-| The internet, through Docker's ordinary bridge network | Outbound connections work; nothing on the host network is exposed to the capsule, and nothing in the capsule is exposed to the host except the desktop URL on loopback | Agents and package managers need it |
-| The capsule's desktop | A browser tab on your computer, over a per-run loopback port with a per-run token | Nothing of your computer's display session enters the capsule |
+| Project working tree | Mounted read-write at `/workspace/<slug>` (or the manifest's `project.mount`) | Edits change your real files, including `.git`; keep an independent backup |
+| Per-checkout persistent home and component slots | Managed host directories under your [configuration home](../configuration/home.md), mounted into the capsule | Preserves IDE preferences, plugins/extensions, agent sign-ins, and `/opt/xtras` across container replacements ([What persists](../sessions/what-persists.md)) |
+| Outbound internet (`bridge` network) | Outbound connections work, including to reachable host and LAN services; host loopback is separate, and only session endpoints are published by default | Package managers, language servers, and hosted AI APIs need outbound HTTPS |
+| Contained desktop and web console | Loopback-only (`127.0.0.1`) ports with fresh per-run tokens for the desktop tab and (on base recipe `11`+) the read-only/request [web console](../sessions/web-console.md) | Gives you the IDE desktop and session inspector in your browser without exposing your host display session |
+
+Also mounted read-only on startup when present: your active configuration
+home's `settings.toml` (channel trust names and resource defaults, containing
+no credentials) so `devcapsule home show` works inside the capsule. The launcher
+also mounts this checkout's configuration and launch context read-only, plus
+writable session-log and console-request directories. It supplies generated
+user/group files and session tokens. See [The
+configuration home](../configuration/home.md#inside-a-capsule).
 
 ## Not shared by default
 
-- Your home directory, your shell configuration, your SSH keys, your cloud
-  credentials, your password stores. An agent inside the capsule cannot
-  read them because they are not there.
-- Your computer's clipboard. Text crosses only when you paste it into the
-  desktop tab's clipboard panel or copy it out of it.
-- Your display session. The capsule has its own; it cannot see your windows
-  or your keystrokes.
-- Your Docker daemon. The capsule cannot start containers on your computer.
-- Your host network namespace. Services on your computer are not reachable
-  as `localhost` from the capsule.
-- Root on your computer. A capsule never has it, whatever you grant.
+- **Your host home directory (`$HOME`)**, shell dotfiles, `~/.ssh` keys, cloud
+  CLI profiles, browser cookies, and password stores—agents inside the capsule
+  cannot read them because they are not mounted.
+- **Your host clipboard**—text crosses only when you copy or paste through the
+  contained desktop's clipboard panel ([Clipboard and
+  browser](../everyday-development/clipboard-and-browser.md)).
+- **Your host display server**—the capsule renders on its own virtual display
+  and cannot capture your host windows or keystrokes.
+- **Your host Docker daemon**—processes inside the capsule cannot start or
+  inspect host containers.
+- **Your host network namespace**—services listening on `127.0.0.1` on your
+  computer are not reachable as `localhost` inside the capsule.
+- **Host root privileges**—unprivileged capsules run with `--cap-drop ALL` and
+  `--security-opt no-new-privileges`. Granting `development-sudo` removes
+  these restrictions inside the container. Granting a rootful host Docker
+  socket can give capsule processes root-level control of the host.
 
 ## What you can grant
 
-Each of these is an authorization: a project may recommend it, only you can
-grant it, and `project config show` tells you which are pending. The
-[granting and withdrawing](granting-and-withdrawing.md) page has the
-commands.
+Every permission below is an authorization node visible in `devcapsule project
+config show`. A project manifest may recommend host access with a reason, and
+only you can grant it; see [Granting and withdrawing
+access](granting-and-withdrawing.md) for the commands.
 
 | Authorization | What it opens | Grant it when |
 |---|---|---|
-| `network host` | The capsule shares your computer's network namespace: your local services become its `localhost`, and its ports become yours | The project talks to services running on your computer |
-| `docker-daemon host-socket` | The capsule can control your Docker daemon | The project builds or runs containers; understand that this is control over the host daemon |
-| `development-sudo true` | The capsule's user may become root **inside the capsule**, never on your computer | Installing system packages in the capsule |
-| `host-browser true` | Links opened inside the capsule open in your computer's browser | Sign-in flows and previews are more convenient; nothing else changes |
-| `host-x11 true` | The capsule uses your computer's display session instead of its own desktop | Almost never. It lets capsule programs see and inject input across your whole session; the launch says so. No project can recommend it |
-| `<agent>-download true` | DevCapsule may download that vendor's agent under its terms | You selected the agent and accept the vendor's terms |
-| `base-image <digest>` | This checkout may run that exact base image | Always asked once; a changed recommendation asks again |
+| `network host` | Shares your host network namespace: host `localhost` services and capsule ports become one namespace | Your app needs direct access to host-bound services or dynamic local ports ([Services and ports](../your-project/services-and-ports.md)) |
+| `docker-daemon host-socket` | Mounts `/var/run/docker.sock` into the capsule | Your build or tests start containers; this grants broad control of the daemon and its host bind mounts |
+| `development-sudo true` | Grants passwordless `sudo` **inside the capsule container** | You need to install temporary OS packages inside a session |
+| `host-browser true` | Forwards `http://` and `https://` URLs opened inside the capsule to your host browser through a URL-only broker | OAuth sign-ins and external documentation links are more convenient on your host browser |
+| `host-x11 true` | Runs the IDE directly on your host X11 display instead of the contained desktop | Almost never—X11 lets clients read keystrokes, clipboard, and windows across your entire host display session; manifests cannot recommend it |
+| `vscode-download`, `claude-code-download`, `antigravity-download` (`true`) | Permits DevCapsule to download that vendor's pinned artifact under its license terms (when not already covered by home channel trust) | You selected that IDE or agent and accept its vendor terms ([Vendor software and trust](../configuration/software-approvals.md)) |
+| `base-image` (`default` or `<image>`) | Approves the lock's pinned base digest for this checkout or selects an inspected [local base image](../configuration/local-base.md) | Settled once via home `devcapsule-base` trust or per-checkout consent |
 
-A grant applies to the next launch, not to a running capsule. A grant can
-also be given for one run only, without recording it. And a project cannot
-grant itself anything: a recommendation committed in the repository is a
-request to you, shown with its reason, and refused by default.
+Authorizations take effect on the **next** launch; they do not change a running
+container. The five host-access nodes can also be granted for one run with
+`project run --authorize ...`. Base and vendor consents require saved approval
+or home channel trust. A Git repository cannot grant itself an authorization.
 
-## What this means for an agent
+## Working with coding agents
 
-An agent inside a capsule works without approvals because the worst it can
-do is change your project, which Git protects, and its own state. That is
-the boundary the *YOLO mode* on the landing page refers to. Widening it is
-your decision, made per checkout, visible in one listing, and reversible.
+An agent can edit mounted files, run builds and tests, and change persistent
+checkout state. Files under the project mount remain accessible, including
+credentials accidentally stored there. Git cannot protect its own metadata
+from a process with write access.
+
+Use `devcapsule project config show` to inspect saved authorizations. Also
+inspect `config docker-args list`: extra Docker options can add mounts and
+capabilities outside those authorization nodes. Changes to either apply on
+the next launch.

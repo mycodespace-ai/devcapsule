@@ -8,6 +8,8 @@ from devcapsule.components.pycharm import runtime_template
 from devcapsule.container_runtime.contract import Identity, RuntimePlanError
 from devcapsule.persistence import StateRoots, plan_component_persistence, prepare_persistence_directories
 
+pytestmark = pytest.mark.legacy
+
 
 def test_component_state_uses_lifecycle_roots_and_declared_destinations(tmp_path: Path) -> None:
     roots = StateRoots(tmp_path / "data", tmp_path / "state", tmp_path / "cache")

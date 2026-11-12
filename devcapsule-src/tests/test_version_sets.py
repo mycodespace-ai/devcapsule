@@ -36,6 +36,8 @@ from devcapsule.materialization import ImageDetails, cache_root
 from devcapsule.platforms import Platform
 from devcapsule.resolution_matrix import MATRICES
 
+pytestmark = pytest.mark.legacy
+
 
 def invoke(project, *args):
     return cli.main(["project", "--path", str(project), *map(str, args)])
@@ -150,10 +152,12 @@ def journey(tmp_path, monkeypatch, request):
     selected = ExecutionConfiguration.load(root).project
     runtime = tmp_path / "runtime.pex"
     runtime.write_bytes(b"fixture-runtime")
-    monkeypatch.setattr("devcapsule.environment_realization.runtime_artifact", lambda: runtime)
-    monkeypatch.setattr("devcapsule.runtime_artifact.runtime_artifact", lambda: runtime)
+    monkeypatch.setattr("devcapsule.environment_realization.runtime_artifact", lambda _platform: runtime)
+    monkeypatch.setattr("devcapsule.runtime_artifact.runtime_artifact", lambda _platform: runtime)
     monkeypatch.setattr("devcapsule.materialization.read_pex_build_info", lambda _: SimpleNamespace(
         build_mnemonic="fixture", source_repository="fixture", source_revision="fixture", source_url="fixture"))
+    monkeypatch.setattr("devcapsule.materialization.extract_webconsole_bundle",
+                        lambda _pex, destination: (destination.mkdir(parents=True, exist_ok=True), destination)[1])
     base = ImageDetails(lock["base"]["reference"], "sha256:" + "a" * 64, {
         "devcapsule.image.managed": "true", "devcapsule.metadata.version": "1", "devcapsule.image.kind": "base",
         "devcapsule.base.display": "contained"}, "linux", "amd64")
@@ -161,7 +165,7 @@ def journey(tmp_path, monkeypatch, request):
     state = SimpleNamespace(fail_build=False, exit_code=0, during_run=None, launched=[], built=[], images=images,
                             root=root, record=selected.checkout_path, resolution=selected.resolution_path, component=component,
                             lock=path, original=path.read_bytes(), metadata=metadata, base=base)
-    def require(reference):
+    def require(reference, platform=None):
         if reference not in images:
             raise CliError("local image missing")
         return images[reference]
@@ -707,6 +711,7 @@ def runtime_view(s, monkeypatch, tmp_path):
     context.write_text(json.dumps(snapshot))
     monkeypatch.setattr(runtime_configuration, "CONTEXT_PATH", context)
     monkeypatch.setattr(runtime_configuration, "CONFIGURATION_PATH", s.record.parent)
+    monkeypatch.setattr(runtime_configuration, "CHANNEL_PATH", tmp_path / "absent-channel")
     monkeypatch.setenv("PROJECT_PATH", str(runtime_root))
     monkeypatch.setenv("DEVCAPSULE_CONTAINER_NAME", "runtime-fixture")
     return runtime_root, snapshot, context

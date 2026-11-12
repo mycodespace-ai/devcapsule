@@ -62,6 +62,8 @@ def _dispatch(args: list[str]) -> int:
         raise framework.UsageError(
             f"unknown option {name!r}; run '{PROJECT_NAME} --help' for usage."
         )
+    from devcapsule.configuration.storage import load_settings
+    load_settings()  # Admit the home before command-specific diagnoses or writes.
     entry = _load_command(name)
     if entry is None:
         visible = ", ".join(command_names())

@@ -18,7 +18,11 @@ from pathlib import Path
 
 import pytest
 
+from devcapsule.platforms import HostOs
+from devcapsule.runtime_artifact import RUNTIME_PEX_ENV, executable_platform
 from tests.e2e.ide_session import SURFACES, IdeSurface, capture_desktop, command, desktop_page_answers, ide_session, launched_ide, stop_session, wait_for_console_url, wait_for_ide_window
+
+pytestmark = pytest.mark.e2e
 
 EVIDENCE_ROOT = Path(__file__).resolve().parents[2] / "dist" / "e2e-evidence" / "ide-smoke"
 
@@ -35,10 +39,12 @@ def evidence_run() -> Path:
     return run
 
 
-@pytest.mark.e2e
 @pytest.mark.ide_smoke
 @pytest.mark.parametrize("surface", SURFACES, ids=[surface.name for surface in SURFACES])
 def test_ide_comes_alive(surface: IdeSurface, built_pex: Path, tmp_path: Path, evidence_run: Path) -> None:
+    """Each IDE, launched in a fresh project by the executable under test, opens its window on the
+    capsule's desktop, the desktop and the token-gated web console answer, and the capsule runs the
+    runtime that executable delivers."""
     evidence = evidence_run / surface.name
     (evidence_run / "run.json").write_text(json.dumps({
         "executable": str(built_pex),
@@ -77,7 +83,8 @@ def test_ide_comes_alive(surface: IdeSurface, built_pex: Path, tmp_path: Path, e
         identity = command("docker", "inspect", "--format", '{{json .Id}} {{json .Image}}', session.container)
         (evidence / "container-identity.txt").write_text(identity.stdout, encoding="utf-8")
         child_digest = command("docker", "exec", session.container, "sha256sum", "/opt/devcapsule/bin/devcapsule.pex").stdout.split()[0]
-        assert child_digest == hashlib.sha256(built_pex.read_bytes()).hexdigest(), "Child runtime differs from selected executable"
+        assert child_digest == hashlib.sha256(delivered_runtime(built_pex, session.workspace).read_bytes()).hexdigest(), \
+            "Child runtime differs from the runtime the selected executable delivers"
         if surface.name == "eclipse":
             package = command("docker", "exec", "--user", f"{os.getuid()}:{os.getgid()}",
                               session.container, "python3", "-c",
@@ -150,6 +157,22 @@ def test_ide_comes_alive(surface: IdeSurface, built_pex: Path, tmp_path: Path, e
                         "editor_font_before": before, "editor_font_after": after,
                         "saved_marker_retained": True, "window": resumed_window,
                     }, indent=2) + "\n", encoding="utf-8")
+
+
+def delivered_runtime(executable: Path, workspace: Path) -> Path:
+    """The executable a launch from ``executable`` should deliver into the capsule.
+
+    Derived independently of the launcher's choice: itself when it is a Linux
+    executable; for a macOS launcher, the Linux runtime its environment names,
+    from a directory the one for the platform of the one lock the smoke's init wrote.
+    """
+    if executable_platform(executable) is not HostOs.DARWIN:
+        return executable
+    named = Path(os.environ[RUNTIME_PEX_ENV]).expanduser().resolve()
+    if named.is_dir():
+        (lock,) = (workspace / ".devcapsule").glob("devcapsule.*.lock")
+        return named / f"devcapsule-{lock.name.split('.')[1]}"
+    return named
 
 
 def editor_font_size(container: str) -> float:

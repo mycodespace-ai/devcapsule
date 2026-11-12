@@ -10,7 +10,20 @@ from devcapsule.images.contract import LEGACY_RECIPE_SOURCE_PATH, Provenance
 from devcapsule.components.catalog import COMPONENTS
 
 from .file_formats import AuthorizationScalar, ProjectConfigurationError, canonical_digest
-from .trust import BASE_CHANNEL, Channel, WorkstationTrust, channels_for
+from .trust import BASE_CHANNEL, Channel, HomeTrust, channels_for
+
+__all__ = [
+    # The catalog of decisions a checkout carries, and its review.
+    "AuthorizationDeclaration", "AuthorizationChoice", "AuthorizationReview", "AuthorizedBaseSelection",
+    "authorization_declarations", "authorization_deny_value", "base_recovery_choices",
+    "review_authorizations", "resolved_checkout_authorizations",
+    "normalize_authorization_value", "render_authorization_value",
+    # What the platform lock says about the base, validated.
+    "immutable_registry_reference", "locked_base_reference", "locked_base_contract", "locked_base_build_mnemonic",
+    "authorized_base_selection", "authorized_base_reference",
+    # The curated V1 vocabularies.
+    "CURATED_HOST_RECOMMENDATIONS", "HOME_CAPABILITY_DEFAULTS",
+]
 
 
 OCI_REPOSITORY_COMPONENT_PATTERN = re.compile(r"^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
@@ -51,7 +64,7 @@ CURATED_HOST_RECOMMENDATIONS: dict[str, tuple[tuple[str, ...], AuthorizationScal
 # form was the raw ``--network`` passthrough, and once ``--authorize network
 # host`` replaced that passthrough the omission only made a fresh project
 # refuse the documented command.
-WORKSTATION_CAPABILITY_DEFAULTS: dict[str, tuple[AuthorizationScalar, str]] = {
+HOME_CAPABILITY_DEFAULTS: dict[str, tuple[AuthorizationScalar, str]] = {
     "docker-daemon": (
         "host-socket",
         "Expose the host Docker daemon socket to the capsule; this permits broad "
@@ -88,7 +101,7 @@ WORKSTATION_CAPABILITY_DEFAULTS: dict[str, tuple[AuthorizationScalar, str]] = {
 # Each string-valued authorization node's deny spelling — the value the run
 # path falls back to when nothing grants the capability. Recording it is the
 # developer's reduce-privilege decision (owner rulings 2026-09-03: denial is a
-# *value*, so a checkout's recorded denial outranks a workstation-level
+# *value*, so a checkout's recorded denial outranks a home-level
 # allow); bool nodes deny with plain ``false`` and need no entry here.
 AUTHORIZATION_DENY_VALUES: dict[str, str] = {
     "docker-daemon": "none",
@@ -111,7 +124,7 @@ class AuthorizationDeclaration:
     recommendation_digest: str
     description: str
     display_value: str | None = None
-    # False for workstation-capability defaults the project did not recommend;
+    # False for home-capability defaults the project did not recommend;
     # bulk authorization of "everything recommended" must not include them.
     project_recommended: bool = True
     # "acquisition" nodes gate a vendor download with per-user terms; init has
@@ -175,7 +188,7 @@ class AuthorizationReview:
     # is kept and never asked again (D-0012, answer 23 of the CLI UX work
     # order); this says what changed, for the listing to disclose.
     superseded: str | None = None
-    # The channel of the workstation trust record that answers this node
+    # The channel of the home trust record that answers this node
     # (D-0011), when the trust covers it; the checkout record is not consulted.
     trusted_channel: str | None = None
 
@@ -312,17 +325,17 @@ def authorization_declarations(
             recommendation_digest=canonical_digest({"name": name, "recommendation": recommendation}),
             description=justification,
         )
-    for name, (supported_value, description) in WORKSTATION_CAPABILITY_DEFAULTS.items():
+    for name, (supported_value, description) in HOME_CAPABILITY_DEFAULTS.items():
         if name in declarations:
             continue
         # The digest is a stable constant distinct from every recommendation
         # digest, so a later project recommendation correctly stales the
-        # workstation-default answer: the question changed, so it is re-asked.
+        # home-default answer: the question changed, so it is re-asked.
         declarations[name] = AuthorizationDeclaration(
             name=name,
             recommended_value=supported_value,
             recommendation_digest=canonical_digest(
-                {"name": name, "recommendation": "workstation-default"}
+                {"name": name, "recommendation": "home-default"}
             ),
             description=description,
             project_recommended=False,
@@ -346,7 +359,7 @@ def normalize_authorization_value(
         if keyword == "none":
             # The reserved denial keyword (owner ruling 2026-09-03): resolves
             # to the node's deny value at decision time and stores it, so a
-            # checkout's recorded denial outranks a workstation-level allow.
+            # checkout's recorded denial outranks a home-level allow.
             if deny is None:
                 raise ProjectConfigurationError(
                     f"Authorization {declaration.name!r} is mandatory and has no deny "
@@ -369,7 +382,7 @@ def normalize_authorization_value(
         raise ProjectConfigurationError(f"Unsupported authorization metadata for {declaration.name!r}.")
     if normalized != expected and (deny is None or normalized != deny):
         # Deliberately source-neutral: the recommendation may be a project's
-        # or a workstation default, and denial is always the developer's to
+        # or a home default, and denial is always the developer's to
         # record — only values *beyond* recommendation-or-deny need reviewed
         # metadata (2026-09-02 denial-grammar bug, aggravations 1 and 2).
         accepted = f"its recommended value {render_authorization_value(expected)!r}"
@@ -448,8 +461,8 @@ def _authorization_choices(
     return tuple(choices)
 
 
-def _trusted_channel(declaration: AuthorizationDeclaration, channels: Mapping[str, Channel], trust: WorkstationTrust | None) -> str | None:
-    """The accepted channel that answers a base or acquisition node, when the workstation trusts it."""
+def _trusted_channel(declaration: AuthorizationDeclaration, channels: Mapping[str, Channel], trust: HomeTrust | None) -> str | None:
+    """The accepted channel that answers a base or acquisition node, when the home trusts it."""
     if trust is None or not declaration.required:
         return None
     for channel in channels.values():
@@ -460,12 +473,12 @@ def _trusted_channel(declaration: AuthorizationDeclaration, channels: Mapping[st
 
 def review_authorizations(
     manifest: Mapping[str, Any], lock: Mapping[str, Any], checkout: Mapping[str, Any],
-    trust: WorkstationTrust | None = None,
+    trust: HomeTrust | None = None,
 ) -> tuple[AuthorizationReview, ...]:
     """Assess every authorization without writes, Docker calls or early refusal.
 
     The same result drives inspection and resolution. Missing optional host
-    access is safe; a base or vendor download the workstation's trust record
+    access is safe; a base or vendor download the home's trust record
     covers (D-0011) is answered by it; a missing consent the trust does not
     cover is not run-ready. A host answer recorded under an earlier
     recommendation is kept, never asked again, and marked superseded
@@ -497,10 +510,10 @@ def review_authorizations(
             except ProjectConfigurationError:
                 checkout_blocks_trust = True  # An invalid answer still needs repair.
         if channel is not None and not local_override and not checkout_blocks_trust:
-            # The workstation's acceptance answers it; a recorded per-checkout
+            # The home's acceptance answers it; a recorded per-checkout
             # denial of a vendor download still outranks (denial is a value).
             reviews.append(AuthorizationReview(
-                name, "trusted", "workstation", recommended, declaration.description,
+                name, "trusted", "home", recommended, declaration.description,
                 declaration.recommended_value, None, (), None, channel,
             ))
             continue
@@ -589,7 +602,7 @@ def review_authorizations(
 
 def resolved_checkout_authorizations(
     manifest: Mapping[str, Any], lock: Mapping[str, Any], checkout: Mapping[str, Any],
-    trust: WorkstationTrust | None = None,
+    trust: HomeTrust | None = None,
 ) -> dict[str, AuthorizationScalar]:
     reviews = review_authorizations(manifest, lock, checkout, trust)
     problems = [review for review in reviews if review.problem is not None]
@@ -697,7 +710,7 @@ def authorized_base_selection(
     checkout: Mapping[str, Any],
     *,
     required: bool = True,
-    trust: WorkstationTrust | None = None,
+    trust: HomeTrust | None = None,
 ) -> AuthorizedBaseSelection | None:
     locked_reference = locked_base_reference(lock)
     build_mnemonic = locked_base_build_mnemonic(lock)
@@ -708,7 +721,7 @@ def authorized_base_selection(
     command = f"devcapsule project config authorize base-image {locked_reference}"
     local_override = isinstance(authorization, dict) and authorization.get("image-id") is not None
     if not local_override and trust is not None:
-        # D-0011: the workstation trusts DevCapsule's base channel; the pinned
+        # D-0011: the home trusts DevCapsule's base channel; the pinned
         # digest is the selection, including when an earlier published base
         # still has per-checkout consent. An explicit local override wins.
         channel = channels_for(lock).get(BASE_CHANNEL)
@@ -779,7 +792,7 @@ def authorized_base_reference(
     checkout: Mapping[str, Any],
     *,
     required: bool = True,
-    trust: WorkstationTrust | None = None,
+    trust: HomeTrust | None = None,
 ) -> str | None:
     """Compatibility accessor for consumers needing only the selected reference."""
 

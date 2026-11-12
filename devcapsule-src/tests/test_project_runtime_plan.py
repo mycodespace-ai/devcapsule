@@ -21,6 +21,9 @@ from devcapsule.configuration.storage import (
 )
 from devcapsule.project_runtime_plan import project_runtime_plan
 from devcapsule_runtime.contract import RuntimePlan as LegacyRuntimePlan
+import pytest
+
+pytestmark = pytest.mark.legacy
 
 
 def selected_project(tmp_path: Path) -> tuple[ResolvedProject, LockedEnvironment]:

@@ -72,8 +72,8 @@ def pending_software_approvals(
     kind, in which case the review's own refusal applies.
     """
 
-    from .trust import WorkstationTrust
-    reviews = review_authorizations(manifest, lock, checkout, WorkstationTrust.read(trust or {}))
+    from .trust import HomeTrust
+    reviews = review_authorizations(manifest, lock, checkout, HomeTrust.read(trust or {}))
     pending = [item for item in reviews if item.problem is not None]
     if not pending:
         return ()

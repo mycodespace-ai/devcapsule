@@ -1,17 +1,28 @@
 ---
-description: What DevCapsule needs from a Linux computer, and the distributions and Docker setups it has been used on.
+description: What DevCapsule needs from a Linux computer, and which distributions and Docker setups are supported.
 weight: 1
-updated: 2026-09-28
+updated: 2026-10-30
 ---
 # Linux
 
-DevCapsule ships as a Linux, Intel/AMD 64-bit executable and needs Docker
-Engine with Buildx, working as your ordinary user, and a web browser. That
-is the whole requirement; [Install](../getting-started/install.md) checks it
-in three commands. ARM Linux is not covered by this release.
+DevCapsule {{tag}} ships as a single executable for **64-bit Intel/AMD Linux
+(`x86_64` / `linux-amd64`)**. You need:
 
-The project is developed and released on Ubuntu-family desktops with Docker
-Engine from Docker's own repository. Other distributions with a current
-Docker Engine are expected to work and are not individually verified; if
-yours does not, [an issue](https://github.com/ccozianu/devcapsule/issues/new)
-with the distribution and the error is welcome.
+- **Docker Engine with Buildx**, usable directly by your ordinary user account
+  (never run `devcapsule` under `sudo`).
+- **A modern web browser** to open the capsule's contained desktop and
+  [web console](../sessions/web-console.md) on `127.0.0.1`.
+- **`curl` and `sha256sum`** to download and verify the release executable,
+  plus several gigabytes of free disk space for base and IDE image layers.
+
+[Install](../getting-started/install.md) starts with three commands to check
+the architecture, Docker daemon, and Buildx.
+ARM Linux (`aarch64` / `linux-arm64`) is not supported in {{tag}}.
+
+DevCapsule is developed and tested on Ubuntu-family desktops using Docker
+Engine from [Docker's official repository](https://docs.docker.com/engine/install/).
+Other current `x86_64` Linux distributions with a standard Docker Engine and
+Buildx setup are expected to work without special flags; if yours hits a
+platform-specific failure, please [open an issue](https://github.com/mycodespace-ai/devcapsule/issues/new)
+with your distribution, Docker version, and error output (omitting private
+session URLs and tokens).

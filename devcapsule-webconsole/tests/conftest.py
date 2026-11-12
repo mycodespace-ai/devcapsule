@@ -14,11 +14,13 @@ from pathlib import Path
 import sys
 import textwrap
 from typing import Any, Iterator
+from urllib.parse import urlsplit
 
 import pytest
 from fastapi.testclient import TestClient
 
 from devcapsule_webconsole.app import create_app
+from devcapsule_webconsole.security import token_cookie_name
 from devcapsule_webconsole.settings import Settings
 
 TOKEN = "0123456789abcdef0123456789abcdef0123456789abcdef"
@@ -117,7 +119,7 @@ def invocations(log: Path) -> list[list[str]]:
 
 
 def with_token(client: TestClient) -> TestClient:
-    client.cookies.set("devcapsule-console-token", TOKEN)
+    client.cookies.set(token_cookie_name(urlsplit(str(client.base_url)).port), TOKEN)
     return client
 
 

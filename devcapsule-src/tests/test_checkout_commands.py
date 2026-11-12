@@ -17,6 +17,8 @@ from devcapsule.configuration.storage import checkout_record_paths, load_toml, r
 from devcapsule.configuration.docker_arguments import arguments_path, read_arguments
 from devcapsule.configuration.capability_commands import paths
 
+pytestmark = pytest.mark.legacy
+
 
 @pytest.fixture
 def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
@@ -99,15 +101,15 @@ def test_set_memory_cpus_default_and_declared_values(project: Path, capsys, monk
     assert run(project, "set", "memory", "none") == 2
     assert run(project, "set", "memroy", "1g") == 2
     assert "Did you mean 'memory'?" in capsys.readouterr().err
-    assert run(project, "default", "cpus", "2") == 0
-    assert run(project, "default", "swap", "2") == 2
-    workstation = tomllib.loads((Path(os.environ["XDG_CONFIG_HOME"]) / "devcapsule" / "workstation.toml").read_text())
-    assert workstation["defaults"] == {"cpus": 2}
+    assert cli.main(["home", "default", "cpus", "2"]) == 0
+    assert cli.main(["home", "default", "swap", "2"]) == 2
+    home = tomllib.loads((Path(os.environ["XDG_CONFIG_HOME"]) / "devcapsule" / "settings.toml").read_text())
+    assert home["defaults"] == {"cpus": 2}
     assert run(project, "show") == 0
     out = capsys.readouterr().out
-    assert "workstation default" in out
-    assert run(project, "default", "cpus", "none") == 0
-    assert tomllib.loads((Path(os.environ["XDG_CONFIG_HOME"]) / "devcapsule" / "workstation.toml").read_text())["defaults"] == {}
+    assert "home default" in out
+    assert cli.main(["home", "default", "cpus", "none"]) == 0
+    assert tomllib.loads((Path(os.environ["XDG_CONFIG_HOME"]) / "devcapsule" / "settings.toml").read_text())["defaults"] == {}
 
 
 def test_legacy_memory_name_redirects_to_memory(project: Path, capsys) -> None:
@@ -193,7 +195,7 @@ def test_every_config_leaf_is_listed_or_hidden_with_its_replacement() -> None:
     from devcapsule.commands.framework import render_command_listing
     from devcapsule.commands.project import ConfigGroup
     listing = render_command_listing(ConfigGroup.subcommands())
-    for visible in ("show", "check", "ide", "add", "omit", "restore", "use", "set", "default", "authorize", "deny", "forget", "bind",
+    for visible in ("show", "check", "ide", "add", "omit", "restore", "use", "set", "authorize", "deny", "forget", "bind",
                     "unbind", "env", "docker-args", "require", "offer", "drop", "recommend"):
         assert f"  {visible} " in listing, visible
     for hidden in ("set-env", "list-env", "unset-env", "set-extra-docker-args", "capabilities", "need", "unset", "agent", "tool", "list"):
@@ -233,16 +235,16 @@ def test_cpu_edit_preserves_legacy_memory_and_other_answers(project, value):
 
 
 @pytest.mark.parametrize("contents", ['defaults = "bad"', '[defaults]\ncpus = 0',
-                                      'devcapsule-workstation-schema-version = 99', '[defaults'])
-def test_malformed_workstation_is_refused_without_writes(project, tmp_path, capsys, contents):
-    from devcapsule.configuration.storage import workstation_path, load_workstation
+                                      'devcapsule-settings-schema-version = 99', '[defaults'])
+def test_malformed_home_is_refused_without_writes(project, tmp_path, capsys, contents):
+    from devcapsule.configuration.storage import settings_path, load_settings
     from devcapsule.configuration.file_formats import ProjectConfigurationError
-    path = workstation_path()
+    path = settings_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(contents)
     before = {p: p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
     with pytest.raises(ProjectConfigurationError):
-        load_workstation()
+        load_settings()
     for verb in ("show", "check"):
         assert run(project, verb) == 2
         assert str(path) in capsys.readouterr().err
@@ -350,6 +352,7 @@ def runtime_project(project, tmp_path, monkeypatch):
     }))
     monkeypatch.setattr(runtime_configuration, "CONTEXT_PATH", context_path)
     monkeypatch.setattr(runtime_configuration, "CONFIGURATION_PATH", input_path.parent)
+    monkeypatch.setattr(runtime_configuration, "CHANNEL_PATH", tmp_path / "absent-channel")
     return inside
 
 
@@ -410,8 +413,18 @@ def test_inspection_never_writes_in_registered_stale_or_unregistered_states(proj
     assert {p: p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()} == before
 
 
-def test_workstation_default_requires_host_launcher(runtime_project, tmp_path, capsys):
-    before = {p: p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
-    assert run(runtime_project, "default", "cpus", "2") == 2
-    assert "Run outside the capsule" in capsys.readouterr().err
-    assert {p: p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()} == before
+def test_home_default_in_a_capsule_writes_the_capsule_s_own_home_not_the_mount(runtime_project, tmp_path, capsys, monkeypatch):
+    """A capsule's write creates the capsule's own settings; the launcher's mounted file is never touched."""
+    from devcapsule.configuration.storage import load_settings, settings_path, settings_source
+    mounted = tmp_path / "mounted"
+    mounted.mkdir()
+    (mounted / "settings.toml").write_text(
+        'devcapsule-settings-schema-version = 1\nminimum-devcapsule = "0.3.0"\n\n[defaults]\ncpus = 8\n')
+    monkeypatch.setattr("devcapsule.runtime_configuration.HOME_PATH", mounted)
+    assert not settings_path().exists() and settings_source() == mounted / "settings.toml"
+    assert load_settings()["defaults"] == {"cpus": 8}
+    before = (mounted / "settings.toml").read_bytes()
+    assert cli.main(["home", "default", "cpus", "2"]) == 0
+    assert f"Home settings: {settings_path()}" in capsys.readouterr().out
+    assert (mounted / "settings.toml").read_bytes() == before
+    assert settings_source() == settings_path() and load_settings()["defaults"] == {"cpus": 2}

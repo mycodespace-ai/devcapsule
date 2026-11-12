@@ -22,11 +22,11 @@ status file; internal WIP/archive documents use the local index in that status.
 - [This project's local workflow: the reasons, for humans](WORKFLOW-LOCAL-humane.md)
 - [Product documentation](docs/README.md), versioned per release under the content–website contract; pages marked *coming soon* are planned stubs
   - Getting started: [Install](docs/getting-started/install.md), [Your first session](docs/getting-started/first-session.md), [Stop and come back](docs/getting-started/stop-and-come-back.md)
-  - Your project: [An existing repository](docs/your-project/existing-repository.md), [A new project](docs/your-project/new-project.md), [What a project declares](docs/your-project/declare-needs.md) (coming soon), [Services and ports](docs/your-project/services-and-ports.md) (coming soon)
+  - Your project: [An existing repository](docs/your-project/existing-repository.md), [A new project](docs/your-project/new-project.md), [Someone else's repository](docs/your-project/someone-elses-repository.md), [What a project declares](docs/your-project/declare-needs.md) (coming soon), [Services and ports](docs/your-project/services-and-ports.md) (coming soon)
   - Working with AI: [Choose an agent](docs/working-with-ai/choose-an-agent.md), [Sign in and defaults](docs/working-with-ai/sign-in-and-defaults.md), [Instructions for agents](docs/working-with-ai/instructions-for-agents.md), [Hosted and local models](docs/working-with-ai/hosted-and-local-models.md) (coming soon), [Review and change agents](docs/working-with-ai/review-and-change-agents.md) (coming soon)
   - Everyday development: [Clipboard, keys and browser](docs/everyday-development/clipboard-and-browser.md); coming soon: [IDEs and terminals](docs/everyday-development/ides-and-terminals.md), [Git](docs/everyday-development/git.md), [Run, debug, test](docs/everyday-development/run-debug-test.md), [Previews and ports](docs/everyday-development/previews-and-ports.md)
 - [Configuration](docs/configuration/index.md)
-  - Configuration: [Inspect a checkout](docs/configuration/inspect.md), [Project versus personal](docs/configuration/project-versus-personal.md), [Capabilities and personal choices](docs/configuration/capabilities.md), [Extra tools](docs/configuration/extra-tools.md), [Resource limits](docs/configuration/resource-limits.md), [Software approvals](docs/configuration/software-approvals.md), [IDE preferences](docs/configuration/ide-preferences.md) (coming soon)
+  - Configuration: [The configuration home](docs/configuration/home.md), [Inspect a checkout](docs/configuration/inspect.md), [Project versus personal](docs/configuration/project-versus-personal.md), [Capabilities and personal choices](docs/configuration/capabilities.md), [Extra tools](docs/configuration/extra-tools.md), [Resource limits](docs/configuration/resource-limits.md), [Software approvals](docs/configuration/software-approvals.md), [IDE preferences](docs/configuration/ide-preferences.md) (coming soon)
   - Containment: [The boundary](docs/containment/the-boundary.md), [Granting and withdrawing access](docs/containment/granting-and-withdrawing.md)
   - Sessions: [Start, stop, reconnect](docs/sessions/start-stop-reconnect.md), [What persists](docs/sessions/what-persists.md), [The web console](docs/sessions/web-console.md); coming soon: [Several projects](docs/sessions/several-projects.md), [Another machine](docs/sessions/another-machine.md)
   - Collaboration: [Work in workstreams with humans and agents](docs/collaboration/working-in-workstreams.md)
@@ -49,13 +49,18 @@ status file; internal WIP/archive documents use the local index in that status.
 
 ## Releases
 
+- [0.3.0 release notes](engineering-docs/releases/v0.3.0/notes.md)
 - [0.2.15 release notes](engineering-docs/releases/v0.2.15/notes.md)
 - [0.2.14 release notes](engineering-docs/releases/v0.2.14/notes.md)
 
+- [0.3.1 release work, scope and candidates](engineering-docs/releases/v0.3.1/README.md)
+- [0.3.1 changelog since 0.3.0](engineering-docs/releases/v0.3.1/changelog.md)
+- [0.3.1 bug table](engineering-docs/releases/v0.3.1/bugs.md)
 - [0.3.0 release work, scope and candidates](engineering-docs/releases/v0.3.0/README.md)
 - [0.3.0 changelog since 0.2.15](engineering-docs/releases/v0.3.0/changelog.md)
 - [0.3.0 bug table](engineering-docs/releases/v0.3.0/bugs.md)
 - [0.2.15 release work, scope and agent validation](engineering-docs/releases/v0.2.15/README.md)
+- [0.3.0 accepted-candidate promotion record](engineering-docs/releases/v0.3.0.json)
 - [0.2.15 accepted-candidate promotion record](engineering-docs/releases/v0.2.15.json)
 - [0.2.14 release work and checklist](engineering-docs/releases/v0.2.14/README.md)
 - [0.2.14 bug triage](engineering-docs/releases/v0.2.14/bugs.md)
@@ -73,6 +78,7 @@ status file; internal WIP/archive documents use the local index in that status.
 ## Root Requirement Records
 
 - [Conservative configuration writers and tolerant readers](engineering-docs/requirements/product/r-config-001-conservative-writers-tolerant-readers.md) — R-CONFIG-001, accepted 0.3 direction.
+- [R-WRAP-001 Wrapped projects](engineering-docs/requirements/product/r-wrap-001-wrapped-projects.md)
 - [R-CONSOLE-001 Every capsule serves a web console](engineering-docs/requirements/product/r-console-001-capsule-web-console.md)
 - [R-UPGRADE-001 Local Component Upgrades And Recoverable Version Sets](engineering-docs/requirements/product/r-upgrade-001-component-version-sets.md)
 - [R-UPGRADE-002 Component Status Operational Reliability](engineering-docs/requirements/product/r-upgrade-002-status-operational-reliability.md)
@@ -97,6 +103,7 @@ status file; internal WIP/archive documents use the local index in that status.
 - [Capability configuration: implementation and test correctness](engineering-docs/implementation-notes/devcapsule/2026-10-06-configuration-correctness.md)
 - [Capability configuration: persistent selection versus execution projection](engineering-docs/implementation-notes/devcapsule/2026-10-08-configuration-composition-correctness.md)
 - [Scenario-driven E2E IDE controller and pause-free WebM video recorder](engineering-docs/implementation-notes/devcapsule/2026-10-21-e2e-scenario-video-recorder.md)
+- [Testing the macOS launcher on cloud Mac hardware, and the alternatives](engineering-docs/implementation-notes/devcapsule/2026-11-08-testing-the-macos-launcher-on-cloud-mac-hardware.md)
 - [Eclipse Java component and recorded smoke validation](engineering-docs/implementation-notes/devcapsule/2026-10-04-eclipse-validation.md)
 - [Linux .NET SDK and Rider validation](engineering-docs/implementation-notes/devcapsule/2026-10-04-dotnet-rider-validation.md)
 - [IntelliJ, Playwright and graphical smoke validation](engineering-docs/implementation-notes/devcapsule/2026-10-04-intellij-playwright-validation.md)
@@ -107,11 +114,13 @@ status file; internal WIP/archive documents use the local index in that status.
 ## Design Decisions
 
 - [D-0010 Developer-Owned Component Version Sets And Recovery](engineering-docs/decisions/product/d-0010-developer-owned-version-sets.md)
-- [D-0011 Vendor Terms And Trust Are Given Once Per Workstation, Bound To A Verified Channel](engineering-docs/decisions/product/d-0011-vendor-trust-once-per-workstation.md)
+- [D-0011 Vendor Terms And Trust Are Given Once Per Configuration Home, Bound To A Verified Channel](engineering-docs/decisions/product/d-0011-vendor-trust-once-per-configuration-home.md)
 - [D-0012 Host Access Is Asked Only When The Project Recommends The Less Secure Value](engineering-docs/decisions/product/d-0012-host-access-asked-only-when-recommended.md)
 - [D-0013 A Provenance Sidecar Beside Each Checkout Records Which Client Wrote It](engineering-docs/decisions/product/d-0013-provenance-sidecar-for-local-records.md)
 - [D-0014 The IDE Role Stays As It Is, Or Generalizes To An Entry Point That Owns The Container's Lifetime](engineering-docs/decisions/product/d-0014-entry-point-generalizes-the-ide-role.md) (proposed, in scope for V1)
 - [D-0015 A Project Constrains Its Base Directly, Not Through Capabilities Or Components](engineering-docs/decisions/product/d-0015-a-project-constrains-its-base-directly.md) (proposed, in scope for V1)
+- [D-0016 A Required IDE Stays Required; One Launch May Depart From It Explicitly](engineering-docs/decisions/product/d-0016-explicit-launch-departure-from-a-required-ide.md) (accepted 2026-10-28)
+- [D-0017 The Launcher Delivers Its Web Console Package On The Base Interpreter](engineering-docs/decisions/product/d-0017-launcher-delivers-web-console-package.md) (accepted 2026-11-08)
 
 - [Decision record template](engineering-docs/decisions/product/_template.md)
 - [D-0001 Capability-First CLI Model](engineering-docs/decisions/product/d-0001-capability-first-cli-model.md)
@@ -129,8 +138,15 @@ status file; internal WIP/archive documents use the local index in that status.
 - [DevCapsule V1 state and persistence](engineering-docs/specifications/product/state-and-persistence.md)
 - [Project workflow bootstrap](engineering-docs/specifications/product/project-workflow-bootstrap.md)
 
+## Pile Of Ideas
+
+- [The pile of ideas](engineering-docs/pile-of-ideas/README.md): untriaged
+  ideas, one file each; the files themselves are not listed here.
+
 ## Work Orders
 
+- [Test improvements: declared public surfaces, no patching of project modules, the discovery module first](engineering-docs/work-orders/2026-11-08-test-improvements.md)
+- [Wrapped projects: a foreign repository as a submodule, three commands](engineering-docs/work-orders/2026-11-02-wrapped-projects.md)
 - [0.3.0 user documentation CLI alignment, full stub authoring, and prose review — maintenance, 0.3.0](engineering-docs/work-orders/2026-10-30-user-docs-0-3-0-cli-alignment.md)
 - [CI path gating and advisory diff coverage — maintenance, 0.3.0](engineering-docs/work-orders/2026-10-30-ci-path-gating-and-diff-coverage.md)
 - [Structural guardrails for the repository with ast-grep](engineering-docs/work-orders/2026-10-29-ast-grep-guardrails.md)
@@ -172,6 +188,9 @@ status file; internal WIP/archive documents use the local index in that status.
 - [Component upgrades current status](engineering-docs/wip/2026-09-21-component-upgrades/CURRENT-STATUS.md)
 - [Maintenance current status](engineering-docs/wip/2026-09-18-maintenance/CURRENT-STATUS.md)
 - [Capsule web console current status](engineering-docs/wip/2026-10-09-capsule-webconsole/CURRENT-STATUS.md)
+- [Wrapped projects current status](engineering-docs/wip/2026-11-02-wrapped-projects/CURRENT-STATUS.md)
+- [macOS launcher current status](engineering-docs/wip/2026-11-03-macos-launcher/CURRENT-STATUS.md)
+- [linux-arm64 capsules current status](engineering-docs/wip/2026-11-04-linux-arm64/CURRENT-STATUS.md)
 - [Sample demo projects current status](engineering-docs/wip/2026-08-14-sample-projects/CURRENT-STATUS.md)
 - [Contained display current status](engineering-docs/wip/2026-08-19-contained-display/CURRENT-STATUS.md)
 
@@ -222,7 +241,6 @@ status file; internal WIP/archive documents use the local index in that status.
 - [Preamble, for humans: why the workflow is opinionated, and for whom](devcapsule-src/devcapsule/assets/project_workflow/definition/PREAMBLE.md)
 - [PyCharm image vibe-coding bootstrap template](devcapsule-src/devcapsule/assets/pycharm/image-assets/vibe-coding-process.md)
 - [Legacy-compatible PyCharm bootstrap template copy](devcapsule-src/devcapsule/assets/docker4pycharm/image-assets/vibe-coding-process.md)
-- [TypeScript five-in-a-row sample project](devcapsule-src/tests/resources/sample_projects/typescript_tictactoe_5inrow/README.md)
 
 ## Development Blog
 
@@ -293,6 +311,16 @@ history; record current decisions in the active documents above.
 ## Bugs
 
 - [A video opened from the web console's Files page does not play: the raw route's policy blocks the browser's own player](engineering-docs/bugs/devcapsule/2026-11-10-console-video-opened-from-files-does-not-play.md)
+- [Markdown-only changes run the whole Python unit suite: the hosted path filter lists too few non-inputs, and the local gate has no filter](engineering-docs/bugs/devcapsule/2026-11-10-markdown-only-changes-run-the-python-unit-suite.md)
+- [Unit tests read the developer's real launcher settings inside a capsule: the consent and trust tests fail or prove nothing there](engineering-docs/bugs/devcapsule/2026-11-10-unit-tests-read-the-capsules-mounted-launcher-settings.md)
+- [Web console changes in `v0.3.1-rc1` do not reach capsules: the PEX omits the console package and the self-hosting override shadows it](engineering-docs/bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md)
+- [Codex status and version checks fail: the npm registry document exceeds the channel's 16 MiB cap](engineering-docs/bugs/devcapsule/2026-11-08-codex-npm-metadata-exceeds-16-mib.md)
+- [Eclipse cannot be acquired from scratch on amd64: the libsoup package URLs return 404](engineering-docs/bugs/devcapsule/2026-11-07-eclipse-amd64-libsoup-urls-return-404.md)
+- [Release-dependent test fixtures cause avoidable release PR churn](engineering-docs/bugs/devcapsule/2026-10-31-release-dependent-test-fixtures.md)
+
+- [Concurrent web consoles on `127.0.0.1` overwrite one another's authentication cookie across ports](engineering-docs/bugs/devcapsule/2026-10-31-webconsole-cookie-collides-across-ports.md)
+- [`project config show --help` advertises JSON schema 1 while emitting schema 2, and retired `project config default|trust` spellings print no replacement hint](engineering-docs/bugs/devcapsule/2026-10-30-config-show-json-help-and-retired-home-command-hints.md)
+- [An old lock keeps the replaced IDE beside an ordinary IDE override](engineering-docs/bugs/devcapsule/2026-10-29-legacy-lock-keeps-the-replaced-ide.md)
 - [Workstation-scoped commands live under `project config` and need a project](engineering-docs/bugs/devcapsule/2026-10-25-workstation-commands-live-under-project-config.md)
 - [Console link printed on a base without the console](engineering-docs/bugs/devcapsule/2026-10-18-console-link-printed-on-a-base-without-the-console.md)
 - [No test proves old projects launch with new releases](engineering-docs/bugs/devcapsule/2026-10-18-no-test-proves-old-projects-launch-with-new-releases.md)
@@ -362,3 +390,5 @@ history; record current decisions in the active documents above.
 - [Git remote credential manual validation deferred](engineering-docs/completed-tasks/docker4pycharm/2026-06-28-git-remote-validation-deferred.md)
 - [Local Git identity edge-case validation](engineering-docs/completed-tasks/docker4pycharm/2026-06-30-local-git-identity-edge-validation.md)
 - [PyCharm v0 MVP checkpoint](engineering-docs/completed-tasks/docker4pycharm/2026-06-30-pycharm-v0-mvp-checkpoint.md)
+
+- [CI path gating and advisory diff coverage — maintenance, 0.3.0](engineering-docs/work-orders/2026-10-30-ci-path-gating-and-diff-coverage.md)

@@ -18,6 +18,8 @@ from devcapsule.workflow_coordination import (
     take,
 )
 
+pytestmark = pytest.mark.legacy
+
 
 def git(root: Path, *args: str, stdin: str | None = None) -> str:
     return subprocess.run(

@@ -11,6 +11,8 @@ import pytest
 
 from devcapsule.images import tooling
 
+pytestmark = pytest.mark.legacy
+
 
 @pytest.mark.integration
 @pytest.mark.parametrize("failure", ["", "revision", "runtime-lock", "build-lock", "package", "import", "help"])

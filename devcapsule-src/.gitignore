@@ -14,3 +14,8 @@ htmlcov/
 build/
 dist/
 *.egg-info/
+
+# Generated coverage data and diff reports, never authored configuration.
+.coverage.*
+diff-cover.json
+diff-cover.md

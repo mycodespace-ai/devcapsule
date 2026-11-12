@@ -23,25 +23,24 @@ from devcapsule.configuration.authorization import AuthorizationReview, authoriz
 from devcapsule.configuration.file_formats import canonical_digest, render_toml, selected_version_lock
 from devcapsule.configuration.model import Configuration
 from devcapsule.configuration.capabilities import CapabilityPolicy, LocalCapabilities
-from devcapsule.configuration.capability_selection import usable_lock
-from devcapsule.configuration.trust import WorkstationTrust
+from devcapsule.configuration.capability_selection import matrix_for, usable_lock
+from devcapsule.configuration.trust import HomeTrust
 from devcapsule.configuration.storage import (
-    load_workstation,
+    load_settings,
     ResolvedProject, activate_configuration, atomic_write, checkout_record_paths,
     load_checkout, load_toml, manifest_for, recommendation_lock_for, selection_for,
 )
 from devcapsule.environment_realization import RealizedEnvironment, realize_environment
 from devcapsule.materialization import ArtifactSpec, acquire_artifact, cache_root, parse_locked_environment, sha256_file
 from devcapsule.platforms import Platform, XdgHomes
-from devcapsule.resolution_matrix import MATRICES
 from devcapsule import runtime_configuration
 from devcapsule.build_info import current_build_info
-from devcapsule.component_status import CompatibilityLookup
+from devcapsule.component_status import CompatibilityLookup, cache_path as status_cache_path
 
 
-def workstation_trust() -> WorkstationTrust:
-    """The workstation's trust record (D-0011), which answers the base for every checkout here."""
-    return WorkstationTrust.read(load_workstation())
+def home_trust() -> HomeTrust:
+    """The home's trust record (D-0011), which answers the base for every checkout here."""
+    return HomeTrust.read(load_settings())
 
 
 @dataclass
@@ -137,7 +136,7 @@ def _validation(lock: Mapping[str, Any], checkout: Mapping[str, Any]) -> tuple[t
         missing = tuple(f"{name} {metadata.get('version')} on local base {local_base}"
                         for name, metadata in lock["components"].items() if isinstance(metadata, dict))
         return (), missing
-    return MATRICES[Platform.current()].validation_evidence(lock)
+    return matrix_for(lock).validation_evidence(lock)
 
 
 INSPECTION_SCHEMA_VERSION = 1
@@ -273,7 +272,9 @@ def _render_runtime_inspection(document: Mapping[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def check(start: Path) -> str:
+def check(start: Path, *, status_url: str | None = None) -> str:
+    """The update report of every selected component; ``status_url`` names the compatibility feed to read
+    instead of the configured one, for a check against a test publication."""
     workspace = Workspace.load(start)
     path = workspace.state / "check.toml"
     previous = load_toml(path) if path.exists() else {}
@@ -281,7 +282,7 @@ def check(start: Path) -> str:
     candidates: list[str] = []
     notices: list[dict[str, Any]] = []
     successes: list[dict[str, Any]] = []
-    compatibility = CompatibilityLookup(workspace.state / "compatibility-v1.json", current_build_info().version)
+    compatibility = CompatibilityLookup(status_cache_path(), current_build_info().version, status_url)
     interactive, ancillary = selected_component_definitions(workspace.lock)
     for definition in (interactive, *ancillary):
         channel = definition.discovery_channel()
@@ -410,7 +411,7 @@ def preview(start: Path, component: str, version: str, *, report: Callable[[str]
     if channel is None:
         raise CliError(f"{component}: {definition.channel_omission_reason() or 'no distribution channel declared'}")
     selection = channel.select(version, str(workspace.lock["platform"]))
-    matrix = MATRICES[Platform.current()]
+    matrix = matrix_for(workspace.lock)
     if workspace.lock["platform"] not in selection.platforms:
         raise CliError("Candidate does not support the selected platform.")
     if selection.base_families and matrix.base_family(workspace.lock) not in selection.base_families:
@@ -536,7 +537,7 @@ def _selection(workspace: Workspace, lock: dict[str, Any], *, follow: bool = Fal
     elif base:
         reference, image_id = str(base["reference"]), base.get("image-id")
     else:
-        prior_base = authorized_base_selection(workspace.lock, workspace.checkout, trust=workstation_trust())
+        prior_base = authorized_base_selection(workspace.lock, workspace.checkout, trust=home_trust())
         if prior_base is None:
             raise CliError("Authorize a base before selecting a version set.")
         reference, image_id = prior_base.reference, prior_base.local_image_identity
@@ -545,7 +546,7 @@ def _selection(workspace: Workspace, lock: dict[str, Any], *, follow: bool = Fal
         answer["reference"] = image_id
         answer["image-id"] = image_id
     checkout.setdefault("authorization", {})["base-image"] = answer
-    config = Configuration(workspace.manifest, lock, checkout, load_workstation())
+    config = Configuration(workspace.manifest, lock, checkout, load_settings())
     review = config.review()
     pending_acquisitions = [item for item in review.authorizations
                             if item.problem and declarations[item.name].kind == "acquisition"]
@@ -556,7 +557,7 @@ def _selection(workspace: Workspace, lock: dict[str, Any], *, follow: bool = Fal
             checkout.setdefault("authorization", {})[item.name] = {
                 "value": True, "recommendation-digest": declarations[item.name].recommendation_digest,
             }
-        config = Configuration(workspace.manifest, lock, checkout, load_workstation())
+        config = Configuration(workspace.manifest, lock, checkout, load_settings())
         review = config.review()
         pending_acquisitions = []
     if pending_acquisitions:
@@ -613,7 +614,7 @@ def record_success(selected: ResolvedProject, realized: RealizedEnvironment | No
         return  # Earlier history remains readable; it lacks a reproducible set.
     state = state_directory(selected.root)
     _retain(selected.lock, state, acquire=False)
-    base = authorized_base_selection(selected.lock, selected.checkout, trust=workstation_trust())
+    base = authorized_base_selection(selected.lock, selected.checkout, trust=home_trust())
     assert base is not None
     record: dict[str, Any] = {"lock": render_toml(selected.lock), "last-success": time.time(),
                              "base": {"reference": base.reference}}
@@ -634,6 +635,9 @@ def _known(workspace: Workspace) -> list[tuple[str, dict[str, Any], dict[str, An
             raise CliError(f"Cannot interpret known-good record {path}: {exc}. Inspect the record; current selection is unchanged.") from exc
         if set_id(lock, document.get("base", {}).get("image-id")) != path.stem:
             raise CliError(f"Known-good record was modified: {path}. Inspect it before recovery.")
+        # A checkout may run as two platforms; only this platform's sets are its history.
+        if lock.get("platform") != workspace.lock.get("platform"):
+            continue
         result.append((path.stem, lock, document))
     return sorted(result, key=lambda entry: entry[2]["last-success"], reverse=True)
 
@@ -665,7 +669,7 @@ def rollback(start: Path, identity: str | None = None, *, reacquire: bool = Fals
         from devcapsule.environment_realization import required_local_image
         from devcapsule.materialization import formation_descriptor, canonical_image_name, verify_materialized_image
         from devcapsule.runtime_artifact import runtime_artifact
-        base = authorized_base_selection(lock, selected.checkout, trust=workstation_trust())
+        base = authorized_base_selection(lock, selected.checkout, trust=home_trust())
         assert base is not None
         try:
             details = required_local_image(base.reference)
@@ -673,7 +677,8 @@ def rollback(start: Path, identity: str | None = None, *, reacquire: bool = Fals
             descriptor = formation_descriptor(platform=parsed.platform, base_identity=details.identity,
                 artifact=parsed.artifact, ancillary_artifacts=parsed.ancillary_artifacts,
                 recipe_id=parsed.recipe_id, recipe_version=parsed.recipe_version,
-                component_id=parsed.component_id, runtime_sha256=sha256_file(runtime_artifact()))
+                component_id=parsed.component_id,
+                runtime_sha256=sha256_file(runtime_artifact(Platform.parse(parsed.platform))))
             if missing:
                 name = canonical_image_name(descriptor, parsed.component_id)
                 verify_materialized_image(required_local_image(name), descriptor=descriptor, canonical_name=name)

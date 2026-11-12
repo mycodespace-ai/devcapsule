@@ -1,5 +1,5 @@
 ---
-status: fixed
+status: closed
 severity: minor
 target: 0.3.0
 owner: maintenance
@@ -149,3 +149,18 @@ run `8a543a0613a9c1f22d839102d592c995`): the launch stays attached, the
 successor is inspected while it runs, stopping it ends the command, Docker
 removes the container, the run directory keeps the log and manifest.
 Closes with the 2026-10-04 record on a 0.3.0 candidate.
+
+## Downloaded RC9 verification — 2026-10-31
+
+The attached-successor regression was rerun with every CLI operation selecting the published RC9 PEX. It launches and inspects the successor, stops it, observes the launcher exit, verifies Docker removed it and retained its evidence, then cleans the owned fresh workspace. The result passes in 8.66 seconds.
+
+[Final audit evidence](../../wip/2026-09-18-maintenance/evidence/2026-10-31-rc9/README.md#final-promotion-audit--2026-10-31).
+Verification is complete; the release acceptance/closure checkpoint remains
+pending the explicit final scope and provider dispositions.
+
+## Closed — 2026-10-31
+
+Closed on the RC9 verification above and the owner's final acceptance of
+that exact candidate on 2026-10-31. [Acceptance record](../../releases/v0.3.0.json).
+The fix is in RC9 source 475427da and main 4b59b10d; the documented test
+limits are retained. This supersedes the pending-closure sentence above.

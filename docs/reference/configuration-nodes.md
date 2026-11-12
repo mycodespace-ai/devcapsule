@@ -1,63 +1,93 @@
 ---
-description: "Every configuration node a checkout can carry, its values, and which command records it: authorizations, declared values and bindings."
-weight: 1
-updated: 2026-10-24
+description: "Every configuration node a checkout can record: host and software authorizations, declared values, and directory or secret bindings."
+weight: 2
+updated: 2026-10-30
 ---
 # Configuration nodes
 
-Every recorded choice in a checkout is a node with one name. `project config
-show` prints them with the value the next launch uses and its source; the
-commands below record them. All are yours, per checkout, outside the
-repository. Workstation trust can cover published bases and vendor downloads;
-per-checkout consents also remain supported. See
+Each checkout choice that is not a capability or provider selection is stored
+as a named configuration node in your checkout record, outside the Git
+repository. Run `devcapsule project config show` to see the value the next
+launch will use, where it came from, and the command that changes any pending
+item.
+
+Published base images and vendor downloads are normally trusted once for your
+[configuration home](../configuration/home.md) (`devcapsule home trust accept
+CHANNEL`), while host-access grants and optional per-checkout software consents
+live on the checkout itself. Channel names are `devcapsule-base`, `vscode`,
+`claude-code`, and `antigravity-cli`; they differ from the authorization node
+names below. See
 [Vendor software and trust](../configuration/software-approvals.md).
 
 ## Authorizations, `config authorize NAME VALUE [JUSTIFICATION]`
 
 | Node | Values | Effect |
 |---|---|---|
-| `base-image` | `default` or the lock's exact digest; a local image tag or ID for a local base | Consent to run that image; binds to the image, so a lock change around an unchanged base keeps it |
-| `network` | `host`, `bridge`; unanswered defaults to `bridge` | `host` shares the host network namespace; `bridge` denies that access; available on every project |
-| `docker-daemon` | `host-socket`, `none` | `host-socket` mounts the host Docker control socket; `none` denies that access |
-| `development-sudo` | `true`, `false` | The capsule user may elevate inside the container through a temporary, launcher-owned sudoers policy |
-| `host-browser` | `true`, `false` | `xdg-open` in the capsule may ask the host browser to open a URL |
-| `host-x11` | `true`, `false` | The host display session is bound into the capsule instead of the contained desktop; never recommended by a project; the contained desktop is the default |
-| `claude-code-download`, `antigravity-download` | `true`, `false` | Per-checkout consent to that vendor's agent when its channel is not trusted on this computer; `false` denies it even when it is |
+| `base-image` | `default`, the lock's exact digest, or a local image tag or ID | Consents to run that base image on this checkout when the base channel is not trusted in this home; bound to the image identity, so unrelated lock edits preserve it. |
+| `network` | `host`, `bridge` (default `bridge`) | `host` shares the host network stack with the capsule; `bridge` keeps isolated container networking. Available on every project. |
+| `docker-daemon` | `host-socket`, `none` (default `none`) | `host-socket` mounts the host Docker socket into the capsule; `none` keeps the daemon unreachable. |
+| `development-sudo` | `true`, `false` (default `false`) | `true` lets the capsule user run `sudo` inside the container via a launcher-generated policy; `false` disables elevation. |
+| `host-browser` | `true`, `false` (default `false`) | `true` lets `xdg-open` inside the capsule ask your host browser to open URLs. |
+| `host-x11` | `true`, `false` (default `false`) | `true` binds your host X11 display instead of starting the contained web desktop. Never recommended by a project. |
+| `vscode-download`, `claude-code-download`, `antigravity-download` | `true`, `false` | Per-checkout vendor download consent when the vendor's channel is not trusted in this home; setting `false` blocks that vendor on this checkout even if the home trusts the channel. |
 
-`--all-recommended` previews every recommendation and authorizes all only on
-`y`. For host access, `project run --authorize NAME VALUE` applies to one launch.
-Add `--save` to record it for the checkout.
-`config deny NAME` records a denial and `config forget NAME` removes your
-answer. `config approve [NAME...|--all]` records new versions of vendor
-software you consented to per checkout.
+`config authorize --all-recommended` previews every open recommendation from
+the project manifest and records them together only when you confirm with `y`.
+For a single session, pass `--authorize NAME VALUE` to `devcapsule project run`
+(add `--save` to persist it).
+
+Use `config deny NAME` to record an explicit denial, and `config forget NAME`
+to delete your recorded answer so the secure default applies (or a project
+recommendation prompts again). When you use per-checkout software consent
+instead of home channel trust, `config approve [NAME...|--all]` approves newer
+locked versions of that software.
 
 ## Values, `config set NAME VALUE`
 
-`memory` and `cpus` are the launcher's own, on every project; the other names
-are the ones the project declares in its manifest, validated against the
-declared type: `string`, `integer`, `boolean` or `memory-size`. `default`
-forgets your answer and follows the project's recommendation and the
-workstation's default again. Values with runtime effects today:
+`memory` and `cpus` are built in on every project. Additional value nodes come
+from declarations in `.devcapsule/devcapsule.toml` and are validated against
+their declared type (`string`, `integer`, `boolean`, or `memory-size`). Passing
+`default` as the value clears your checkout override so the project
+recommendation or home default (`devcapsule home default`) takes effect again.
 
 | Node | Effect |
 |---|---|
-| `memory`, `cpus` | The container's hard memory limit and CPU count; a manifest that declared a memory limit under its own name with `runtime-effect = "docker.memory-limit"` is read as `memory` |
-| `runtime.devcapsule-command` | The name of the in-capsule DevCapsule command, `devcapsule` or `devcapsule0`; reserved for projects that develop DevCapsule itself |
+| `memory`, `cpus` | Sets the container's memory limit (`6GiB`, `6g`) and CPU limit (`4`). A legacy manifest node with `runtime-effect = "docker.memory-limit"` maps to `memory`. |
+| `runtime.devcapsule-command` | Sets the command name (`devcapsule` or `devcapsule0`) installed inside the capsule when developing DevCapsule itself. |
 
 ## Bindings, `config bind RESOURCE PROVIDER:VALUE`
 
-Bind a component's declared persistent resource to storage of your own. The
-provider `host-directory:` takes an existing directory, which becomes a
-read-write mount; `host-environment:` names a host environment variable for
-a declared secret and records only its name.
+`config bind` redirects a declared persistent state slot or supplies a secret
+input. `config unbind RESOURCE` returns a directory slot to managed storage;
+for a secret input, it removes the host-variable binding. Directory slots and
+secret inputs must belong to the selected components; `home` is always available.
 
-| Resource | Holds |
-|---|---|
-| `home` | The capsule user's persistent home |
-| `pycharm/config`, `pycharm/plugins`, `pycharm/system`, `pycharm/log`, `pycharm/cache` | PyCharm's directories |
-| `codex/home` | Codex configuration and sign-in |
-| `codex/openai-api-key` | `host-environment:OPENAI_API_KEY`; the listing warns that the value is visible to every process in the capsule |
+Two providers exist:
 
-The command reports the resource's sensitivity and whether its component
-allows concurrent use. Every binding is revalidated when `project run`
-derives the plan, before a launch uses it.
+- `host-directory:PATH` mounts an existing host directory read-write at the
+  slot's container path.
+- `host-environment:VAR` reads a host environment variable at launch for a
+  declared component secret input, storing only the variable's name on disk.
+
+| Resource | Component | Holds |
+|---|---|---|
+| `home` | Capsule | Persistent `/home/devcapsule` directory (including `~/xtras`, aliased at `/opt/xtras`). |
+| `pycharm/config`, `pycharm/plugins`, `pycharm/system`, `pycharm/log`, `pycharm/cache` | PyCharm | Settings, installed plugins, rebuildable indexes, `idea.log`, and user caches. |
+| `intellij/config`, `intellij/plugins`, `intellij/system`, `intellij/log`, `intellij/cache` | IntelliJ IDEA | Settings, installed plugins, rebuildable indexes, `idea.log`, and user caches. |
+| `rider/config`, `rider/plugins`, `rider/system`, `rider/log`, `rider/cache` | Rider | Settings, installed plugins, rebuildable indexes, `idea.log`, and user caches. |
+| `codium/user-data`, `codium/extensions`, `codium/cache` | VSCodium | Editor settings and workspace state, installed extensions, and user caches. |
+| `vscode/user-data`, `vscode/extensions`, `vscode/cache` | Visual Studio Code | Editor settings and workspace state, installed extensions, and user caches. |
+| `eclipse/workspace` | Eclipse | Workspace preferences, project metadata, and local history (`/ide-workspace`). |
+| `codex/home` | Codex | `~/.codex` configuration, authentication, and local session state. |
+| `claude-code/home` | Claude Code | `~/.claude` authentication, settings, and local session state. |
+| `antigravity-cli/home` | Antigravity CLI | `~/.gemini` settings, project registry, and local session state. |
+| `codex/openai-api-key` | Codex | Optional `host-environment:OPENAI_API_KEY`; exported into the container environment and visible to all capsule processes. |
+| `antigravity-cli/gemini-api-key` | Antigravity CLI | Optional `host-environment:GEMINI_API_KEY`; exported into the container environment and visible to all capsule processes. |
+
+For directory bindings, `config bind` prints the slot's sensitivity
+(`ordinary`, `personal`, or `credentials`) and its sharing restriction. All
+directory slots above declare `concurrent = false`. For secret bindings, it
+warns that all capsule processes and Docker inspection can see the value.
+Every binding is rechecked when `project run` derives the launch plan. For ordinary application environment
+variables rather than component-declared secret inputs, use
+`devcapsule project config env set`.

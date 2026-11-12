@@ -22,6 +22,8 @@ from devcapsule.recursive_dogfood import (
     validate_container_name,
 )
 
+pytestmark = pytest.mark.legacy
+
 
 def inspection_mapping(
     *,

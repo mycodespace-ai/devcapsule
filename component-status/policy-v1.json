@@ -7,6 +7,7 @@
     {"component": "playwright", "platform": "linux-amd64", "version": "1.63.0"},
     {"component": "pycharm", "platform": "linux-amd64", "version": "2026.2.0.1"},
     {"component": "codium", "platform": "linux-amd64", "version": "1.126.04524"},
+    {"component": "vscode", "platform": "linux-amd64", "version": "1.143.1"},
     {"component": "codex", "platform": "linux-amd64", "version": "0.153.4"},
     {"component": "claude-code", "platform": "linux-amd64", "version": "2.1.261"},
     {"component": "antigravity-cli", "platform": "linux-amd64", "version": "1.1.24"},

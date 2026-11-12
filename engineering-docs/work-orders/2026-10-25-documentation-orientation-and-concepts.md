@@ -17,6 +17,15 @@ in `engineering-docs/wip/2026-09-12-user-docs/2026-09-28-docs-improvements-for-0
 the landing-page order of 2026-10-18. Decisions already taken by the owner
 are cited where they bind; the rest is decided here and flagged below.
 
+## Current scheduling decision
+
+Owner amendment, 2026-10-29, acknowledged by maintenance on 2026-10-30:
+**both Part A and Part B target 0.3.1**. Maintenance retains ownership.
+This supersedes the original plan above to combine these proposals with
+0.3.0's documentation round. The separate language review, accurate
+candidate documentation (C16) and C20 remain 0.3.0 obligations. No existing
+documentation is removed and no proposal is cancelled.
+
 ## Outcome
 
 A visitor who does not yet trust the product finds, in this order and

@@ -26,7 +26,7 @@ is applied at once with the command's own validation: ``ide``, ``add``, ``omit``
 ``trust withdraw``, ``docker-args clear``. A verb that widens what the
 next launch may reach is deferred: ``authorize``, ``trust accept``,
 ``bind``, ``forget``, ``env set --from-host``, ``docker-args set``. Forgetting
-a vendor-download denial can restore workstation trust. Anything running inside the capsule can
+a vendor-download denial can restore home trust. Anything running inside the capsule can
 write to the mounted directory, not only the console, so a widening is
 never taken from it unconfirmed: the launcher keeps it as the console's
 request beside the checkout record, and the user confirms or discards it
@@ -96,7 +96,7 @@ def classify(arguments: Sequence[str]) -> tuple[Disposition, str]:
         return Disposition.APPLY, ""
     verb = arguments[0]
     pair = (verb, arguments[1]) if len(arguments) > 1 else (verb, "")
-    # Removing a denial can expose a workstation grant. Host environment
+    # Removing a denial can expose a home grant. Host environment
     # bindings can expose secrets. Only a literal env value is safe here;
     # argparse also accepts abbreviated options such as --from-h.
     if pair == ("env", "set") and not (
@@ -110,7 +110,7 @@ def classify(arguments: Sequence[str]) -> tuple[Disposition, str]:
     if verb in READ_ONLY_VERBS or pair in READ_ONLY_SUBVERBS:
         return Disposition.REFUSE, f"config {verb} is read-only; the console shows what it reports"
     if verb == "default":
-        return Disposition.REFUSE, "config default sets a workstation default; run it on the host"
+        return Disposition.REFUSE, "home default sets a home default; run it on the host"
     if verb in {"require", "offer", "drop", "recommend", "promote", "capabilities", "need"}:
         return Disposition.REFUSE, f"config {verb} edits the project's shared files; run it on the host, in the project"
     return Disposition.REFUSE, f"config {verb!r} is not a request the launcher takes from the console"

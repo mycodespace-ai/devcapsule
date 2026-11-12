@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-31",
+  "release_url": "https://github.com/ccozianu/devcapsule/releases/tag/v0.3.0-rc9",
+  "workflow_url": "https://github.com/ccozianu/devcapsule/actions/runs/41181720227",
+  "workflow_result": "success",
+  "identity": {
+    "build_mnemonic": "v0.3.0-rc9",
+    "schema_version": 2,
+    "source_repository": "https://github.com/ccozianu/devcapsule",
+    "source_revision": "475427da033633ff5ee0e44e09face700630bf36",
+    "source_url": "https://github.com/ccozianu/devcapsule/commit/475427da033633ff5ee0e44e09face700630bf36",
+    "version": "0.3.0rc9"
+  },
+  "pex_sha256": "413b1d45bac9c39b6fa5fab68090e43550c9e255108de48b387c50a715c4fcf2",
+  "checksum_verified": true,
+  "main_revision": "4b59b10daede8b77ff7c7aee753b9df483d62458",
+  "main_integration_pr": 331,
+  "candidate_gate": {
+    "method": "mainline",
+    "unintegrated-commits": []
+  },
+  "e2e": {
+    "passed": 8,
+    "deselected": 15,
+    "seconds": 129.38,
+    "nox_session": "e2e",
+    "build_network": "host",
+    "base_digest": "sha256:d7047ced8556cd35964fcc058a1101cf2b5b202f7a5daa2fdd434dcda5ed82c9"
+  },
+  "concurrent_auth": {
+    "passed": 1,
+    "seconds": 22.9,
+    "base_override": false,
+    "network": "host",
+    "containers_removed": true,
+    "project_records_removed": true
+  },
+  "final_release_accepted": false
+}

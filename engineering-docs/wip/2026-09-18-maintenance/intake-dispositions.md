@@ -32,3 +32,11 @@ undispositioned, or listed below, meaning resolved. Never both, never neither.
 | `2026-10-11-project-management-bootstrap-target-09.md` | 2026-10-18 | acknowledged | Owner decision, not forwardable: the ecosystem-bootstrap record is retargeted from 0.3.0 to 0.9 with the dated ruling, classification unchanged, and leaves the 0.3.0 plate; project-type templating stays a dependency sequenced by project-management. |
 | `2026-10-11-project-management-pre-rc-sequence.md` | 2026-10-18 | acknowledged | Superseded by the owner's cut decision of 2026-10-18: consent is out of 0.3.0 and forced configuration is a slice of the candidate cycle; the scope clarifications it carries stand and are reflected in the plate. |
 | `2026-10-18-project-management-release-0-3-0.md` | 2026-10-18 | acknowledged | Maintenance drives 0.3.0: `release-0.3.0` cut from `main` at `3c91183`, version 0.3.0 at `6965c5e`, the overview under releases/v0.3.0; the six dogfooding slices, the gates and the records are the plate. |
+
+| `2026-10-29-project-management-october25-docs-to-031.md` | 2026-10-30 | acknowledged | Parts A/B retained for 0.3.1; canonical scheduling update follows the CI slice; language review, C16 and C20 unchanged. |
+
+| `2026-10-30-project-management-ci-path-gating-and-diff-coverage-030.md` | 2026-10-30 | acknowledged | Accepted for immediate 0.3.0 implementation with owner decisions 1B/2B and Claude Fable 5.1 Pair Review. |
+
+| `2026-10-30-workflow-improvements-pair-review-loop-030.md` | 2026-10-30 | acknowledged | Accepted for 0.3.0; apply supplied release patch in a separate slice after CI review settles; PR #309 verified on main. |
+
+| `2026-10-30-project-management-user-docs-0-3-0-cli-alignment.md` | 2026-10-30 | acknowledged | Accepted for immediate 0.3.0 execution across five `<= 10`-file Pair Review batches (`Antigravity` + `Codex / gpt-6-astra`) on `release-0.3.0`: file-by-file 0.3.0 CLI alignment, full 0.3.0 authoring of all 12 `status: planned` stubs, and human-English prose cleanup; PR #316 verified on `main` at `ebab228a`. |

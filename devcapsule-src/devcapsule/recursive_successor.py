@@ -25,12 +25,13 @@ from devcapsule.container_runtime.contract import CONTAINED_DISPLAY_TRANSPORT, R
 from devcapsule.display_client import display_url, select_display_transport
 from devcapsule.environment_realization import realize_environment
 from devcapsule.materialization import RUNTIME_PLAN_PATH as SUCCESSOR_RUNTIME_PLAN_PATH
-from devcapsule.project import project_namespace
+from devcapsule.configuration.capability_selection import lock_platform
 from devcapsule.configuration.storage import (
     atomic_write,
 )
 from devcapsule.configuration.bindings import (
     configuration_binding_declarations,
+    managed_binding_path,
 )
 from devcapsule.configuration.execution import (
     fresh_resolved_project,
@@ -505,6 +506,7 @@ def _resolved_run_options(
     )
     return PycharmRunOptions(
         project=selected.root,
+        capsule_platform=lock_platform(selected.lock),
         project_mount=str(runtime["project-mount"]),
         image=image,
         name=name,
@@ -571,16 +573,7 @@ def _additional_component_state_mounts(
 
 
 def _managed_binding_path(root: Path, declaration: Any) -> Path:
-    home = Path(os.environ.get("HOME", "~")).expanduser()
-    roots = {
-        "durable": Path(os.environ.get("XDG_DATA_HOME") or home / ".local" / "share"),
-        "state": Path(os.environ.get("XDG_STATE_HOME") or home / ".local" / "state"),
-        "cache": Path(os.environ.get("XDG_CACHE_HOME") or home / ".cache"),
-    }
-    namespace = roots[declaration.kind] / "devcapsule" / "projects" / "by-path" / project_namespace(root)
-    if declaration.name == "home":
-        return namespace / "home"
-    return namespace / "components" / str(declaration.component_id) / str(declaration.slot_name)
+    return managed_binding_path(root, declaration)
 
 
 def _launch_context(

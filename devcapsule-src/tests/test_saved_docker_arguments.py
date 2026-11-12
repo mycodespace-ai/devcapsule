@@ -15,6 +15,8 @@ from devcapsule.materialization import parse_locked_environment
 from tests.test_checkout_environment import project, config
 from tests.test_project_commands import initialize_codium_project, LOCKED_BASE
 
+pytestmark = pytest.mark.legacy
+
 
 def test_saved_args_replace_list_clear_and_share_hidden_env(project, tmp_path, capsys, monkeypatch):
     path = arguments_path(registered_checkouts()[0].record_path)

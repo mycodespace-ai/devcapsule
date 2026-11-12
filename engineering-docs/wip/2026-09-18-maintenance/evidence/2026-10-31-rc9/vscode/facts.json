@@ -1,0 +1,22 @@
+{
+  "surface": "vscode",
+  "needs": [
+    "vscode-ide",
+    "node"
+  ],
+  "container": "devcapsule-e2e-ide-vscode-201a4e30",
+  "desktop_url_port": "55003",
+  "console_url_port": "34483",
+  "console_answers": 200,
+  "ide_window": {
+    "id": 6291459,
+    "class": "code code",
+    "name": "Visual Studio Code"
+  },
+  "pixels": {
+    "width": 1600,
+    "height": 1000,
+    "distinctColours": 622,
+    "video": "desktop.webm"
+  }
+}

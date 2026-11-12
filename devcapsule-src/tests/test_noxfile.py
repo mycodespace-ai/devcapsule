@@ -10,6 +10,8 @@ from unittest.mock import patch
 
 import noxfile
 
+pytestmark = pytest.mark.legacy
+
 
 RELEASE_WORKFLOW = noxfile.REPO_ROOT / ".github" / "workflows" / "release-pex.yml"
 

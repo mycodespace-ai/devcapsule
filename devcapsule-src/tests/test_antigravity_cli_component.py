@@ -12,6 +12,9 @@ from devcapsule.components.antigravity_cli import (
     AntigravityCliComponent,
     runtime_template,
 )
+import pytest
+
+pytestmark = pytest.mark.legacy
 
 
 def locked_metadata() -> dict[str, object]:

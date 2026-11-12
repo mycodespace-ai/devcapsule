@@ -10,6 +10,9 @@ from devcapsule.configuration.history import (
     history_directory,
     record_known_good_configuration,
 )
+import pytest
+
+pytestmark = pytest.mark.legacy
 
 
 MANIFEST = {

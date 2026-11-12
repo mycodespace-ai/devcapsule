@@ -1,0 +1,51 @@
+# dorny/paths-filter v3 with predicate-quantifier: every and picomatch's
+# dot: true. Every pattern is a negation, so a changed file selects a route
+# unless one of the route's listed non-inputs covers it. A new or unclassified
+# path therefore runs the job: nothing escapes verification silently. Under
+# picomatch, `a/**` also matches `a` itself, which covers the website gitlink.
+python:
+  # docs/versions.yaml is not excluded: tests/test_release_docs.py reads the
+  # real manifest, so it is a runtime input.
+  - '!docs/**/*.md'
+  - '!README.md'
+  - '!website/**'
+  - '!scripts/website.sh'
+  # engineering-docs is listed by subtree. releases/ stays a runtime input:
+  # tests/test_release_docs.py reads a published notes file. A new subtree
+  # runs the suite until it is proven a non-input and listed here.
+  - '!engineering-docs/README.md'
+  - '!engineering-docs/archive/**'
+  - '!engineering-docs/blog/**'
+  - '!engineering-docs/bugs/**'
+  - '!engineering-docs/completed-tasks/**'
+  - '!engineering-docs/decisions/**'
+  - '!engineering-docs/design-notes/**'
+  - '!engineering-docs/development/**'
+  - '!engineering-docs/implementation-notes/**'
+  - '!engineering-docs/product/**'
+  - '!engineering-docs/requirements/**'
+  - '!engineering-docs/session-records/**'
+  - '!engineering-docs/specifications/**'
+  - '!engineering-docs/wip/**'
+  - '!engineering-docs/work-orders/**'
+  - '!CURRENT-STATUS.md'
+  - '!index.md'
+docs:
+  - '!devcapsule-src/devcapsule/**'
+  - '!devcapsule-src/tests/**'
+  - '!devcapsule-src/scripts/**'
+  - '!devcapsule-src/noxfile.py'
+  - '!devcapsule-src/dev-requirements.txt'
+  - '!devcapsule-webconsole/**'
+  - '!docker4pycharm/**'
+  - '!engineering-docs/wip/**'
+  - '!engineering-docs/archive/**'
+  - '!engineering-docs/work-orders/**'
+  - '!engineering-docs/session-records/**'
+  - '!engineering-docs/bugs/**'
+  - '!CURRENT-STATUS.md'
+  - '!index.md'
+# README, docs, journal, release notes, engineering design notes, the website
+# gitlink, .gitmodules, pyproject version and CI definitions still build docs.
+# Console changes conservatively run the existing hosted Python check; that
+# check does not replace the separate local nox -s webconsole gate.

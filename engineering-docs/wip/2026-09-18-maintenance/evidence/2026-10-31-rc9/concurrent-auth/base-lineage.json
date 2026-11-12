@@ -1,0 +1,8 @@
+{
+  "published_base_digest": "sha256:d7047ced8556cd35964fcc058a1101cf2b5b202f7a5daa2fdd434dcda5ed82c9",
+  "environment_images": [
+    "sha256:d43faae343ac254ca599b601c597cc71a23f53d08942c4d03e74dd7459801142",
+    "sha256:d43faae343ac254ca599b601c597cc71a23f53d08942c4d03e74dd7459801142"
+  ],
+  "all_base_layers_match_published_image": true
+}

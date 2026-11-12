@@ -2,12 +2,53 @@
 
 [Development](README.md) · [Developer environment](developer-environment.md) · [Source layout](source-layout.md) · [Unit tests](unit-tests.md) · [Integration tests](integration-tests.md) · [Running scenario recordings](running-e2e-scenario-recordings.md)
 
-The end-to-end suites run real Docker: they build images, start containers,
-launch capsules and look at what happens. They are opt-in, they run on a
-developer's machine or inside a capsule with host Docker, and never on the
-hosted runner. During a release they run against the downloaded candidate,
-which is how the acceptance record gets its Docker proofs; see the
+An end-to-end test drives the product the way a user does, through its
+entry point, against real infrastructure, with nothing faked, and reads
+the result from the outside as the user would see it. Here that means
+real Docker: the suites build images, start containers, launch capsules
+and look at what happens. They are opt-in, they run on a developer's
+machine or inside a capsule with host Docker, and never on the hosted
+runner. During a release they run against the downloaded candidate, which
+is how the acceptance record gets its Docker proofs; see the
 [release runbook](../implementation-notes/devcapsule/2026-09-01-release-and-validation-process.md).
+
+## What an end-to-end test is, in rules
+
+Owner direction, 2026-11-06, a synthesis of the general practice and the
+rules this repository already had. Each rule below is the standing one
+or names the date it was added.
+
+1. The test drives the product through its user entry point, the
+   executable under test, and fakes nothing. A proof that fakes a service
+   or calls into the package is an integration test or a unit test.
+2. The executable is the one that ships: `DEVCAPSULE_PEX_UNDER_TEST` and
+   the asserted identity, so the evidence names exact bytes.
+3. The test runs on a fresh workspace, never on the live checkout, and
+   never reads the capsule's own records; the owner's ruling of
+   2026-10-05, below.
+4. The postcondition is observed from outside, independently of what the
+   product says about itself: a window the display socket lists, a file
+   the test reads back, a container Docker reports gone. A log line or a
+   model's verdict alone cannot pass a test.
+5. Every wait has an explicit deadline, and a deadline is the only wait.
+   No sleep stands in for a condition, and no retry turns a failure into
+   a pass; a test that passes on its second run has found a bug or a bad
+   test, and either gets a record. Added 2026-11-06, from the claim test
+   of 2026-09-22.
+6. Every run leaves evidence under `dist/e2e-evidence/`, named by the
+   executable's identity and the environment: the host, the daemon, the
+   base image by digest. The acceptance record cites it; nobody
+   reconstructs it from memory.
+7. Each test proves one thing a user would notice, and the table below
+   names it, so a failure names the broken journey. A test that proves a
+   subsystem rather than a journey belongs in the integration suite.
+8. The test cleans up what it created, best effort, and reports what it
+   could not remove.
+9. The suites run on demand, never as the gate of a commit, and at least
+   one of them runs for every release, on the accepted candidate's bytes,
+   with the run recorded and the release notes saying which tests ran and
+   why that selection; *Release Policy* rule 10 in `WORKFLOW-LOCAL.md`.
+   Added 2026-11-06.
 
 ## Entry points
 
@@ -76,6 +117,8 @@ to installing `xprop` in every image.
 | `DEVCAPSULE_EARLY_EXIT_E2E_IMAGE`, `DEVCAPSULE_CONTRIBUTOR_E2E_IMAGE`, `DEVCAPSULE_PEX_CLEAN_MACHINE_IMAGE` | the sessions | Disposable images the tests build or reuse |
 | `DEVCAPSULE_E2E_BUILD_NETWORK` | `-- --build-network` | The network mode of image builds |
 | `DEVCAPSULE_SMOKE_SCENARIO` | `-- --scenario` | Catalog ID or JSON path of a recorded IDE scenario to replay |
+| `DEVCAPSULE_SMOKE_PLATFORM` | `-- --platform` | The capsule platform the IDE smoke creates each project for, such as `linux-arm64` |
+| `DEVCAPSULE_RUNTIME_PEX` | you, for a macOS launcher | The Linux runtime it delivers, or a directory of `devcapsule-<platform>` runtimes |
 | `PLAYWRIGHT_BROWSERS_PATH` | you, optionally | Where `ide-smoke -- --display` finds or installs Chromium |
 
 ## Evidence

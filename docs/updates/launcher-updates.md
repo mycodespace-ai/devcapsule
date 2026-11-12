@@ -1,21 +1,31 @@
 ---
-description: How the launcher tells you a newer DevCapsule exists, how to install it, and what does not change when you do.
+description: Where to find a newer DevCapsule launcher, how to install it, and what stays untouched when you upgrade.
 weight: 2
-updated: 2026-10-24
+updated: 2026-10-30
 ---
 # Launcher updates
 
-Once a day, `project run` checks whether a newer DevCapsule release exists
-and tells you interactively; `--no-update-check` skips the check for one
-launch, and a cached critical notice still lets you decide. Installing the
-newer release is the [install block](../getting-started/install.md) again,
-with the new version's download address; it replaces the executable and
-nothing else.
+Check the [DevCapsule releases page](https://github.com/mycodespace-ai/devcapsule/releases)
+for launcher updates. Install a newer release with the steps in
+[Install DevCapsule](../getting-started/install.md), using that release's
+download URL. This replaces the single-file executable.
 
-An upgraded launcher keeps every project's lock and every checkout's
-recorded choices. It grants no new host access. If a project changed its own
-configuration in the meantime, the next launch asks what is pending, as
+The daily interactive check in `devcapsule project run` checks component
+channels, not the launcher's release list. `--no-update-check` skips that live
+check. Cached component notices can still ask for a decision in an interactive
+terminal; non-interactive launches report them and continue. See
+[Component freshness](component-freshness.md).
+
+Upgrading the launcher preserves every project's lock, every checkout's
+recorded choices, and your [configuration home](../configuration/home.md)
+(`settings.toml` defaults and accepted channels). It grants no new host
+access. Existing per-checkout approvals and home channel acceptances stay
+valid while they still match the selected software.
+
+If a project updated its manifest or lock in the meantime, or a newly selected
+component requires a channel acceptance or checkout approval, the next launch
+stops and asks, as
 [Project versus personal](../configuration/project-versus-personal.md#when-the-project-changes)
-describes. Existing per-checkout consents remain valid when they still match
-the selected software. A missing consent or channel acceptance can require
-an answer. An upgrade alone does not invalidate a matching consent.
+describes. When the launcher creates `settings.toml`, it records its release in
+`minimum-devcapsule`. Later writes preserve an existing minimum. A launcher
+older than that minimum refuses commands that load the home, including reads.

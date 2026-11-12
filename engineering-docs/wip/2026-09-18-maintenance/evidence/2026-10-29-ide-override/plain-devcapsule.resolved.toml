@@ -1,0 +1,20 @@
+"devcapsule-resolved-schema-version" = 1
+
+["authorization"]
+"network" = "host"
+
+["authorization"."base-image"]
+"lock-digest" = "3298373f3fde1871aa10cd13ee42f9d957d99ed23cd92d7e121ed91fbde2d04a"
+"reference" = "docker.io/mycodespaceai/devcapsule-base@sha256:8c97d308b4ac8172ce91ef4f96406063bfcd85a55efb09d4a23e795b10a834a3"
+
+["runtime"]
+"component" = "pycharm"
+"project-mount" = "/workspace/e2e-ide-required-7fa4db67"
+
+["sources"]
+"capability-baseline" = "78c3bc23de14c14d2e9fdd445325c963bb0a1c1488765cf5e753f338ed5ac893"
+"checkout-input" = "d3fe868e18506d321f8dd002ab99fc5b0f4e0e4e04aee5d4efa380124e34c739"
+"home-config" = "absent"
+"manifest" = "63768aa3d623f186c30ba2860b92f2779d5bc86c68dba2b8138e14f4636b5dfd"
+"manifest-scope" = "configuration-v1"
+"platform-lock" = "3298373f3fde1871aa10cd13ee42f9d957d99ed23cd92d7e121ed91fbde2d04a"

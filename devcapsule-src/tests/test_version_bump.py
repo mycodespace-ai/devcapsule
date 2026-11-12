@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.legacy
+
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "bump-version.py"
 SPEC = importlib.util.spec_from_file_location("devcapsule_bump_version", SCRIPT)

@@ -13,6 +13,8 @@ import pytest
 from devcapsule.configuration import Configuration, Resolution, HostAccess, ProjectConfigurationError
 from devcapsule.configuration.file_formats import canonical_digest
 
+pytestmark = pytest.mark.legacy
+
 
 @pytest.fixture
 def predecessor_documents():

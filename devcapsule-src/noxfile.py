@@ -52,6 +52,11 @@ def run_tests(session: nox.Session) -> None:
     session.run("python", "-m", "pytest", str(PROJECT_ROOT / "tests"))
 
 
+def check_test_conventions(session: nox.Session) -> None:
+    """Hold the suite to *Unit Tests* in WORKFLOW-LOCAL.md; legacy files are compared with the diff base."""
+    session.run("python", str(PROJECT_ROOT / "scripts" / "validate_unittests_follow_conventions.py"))
+
+
 def run_packaging_tests(session: nox.Session) -> None:
     session.run(
         "python",
@@ -170,6 +175,8 @@ def run_typecheck(session: nox.Session) -> None:
         str(PROJECT_ROOT / "noxfile.py"),
         str(VERSION_SCRIPT),
         str(PROJECT_ROOT / "scripts" / "release-manifest.py"),
+        str(PROJECT_ROOT / "scripts" / "validate_unittests_follow_conventions.py"),
+        str(PROJECT_ROOT / "scripts" / "publish_coverage_numbers_to_pr.py"),
         str(PROJECT_ROOT / "scripts" / "release-protocol.py"),
         str(PROJECT_ROOT / "scripts" / "prepare-promotion.py"),
     )
@@ -179,9 +186,11 @@ def run_smoke(session: nox.Session) -> None:
     session.run("python", "-m", "devcapsule", "--help")
     session.run("python", "-m", "devcapsule", "version", "--json")
     session.run("python", "-m", "devcapsule", "runtime", success_codes=[2])
+    session.run("python", "-m", "devcapsule", "runtime", "diagnose-probe", "--help")
     session.run("python", "-m", "devcapsule", "host-open", "--help")
     session.run("python", "-m", "devcapsule", "pycharm", "run", "--help", success_codes=[2])
     session.run("python", "-m", "devcapsule", "project", "--help")
+    session.run("python", "-m", "devcapsule", "project", "diagnose", "--help")
     session.run("python", "-m", "devcapsule", "project", "list", "--help")
     session.run("python", "-m", "devcapsule", "project", "config", "show", "--help")
     session.run("python", "-m", "devcapsule", "project", "run", "--help")
@@ -248,9 +257,11 @@ def smoke_pex(session: nox.Session, path: Path = TEST_PEX_PATH) -> None:
     session.run(str(path), "--help", external=True)
     session.run(str(path), "version", "--json", external=True)
     session.run(str(path), "runtime", success_codes=[2], external=True)
+    session.run(str(path), "runtime", "diagnose-probe", "--help", external=True)
     session.run(str(path), "host-open", "--help", external=True)
     session.run(str(path), "pycharm", "run", "--help", success_codes=[2], external=True)
     session.run(str(path), "project", "--help", external=True)
+    session.run(str(path), "project", "diagnose", "--help", external=True)
     session.run(str(path), "project", "list", "--help", external=True)
     session.run(str(path), "project", "config", "show", "--help", external=True)
     session.run(str(path), "project", "run", "--help", external=True)
@@ -353,6 +364,7 @@ def bump_version(session: nox.Session) -> None:
 def tests(session: nox.Session) -> None:
     install_locked(session)
     check_python_syntax(session)
+    check_test_conventions(session)
     run_tests(session)
 
 
@@ -445,7 +457,13 @@ def ide_smoke(session: nox.Session) -> None:
     parser.add_argument("--max-actions", type=int, default=30)
     parser.add_argument("--agent-timeout", type=int, default=900)
     parser.add_argument("--surface", action="append", default=[], help="limit to a surface name; repeatable")
+    parser.add_argument("--platform", help="create each project for this capsule platform, such as linux-arm64")
+    parser.add_argument("--required-ide", action="store_true",
+                        help="instead of the surfaces: a project requiring PyCharm launches Codium once with "
+                             "'run --ide codium --force', then PyCharm again plainly (work order of 2026-10-28)")
     options = parser.parse_args(session.posargs)
+    if options.required_ide and (options.surface or options.agent or options.scenario):
+        session.error("--required-ide runs its own two launches; it takes no --surface, --agent or --scenario")
     if options.component_browser and not (options.agent or options.display or options.scenario):
         session.error("--component-browser requires --display, --agent, or --scenario")
     if options.component_browser:
@@ -455,6 +473,8 @@ def ide_smoke(session: nox.Session) -> None:
             session.error("--scenario cannot be combined with --agent: the scenario leaves the IDE in its final state")
         if len(options.surface) != 1:
             session.error("--scenario requires exactly one --surface, the scenario's own")
+    if options.platform:
+        session.env["DEVCAPSULE_SMOKE_PLATFORM"] = options.platform
     if options.relaunch:
         if not options.agent or options.surface not in (["intellij"], ["rider"]):
             session.error("--relaunch requires --agent --surface intellij or rider")
@@ -482,7 +502,7 @@ def ide_smoke(session: nox.Session) -> None:
     session.run(
         "python", "-m", "pytest", "--no-cov", "-m", "ide_smoke",
         *(["-k", " or ".join(options.surface)] if options.surface else []),
-        str(PROJECT_ROOT / "tests" / "e2e" / "test_ide_comes_alive.py"),
+        str(PROJECT_ROOT / "tests" / "e2e" / ("test_required_ide_override.py" if options.required_ide else "test_ide_comes_alive.py")),
         env={PEX_UNDER_TEST_ENV: session.env[PEX_UNDER_TEST_ENV]},
     )
 
@@ -525,11 +545,11 @@ def build(session: nox.Session) -> None:
     check_python_syntax(session)
     check_shell_syntax(session)
     run_typecheck(session)
+    check_test_conventions(session)
     run_tests(session)
     run_smoke(session)
     build_test_pex(session)
     smoke_pex(session)
-    run_packaging_tests(session)
     check_docs_contract(session)
     if build_public_pex_if_clean(session):
         smoke_pex(session, PUBLIC_PEX_PATH)

@@ -19,6 +19,8 @@ from devcapsule.display_client import (
 )
 from devcapsule.host_open import HOST_OPEN_SOCKET_ENV, HostOpenError
 
+pytestmark = pytest.mark.legacy
+
 
 def test_token_and_port_are_fresh_and_usable() -> None:
     token = new_display_token()

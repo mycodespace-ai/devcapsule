@@ -7,6 +7,8 @@ import pytest
 
 from tests.test_base_image import pex_fixture
 
+pytestmark = pytest.mark.legacy
+
 
 SPEC = importlib.util.spec_from_file_location(
     "release_manifest", Path(__file__).parents[1] / "scripts" / "release-manifest.py",

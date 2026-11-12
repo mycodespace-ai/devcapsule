@@ -1,0 +1,42 @@
+{
+  "slug": "e2e-ide-required-7fa4db67",
+  "required": "pycharm",
+  "alternate": "codium",
+  "refusal_exit": 2,
+  "forced": {
+    "launch": "forced",
+    "surface": "codium",
+    "container": "devcapsule-e2e-ide-required-7fa4db67-forced",
+    "runtime_component": "codium",
+    "ide_window": {
+      "id": 6291459,
+      "class": "codium codium",
+      "name": "VSCodium"
+    },
+    "pixels": {
+      "width": 1600,
+      "height": 1000,
+      "distinctColours": 389,
+      "video": "desktop.webm"
+    }
+  },
+  "plain": {
+    "launch": "plain",
+    "surface": "pycharm",
+    "container": "devcapsule-e2e-ide-required-7fa4db67-plain",
+    "runtime_component": "pycharm",
+    "ide_window": {
+      "id": 6291533,
+      "class": "jetbrains-pycharm jetbrains-pycharm",
+      "name": "splash"
+    },
+    "pixels": {
+      "width": 1600,
+      "height": 1000,
+      "distinctColours": 1432,
+      "video": "desktop.webm"
+    }
+  },
+  "record_unchanged": true,
+  "shared_unchanged": true
+}

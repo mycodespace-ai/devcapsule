@@ -6,8 +6,9 @@ deliberate:
 
 - The framework owns the command *tree*: discovery-independent group dispatch,
   group help, hidden commands, group-scoped options such as
-  ``project --path``, and the carrier-option grammar shared by ``init``,
-  ``run``, and the ``config`` family.
+  ``project --path``, the carrier-option grammar shared by ``init``,
+  ``run``, and the ``config`` family, and the ``--platform`` value shared by
+  ``project init`` and ``images build``.
 - :mod:`argparse` owns only *leaf* option parsing, declared per command in
   ``configure``.
 
@@ -31,6 +32,7 @@ from dataclasses import dataclass
 from typing import Any, ClassVar, Mapping, NoReturn, Sequence
 
 from devcapsule.compat import CliError
+from devcapsule.platforms import Platform, UnsupportedPlatformError
 
 
 class UsageError(CliError):
@@ -303,3 +305,17 @@ def carrier_answers(
                 )
             )
     return tuple(answers)
+
+
+def capsule_platform_argument(value: str) -> Platform:
+    """A ``--platform`` value: a capsule platform this host runs."""
+
+    try:
+        platform = Platform.parse(value)
+        runnable = Platform.runnable()
+    except UnsupportedPlatformError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
+    if platform not in runnable:
+        names = ", ".join(str(member) for member in runnable)
+        raise argparse.ArgumentTypeError(f"this host runs {names} capsules, not {platform}")
+    return platform

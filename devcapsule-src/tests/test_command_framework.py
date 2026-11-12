@@ -18,6 +18,8 @@ from devcapsule.commands.framework import (
     carrier_answers,
 )
 
+pytestmark = pytest.mark.legacy
+
 
 class _Echo(Command):
     name = "echo"

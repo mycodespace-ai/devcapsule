@@ -1,0 +1,21 @@
+{
+  "accepted-by": "Costin Cozianu",
+  "candidate-sha256": "413b1d45bac9c39b6fa5fab68090e43550c9e255108de48b387c50a715c4fcf2",
+  "candidate-tag": "v0.3.0-rc9",
+  "evidence": [
+    "On 2026-10-31 Costin Cozianu requested final 0.3.0 publication after the verified RC9 restart, then answered \"Yes to both questions, let's move ahead\" to the final scope/provider dispositions. C17 and the nine undecided September 28 documentation proposals move to 0.3.1 planning; RC9 is accepted with the documented provider/editor verification limits. This does not assert additional unobserved provider actions.",
+    "RC9 publication succeeded: https://github.com/ccozianu/devcapsule/actions/runs/41181720227 ; downloaded assets, checksum and source identity verified. Candidate source integrated through PR #331 at main 4b59b10daede8b77ff7c7aee753b9df483d62458.",
+    "Eight downloaded-PEX E2E tests passed, including clean-machine, component-cache, exact launcher delivery and runtime/display lifecycle; the two-capsule shared-browser authentication regression passed against the fixed published base. Evidence: engineering-docs/wip/2026-09-18-maintenance/evidence/2026-10-31-rc9/published/.",
+    "Owner restarted after clearing the saved RC0 local-base override. Running PEX matches RC9; actual environment layers match published base image 5405ee00017d77b907fb78c44eab94a819e536c4c0acb600b28dee86b2ff0e68; installed console security code matches the fix. Console authenticated/anonymous probes pass; host-X11 rather than noVNC is selected.",
+    "Nine in-capsule inspection commands pass across project root, descendant and /opt; unknown subcommand gives the correct diagnostic. Packaged RC9 passed 18 unpacked-cache/network regression cases; published-PEX recursive successor launches, inspects and cleans up in a fresh isolated workspace. Fresh Codium launch accepts run-once host networking with no project recommendation and saved access denied.",
+    "Full source gate before RC9: 2645 unit, 18 packaging and 374 console tests plus type/syntax/CLI/PEX/docs checks. Website checked 252 pages and 21031 links/assets/anchors. Release notes, promoted manifest and docs branch match RC9; release-docs check passes.",
+    "Final freshness recheck: Codex 0.166.0 and Antigravity 1.4.12 unchanged; Claude latest 2.1.316 versus tested 2.1.314. Hold tested RC9 pins for the requested final promotion; review newer Claude during 0.3.1 preparation. Provider/editor verification limits remain explicit."
+  ],
+  "integration": {
+    "baseline": "3c91183ffd2130f6c7b40d2f9e3fd41588f977eb",
+    "method": "ancestry"
+  },
+  "schema-version": 1,
+  "source-revision": "475427da033633ff5ee0e44e09face700630bf36",
+  "tag": "v0.3.0"
+}

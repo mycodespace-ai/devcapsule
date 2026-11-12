@@ -1,0 +1,22 @@
+{
+  "surface": "pycharm",
+  "needs": [
+    "python-ide",
+    "python"
+  ],
+  "container": "devcapsule-e2e-ide-pycharm-379fac64",
+  "desktop_url_port": "43943",
+  "console_url_port": "44529",
+  "console_answers": 200,
+  "ide_window": {
+    "id": 6291562,
+    "class": "jetbrains-pycharm jetbrains-pycharm",
+    "name": "PyCharm User Agreement"
+  },
+  "pixels": {
+    "width": 1600,
+    "height": 1000,
+    "distinctColours": 1434,
+    "video": "desktop.webm"
+  }
+}

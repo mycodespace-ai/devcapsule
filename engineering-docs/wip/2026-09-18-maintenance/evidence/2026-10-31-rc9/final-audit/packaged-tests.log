@@ -1,0 +1,13 @@
+TESTED_PACKAGE=/tmp/devcapsule-pex-root/installed_wheels/2/1efa1fabe1ade3183ab9c7ef7e100a1103c566da13814cf75c40fa01329b97c3/devcapsule-0.3.0rc9-py3-none-any.whl/devcapsule/__init__.py
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/devcapsule/worktrees/maintenance-ci/devcapsule-src
+configfile: pyproject.toml
+plugins: cov-7.1.0
+collected 18 items
+
+../../../home/devcapsule/worktrees/maintenance-ci/devcapsule-src/tests/test_unpacked_cache.py . [  5%]
+................                                                         [ 94%]
+../../../home/devcapsule/worktrees/maintenance-ci/devcapsule-src/tests/test_project_commands.py . [100%]
+
+============================== 18 passed in 0.37s ==============================

@@ -1,5 +1,5 @@
 ---
-status: fixed
+status: closed
 severity: major
 target: 0.3.0
 owner: maintenance
@@ -226,3 +226,18 @@ show` and `versions show` answer from the runtime context, `config set`
 names the launcher command with the host path, `project --path $PWD
 bootstrap` reports an unknown command. Closes on the owner's confirmation
 with a 0.3.0 candidate.
+
+## Downloaded RC9 verification — 2026-10-31
+
+The published RC9 executable returns valid JSON for config show, versions show and project info from the project root, a descendant and /opt (nine checks). The fresh-workspace attached-successor inspection also passes. The old config list spelling is retired; config show is the current contract.
+
+[Final audit evidence](../../wip/2026-09-18-maintenance/evidence/2026-10-31-rc9/README.md#final-promotion-audit--2026-10-31).
+Verification is complete; the release acceptance/closure checkpoint remains
+pending the explicit final scope and provider dispositions.
+
+## Closed — 2026-10-31
+
+Closed on the RC9 verification above and the owner's final acceptance of
+that exact candidate on 2026-10-31. [Acceptance record](../../releases/v0.3.0.json).
+The fix is in RC9 source 475427da and main 4b59b10d; the documented test
+limits are retained. This supersedes the pending-closure sentence above.

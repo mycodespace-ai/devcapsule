@@ -1,0 +1,11 @@
+[
+  {
+    "path": "devcapsule-src/devcapsule/_ci_annotation_probe.py",
+    "start_line": 1,
+    "end_line": 2,
+    "annotation_level": "warning",
+    "title": "Uncovered changed lines",
+    "message": "Changed executable lines 1-2 are not covered by tests (advisory).",
+    "blob_href": "https://github.com/ccozianu/devcapsule/blob/421a06ba4230784485b5c00e79ec540fd07894ec/devcapsule-src/devcapsule/_ci_annotation_probe.py"
+  }
+]

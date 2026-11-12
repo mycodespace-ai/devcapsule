@@ -24,6 +24,8 @@ from devcapsule.host_daemon import (
 )
 from devcapsule.recursive_dogfood import ContainerInspection, Mount
 
+pytestmark = pytest.mark.legacy
+
 
 HOST_PROJECT = "/home/developer/work/project"
 HOST_HOME = "/home/developer/.local/share/devcapsule/home"

@@ -19,6 +19,8 @@ from devcapsule.configuration.capabilities import CapabilityPolicy
 from devcapsule.configuration.values import normalize_memory_size
 from pathlib import Path
 
+pytestmark = pytest.mark.legacy
+
 
 def document(**extra) -> dict:
     return {

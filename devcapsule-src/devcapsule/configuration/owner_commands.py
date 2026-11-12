@@ -2,9 +2,9 @@
 
 Each operation edits the shared manifest through one writer
 (:func:`manifest_document.render_manifest`) and, when the tools change,
-regenerates the platform lock, validating the candidate pair before anything
-is written and promoting both files under the capability transaction journal
-of :mod:`capability_commands`. The rc4 IDE recommendation command stays; agents are ordinary shared
+regenerates every platform lock the project carries, validating each
+candidate pair before anything is written and promoting the files under the
+capability transaction journal of :mod:`capability_commands`. The rc4 IDE recommendation command stays; agents are ordinary shared
 capabilities. Component acquisition still requires the developer's consent.
 
 The verbs are the ones the CLI UX redesign work order of 2026-10-24 settled:
@@ -24,8 +24,7 @@ from devcapsule.resolution_matrix import MATRICES, ResolutionMatrix
 
 from .authorization import CURATED_HOST_RECOMMENDATIONS, render_authorization_value
 from .capabilities import CapabilityPolicy, requirement, resolution_recommendations
-from .capability_commands import canonical_tool_name, check_documents, paths, promote
-from .capability_selection import generate_lock
+from .capability_commands import canonical_tool_name, check_documents, paths, project_locks, promote, regenerate_locks
 from .file_formats import ProjectConfigurationError
 from .manifest import current_manifest
 from .manifest_document import (
@@ -36,10 +35,12 @@ from .manifest_document import (
     capability_table,
     environment_name,
 )
-from .storage import discover_project, load_toml, require_settled
+from .sources import WrappedSource, WrappedSources, has_control_characters, java_line, source_path
+from .storage import discover_project, load_toml, project_platform, require_settled
 from .values import normalize_memory_size
 
 __all__ = [
+    "declare_source",
     "edit_capabilities",
     "drop_environment",
     "drop_tools",
@@ -51,20 +52,24 @@ __all__ = [
 ]
 
 
-def _project(start: Path, *, check_resolutions: bool = True) -> tuple[Path, dict[str, Any], dict[str, Any], ResolutionMatrix]:
+def _project(start: Path, *, check_resolutions: bool = True) -> tuple[
+    Path, dict[str, Any], dict[Platform, dict[str, Any]], ResolutionMatrix,
+]:
+    """The project's root, manifest and every lock, validated, and this host's matrix for its vocabulary."""
     root = discover_project(start)
     require_settled(root)
-    manifest_path, lock_path, _ = paths(root)
-    manifest, lock = current_manifest(load_toml(manifest_path), manifest_path).document(), load_toml(lock_path)
-    check_documents(manifest, lock, check_resolutions=check_resolutions)
-    return root, manifest, lock, MATRICES[Platform.current()]
+    manifest_path = paths(root)[0]
+    manifest, locks = current_manifest(load_toml(manifest_path), manifest_path).document(), project_locks(root)
+    for lock in locks.values():
+        check_documents(manifest, lock, check_resolutions=check_resolutions)
+    return root, manifest, locks, MATRICES[project_platform(root)]
 
 
 def _policy_edit(
     start: Path, *, change: str, names: Sequence[str], because: str | None,
     preview: bool, allow_unverified: bool, native: bool = False,
 ) -> str:
-    root, manifest, lock, matrix = _project(start)
+    root, manifest, locks, matrix = _project(start)
     policy = CapabilityPolicy.read(manifest)
     reasons = capability_reasons(manifest)
     required, optional = set(policy.required), set(policy.optional)
@@ -125,14 +130,16 @@ def _policy_edit(
     candidate = CapabilityPolicy(ordered(required, required_order), ordered(optional, optional_order), tuple(sorted(minimums.items())))
     candidate_manifest = deepcopy(manifest)
     candidate_manifest["capabilities"] = capability_table(candidate, reasons, previous=manifest["capabilities"])
-    generated = generate_lock(candidate, matrix, previous=lock, allow_unverified=allow_unverified,
-                              recommendations=resolution_recommendations(candidate_manifest))
-    check_documents(candidate_manifest, generated)
+    generated = regenerate_locks(candidate, locks, allow_unverified=allow_unverified,
+                                 recommendations=resolution_recommendations(candidate_manifest))
+    for lock in generated.values():
+        check_documents(candidate_manifest, lock)
     if not preview:
         promote(root, candidate_manifest, generated)
     verb = {"require": "Required", "offer": "Offered", "drop": "Dropped"}[change]
     lines = [
-        ("Preview; nothing written." if preview else f"{verb} {', '.join(canonical)}; the manifest and the lock are updated."),
+        ("Preview; nothing written." if preview else
+         f"{verb} {', '.join(canonical)}; the manifest and {'the lock' if len(generated) == 1 else 'its locks'} are updated."),
         f"Required: {' '.join(candidate.requirements()) or 'none'}",
         f"Offered: {' '.join(candidate.optional) or 'none'}",
     ]
@@ -168,7 +175,7 @@ def _refresh_own_checkout(root: Path, manifest: Mapping[str, Any]) -> list[str]:
 
 def require_tools(start: Path, names: Sequence[str], *, because: str | None = None,
                   preview: bool = False, allow_unverified: bool = False) -> str:
-    """Make ``names`` required tools of the project, with an optional reason; regenerate the lock."""
+    """Make ``names`` required tools of the project, with an optional reason; regenerate the locks."""
     return _policy_edit(start, change="require", names=names, because=because, preview=preview, allow_unverified=allow_unverified)
 
 
@@ -184,7 +191,7 @@ def drop_tools(start: Path, names: Sequence[str], *, preview: bool = False, allo
 
 
 def _environment_edit(start: Path, *, change: str, names: Sequence[str], because: str | None, preview: bool) -> str:
-    root, manifest, _lock, _matrix = _project(start)
+    root, manifest, _locks, _matrix = _project(start)
     environment = deepcopy(manifest.get("environment", {}))
     required, optional = environment.get("required", {}), environment.get("optional", {})
     canonical = tuple(environment_name(name, field_name="environment variable") for name in names)
@@ -249,7 +256,7 @@ def recommend(start: Path, name: str, value: str, *, because: str | None = None,
     recommendation. A host recommendation requires ``because``: the reason is
     what the developer reads when asked.
     """
-    root, manifest, lock, matrix = _project(start, check_resolutions=False)
+    root, manifest, locks, matrix = _project(start, check_resolutions=False)
     candidate_manifest = deepcopy(manifest)
     removing = value.strip().lower() == "none"
     generated = None
@@ -328,11 +335,11 @@ def recommend(start: Path, name: str, value: str, *, because: str | None = None,
         capabilities.pop("resolution", None)
         if resolutions:
             capabilities["resolution"] = resolutions
-        generated = generate_lock(CapabilityPolicy.read(candidate_manifest), matrix, previous=lock,
-                                  recommendations=resolutions)
+        generated = regenerate_locks(CapabilityPolicy.read(candidate_manifest), locks, recommendations=resolutions)
         effect = "the provider default; acquisition still needs the developer's trust or consent"
     _validate(candidate_manifest)
-    check_documents(candidate_manifest, generated if generated is not None else lock)
+    for lock in (generated if generated is not None else locks).values():
+        check_documents(candidate_manifest, lock)
     if not preview:
         promote(root, candidate_manifest, generated)
     head = "Preview; nothing written." if preview else (
@@ -392,3 +399,41 @@ def _validate(manifest: dict[str, Any]) -> None:
     ManifestV2.read(manifest, Path("manifest"))
     from .authorization import authorization_declarations
     authorization_declarations(manifest, {})
+
+
+def declare_source(start: Path, path: str, *, upstream: str | None = None, java: str | None = None,
+                   preview: bool = False) -> str:
+    """Declare, or redeclare, one wrapped source under ``[sources."<path>"]``; the manifest alone changes.
+
+    ``path`` is the submodule's path in the wrapper. ``upstream`` is the
+    upstream's URL when the submodule's origin is the developer's fork, else
+    ``None``. ``java`` is the Java line the source builds with, or ``None``
+    when the source does not build with Java. A second declaration of the
+    same path replaces its known keys and keeps any key this launcher does
+    not know. The lock is untouched: a source adds no capability by itself;
+    ``require_tools`` does that, and ``project wrap`` calls both.
+    """
+    root, manifest, locks, _matrix = _project(start, check_resolutions=False)
+    path = source_path(path, field_name="source path")
+    if upstream is not None and (not isinstance(upstream, str) or not upstream.strip() or has_control_characters(upstream)):
+        raise ProjectConfigurationError("The upstream is the upstream repository's URL, on one line; it cannot be blank.")
+    if java is not None:
+        java = java_line(java, field_name="java line")
+    previous = deepcopy(manifest.get("sources", {}))
+    declared = WrappedSources.read(manifest)
+    entries = [source for source in declared.entries if source.path != path]
+    entries.append(WrappedSource(path, upstream, java))
+    candidate = WrappedSources(tuple(sorted(entries, key=lambda source: source.path)))
+    candidate_manifest = deepcopy(manifest)
+    candidate_manifest["sources"] = candidate.document(previous=previous)
+    WrappedSources.read(candidate_manifest)
+    for lock in locks.values():
+        check_documents(candidate_manifest, lock, check_resolutions=False)
+    if not preview:
+        promote(root, candidate_manifest)
+    verb = "Redeclared" if declared.get(path) is not None else "Declared"
+    lines = ["Preview; nothing written." if preview else f"{verb} source {path}; the manifest is updated."]
+    lines.append(f"  {path}: " + ("learn from it; the origin is the upstream and nothing is pushed" if upstream is None
+                                   else f"change it in your fork of {upstream}; pull requests go to the fork")
+                 + (f"; builds with Java {java}" if java is not None else ""))
+    return "\n".join(lines)

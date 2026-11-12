@@ -10,6 +10,7 @@ from typing import Any, Mapping
 from urllib.parse import quote
 from devcapsule.platforms import Platform, UnsupportedPlatformError, XdgHomes
 
+from .capabilities import RequirementDeparture
 from .authorization import locked_base_reference
 from .file_formats import ConfigurationFileKind, ProjectConfigurationError, canonical_digest, legacy_lock, validate_file_format, table, selected_version_lock, render_toml
 from .manifest import current_manifest
@@ -39,6 +40,9 @@ class ResolvedProject:
     checkout: dict[str, Any]
     resolution_path: Path
     resolution: dict[str, Any]
+    # The named departures from the project's contract this launch runs
+    # with (``RequirementDeparture``); empty for an ordinary launch.
+    departures: tuple[RequirementDeparture, ...] = ()
 
 
 def discover_project(path: Path) -> Path:
@@ -85,65 +89,102 @@ def config_root(env: Mapping[str, str] | None = None) -> Path:
     return XdgHomes.from_environment(env).config
 
 
-def workstation_path(env: Mapping[str, str] | None = None) -> Path:
-    """Where this workstation keeps its own defaults: ``$XDG_CONFIG_HOME/devcapsule/workstation.toml``."""
-    return config_root(env) / "workstation.toml"
+def settings_path(env: Mapping[str, str] | None = None) -> Path:
+    """This home's settings file, the one a write goes to."""
+    return config_root(env) / "settings.toml"
 
 
-def trust_path(env: Mapping[str, str] | None = None) -> Path:
-    """Where this workstation keeps the channels its user trusts: ``$XDG_CONFIG_HOME/devcapsule/trust.toml``."""
-    return config_root(env) / "trust.toml"
+def settings_source(env: Mapping[str, str] | None = None) -> Path:
+    """The settings file a read takes.
+
+    Inside a capsule the launcher's settings arrive as a read-only mount. A
+    capsule that has no settings of its own and names no home reads that
+    mount, so that what it trusts and defaults to is what launched it; once
+    it writes its own, or names a home, that home is the whole truth, as it
+    is for a launcher the capsule runs.
+    """
+    from devcapsule.runtime_configuration import mounted_settings_path
+    own = settings_path(env)
+    if own.exists():
+        return own
+    mounted = mounted_settings_path(env)
+    return mounted if mounted is not None and mounted.exists() else own
+
+
+def launcher_release() -> str:
+    from importlib.metadata import version
+    return re.split(r"rc|\.dev|\+", version("devcapsule"), maxsplit=1)[0]
+
+
+def launcher_meets_minimum(required: object) -> bool:
+    """Compare three release integers; the file must name a complete release."""
+    pattern = r"([0-9]+)\.([0-9]+)\.([0-9]+)"
+    minimum = re.fullmatch(pattern, required) if isinstance(required, str) else None
+    if minimum is None:
+        raise ValueError("minimum-devcapsule must be a release version string (X.Y.Z)")
+    own = re.fullmatch(pattern, launcher_release())
+    if own is None:
+        raise ValueError("the launcher must have a release version (X.Y.Z)")
+    return tuple(map(int, own.groups())) >= tuple(map(int, minimum.groups()))
+
+
+def validate_settings(document: Mapping[str, Any], path: Path) -> None:
+    """Check reader admission before the schema or the settings themselves."""
+    from .home import HomeDefaults
+    from .trust import HomeTrust
+    required = document.get("minimum-devcapsule")
+    try:
+        admitted = launcher_meets_minimum(required)
+    except ValueError as exc:
+        raise ProjectConfigurationError(f"{path}: {exc}") from exc
+    from importlib.metadata import version
+    own = version("devcapsule")
+    if not admitted:
+        raise ProjectConfigurationError(
+            f"DevCapsule home {path.parent} requires DevCapsule {required}; this launcher is {own}. "
+            "Get the release at https://github.com/mycodespace-ai/devcapsule/releases."
+        )
+    schema = document.get("devcapsule-settings-schema-version")
+    if type(schema) is not int or schema != 1:
+        raise ProjectConfigurationError(f"{path}: unsupported schema version {schema!r}; this launcher reads 1.")
+    try:
+        HomeDefaults.read(document)
+        HomeTrust.read(document)
+    except ProjectConfigurationError as exc:
+        raise ProjectConfigurationError(f"{path}: {exc}") from exc
+
+
+def load_settings(env: Mapping[str, str] | None = None) -> dict[str, Any]:
+    """Read the single settings document; a missing home is empty."""
+    path = settings_source(env)
+    if not path.exists():
+        return {}
+    document = load_toml(path)
+    validate_settings(document, path)
+    return document
 
 
 def load_trust(env: Mapping[str, str] | None = None) -> dict[str, Any]:
-    """The workstation's trust record, validated; empty when the file does not exist."""
-    from .trust import WorkstationTrust
-    path = trust_path(env)
-    if not path.is_file():
-        return {}
-    document = load_toml(path)
-    try:
-        WorkstationTrust.read(document)
-    except ProjectConfigurationError as exc:
-        raise ProjectConfigurationError(f"{path}: {exc}") from exc
-    return document
+    return dict(table(load_settings(env), "trust"))
 
 
-def write_trust(document: Mapping[str, Any], env: Mapping[str, str] | None = None) -> Path:
-    """Write the workstation's trust record atomically; return its path."""
-    from .trust import WorkstationTrust, render_trust
-    path = trust_path(env)
-    atomic_write(path, render_trust(WorkstationTrust.read(document)))
-    return path
+def write_settings(document: Mapping[str, Any], env: Mapping[str, str] | None = None) -> Path:
+    """Merge changed tables, retain headers, and replace only changed content.
 
-
-def load_workstation(env: Mapping[str, str] | None = None) -> dict[str, Any]:
-    """The workstation's configuration document, validated; empty when no file exists.
-
-    The defaults come from ``workstation.toml``; the trust record of
-    ``trust.toml`` rides along under ``trust`` so one document carries what
-    the review needs of the workstation.
+    Atomic replacement prevents partial reads. Concurrent updates of the same
+    table use the last writer's value; this is not a transaction across launchers.
     """
-    from .workstation import WorkstationDefaults
-    path = workstation_path(env)
-    document: dict[str, Any] = {}
-    if path.is_file():
-        document = load_toml(path)
-        try:
-            WorkstationDefaults.read(document)
-        except ProjectConfigurationError as exc:
-            raise ProjectConfigurationError(f"{path}: {exc}") from exc
-    trust = load_trust(env)
-    if trust:
-        document = {**document, "trust": trust}
-    return document
-
-
-def write_workstation(document: Mapping[str, Any], env: Mapping[str, str] | None = None) -> Path:
-    """Write the workstation's configuration document atomically; return its path."""
-    from .workstation import WorkstationDefaults, render_workstation
-    path = workstation_path(env)
-    atomic_write(path, render_workstation(WorkstationDefaults.read(document)))
+    path = settings_path(env)
+    before = load_settings(env)
+    after = {**before, **document}
+    after.setdefault("devcapsule-settings-schema-version", 1)
+    after.setdefault("minimum-devcapsule", launcher_release())
+    validate_settings(after, path)
+    # A no-op keeps comments, spelling, permissions and timestamps intact.
+    if all(before.get(key, {}) == after.get(key, {}) for key in set(before) | set(after)):
+        return path
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    atomic_write(path, render_toml(after))
     return path
 
 
@@ -341,8 +382,35 @@ def manifest_source_digest(root: Path) -> str | None:
         return None
 
 
+def platform_lock_path(root: Path, platform: Platform) -> Path:
+    """The path of the project's lock for ``platform``."""
+    return root / ".devcapsule" / f"devcapsule.{platform}.lock"
+
+
+def project_platform(root: Path) -> Platform:
+    """The capsule platform this host runs the project at ``root`` as.
+
+    The first platform this host runs that the project has a lock for, so
+    Apple Silicon runs a project locked for linux-arm64 natively and one
+    locked only for linux-amd64 under emulation; for a project with no such
+    lock, the platform this host creates projects for. Reads only.
+    """
+    try:
+        for platform in Platform.runnable():
+            if platform_lock_path(root, platform).is_file():
+                return platform
+        return Platform.current()
+    except UnsupportedPlatformError as exc:
+        raise ProjectConfigurationError(str(exc)) from exc
+
+
+def locked_platforms(root: Path) -> tuple[Platform, ...]:
+    """Every platform the project at ``root`` has a lock for, on any host."""
+    return tuple(platform for platform in Platform if platform_lock_path(root, platform).is_file())
+
+
 def recommendation_lock_for(root: Path, manifest: Mapping[str, Any]) -> tuple[Path, dict[str, Any]]:
-    """Load the committed platform lock for this host's platform.
+    """Load the committed lock of the platform this host runs the project as.
 
     The lock is the project-side record of one resolution: the version set and
     property defaults selected for one platform. It is a record, not a
@@ -363,15 +431,13 @@ def recommendation_lock_for(root: Path, manifest: Mapping[str, Any]) -> tuple[Pa
     to keep existing committed locks working.
     """
 
-    try:
-        current = Platform.current()
-    except UnsupportedPlatformError as exc:
-        raise ProjectConfigurationError(str(exc)) from exc
-    path = root / ".devcapsule" / f"devcapsule.{current}.lock"
+    platform = project_platform(root)
+    path = platform_lock_path(root, platform)
     if not path.is_file():
         raise ProjectConfigurationError(
-            f"Missing {path}: this project carries no platform lock for {current}. "
-            "The platform lock is authored on the project side and committed with the project."
+            f"Missing {path}: this project carries no platform lock for {platform}. "
+            "The platform lock is authored on the project side and committed with the project; "
+            "'devcapsule project init' adds it."
         )
     value = load_toml(path)
     validate_file_format(value, ConfigurationFileKind.lock, path)
@@ -388,7 +454,7 @@ def recommendation_lock_for(root: Path, manifest: Mapping[str, Any]) -> tuple[Pa
 def composition_for(root: Path, manifest: Mapping[str, Any]) -> tuple[Path, dict[str, Any], dict[str, Any]]:
     """The checkout's persistent software selection, before execution filtering.
 
-    Return the current platform's shared lock path, the composed selection (the
+    Return the project platform's shared lock path, the composed selection (the
     explicit version set, or the shared lock with personal pins laid over it)
     and the loaded checkout record, empty when the checkout is unregistered.
     A version set for another platform raises ProjectConfigurationError.
@@ -398,9 +464,10 @@ def composition_for(root: Path, manifest: Mapping[str, Any]) -> tuple[Path, dict
     checkout = load_checkout(record, manifest, root) if record is not None else {}
     selected = selected_version_lock(checkout)
     if selected is not None:
-        if selected.get("platform") != str(Platform.current()):
+        platform = project_platform(root)
+        if selected.get("platform") != str(platform):
             raise ProjectConfigurationError("Local version set is for another platform; follow the project explicitly.")
-        path, shared = root / ".devcapsule" / f"devcapsule.{Platform.current()}.lock", selected
+        path, shared = platform_lock_path(root, platform), selected
     else:
         path, shared = recommendation_lock_for(root, manifest)
     return path, compose_lock(manifest, shared, checkout), checkout
@@ -422,7 +489,7 @@ def selection_for(root: Path, manifest: Mapping[str, Any]) -> tuple[Path, dict[s
     if not value.get("components", {}).get("interactive-surface"):
         raise ProjectConfigurationError(
             "Choose your IDE for this checkout: devcapsule project config ide IDE "
-            "(python-ide, frontend-ide, java-ide, eclipse-ide or dotnet-ide)."
+            "(python-ide, frontend-ide, vscode-ide, java-ide, eclipse-ide or dotnet-ide)."
         )
     build_node_registry(manifest, value)
     return path, composed, value

@@ -17,7 +17,7 @@ from .bindings import resolve_configuration_bindings, resolve_secret_bindings
 from .file_formats import AuthorizationScalar, ConfigurationScalar, ProjectConfigurationError, table
 from .nodes import build_node_registry
 from .launcher_values import resolve_launcher_values
-from .trust import WorkstationTrust
+from .trust import HomeTrust
 from .values import RuntimeEffects, resolve_configuration_values
 
 
@@ -134,9 +134,9 @@ class ConfigurationReview:
 
 def review_configuration(
     manifest: Mapping[str, Any], lock: Mapping[str, Any], checkout: Mapping[str, Any],
-    workstation: Mapping[str, Any] | None = None,
+    home: Mapping[str, Any] | None = None,
 ) -> ConfigurationReview:
-    """Assess one checkout; ``workstation`` holds the workstation's defaults for the launcher-owned values."""
+    """Assess one checkout; ``home`` holds the home's defaults for the launcher-owned values."""
     # No consumer can assess a tree with ambiguous names or runtime effects.
     build_node_registry(manifest, lock)
     problems: list[str] = []
@@ -155,7 +155,7 @@ def review_configuration(
     except ProjectConfigurationError as exc:
         problems.append(str(exc))
     try:
-        launcher_values, launcher_effects = resolve_launcher_values(manifest, checkout, workstation)
+        launcher_values, launcher_effects = resolve_launcher_values(manifest, checkout, home)
         values = {**values, **launcher_values}
         effects = {**effects, **launcher_effects}
     except ProjectConfigurationError as exc:
@@ -169,7 +169,7 @@ def review_configuration(
     except ProjectConfigurationError as exc:
         problems.append(str(exc))
     try:
-        authorizations = review_authorizations(manifest, lock, checkout, WorkstationTrust.read(workstation or {}))
+        authorizations = review_authorizations(manifest, lock, checkout, HomeTrust.read(home or {}))
     except ProjectConfigurationError as exc:
         problems.append(str(exc))
     state = checkout.get("state", {})

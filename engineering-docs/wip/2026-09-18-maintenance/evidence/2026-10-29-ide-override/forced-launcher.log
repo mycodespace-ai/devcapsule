@@ -1,0 +1,117 @@
+WARNING: --force sets aside the project's required IDE python-ide for this launch; frontend-ide (codium) runs. The project's requirement and this checkout's saved IDE are unchanged; the next plain launch uses them.
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 3.57kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 1.0s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/mycodespaceai/devcapsule-base@sha256:8c97d308b4ac8172ce91ef4f96406063bfcd85a55efb09d4a23e795b10a834a3
+#4 DONE 0.0s
+
+#5 [context codium-copy-dir-0] load .dockerignore
+#5 transferring codium-copy-dir-0: 2B done
+#5 DONE 0.0s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 2B done
+#6 DONE 0.0s
+
+#7 [devcapsule-baseline 1/1] FROM docker.io/mycodespaceai/devcapsule-base@sha256:8c97d308b4ac8172ce91ef4f96406063bfcd85a55efb09d4a23e795b10a834a3
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 40.55MB 0.1s done
+#8 DONE 0.1s
+
+#9 [context codium-copy-dir-0] load from client
+#9 transferring codium-copy-dir-0: 470.04kB 0.1s done
+#9 DONE 0.2s
+
+#10 [stage-2 1/9] RUN mkdir -p '/etc/devcapsule'
+#10 CACHED
+
+#11 [stage-2 2/9] COPY copy-file-0 /etc/devcapsule/component-runtime-template.json
+#11 CACHED
+
+#12 [stage-2 3/9] RUN chmod 644 '/etc/devcapsule/component-runtime-template.json'
+#12 CACHED
+
+#13 [stage-2 4/9] RUN mkdir -p '/opt/devcapsule/bin'
+#13 CACHED
+
+#14 [codium 1/1] COPY --from=codium-copy-dir-0 / /opt/codium/
+#14 CACHED
+
+#15 [stage-2 5/9] COPY copy-file-1 /opt/devcapsule/bin/devcapsule.pex
+#15 DONE 0.3s
+
+#16 [stage-2 6/9] RUN chmod 755 '/opt/devcapsule/bin/devcapsule.pex'
+#16 DONE 0.3s
+
+#17 [stage-2 7/9] COPY --link --from=codium /opt/codium /opt/codium
+#17 DONE 0.5s
+
+#18 [stage-2 8/9] RUN 'sh' '-ec' 'if [ -e /opt/xtras ] || [ -L /opt/xtras ]; then [ "$(readlink /opt/xtras)" = /home/devcapsule/xtras ] || { echo "Cannot reserve /opt/xtras: base contains another path" >&2; exit 1; }; else ln -s /home/devcapsule/xtras /opt/xtras; fi; mkdir -p /etc/profile.d; printf '"'"'%s\n'"'"' '"'"'export PATH="/opt/xtras/bin:$PATH"'"'"' > /etc/profile.d/devcapsule-xtras.sh'
+#18 DONE 0.3s
+
+#19 [stage-2 9/9] RUN 'ln' '-sfn' '/opt/devcapsule/bin/devcapsule.pex' '/usr/local/bin/devcapsule'
+#19 DONE 0.2s
+
+#20 exporting to image
+#20 exporting layers
+#20 exporting layers 3.3s done
+#20 writing image sha256:2b7232db3dbddf629df4d895119ec8e4a2393281cf23032ebe7639427c25d997 done
+#20 naming to docker.io/library/devcapsule-local-codium:3c0799340a12c19c47db done
+#20 DONE 3.3s
+Warning: no complete Git author identity was provided or found in host global Git config.
+Pass --git-user-name and --git-user-email, or launch with --no-git-identity-from-host to suppress host identity lookup.
+Launching from inside a container against an external Docker daemon; bind sources were translated to their host paths.
+codium storage:
+  Persistent home:       /home/devcapsule/.local/share/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/home
+  codium/cache: /home/devcapsule/.cache/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/components/codium/cache
+  codium/extensions: /home/devcapsule/.local/share/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/components/codium/extensions
+  codium/user-data: /home/devcapsule/.local/share/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/components/codium/user-data
+  Session logs:           /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013250-c54d (budget 256 MiB)
+  Container project path: /workspace/e2e-ide-required-7fa4db67
+
+Renderer security:
+  Chromium renderers run unsandboxed (--no-sandbox) and inherit the capsule
+  user's project, state, network, and any separately authorized Docker
+  access. Docker's outer isolation is unchanged.
+
+Display:
+  Contained desktop: the capsule runs its own X server and serves it to a
+  browser through a token-authorized noVNC bridge on host loopback port 54995 (host networking).
+  No host X socket, credential, or DISPLAY is shared with the capsule.
+
+Web console:
+  The capsule serves its configuration, versions and project information as
+  pages on host loopback port 57589 (host networking), behind this run's token. It is read-only.
+Contained display: http://127.0.0.1:54995/vnc.html?REDACTED=1&resize=remote&path=websockify%3Ftoken%3DREDACTED
+  (opens in your browser once the capsule is ready; closing the tab does not end the session)
+Web console: http://127.0.0.1:57589/?REDACTED=c6a96cf10ebaa9f51d663e990f57673548d500c93ed13426
+  (the capsule as a page; the link works for this run only)
+Contained display is ready; open it in a browser: http://127.0.0.1:54995/vnc.html?REDACTED=1&resize=remote&path=websockify%3Ftoken%3DREDACTED
+Web console is ready; open it in a browser: http://127.0.0.1:57589/?REDACTED=c6a96cf10ebaa9f51d663e990f57673548d500c93ed13426
+devcapsule supervisor: session end requested (SIGTERM); stopping children
+Session ended with exit code 133.
+Session logs on this computer:
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013250-c54d/devcapsule-codium.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013250-c54d/devcapsule-console.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013250-c54d/devcapsule-launcher.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013250-c54d/devcapsule-novnc.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013250-c54d/devcapsule-panel.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013250-c54d/devcapsule-supervisor.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013250-c54d/devcapsule-window-manager.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013250-c54d/devcapsule-xvnc.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013250-c54d/session.json
+Display: contained desktop, reached through your browser; no host X session is shared.
+Materializing devcapsule-local-codium:3c0799340a12c19c47db: differs from devcapsule-local-codium:f69d0b40f967d87bc3c1 in runtime.pex-sha256.
+Prior codium formation images remain (95.1 GB total): devcapsule-local-codium:064bdf65f608746945ac, devcapsule-local-codium:1d3b1dfc88b3d0380eef, devcapsule-local-codium:3652720a1bf86d186250, devcapsule-local-codium:367dbc9032ebaca659e1, devcapsule-local-codium:3c04c83f162889ff6b66, devcapsule-local-codium:4352ec79772cc2c2a498, devcapsule-local-codium:49ca42363585edbe49ae, devcapsule-local-codium:506166aeb04ad1efc297, devcapsule-local-codium:56248ed25c93a836107d, devcapsule-local-codium:60ed46caf1a3e8897e5d, devcapsule-local-codium:61db9488bc627ac44ab7, devcapsule-local-codium:6319b346cf52ef2bbe2c, devcapsule-local-codium:706ed627a994928e916b, devcapsule-local-codium:86e0a45794487ce4022a, devcapsule-local-codium:8bd29b6c101da3da9e0c, devcapsule-local-codium:8f52aeacfd5612225e4d, devcapsule-local-codium:a1bb9fe71ee817306181, devcapsule-local-codium:a25944865b7e7f45e052, devcapsule-local-codium:aa2314efd558dad5f7e0, devcapsule-local-codium:b02f80a467b874122bf0, devcapsule-local-codium:b10fe7da26c222239f2e, devcapsule-local-codium:b17608b8c444642232a4, devcapsule-local-codium:bfc50a6248ebb00376ee, devcapsule-local-codium:bffdab063787b25fccbd, devcapsule-local-codium:c92c83541cbff46dd0a4, devcapsule-local-codium:e6393119f03279bcdbe6, devcapsule-local-codium:f69d0b40f967d87bc3c1. DevCapsule does not reap superseded canonical images yet.
+Materialized canonical environment: devcapsule-local-codium:3c0799340a12c19c47db

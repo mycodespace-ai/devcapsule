@@ -5,6 +5,9 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from devcapsule.images.metadata import list_local_images, managed_labels
+import pytest
+
+pytestmark = pytest.mark.legacy
 
 
 def fake_image(

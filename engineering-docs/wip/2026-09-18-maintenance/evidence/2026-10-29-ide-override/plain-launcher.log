@@ -1,0 +1,124 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 3.70kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 0.2s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 CACHED
+
+#4 [context pycharm-copy-dir-0] load .dockerignore
+#4 transferring pycharm-copy-dir-0: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/mycodespaceai/devcapsule-base@sha256:8c97d308b4ac8172ce91ef4f96406063bfcd85a55efb09d4a23e795b10a834a3
+#5 DONE 0.0s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 2B done
+#6 DONE 0.0s
+
+#7 [devcapsule-baseline 1/1] FROM docker.io/mycodespaceai/devcapsule-base@sha256:8c97d308b4ac8172ce91ef4f96406063bfcd85a55efb09d4a23e795b10a834a3
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 2.13kB done
+#8 DONE 0.0s
+
+#9 [stage-2 1/9] RUN mkdir -p '/etc/devcapsule'
+#9 CACHED
+
+#10 [stage-2 2/9] COPY copy-file-0 /etc/devcapsule/component-runtime-template.json
+#10 CACHED
+
+#11 [stage-2 3/9] RUN chmod 644 '/etc/devcapsule/component-runtime-template.json'
+#11 CACHED
+
+#12 [stage-2 4/9] RUN mkdir -p '/opt/devcapsule/bin'
+#12 CACHED
+
+#13 [context pycharm-copy-dir-0] load from client
+#13 ...
+
+#14 [stage-2 5/9] COPY copy-file-1 /opt/devcapsule/bin/devcapsule.pex
+#14 DONE 0.2s
+
+#13 [context pycharm-copy-dir-0] load from client
+#13 ...
+
+#15 [stage-2 6/9] RUN chmod 755 '/opt/devcapsule/bin/devcapsule.pex'
+#15 DONE 0.3s
+
+#13 [context pycharm-copy-dir-0] load from client
+#13 transferring pycharm-copy-dir-0: 1.29MB 0.5s done
+#13 DONE 0.7s
+
+#16 [pycharm 1/1] COPY --from=pycharm-copy-dir-0 / /opt/jetbrains/pycharm/
+#16 CACHED
+
+#17 [stage-2 7/9] COPY --link --from=pycharm /opt/jetbrains/pycharm /opt/jetbrains/pycharm
+#17 DONE 1.1s
+
+#18 [stage-2 8/9] RUN 'sh' '-ec' 'if [ -e /opt/xtras ] || [ -L /opt/xtras ]; then [ "$(readlink /opt/xtras)" = /home/devcapsule/xtras ] || { echo "Cannot reserve /opt/xtras: base contains another path" >&2; exit 1; }; else ln -s /home/devcapsule/xtras /opt/xtras; fi; mkdir -p /etc/profile.d; printf '"'"'%s\n'"'"' '"'"'export PATH="/opt/xtras/bin:$PATH"'"'"' > /etc/profile.d/devcapsule-xtras.sh'
+#18 DONE 0.2s
+
+#19 [stage-2 9/9] RUN 'ln' '-sfn' '/opt/devcapsule/bin/devcapsule.pex' '/usr/local/bin/devcapsule'
+#19 DONE 0.2s
+
+#20 exporting to image
+#20 exporting layers
+#20 exporting layers 14.3s done
+#20 writing image sha256:bd8ba2245086070e79d831c45b42f3dc27901b6b5296b8e84100b661669e5d8c done
+#20 naming to docker.io/library/devcapsule-local-pycharm:23af9ec77ca0fb4f2785 done
+#20 DONE 14.3s
+Warning: no complete Git author identity was provided or found in host global Git config.
+Pass --git-user-name and --git-user-email, or launch with --no-git-identity-from-host to suppress host identity lookup.
+Launching from inside a container against an external Docker daemon; bind sources were translated to their host paths.
+PyCharm storage:
+  Persistent home:       /home/devcapsule/.local/share/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/home
+  PyCharm config:         /home/devcapsule/.local/share/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/components/pycharm/config (shared)
+  Shared plugins:         /home/devcapsule/.local/share/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/components/pycharm/plugins
+  PyCharm system:         /home/devcapsule/.cache/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/components/pycharm/system
+  PyCharm logs:           /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/components/pycharm/log
+  Tool cache:             /home/devcapsule/.cache/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/components/pycharm/cache
+  Session logs:           /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013320-8175 (budget 256 MiB)
+  Container project path: /workspace/e2e-ide-required-7fa4db67
+
+Embedded browser security:
+  JCEF's inner Chromium sandbox is disabled for V1 container compatibility.
+  Embedded content inherits the IDE user's project, state, network, and any
+  separately authorized Docker access. Docker's outer isolation is unchanged.
+
+Display:
+  Contained desktop: the capsule runs its own X server and serves it to a
+  browser through a token-authorized noVNC bridge on host loopback port 41551 (host networking).
+  No host X socket, credential, or DISPLAY is shared with the capsule.
+
+Web console:
+  The capsule serves its configuration, versions and project information as
+  pages on host loopback port 40259 (host networking), behind this run's token. It is read-only.
+Contained display: http://127.0.0.1:41551/vnc.html?REDACTED=1&resize=remote&path=websockify%3Ftoken%3DREDACTED
+  (opens in your browser once the capsule is ready; closing the tab does not end the session)
+Web console: http://127.0.0.1:40259/?REDACTED=47bc8b34299d2b8893a47073b5df4044480041f7a9585df4
+  (the capsule as a page; the link works for this run only)
+Contained display is ready; open it in a browser: http://127.0.0.1:41551/vnc.html?REDACTED=1&resize=remote&path=websockify%3Ftoken%3DREDACTED
+Web console is ready; open it in a browser: http://127.0.0.1:40259/?REDACTED=47bc8b34299d2b8893a47073b5df4044480041f7a9585df4
+devcapsule supervisor: session end requested (SIGTERM); stopping children
+Session ended with exit code 1.
+Session logs on this computer:
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013320-8175/devcapsule-console.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013320-8175/devcapsule-launcher.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013320-8175/devcapsule-novnc.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013320-8175/devcapsule-panel.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013320-8175/devcapsule-pycharm.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013320-8175/devcapsule-supervisor.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013320-8175/devcapsule-window-manager.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013320-8175/devcapsule-xvnc.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/1a0e19c97f39-e2e-ide-required-7fa4db67/logs/20261029-013320-8175/session.json
+Display: contained desktop, reached through your browser; no host X session is shared.
+Materializing devcapsule-local-pycharm:23af9ec77ca0fb4f2785: differs from devcapsule-local-pycharm:837a4a121077e241aee3 in runtime.pex-sha256.
+Prior pycharm formation images remain (142.8 GB total): devcapsule-local-pycharm:0d918d47a8b651e01707, devcapsule-local-pycharm:123fdae64ddba5886bbf, devcapsule-local-pycharm:19e5a3c3b93fbbb3e95a, devcapsule-local-pycharm:48316effb82e0aa522d5, devcapsule-local-pycharm:499f145235a411b6c898, devcapsule-local-pycharm:5631d6baa6bd391030ba, devcapsule-local-pycharm:636d914a184501bf44b2, devcapsule-local-pycharm:7b04410238071f368bce, devcapsule-local-pycharm:7c2c44bc4f6db4c86e4a, devcapsule-local-pycharm:81dd0b7769487cb2fb7d, devcapsule-local-pycharm:837a4a121077e241aee3, devcapsule-local-pycharm:af4744e50a14015d3e63, devcapsule-local-pycharm:b7e1eadcade6e5b9d4fe, devcapsule-local-pycharm:bd36b577554f7a2a85aa, devcapsule-local-pycharm:cc224c3593a4f0d917a1, devcapsule-local-pycharm:d035ee494041ffb9acc8, devcapsule-local-pycharm:de50e83a578051a03ca3, devcapsule-local-pycharm:e80d9ca9205209f48d22, devcapsule-local-pycharm:e8d826b18aa457b9c06d, devcapsule-local-pycharm:e8f9b0c12623d7d366ca. DevCapsule does not reap superseded canonical images yet.
+Materialized canonical environment: devcapsule-local-pycharm:23af9ec77ca0fb4f2785

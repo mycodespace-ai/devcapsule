@@ -85,7 +85,8 @@ Current release/stabilization reality:
 
 ### Developer Experience And Persistence
 
-- `R-CONFIG-001` — [Conservative Configuration Writers And Tolerant Readers](engineering-docs/requirements/product/r-config-001-conservative-writers-tolerant-readers.md) — accepted for 0.3 planning; mandatory/optional needs, command-owned writes and graceful degradation.
+- `R-CONFIG-001` — [Conservative Configuration Writers And Tolerant Readers](engineering-docs/requirements/product/r-config-001-conservative-writers-tolerant-readers.md) — accepted for 0.3 planning; mandatory/optional needs, command-owned writes and graceful degradation; one explicit per-launch exception for a required IDE (D-0016, 2026-10-28).
+- `R-WRAP-001` — [Wrapped Projects](engineering-docs/requirements/product/r-wrap-001-wrapped-projects.md) — accepted 2026-11-02 with the wrapped-projects work order; a foreign repository as a submodule of a wrapper project, `project wrap`, a clean foreign tree, the toolchain reaching the build.
 - `R-CONSOLE-001` — [Every Capsule Serves A Web Console](engineering-docs/requirements/product/r-console-001-capsule-web-console.md) — proposed and accepted 2026-10-09 by `capsule-webconsole` in its first integration; token-gated loopback console in the base image showing configuration, versions, info and live resources.
 
 - `R-UPGRADE-001` — [Local Component Upgrades And Recoverable Version Sets](engineering-docs/requirements/product/r-upgrade-001-component-version-sets.md)

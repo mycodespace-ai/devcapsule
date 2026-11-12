@@ -12,6 +12,8 @@ from tests.e2e.ai_driver import CliDriver, Decision, DriverError, cli_identity
 from tests.e2e.ide_session import SURFACES, SessionFacts, wait_for_ide_window
 from tests.e2e.visual_smoke import drive_scenario
 
+pytestmark = pytest.mark.legacy
+
 
 def decision(action: str = "done") -> Decision:
     return Decision(action, 0, 0, "", 0, "test observation")

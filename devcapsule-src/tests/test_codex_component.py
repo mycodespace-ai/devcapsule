@@ -23,6 +23,8 @@ from devcapsule.configuration.bindings import (
     configuration_binding_declarations,
 )
 
+pytestmark = pytest.mark.legacy
+
 
 def locked_components() -> dict[str, object]:
     return {

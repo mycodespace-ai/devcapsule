@@ -1,0 +1,1 @@
+{"report_name": "XML", "diff_name": "000c86561ea80b492717efc5178545e8f61e5e7a...HEAD", "src_stats": {"devcapsule-src/devcapsule/_ci_annotation_probe.py": {"percent_covered": 0.0, "violation_lines": [1, 2], "covered_lines": [], "violations": [[1, null], [2, null]]}}, "total_num_lines": 2, "total_num_violations": 2, "total_percent_covered": 0, "num_changed_lines": 978}

@@ -10,6 +10,8 @@ from devcapsule.materialization import parse_locked_environment, surface_profile
 from devcapsule.platforms import Platform
 from devcapsule.resolution_matrix import MATRICES, ResolutionError
 
+pytestmark = pytest.mark.legacy
+
 
 def runtime():
     return RuntimePlan.for_component(DEFINITION.runtime_template(), project_path="/workspace/project",

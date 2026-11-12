@@ -1,0 +1,22 @@
+{
+  "surface": "codium",
+  "needs": [
+    "frontend-ide",
+    "node"
+  ],
+  "container": "devcapsule-e2e-ide-codium-975bace0",
+  "desktop_url_port": "45907",
+  "console_url_port": "60967",
+  "console_answers": 200,
+  "ide_window": {
+    "id": 6291459,
+    "class": "codium codium",
+    "name": "VSCodium"
+  },
+  "pixels": {
+    "width": 1600,
+    "height": 1000,
+    "distinctColours": 397,
+    "video": "desktop.webm"
+  }
+}

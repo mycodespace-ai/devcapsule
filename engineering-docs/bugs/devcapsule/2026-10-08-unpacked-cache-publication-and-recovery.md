@@ -1,5 +1,5 @@
 ---
-status: fixed
+status: closed
 severity: minor
 target: 0.3.0
 owner: maintenance
@@ -27,3 +27,18 @@ test-only commit `ac20182` demonstrates seven failures before the correction.
 See the [review and evidence](../../wip/2026-09-18-maintenance/2026-10-08-pr172-review.md)
 for the exact cases and limits. Close after the stacked fix and #172 reach main;
 no released-candidate acceptance is claimed.
+
+## Downloaded RC9 verification — 2026-10-31
+
+All 17 unpacked-cache regression cases pass against the devcapsule-0.3.0rc9 wheel inside the downloaded PEX. The PEX interpreter pre-imported the packaged module before pytest loaded the existing test file; the recorded package path confirms this was not a source-only retest.
+
+[Final audit evidence](../../wip/2026-09-18-maintenance/evidence/2026-10-31-rc9/README.md#final-promotion-audit--2026-10-31).
+Verification is complete; the release acceptance/closure checkpoint remains
+pending the explicit final scope and provider dispositions.
+
+## Closed — 2026-10-31
+
+Closed on the RC9 verification above and the owner's final acceptance of
+that exact candidate on 2026-10-31. [Acceptance record](../../releases/v0.3.0.json).
+The fix is in RC9 source 475427da and main 4b59b10d; the documented test
+limits are retained. This supersedes the pending-closure sentence above.

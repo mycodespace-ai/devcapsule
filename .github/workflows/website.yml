@@ -41,6 +41,12 @@ jobs:
           # single-branch checkout resolves none of them.
           fetch-depth: 0
           fetch-tags: true
+      - name: Verify published documentation downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -m pip install "$(sed -n '/^pyyaml==/p' devcapsule-src/dev-requirements.txt)"
+          python3 devcapsule-src/scripts/release-docs.py published
       - name: Fetch the documentation refs the manifest names
         shell: bash
         run: git fetch origin '+refs/heads/docs-*:refs/heads/docs-*'
@@ -48,7 +54,7 @@ jobs:
       - name: Fetch the exact website submodule commit
         shell: bash
         run: |
-          git config submodule.website.url https://github.com/ccozianu/devcapsule-website.git
+          git config submodule.website.url https://github.com/mycodespace-ai/devcapsule-website.git
           git submodule update --init website
       - uses: actions/setup-node@v4
         with:
@@ -96,7 +102,7 @@ jobs:
           persist-credentials: false
       - name: Fetch the pinned website implementation
         run: |
-          git config submodule.website.url https://github.com/ccozianu/devcapsule-website.git
+          git config submodule.website.url https://github.com/mycodespace-ai/devcapsule-website.git
           git submodule update --init website
       - uses: actions/setup-node@v4
         with:

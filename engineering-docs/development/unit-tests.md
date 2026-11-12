@@ -2,6 +2,20 @@
 
 [Development](README.md) · [Developer environment](developer-environment.md) · [Source layout](source-layout.md) · [Integration tests](integration-tests.md) · [End-to-end tests](e2e-tests.md)
 
+## Conventions
+
+*Unit Tests* in [`WORKFLOW-LOCAL.md`](../../WORKFLOW-LOCAL.md) binds: a
+unit test file mirrors its module under `tests/unit/`, a test is a
+precondition, one call and a postcondition, its outcome is a function of
+inputs the test constructs, with the clock, other processes and services
+among the inputs, and its docstring states the contract. The companion
+explains why. `scripts/validate_unittests_follow_conventions.py` is the
+gate's check; its summary line counts the files still marked `legacy`. The
+flat files under `tests/` are those legacy files: they are never edited in
+place or shrunk one function at a time, and touching one, or adding,
+changing or deleting a test in a `tests/unit/` file of the same name,
+retires the entire legacy file into the mirror.
+
 ## Running them
 
 ```text
@@ -16,16 +30,70 @@ with a terminal report of missing lines, and the default selection
 `-m "not integration and not e2e"`. So a bare `pytest` under `tests/` is the
 unit suite; the heavier suites are chosen by marker, never by accident. The
 `flaky` marker runs a test for visibility with a temporarily non-blocking
-result; the other markers belong to the heavier suites.
+result; `own_host_patches` marks a unit test that patches the host itself
+(see Fixtures); the other markers belong to the heavier suites.
 
-The hosted runner runs exactly this: the GitHub Actions workflow
-`tests.yml` installs the locked environment, runs `pytest tests/` with
-coverage and publishes the summary, on every push to `main` and on every
-pull request against `main` or a `release-*` branch, so the result and the
-coverage are there before the merge; the badge is published from `main`
-alone. It runs no Docker, by
-the owner's standing rule, so everything the unit suite proves it proves
-with fakes and files.
+On a pull request the hosted workflow also writes both coverage figures,
+changed lines covered and the whole package, into the pull request's
+description between two marker comments, through
+`scripts/publish_coverage_numbers_to_pr.py`; a merge that takes the
+description as its message carries them into `main`'s history. The block is
+replaced on every run and the author's text around it is never touched. A pull
+request from a fork gets a read-only token, so its description is left alone;
+the job summary and the uploaded coverage reports still carry the figures.
+
+The hosted `tests.yml` workflow selects the existing serial unit suite when
+runtime, test, build or unclassified inputs change. It runs no Docker.
+Planning/status-only PRs skip heavy jobs; website inputs run the website's
+own tests and build. The filters live in `.github/ci-paths.yml`: each route
+lists the paths proven not to be its inputs, and any other changed path runs
+the job. Root README, journal entries and release notes are website inputs,
+while packaged Markdown under `devcapsule-src/` remains a runtime input, and
+so do `docs/versions.yaml` and the published release notes, which the unit
+suite reads as fixtures. A pull request with more than 3000 changed files
+runs everything, because GitHub's changed-file listing stops there. Console
+changes conservatively run the hosted Python suite, but its runtime coverage
+does not measure the separate console distribution; the local
+`nox -s webconsole` gate still applies.
+
+Main pushes, merge-queue checks and manual runs use full applicable verification.
+PRs into `main` and `release-*` test the PR head SHA. The advisory diff report
+compares that same revision against the merge base with the event's base SHA,
+so warning coordinates refer to the code the author changed. Coverage
+artifacts and the main-only badge remain available.
+
+### Advisory changed-line coverage
+
+From `devcapsule-src`, using the locked development environment:
+
+```sh
+.venv/bin/python -m pytest tests/ --cov-report=xml:coverage.xml
+.venv/bin/diff-cover coverage.xml --compare-branch=origin/main \
+  --format markdown:diff-cover.md,json:diff-cover.json
+```
+
+Fetch the actual target branch first and substitute it for `origin/main`
+when appropriate, for example `origin/release-0.3.0`. The reports measure
+changed executable lines in the runtime package, not changed-branch coverage.
+No percentage blocks a PR. Tests, invalid routing and failed reporting still
+fail CI. No measured executable lines means not applicable, not 100% coverage.
+
+The annotation bridge publishes at most ten warning ranges per step, escapes
+GitHub command fields, and directs the reader to the complete uploaded report
+when inline output is truncated. The summary has a size budget too; an oversized
+table remains available in the artifact. Native annotation placement must be
+checked on a real PR, not inferred from the command's exit status.
+
+### Required-check rollout
+
+Establish `ci-gate` on a representative PR before making it required. The
+owner changes repository settings: replace an existing required `Python 3.12`
+check with `ci-gate`, preserving other required checks, or add `ci-gate` when
+no CI check is currently required. YAML changes do not change branch protection.
+The aggregate requires successful routing and every selected verification job;
+unselected jobs may be skipped. A reporting failure is not a coverage warning.
+Keep the implementation PR's acceptance record explicit about the settings
+migration and the hosted cases verified.
 
 ## What is in the suite
 
@@ -61,15 +129,29 @@ so prefer the existing laws and an acceptance step for what the user sees.
 
 ## Fixtures
 
-`tests/conftest.py` holds two fixtures and nothing else:
+`tests/conftest.py` holds the suite's shared fixtures and hooks:
 
 - `host_launch_by_default`, autouse: makes launcher tests behave as if they
   run on the host, since the launcher translates bind sources when it finds
   itself inside a capsule and the suite is often run from one.
+- `amd64_linux_host_by_default`, autouse: makes the host an amd64 Linux
+  machine with an amd64 Docker daemon, as on the CI, since the launcher takes
+  other paths on macOS and Apple Silicon runs linux-arm64 capsules. A test of
+  another host patches the host itself and carries `own_host_patches`;
+  Docker-marked tests keep the real host.
+- `private_user_directories`, autouse: moves `HOME` and every XDG directory
+  under the test's `tmp_path` for non-Docker tests. Inside a capsule this is
+  not yet a private home: a home with no settings of its own reads the
+  launcher's mounted settings, so tests that assume no accepted vendor
+  channel fail there. Recorded on 2026-11-03 for the 0.3.1 fixture slice.
 - `built_pex`: the executable under test, `DEVCAPSULE_PEX_UNDER_TEST` when
   set, otherwise `dist/devcapsule-local.pex`; it fails with the Nox session
   to run when the file is missing. The integration and end-to-end suites use
   it; the unit suite does not need an artifact.
+- `pytest_configure` and `pytest_sessionfinish`: on macOS, a short temporary
+  root under `/tmp`, because a Unix socket path there is limited to 104
+  bytes. A session whose tests all passed removes it; a failed one keeps it
+  and prints its path.
 
 Everything else is local to its module: fakes for Docker and vendor
 services, temporary XDG roots, and the `tmp_path` pytest provides.
@@ -86,9 +168,6 @@ services, temporary XDG roots, and the `tmp_path` pytest provides.
   regenerated, proving R-COMPAT-001: a newer client needs no user action
   for a project, checkout or lock an older one created. [Its README](../../devcapsule-src/tests/resources/compat/README.md)
   names each client and what was templated.
-- `sample_projects/`: three sample projects as submodules, fixtures for the
-  project model; they have their own suites and are excluded from this one
-  by `norecursedirs`.
 - `supervisor_driver.py`: a driver that runs the supervisor over a JSON
   child-set specification, used by the supervisor and runtime tests.
 

@@ -12,6 +12,7 @@ from devcapsule.components.catalog import INTERACTIVE_SURFACES
 from devcapsule.project import ProjectMountError, normalize_project_mount
 from devcapsule.runtime_command import RuntimeCommand
 
+from .capabilities import RequirementDeparture
 from .authorization import authorized_base_selection
 from .file_formats import (
     ConfigurationFileKind,
@@ -24,13 +25,15 @@ from .file_formats import (
 )
 from .fingerprints import resolution_source_digests
 from .review import ConfigurationReview, HostAccess, review_configuration
-from .trust import WorkstationTrust
+from .trust import HomeTrust
 from .values import checkout_omitted_values
 
 
 def render_resolution(manifest: Mapping[str, Any], lock: Mapping[str, Any],
                       checkout: Mapping[str, Any], review: ConfigurationReview,
-                      workstation: Mapping[str, Any] | None = None) -> str:
+                      home: Mapping[str, Any] | None = None, *,
+                      departures: tuple[RequirementDeparture, ...] = ()) -> str:
+    """The resolution document; ``departures`` are the launch's named departures from the project's contract."""
     if not review.ready:
         raise ProjectConfigurationError("Cannot publish an incomplete configuration.")
     image = lock.get("image", {}).get("reference")
@@ -40,7 +43,9 @@ def render_resolution(manifest: Mapping[str, Any], lock: Mapping[str, Any],
     values, runtime_effects = review.values, review.runtime_effects
     bindings, secret_bindings = review.bindings, review.secret_bindings
     authorizations = review.resolved_authorizations()
-    sources = resolution_source_digests(manifest, lock, checkout, workstation)
+    from .capabilities import CapabilityPolicy
+    sources = resolution_source_digests(manifest, lock, checkout, home,
+                                        policy=CapabilityPolicy.read(manifest).departing(tuple(departures)))
     lines = [
         "devcapsule-resolved-schema-version = 1",
         "",
@@ -48,7 +53,7 @@ def render_resolution(manifest: Mapping[str, Any], lock: Mapping[str, Any],
         f"manifest = {quote_toml(sources['manifest'])}",
         f"platform-lock = {quote_toml(sources['platform-lock'])}",
         f"checkout-input = {quote_toml(sources['checkout-input'])}",
-        f"workstation-config = {quote_toml(sources['workstation-config'])}",
+        f"home-config = {quote_toml(sources['home-config'])}",
         'manifest-scope = "configuration-v1"',
         *([f"capability-baseline = {quote_toml(sources['capability-baseline'])}"] if "capability-baseline" in sources else []),
         "",
@@ -61,6 +66,12 @@ def render_resolution(manifest: Mapping[str, Any], lock: Mapping[str, Any],
     )
     if image:
         lines.append(f"image = {quote_toml(str(image))}")
+    for departure in departures:
+        # A departure is not satisfaction: the plan says which requirement
+        # it set aside, for the launch's records and diagnostics.
+        lines.extend(["", f"[departures.{departure.policy}]",
+                      f"required = {quote_toml(departure.capability)}",
+                      f"launched = {quote_toml(departure.replacement)}"])
     omitted = checkout_omitted_values(checkout)
     if omitted:
         # Explicit omissions are inspectable decisions, not silent gaps.
@@ -104,7 +115,7 @@ def render_resolution(manifest: Mapping[str, Any], lock: Mapping[str, Any],
             for key, value in sorted(runtime_authorizations.items())
         )
     if "base-image" in authorizations:
-        base_selection = authorized_base_selection(lock, checkout, trust=WorkstationTrust.read(workstation or {}))
+        base_selection = authorized_base_selection(lock, checkout, trust=HomeTrust.read(home or {}))
         if base_selection is None:  # pragma: no cover - authorized_base establishes it.
             raise ProjectConfigurationError("Resolved base-image authorization is missing.")
         lines.extend(
@@ -122,12 +133,12 @@ def render_resolution(manifest: Mapping[str, Any], lock: Mapping[str, Any],
 
 def same_effective_resolution(manifest: Mapping[str, Any], lock: Mapping[str, Any],
                               checkout: Mapping[str, Any], resolution: Mapping[str, Any],
-                              workstation: Mapping[str, Any] | None = None) -> bool:
+                              home: Mapping[str, Any] | None = None) -> bool:
     """Compare a predecessor's derived meaning, not its retired digest algorithm."""
-    review = review_configuration(manifest, lock, checkout, workstation)
+    review = review_configuration(manifest, lock, checkout, home)
     if not review.ready:
         return False
-    expected = tomllib.loads(render_resolution(manifest, lock, checkout, review, workstation))
+    expected = tomllib.loads(render_resolution(manifest, lock, checkout, review, home))
     return Resolution(expected).same_meaning_as(Resolution(resolution))
 
 

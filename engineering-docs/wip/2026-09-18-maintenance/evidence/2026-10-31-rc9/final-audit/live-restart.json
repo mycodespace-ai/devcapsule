@@ -1,0 +1,28 @@
+{
+  "checked_at": "2026-10-31T08:25:47.721151+00:00",
+  "pex_sha256": "413b1d45bac9c39b6fa5fab68090e43550c9e255108de48b387c50a715c4fcf2",
+  "identity": {
+    "build_mnemonic": "v0.3.0-rc9",
+    "schema_version": 2,
+    "source_repository": "https://github.com/ccozianu/devcapsule",
+    "source_revision": "475427da033633ff5ee0e44e09face700630bf36",
+    "source_url": "https://github.com/ccozianu/devcapsule/commit/475427da033633ff5ee0e44e09face700630bf36",
+    "version": "0.3.0rc9"
+  },
+  "container_started_at": "2026-10-31T08:17:39.448975194Z",
+  "container_running": true,
+  "oom_killed": false,
+  "environment_image": "sha256:04490b4bed51ae092f376faf77a58af8316f6149cd91d58538b12de9d5e251e3",
+  "base_image": "sha256:5405ee00017d77b907fb78c44eab94a819e536c4c0acb600b28dee86b2ff0e68",
+  "base_layers_match": true,
+  "console_security_sha256": "e59ca05eafe62414fcbdd57aa7a1c411cb0d42aa988a97042bea1b591b5d1850",
+  "display": "host-x11",
+  "prior_session_local_override": "RC0 devcapsule-base-local:recipe-11; corrected on host with config authorize base-image default",
+  "config_check": "valid offline; host decisions cannot be assessed in capsule",
+  "console_http_probes": {
+    "anonymous_root": 403,
+    "authenticated_root": 200,
+    "authenticated_configuration": 200,
+    "authenticated_processes": 200
+  }
+}

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "devcapsule"
-version = "0.3.1.dev0"
+version = "0.3.2.dev0"
 description = "Profile-driven Docker launch tooling for isolated IDE development environments."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -26,6 +26,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+  "diff-cover>=9.2,<11",
   "genbadge[coverage]>=1.1,<2",
   "mypy>=2.3,<3",
   "nox>=2025.5,<2027",
@@ -33,6 +34,8 @@ dev = [
   "pip-tools>=7.5,<8",
   "pytest>=7.4",
   "pytest-cov>=5,<8",
+  "PyYAML>=6,<7",
+  "types-PyYAML>=6,<7",
 ]
 
 [project.scripts]
@@ -46,6 +49,8 @@ include = ["devcapsule*"]
 [tool.setuptools.package-data]
 "devcapsule" = [
   "_build_info.json",
+  "_compatibility-v1.json",
+  "_webconsole_bundle.zip",
 ]
 "devcapsule.container_runtime" = [
   "openbox-rc.xml",
@@ -74,9 +79,6 @@ include = ["devcapsule*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-# Sample projects are independent submodules with their own dependencies and
-# their own test suites. They are fixtures for DevCapsule, not part of its gate.
-norecursedirs = ["sample_projects"]
 addopts = [
   "--cov=devcapsule",
   "--cov-report=term-missing",
@@ -85,12 +87,15 @@ addopts = [
 ]
 markers = [
   "base_build_e2e: validates the full base built by the selected published executable",
-  "integration: crosses packaging or process boundaries without Docker",
+  "integration: a subsystem with the real external things it uses, the services it does not test faked",
+  "docker: an integration test that needs the Docker daemon; the candidate workflow leaves it out",
   "e2e: builds or runs real Docker images and containers",
   "recursive_e2e: requires an authorized DevCapsule container with host-Docker access",
   "contributor_e2e: launches a clean contributor container from a host or recursive capsule",
   "ide_smoke: launches a real IDE session per surface with the executable under test; opt-in through nox -s ide-smoke",
   "flaky: executes for visibility but has a temporarily non-blocking result",
+  "legacy: predates the unit-test conventions of WORKFLOW-LOCAL.md; the file only loses tests, see scripts/validate_unittests_follow_conventions.py",
+  "own_host_patches: the test sets up its host itself; the suite's amd64 Linux host defaults stay off",
 ]
 
 [tool.coverage.run]
@@ -103,10 +108,7 @@ skip_covered = true
 
 [tool.mypy]
 python_version = "3.12"
-files = ["devcapsule", "tests", "noxfile.py", "scripts/bump-version.py", "scripts/release-manifest.py"]
-# Sample projects are independent submodules with their own dependencies. They
-# are checked by their own tooling, not by DevCapsule's gate.
-exclude = "(^|/)tests/resources/sample_projects/"
+files = ["devcapsule", "tests", "noxfile.py", "scripts/bump-version.py", "scripts/release-manifest.py", "scripts/ci_gate.py", "scripts/diff_coverage_annotations.py", "scripts/validate_unittests_follow_conventions.py", "scripts/publish_coverage_numbers_to_pr.py"]
 warn_unused_configs = true
 show_error_codes = true
 pretty = true

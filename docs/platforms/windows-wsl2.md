@@ -1,28 +1,28 @@
 ---
-description: Run DevCapsule on Windows through WSL2 and Docker Desktop's Linux integration, and open the capsule's desktop in your Windows browser.
+description: Run DevCapsule on Windows through WSL2 and Docker Desktop's Linux integration, and open the capsule desktop in your Windows browser.
 role: windows
 aliases:
   - /docs/guides/windows-wsl2/
 weight: 2
-updated: 2026-09-28
+updated: 2026-10-30
 ---
 # Windows: read this before installing
 
-DevCapsule {{tag}} ships a **Linux Intel/AMD 64-bit executable**. On Windows,
-run it in a Linux distribution under **WSL2**, with Docker Desktop's Linux
-container integration enabled. PowerShell and Command Prompt cannot run the
-executable directly; Windows on ARM is not covered by this release.
+DevCapsule {{tag}} ships a **Linux Intel/AMD 64-bit (`x86_64`) executable**. On
+Windows, run it inside a Linux distribution under **WSL2** with Docker
+Desktop's WSL2 Linux container integration enabled. PowerShell and Command
+Prompt cannot run the executable directly, and Windows on ARM is not supported
+in {{tag}}.
 
-**WSL2 has sharp edges:** Docker integration, networking and opening the browser
-can need attention. The project owner encountered these during Windows testing.
-This page covers the confirmed setup and browser workaround; it is not yet a
-complete account of that Windows troubleshooting session.
+Pay attention to three WSL2 details up front: enabling Docker Desktop for your
+specific WSL2 distribution, keeping project files inside the Linux filesystem,
+and opening the capsule's loopback URL in your Windows browser.
 
-## Get Docker working in your Linux terminal
+## Get Docker working in your WSL2 terminal
 
-Follow [Docker's WSL2 backend instructions](https://docs.docker.com/desktop/features/wsl/),
-including enabling your distribution under **Settings → Resources → WSL
-Integration**. Open that distribution's terminal and check:
+Follow [Docker Desktop's WSL2 backend guide](https://docs.docker.com/desktop/features/wsl/)
+and enable your Linux distribution under **Settings → Resources → WSL
+Integration**. Open that distribution's Linux terminal and verify:
 
 ```bash
 uname -sm
@@ -30,33 +30,50 @@ docker info
 docker buildx version
 ```
 
-You need `Linux x86_64`, a responding Docker server and Buildx before continuing.
-If Docker works in PowerShell but not here, check the distribution's WSL
-integration setting. Keep your project under your Linux home directory, such
-as `~/hello-devcapsule`; Microsoft recommends the Linux filesystem for projects
-worked on with Linux tools in its [filesystem guidance](https://learn.microsoft.com/en-us/windows/wsl/filesystems).
+Confirm you see `Linux x86_64`, a responding Docker daemon, and a Buildx
+version before continuing. If `docker info` works in PowerShell but fails inside
+WSL2, re-check the distribution toggle under **WSL Integration** in Docker
+Desktop.
 
-Now follow [Install](../getting-started/install.md) and [your first session](../getting-started/first-session.md),
-running all host-terminal commands in this Linux terminal.
+Keep your repositories inside your WSL2 Linux home directory (for example,
+`~/projects/my-app`) rather than under `/mnt/c/...`. Linux bind mounts, file
+permissions, and IDE file watchers are substantially faster and more reliable
+on the native ext4 WSL2 filesystem; see Microsoft's
+[WSL filesystem guidance](https://learn.microsoft.com/en-us/windows/wsl/filesystems).
 
-## Open the desktop in Windows
+Next, complete [Install](../getting-started/install.md) and
+[Your first session](../getting-started/first-session.md), running every
+host-terminal command inside this WSL2 Linux terminal.
 
-When `project run` prints its desktop URL, paste the **whole URL** into your
-Windows browser. The IDE runs inside the capsule; this path needs neither a
-separate X server nor WSLg.
+## Open the desktop and web console in Windows
 
-If you already have `wslview` available from the `wslu` package, this confirmed
-workaround asks the launcher to use your Windows browser automatically:
+When `devcapsule project run` starts a session, it prints `127.0.0.1` links for
+the contained desktop and the [web console](../sessions/web-console.md). Paste
+the **entire URL** (including its token) into your Windows browser. Because the
+capsule serves its own desktop over HTTP to your browser, you do not need WSLg
+or a separate Windows X server.
+
+If your WSL2 distribution has `wslview` installed (from the `wslu` package),
+you can have the launcher open your Windows browser automatically:
 
 ```bash
-BROWSER=wslview ~/.local/bin/devcapsule project run
+BROWSER=wslview devcapsule project run
 ```
 
-Otherwise, opening the printed URL manually is sufficient. Keep the launcher
-terminal open; closing the browser tab leaves the session running.
+(Use `~/.local/bin/devcapsule` if `~/.local/bin` is not yet on `PATH`.)
+Otherwise, copying and pasting the printed URL into your browser works the same
+way. Keep the WSL2 terminal open while you work; closing the browser tab leaves
+the capsule running so you can reconnect at the same URL.
 
-If the URL is unreachable, first check Docker is still running and that you
-are using the URL from the current run. Other WSL2 networking remedies depend
-on the host setup; do not apply an unexplained DNS or firewall change. Report
-the actual error and Windows/WSL versions when [asking for help](https://github.com/ccozianu/devcapsule/issues/new),
-with the private desktop URL and tokens removed.
+## If the URL does not connect
+
+1. Check that Docker Desktop is still running and that you pasted the full URL
+   from the **current** `devcapsule project run` output (every launch uses a
+   new token and selects an available port).
+2. Test from inside WSL2 (`curl -I "http://127.0.0.1:PORT/"` using the printed
+   port) to see whether the listener answers inside Linux before troubleshooting
+   WSL2-to-Windows `localhost` forwarding.
+3. Avoid applying unverified firewall or DNS workarounds. If loopback
+   forwarding fails on your setup, [open an issue](https://github.com/mycodespace-ai/devcapsule/issues/new)
+   with the exact error, Windows build, and `wsl --version` output—removing the
+   private URL tokens before posting.

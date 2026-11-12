@@ -1,0 +1,116 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 3.56kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 5.8s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/mycodespaceai/devcapsule-base@sha256:8c97d308b4ac8172ce91ef4f96406063bfcd85a55efb09d4a23e795b10a834a3
+#4 DONE 0.0s
+
+#5 [context vscode-copy-dir-0] load .dockerignore
+#5 transferring vscode-copy-dir-0: 2B done
+#5 DONE 0.0s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 2B done
+#6 DONE 0.0s
+
+#7 [devcapsule-baseline 1/1] FROM docker.io/mycodespaceai/devcapsule-base@sha256:8c97d308b4ac8172ce91ef4f96406063bfcd85a55efb09d4a23e795b10a834a3
+#7 DONE 0.0s
+
+#8 [context vscode-copy-dir-0] load from client
+#8 transferring vscode-copy-dir-0: 288.76kB 0.1s done
+#8 DONE 0.1s
+
+#9 [internal] load build context
+#9 transferring context: 40.55MB 0.1s done
+#9 DONE 0.1s
+
+#10 [vscode 1/1] COPY --from=vscode-copy-dir-0 / /opt/vscode/
+#10 CACHED
+
+#11 [stage-2 2/9] COPY copy-file-0 /etc/devcapsule/component-runtime-template.json
+#11 CACHED
+
+#12 [stage-2 3/9] RUN chmod 644 '/etc/devcapsule/component-runtime-template.json'
+#12 CACHED
+
+#13 [stage-2 1/9] RUN mkdir -p '/etc/devcapsule'
+#13 CACHED
+
+#14 [stage-2 4/9] RUN mkdir -p '/opt/devcapsule/bin'
+#14 CACHED
+
+#15 [stage-2 5/9] COPY copy-file-1 /opt/devcapsule/bin/devcapsule.pex
+#15 DONE 0.3s
+
+#16 [stage-2 6/9] RUN chmod 755 '/opt/devcapsule/bin/devcapsule.pex'
+#16 DONE 0.2s
+
+#17 [stage-2 7/9] COPY --link --from=vscode /opt/vscode /opt/vscode
+#17 DONE 0.3s
+
+#18 [stage-2 8/9] RUN 'sh' '-ec' 'if [ -e /opt/xtras ] || [ -L /opt/xtras ]; then [ "$(readlink /opt/xtras)" = /home/devcapsule/xtras ] || { echo "Cannot reserve /opt/xtras: base contains another path" >&2; exit 1; }; else ln -s /home/devcapsule/xtras /opt/xtras; fi; mkdir -p /etc/profile.d; printf '"'"'%s\n'"'"' '"'"'export PATH="/opt/xtras/bin:$PATH"'"'"' > /etc/profile.d/devcapsule-xtras.sh'
+#18 DONE 0.3s
+
+#19 [stage-2 9/9] RUN 'ln' '-sfn' '/opt/devcapsule/bin/devcapsule.pex' '/usr/local/bin/devcapsule'
+#19 DONE 0.2s
+
+#20 exporting to image
+#20 exporting layers
+#20 exporting layers 3.0s done
+#20 writing image sha256:28b2f1b5428a6e429ebc14a0ef0a5087a6613b1f678bfdf6d758eb8f2fb64eca done
+#20 naming to docker.io/library/devcapsule-local-vscode:07c7624b3c3ba53abab1 done
+#20 DONE 3.0s
+Warning: no complete Git author identity was provided or found in host global Git config.
+Pass --git-user-name and --git-user-email, or launch with --no-git-identity-from-host to suppress host identity lookup.
+Launching from inside a container against an external Docker daemon; bind sources were translated to their host paths.
+vscode storage:
+  Persistent home:       /home/devcapsule/.local/share/devcapsule/projects/by-path/6cfe65cdb774-e2e-ide-vscode-fa15be38/home
+  vscode/cache: /home/devcapsule/.cache/devcapsule/projects/by-path/6cfe65cdb774-e2e-ide-vscode-fa15be38/components/vscode/cache
+  vscode/extensions: /home/devcapsule/.local/share/devcapsule/projects/by-path/6cfe65cdb774-e2e-ide-vscode-fa15be38/components/vscode/extensions
+  vscode/user-data: /home/devcapsule/.local/share/devcapsule/projects/by-path/6cfe65cdb774-e2e-ide-vscode-fa15be38/components/vscode/user-data
+  Session logs:           /home/devcapsule/.local/state/devcapsule/projects/by-path/6cfe65cdb774-e2e-ide-vscode-fa15be38/logs/20261028-120649-bacb (budget 256 MiB)
+  Container project path: /workspace/e2e-ide-vscode-fa15be38
+
+Renderer security:
+  Chromium renderers run unsandboxed (--no-sandbox) and inherit the capsule
+  user's project, state, network, and any separately authorized Docker
+  access. Docker's outer isolation is unchanged.
+
+Display:
+  Contained desktop: the capsule runs its own X server and serves it to a
+  browser through a token-authorized noVNC bridge on host loopback port 37163 (host networking).
+  No host X socket, credential, or DISPLAY is shared with the capsule.
+
+Web console:
+  The capsule serves its configuration, versions and project information as
+  pages on host loopback port 41913 (host networking), behind this run's token. It is read-only.
+Contained display: http://127.0.0.1:37163/vnc.html?<redacted>
+  (opens in your browser once the capsule is ready; closing the tab does not end the session)
+Web console: http://127.0.0.1:41913/?token=<redacted>
+  (the capsule as a page; the link works for this run only)
+Contained display is ready; open it in a browser: http://127.0.0.1:37163/vnc.html?<redacted>
+Web console is ready; open it in a browser: http://127.0.0.1:41913/?token=<redacted>
+devcapsule supervisor: session end requested (SIGTERM); stopping children
+Session ended with exit code 1.
+Session logs on this computer:
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/6cfe65cdb774-e2e-ide-vscode-fa15be38/logs/20261028-120649-bacb/devcapsule-console.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/6cfe65cdb774-e2e-ide-vscode-fa15be38/logs/20261028-120649-bacb/devcapsule-launcher.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/6cfe65cdb774-e2e-ide-vscode-fa15be38/logs/20261028-120649-bacb/devcapsule-novnc.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/6cfe65cdb774-e2e-ide-vscode-fa15be38/logs/20261028-120649-bacb/devcapsule-panel.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/6cfe65cdb774-e2e-ide-vscode-fa15be38/logs/20261028-120649-bacb/devcapsule-supervisor.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/6cfe65cdb774-e2e-ide-vscode-fa15be38/logs/20261028-120649-bacb/devcapsule-vscode.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/6cfe65cdb774-e2e-ide-vscode-fa15be38/logs/20261028-120649-bacb/devcapsule-window-manager.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/6cfe65cdb774-e2e-ide-vscode-fa15be38/logs/20261028-120649-bacb/devcapsule-xvnc.log
+  /home/devcapsule/.local/state/devcapsule/projects/by-path/6cfe65cdb774-e2e-ide-vscode-fa15be38/logs/20261028-120649-bacb/session.json
+Display: contained desktop, reached through your browser; no host X session is shared.
+Materializing devcapsule-local-vscode:07c7624b3c3ba53abab1: differs from devcapsule-local-vscode:abff47a4301b30091fc4 in runtime.pex-sha256.
+Prior vscode formation images remain (3.6 GB total): devcapsule-local-vscode:abff47a4301b30091fc4. DevCapsule does not reap superseded canonical images yet.
+Materialized canonical environment: devcapsule-local-vscode:07c7624b3c3ba53abab1

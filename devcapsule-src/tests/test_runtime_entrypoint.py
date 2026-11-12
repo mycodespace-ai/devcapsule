@@ -21,6 +21,8 @@ from devcapsule.container_runtime.graphics import environment as graphics_enviro
 from devcapsule.container_runtime.identity import foreground_command
 from devcapsule.container_runtime.supervisor import SupervisedChild
 
+pytestmark = pytest.mark.legacy
+
 
 def runtime_document(tmp_path: Path) -> dict[str, object]:
     return {

@@ -1,0 +1,5 @@
+{
+  "executable": "/home/devcapsule/worktrees/ide-override/devcapsule-src/dist/devcapsule-local.pex",
+  "sha256": "520f816309ebc997c5614c6ffe1ffdb608b53c70263c4c4eba1f2e6d8491cfc5",
+  "version": "{\"build_mnemonic\":\"v0.3.0-local-linux-x86_64\",\"schema_version\":2,\"source_repository\":\"https://github.com/ccozianu/devcapsule\",\"source_revision\":\"unknown\",\"source_url\":\"unknown\",\"version\":\"0.3.0\"}\n"
+}

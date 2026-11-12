@@ -35,6 +35,7 @@ _VALUE_FLAGS = frozenset(
         "--name",
         "--network",
         "--pids-limit",
+        "--platform",
         "--restart",
         "--security-opt",
         "--tmpfs",
@@ -109,9 +110,12 @@ class ExpectedSuccessorPlan:
     security_opt: tuple[str, ...]
     runtime_plan_destination: str
     runtime_plan_digest: str
+    # The planned ``--platform`` (``linux/amd64``), when the daemon emulates the
+    # capsule platform; None when the image's own platform is the daemon's.
+    platform: str | None = None
 
     def to_mapping(self, *, show_host_paths: bool = False) -> dict[str, Any]:
-        return {
+        mapping = {
             "schema_version": 1,
             "name": self.name,
             "image_reference": self.image_reference,
@@ -139,6 +143,11 @@ class ExpectedSuccessorPlan:
             "runtime_plan_destination": self.runtime_plan_destination,
             "runtime_plan_digest": self.runtime_plan_digest,
         }
+        # Only an emulated plan carries the key, so a native plan's digest is
+        # the one a launcher without emulation computed for it.
+        if self.platform is not None:
+            mapping["platform"] = self.platform
+        return mapping
 
     def to_json(self, *, show_host_paths: bool = False) -> str:
         return json.dumps(
@@ -184,6 +193,7 @@ class ExpectedSuccessorPlan:
             security_opt=_string_tuple(value.get("security_opt")),
             runtime_plan_destination=_required_string(value, "runtime_plan_destination"),
             runtime_plan_digest=_required_string(value, "runtime_plan_digest"),
+            platform=_optional_string(value.get("platform"), "platform"),
         )
 
     @classmethod
@@ -270,6 +280,7 @@ class ExpectedSuccessorPlan:
             security_opt=tuple(sorted(parsed.repeated("--security-opt"))),
             runtime_plan_destination=runtime_plan_destination,
             runtime_plan_digest=runtime_plan_digest,
+            platform=parsed.optional("--platform"),
         )
 
 
@@ -291,6 +302,13 @@ def compare_inspection(
         raise SuccessorPlanError("successor name does not match the deterministic run name")
     if inspection.get("Image") != plan.image_identity:
         raise SuccessorPlanError("successor image ID does not match materialization evidence")
+    # The image ID fixes the architecture; where the daemon also reports the
+    # platform it ran, an emulated plan must have run as the one it named.
+    descriptor = inspection.get("ImageManifestDescriptor")
+    reported = descriptor.get("platform") if isinstance(descriptor, Mapping) else None
+    if plan.platform is not None and isinstance(reported, Mapping):
+        if f"{reported.get('os')}/{reported.get('architecture')}" != plan.platform:
+            raise SuccessorPlanError("successor platform does not match the planned --platform")
     if config.get("Image") != plan.image_reference:
         raise SuccessorPlanError("successor image reference does not match the canonical environment")
 
@@ -570,6 +588,12 @@ def _required_bool(value: Mapping[str, Any], name: str) -> bool:
     if not isinstance(found, bool):
         raise SuccessorPlanError(f"retained expected plan has no usable {name}")
     return found
+
+
+def _optional_string(value: Any, name: str) -> str | None:
+    if value is not None and (not isinstance(value, str) or not value):
+        raise SuccessorPlanError(f"retained expected plan has no usable {name}")
+    return value
 
 
 def _optional_int(value: Any, name: str) -> int | None:

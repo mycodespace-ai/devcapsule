@@ -19,6 +19,8 @@ from devcapsule.components.catalog import COMPONENTS
 from devcapsule.components.channels import ChannelReport, ChannelVersion
 from devcapsule.compat import CliError
 
+pytestmark = pytest.mark.legacy
+
 
 @pytest.fixture
 def feed():

@@ -1,28 +1,32 @@
 # The documentation versions the website publishes; contract version 1.
-# Authoritative on main. Promote the released version after each final tag
+# Authoritative on main. Promote on the release branch before the final tag
 # and demote the previous ones, per the release runbook.
 contract: 1
-current: "0.2.15"
+current: 0.3.0
 notice: >
-  DevCapsule 0.x is for early adopters. We publish the documentation of every
-  released version, and we ask you to run the current release: it is the one
-  we fix. Whether we patch a release older than two weeks is at our
-  discretion. A support policy with defined windows will come with V1.
+  DevCapsule 0.x is for early adopters. We publish the documentation of every released
+  version, and we ask you to run the current release: it is the one we fix. Whether
+  we patch a release older than two weeks is at our discretion. A support policy with
+  defined windows will come with V1.
 versions:
-  - version: devel
-    source: main
-    status: development
-  - version: "0.2.15"
-    source: docs-0.2.15
-    status: supported
-  - version: "0.2.14"
-    source: v0.2.14
-    status: deprecated
-    legacy: true
-    note: The install steps in this version refer to an earlier download; follow the current guide.
-  - version: "0.2.12"
-    source: a989155385026b2e5f80cedb5edc8e1e0f4a6bbd
-    source-version: 0.2.14.dev0
-    status: deprecated
-    legacy: true
-    note: Its guides were written after the tag; this is the commit that holds them.
+- version: devel
+  source: main
+  status: development
+- version: 0.3.0
+  source: docs-0.3.0
+  status: supported
+- version: 0.2.15
+  source: docs-0.2.15
+  status: deprecated
+- version: 0.2.14
+  source: v0.2.14
+  status: unsupported
+  legacy: true
+  note: The install steps in this version refer to an earlier download; follow the
+    current guide.
+- version: 0.2.12
+  source: a989155385026b2e5f80cedb5edc8e1e0f4a6bbd
+  source-version: 0.2.14.dev0
+  status: unsupported
+  legacy: true
+  note: Its guides were written after the tag; this is the commit that holds them.

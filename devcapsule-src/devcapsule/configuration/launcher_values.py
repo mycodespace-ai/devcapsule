@@ -3,7 +3,7 @@
 Answer 6 of the CLI UX redesign work order: the launcher owns the
 container's memory limit and CPU count on every project. Neither needs a
 declaration. The precedence is the checkout's answer, then the project's
-recommendation, then the workstation default, then nothing. A manifest that
+recommendation, then the home default, then nothing. A manifest that
 declares a value with the ``docker.memory-limit`` effect, as manifests did
 before 0.3.0 rc4, is read here as a recommendation for ``memory`` and that
 name as an alias, so recorded answers keep working.
@@ -24,24 +24,24 @@ from .values import (
     memory_size_bytes,
     normalize_launcher_value,
 )
-from .workstation import WorkstationDefaults
+from .home import HomeDefaults
 
 __all__ = ["launcher_value_source", "launcher_value_sources", "resolve_launcher_values"]
 
 
 def launcher_value_sources(
-    manifest: Mapping[str, Any], checkout: Mapping[str, Any], workstation: Mapping[str, Any] | None = None,
+    manifest: Mapping[str, Any], checkout: Mapping[str, Any], home: Mapping[str, Any] | None = None,
 ) -> dict[str, tuple[str | int | None, str]]:
     """Both launcher values and their sources; invalid answers raise."""
-    return {name: launcher_value_source(name, manifest, checkout, workstation) for name in LAUNCHER_VALUE_NAMES}
+    return {name: launcher_value_source(name, manifest, checkout, home) for name in LAUNCHER_VALUE_NAMES}
 
 
 def launcher_value_source(
-    name: str, manifest: Mapping[str, Any], checkout: Mapping[str, Any], workstation: Mapping[str, Any] | None = None,
+    name: str, manifest: Mapping[str, Any], checkout: Mapping[str, Any], home: Mapping[str, Any] | None = None,
 ) -> tuple[str | int | None, str]:
     """One resource's value and source, independently of errors in the other.
 
-    Precedence: checkout answer, project recommendation, workstation default,
+    Precedence: checkout answer, project recommendation, home default,
     then no limit. Legacy memory declarations retain requiredness and explicit
     omissions; a reset clears the omission and follows defaults again.
     """
@@ -55,7 +55,7 @@ def launcher_value_source(
         raise ProjectConfigurationError("Checkout configuration.values must be a table.")
     recommendations = Recommendations.read(manifest)
     declarations = configuration_value_declarations(manifest)
-    defaults = WorkstationDefaults.read(workstation or {}).values
+    defaults = HomeDefaults.read(home or {}).values
     aliases = legacy_memory_names(manifest)
     omitted = set(checkout_omitted_values(checkout))
     related = {name, *(aliases if name == "memory" else ())}
@@ -82,19 +82,19 @@ def launcher_value_source(
     if recommended is not None:
         return (normalize_launcher_value(name, recommended, field_name=f"recommended {name}"), "project recommendation")
     if name in defaults:
-        return (defaults[name], "workstation default")
+        return (defaults[name], "home default")
     if name == "memory" and any(declarations[alias].get("required", False) for alias in aliases):
         raise ProjectConfigurationError("Required value memory is missing; config set memory SIZE.")
     return (None, "none")
 
 
 def resolve_launcher_values(
-    manifest: Mapping[str, Any], checkout: Mapping[str, Any], workstation: Mapping[str, Any] | None = None,
+    manifest: Mapping[str, Any], checkout: Mapping[str, Any], home: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, ConfigurationScalar], RuntimeEffects]:
     """The effective launcher values and their effects, ``memory-limit-bytes`` and ``cpus``."""
     values: dict[str, ConfigurationScalar] = {}
     effects: RuntimeEffects = {}
-    for name, (value, _source) in launcher_value_sources(manifest, checkout, workstation).items():
+    for name, (value, _source) in launcher_value_sources(manifest, checkout, home).items():
         if value is None:
             continue
         values[name] = value

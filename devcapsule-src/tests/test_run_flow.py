@@ -16,7 +16,9 @@ from devcapsule.commands._run_flow import RunFlags, prepare_launch
 from devcapsule.compat import DecisionPending
 from devcapsule.configuration.capability_commands import paths
 from devcapsule.configuration.docker_arguments import arguments_path, read_arguments
-from devcapsule.configuration.storage import checkout_record_paths, load_toml, registered_checkouts, trust_path
+from devcapsule.configuration.storage import checkout_record_paths, load_toml, registered_checkouts, settings_path
+
+pytestmark = pytest.mark.legacy
 
 
 @pytest.fixture
@@ -89,13 +91,13 @@ def test_a_second_checkout_is_registered_under_its_directory_name(project: Path,
     (second / ".devcapsule").mkdir()
     for name in ("devcapsule.toml", "devcapsule.linux-amd64.lock"):
         (second / ".devcapsule" / name).write_bytes((project / ".devcapsule" / name).read_bytes())
-    with pytest.raises(DecisionPending):  # its own record: no IDE; the base's channel is the workstation's question
+    with pytest.raises(DecisionPending):  # its own record: no IDE; the base's channel is the home's question
         prepare_launch(second, RunFlags(), interactive=False)
     prompts = io.StringIO()
     prepared = prepare_launch(second, RunFlags(ide="python-ide", authorize=()), interactive=True,
                               input_stream=io.StringIO("y\n"), output_stream=prompts)
-    assert "Accept for this user account on this computer?" in prompts.getvalue()
-    assert load_toml(trust_path())["channels"]["devcapsule-base"]["vendor"]
+    assert "Accept for this DevCapsule home?" in prompts.getvalue()
+    assert load_toml(settings_path())["trust"]["channels"]["devcapsule-base"]["vendor"]
     names = {item.checkout_name: item.checkout_path for item in registered_checkouts()}
     assert names == {"default": project.resolve(), "second-copy": second.resolve()}
     assert prepared.selected.checkout_path.name == "second-copy.checkout.toml"
@@ -120,8 +122,8 @@ def test_interactive_questions_record_answers_where_the_config_family_would(proj
     assert saved["authorization"]["docker-daemon"]["value"] == "none"
     assert "network" not in saved["authorization"]
     assert prepared.host_overrides == {"network": "host"}
-    assert "base-image" not in saved.get("authorization", {})  # the channel is trusted for the workstation, not consented per checkout
-    assert "devcapsule-base" in load_toml(trust_path())["channels"]
+    assert "base-image" not in saved.get("authorization", {})  # the channel is trusted for the home, not consented per checkout
+    assert "devcapsule-base" in load_toml(settings_path())["trust"]["channels"]
     assert read_arguments(arguments_path(checkout_record_paths(load_toml(paths(project)[0]), project)[0])) == [
         "--env", "POSTGRES_HOST=db.example.org"]
     assert prepared.selected.resolution["runtime"]["component"] == "codium"
@@ -162,12 +164,16 @@ def test_run_exits_three_until_preparation_has_its_answers(project: Path, capsys
     assert "  resolve " not in render_command_listing(ConfigGroup.subcommands())
 
 
-def test_run_help_has_the_flags_and_no_force(capsys) -> None:
+def test_run_help_has_the_flags_and_force_names_the_ide_departure(capsys) -> None:
     assert cli.main(["project", "run", "--help"]) == 0
     text = capsys.readouterr().out
-    for flag in ("--ide", "--with", "--memory", "--cpus", "--env", "--save", "--print-command"):
+    for flag in ("--ide", "--with", "--memory", "--cpus", "--env", "--save", "--print-command", "--force"):
         assert flag in text
-    assert "--force" not in text
+    import re
+    assert re.search(r"although\s+the\s+project\s+requires\s+another\s+IDE", text)
+    assert "--force-config" not in text
+    assert cli.main(["project", "run", "--force-config"]) == 2
+    assert "--force-config is retired" in capsys.readouterr().err
 
 
 def snapshot(directory: Path) -> dict[Path, bytes]:

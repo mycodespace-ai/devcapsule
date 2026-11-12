@@ -1,16 +1,16 @@
 ---
-description: Build a DevCapsule base image on your computer and select it for one checkout, when the published base lacks something the capsule needs, such as the web console.
+description: Build a DevCapsule base image locally and select it for one checkout when the published base predates a feature you need.
 weight: 6
-updated: 2026-10-25
+updated: 2026-10-30
 ---
 # Build and select a local base
 
-Every capsule image starts from a base: the operating system, the toolchains,
-the contained display and, since base recipe 11, the web console. The project
-lock pins a published base, and that is what you get unless you choose
-otherwise. A base built on your computer is the way to run a checkout on a
-newer recipe than the published one; a checkout whose lock still pins an
-older base can show this message:
+Every capsule image starts from a base image containing the operating system,
+toolchains, contained display, and (from base recipe `11` onward) the web
+console. Normally you run the published base pinned in the project's platform
+lock. Building a base on your own computer lets one checkout run a newer recipe
+before the project lock pins a published update—for example, when a checkout on
+an older base prints:
 
 ```text
 Web console: none on this base (ubuntu-24.04@9; the console needs base recipe 11 or later); the capsule runs without it.
@@ -18,76 +18,92 @@ Web console: none on this base (ubuntu-24.04@9; the console needs base recipe 11
   Then select it for this checkout; the steps: https://devcapsule.mycodespace.ai/docs/current/configuration/local-base/
 ```
 
-The capsule still runs. Nothing below is required for everyday work; it is
-how you get the newer base before the project pins one.
+The capsule still runs without a local base; follow these steps only when you
+want the newer base recipe on your checkout right away.
 
 ## Build the base
 
-The launcher builds the base from the recipe it carries, and records its own
-source revision in the image as provenance. Take the revision from
-`devcapsule version`, or copy the command the launcher printed, which already
-has it:
+`images build --type base` builds from the recipe embedded in your launcher and
+records the launcher's source revision in image provenance labels. Read the
+revision from `devcapsule version` and replace the example revision below.
+Supply a local `--tag` name, which `images build --type base` requires even when
+you copy the launcher's printed build hint:
 
 ```bash
-~/.local/bin/devcapsule version
-~/.local/bin/devcapsule images build --type base --recipe ubuntu-24.04 \
+devcapsule version
+devcapsule images build --type base --recipe ubuntu-24.04 \
   --tag devcapsule-base-local:recipe-11 \
   --source-revision 0123456789abcdef0123456789abcdef01234567
 ```
 
-`--tag` is the local name you will select; choose one that says what it is.
-The build installs the operating system packages and the toolchains and takes
-a while the first time. If your Docker daemon's build network cannot resolve
-names, add `--network host`. A launcher built from source rather than
-downloaded has no public revision; it builds with `--allow-local-source`
-instead of `--source-revision`.
+Choose a `--tag` that makes the local image clear to you. The first build
+installs OS packages and toolchains and takes several minutes. Add `--network
+host` if your Docker BuildKit network cannot resolve DNS names.
+`--source-revision` must match the revision already embedded in the launcher;
+it does not select different source code.
 
-When it is done, the base is in your local Docker store with its labels:
+`--allow-local-source` bypasses the public-revision check for a development
+build. It cannot supply missing console source: current base recipes still
+need a full GitHub source identity to install the web console. Use a launcher
+built from a published commit when that identity is missing.
+
+List the built image in your local Docker store:
 
 ```bash
-~/.local/bin/devcapsule images list
+devcapsule images list
 ```
 
-The listing shows the recipe, `ubuntu-24.04@11`, and the revision it was
-built from. The published base and your local one are told apart by that
-recipe and by where they live, not by a release number.
+`images list` reports the recipe (such as `ubuntu-24.04@11`), image ID, and tags.
+The build output reports the source revision and source URL. To inspect the
+stored revision later:
+
+```bash
+docker image inspect devcapsule-base-local:recipe-11
+```
+
+Read `devcapsule.source.revision` under `Config.Labels` in the JSON output.
 
 ## Select it for a checkout
 
-Run these from the project checkout, on your computer:
+From the project checkout on your host:
 
 ```bash
-~/.local/bin/devcapsule project config authorize base-image devcapsule-base-local:recipe-11
-~/.local/bin/devcapsule project run
+devcapsule project config authorize base-image devcapsule-base-local:recipe-11
+devcapsule project run
 ```
 
-The first command inspects the image, checks that it is a DevCapsule base
-for your platform, and records its image ID in this checkout's own
-configuration. It prints the ID it bound to and says that this
-developer-owned selection overrides the published base recommendation for
-this checkout. The second launches on it. On a recipe-11 base, the launcher
-prints the web console link.
+`authorize base-image` inspects the local image, verifies that it is a
+DevCapsule base image for your platform, records its exact image ID in this
+checkout's configuration, and notes that your selection overrides the lock's
+published base for this checkout. The next `project run` materializes the
+checkout's environment image on top of that local base (printing the web
+console link when the base is recipe `11` or newer).
 
-What the selection is, and is not:
+Keep these boundaries in mind:
 
-- It is yours and stays on your computer, like every personal choice in
-  [project versus personal](project-versus-personal.md). The project's lock
-  still recommends the published base; collaborators are unaffected.
-- It binds to the exact image ID. If you rebuild the base under the same
-  tag, select it again.
-- It is a qualification, not validation: a run on a local base proves that
-  run, not the base, and a lock proposal from such a checkout says so.
-- It cannot satisfy a mandatory guarantee the project declares, such as an
-  capability minimum; see [capabilities](capabilities.md).
+- **Personal to this checkout:** the override stays in your checkout record
+  ([Project versus personal](project-versus-personal.md)); the shared lock in
+  Git still pins the published base for everyone else.
+- **Bound to the exact image ID:** if you rebuild the base under the same tag,
+  run `project config authorize base-image <tag>` again to bind the new ID.
+- **Qualification, not shared validation:** running on a local base tests your
+  checkout on that recipe, and any lock proposal generated from such a checkout
+  notes the local-base qualification.
+- **Does not waive project requirements:** a local base cannot bypass mandatory
+  project guarantees such as a capability minimum; see [Capabilities and
+  components](capabilities.md).
 
-`devcapsule project config show` shows the override among this checkout's
-answers.
+`devcapsule project config show` lists the active `base-image` override among
+your checkout's answers.
 
 ## Back to the published base
 
 ```bash
-~/.local/bin/devcapsule project config authorize base-image default
+devcapsule project config authorize base-image default
 ```
 
-`default` accepts the lock's current pin and nothing more. The local image
-stays in your Docker store until you remove it.
+`default` returns this checkout to the base pinned in the project lock and
+records consent for that exact digest. It does not accept the home-wide
+`devcapsule-base` channel.
+The local base image stays in your Docker store until you remove it with
+`docker rmi`.

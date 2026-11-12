@@ -9,6 +9,8 @@ import pytest
 
 from devcapsule.launch.command_output import preparation_diagnostics, render_command
 
+pytestmark = pytest.mark.legacy
+
 
 def test_shell_rendering_preserves_arguments_without_evaluating_them(tmp_path):
     marker = tmp_path / 'must-not-exist'

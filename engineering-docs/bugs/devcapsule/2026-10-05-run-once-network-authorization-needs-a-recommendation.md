@@ -1,5 +1,5 @@
 ---
-status: fixed
+status: closed
 severity: minor
 target: 0.3.0
 owner: maintenance
@@ -110,3 +110,18 @@ on a fresh project. The documentation rows that said the node is declared
 only by projects that need it say instead that it is on every project.
 Verification on a candidate: the unit test and component-catalog's IDE
 smoke launching a fresh project with the documented command.
+
+## Downloaded RC9 verification — 2026-10-31
+
+The universal-network-node unit regression passes against the packaged RC9 wheel. A fresh Codium project with no network recommendation and saved network access denied launches with --authorize network host; independent inspection sees host networking and an IDE window. The owned container and project records are removed afterward.
+
+[Final audit evidence](../../wip/2026-09-18-maintenance/evidence/2026-10-31-rc9/README.md#final-promotion-audit--2026-10-31).
+Verification is complete; the release acceptance/closure checkpoint remains
+pending the explicit final scope and provider dispositions.
+
+## Closed — 2026-10-31
+
+Closed on the RC9 verification above and the owner's final acceptance of
+that exact candidate on 2026-10-31. [Acceptance record](../../releases/v0.3.0.json).
+The fix is in RC9 source 475427da and main 4b59b10d; the documented test
+limits are retained. This supersedes the pending-closure sentence above.

@@ -46,6 +46,7 @@ from devcapsule.project import ProjectMountError, normalize_project_mount
 from .capabilities import RETIRED_CAPABILITY_FIELD, CapabilityPolicy, names, requirement, resolution_recommendations
 from .file_formats import ConfigurationFileKind, ProjectConfigurationError, table, validate_file_format
 from .manifest_document import EnvironmentPolicy, Recommendations, capability_reasons
+from .sources import WrappedSources
 from .values import configuration_value_declarations
 
 __all__ = ["ManifestV1", "ManifestV2", "NeedForm", "RequiredForm", "read_manifest", "upgrade"]
@@ -54,7 +55,7 @@ VERSION_KEY = "devcapsule-schema-version"
 
 # The root keys each schema names; every other root key is an extension.
 _V1_ROOT = frozenset({VERSION_KEY, "project", "capabilities", "host", "configuration", "workflow", "workflow-type"})
-_V2_ROOT = frozenset({VERSION_KEY, "project", "capabilities", "environment", "recommendations", "host", "configuration", "workflow"})
+_V2_ROOT = frozenset({VERSION_KEY, "project", "capabilities", "sources", "environment", "recommendations", "host", "configuration", "workflow"})
 # The keys each schema names under [capabilities]; every other key is an extension.
 _V1_CAPABILITIES = frozenset({"need", "required", "optional", "resolution", RETIRED_CAPABILITY_FIELD})
 _V2_CAPABILITIES = frozenset({"required", "optional", "reasons", "resolution", RETIRED_CAPABILITY_FIELD})
@@ -167,7 +168,7 @@ class ManifestV1:
         validate_file_format(document, ConfigurationFileKind.manifest, source)
         if document[VERSION_KEY] != cls.version:
             raise ProjectConfigurationError(f"{source} is not a schema-{cls.version} manifest; it says {document[VERSION_KEY]!r}.")
-        for word in ("environment", "recommendations"):
+        for word in ("sources", "environment", "recommendations"):
             if word in document:
                 raise _refuse(source, f"[{word}]", belongs_to=2, says=1)
         capabilities = table(document, "capabilities")
@@ -237,7 +238,9 @@ class ManifestV2:
     Required entries allow ``NAME>=VERSION``; optional entries allow only
     names. :attr:`policy`
     is their value.  ``reasons`` is ``[capabilities.reasons]``, ``resolution``
-    the owner's provider choices.  ``environment`` is the ``[environment]``
+    the owner's provider choices.  ``sources`` is the ``[sources]`` table as
+    written, the wrapped sources of a wrapper project; :attr:`wrapped_sources`
+    is its value.  ``environment`` is the ``[environment]``
     table as written, since an entry may carry a newer owner's field beside
     its reason; :attr:`environment_policy` is its value. ``recommendation_fields``
     keeps the original spelling and all reasons; :attr:`recommendations`
@@ -252,6 +255,7 @@ class ManifestV2:
     optional: tuple[str, ...] = ()
     reasons: dict[str, str] = field(default_factory=dict)
     resolution: dict[str, str] = field(default_factory=dict)
+    sources: dict[str, Any] = field(default_factory=dict)
     environment: dict[str, Any] = field(default_factory=dict)
     recommendation_fields: dict[str, Any] = field(default_factory=dict)
     host: dict[str, Any] = field(default_factory=dict)
@@ -276,6 +280,7 @@ class ManifestV2:
         CapabilityPolicy.read(document)
         try:
             reasons = capability_reasons(document)
+            WrappedSources.read(document)
             EnvironmentPolicy.read(document)
             Recommendations.read(document)
         except ProjectConfigurationError as exc:
@@ -288,6 +293,7 @@ class ManifestV2:
             optional=optional,
             reasons=reasons,
             resolution=resolution_recommendations(document),
+            sources=_optional_table(document, "sources", source) or {},
             environment=_optional_table(document, "environment", source) or {},
             recommendation_fields=_optional_table(document, "recommendations", source) or {},
             host=_optional_table(document, "host", source) or {},
@@ -308,6 +314,10 @@ class ManifestV2:
         return EnvironmentPolicy.read({"environment": self.environment})
 
     @property
+    def wrapped_sources(self) -> WrappedSources:
+        return WrappedSources.read({"sources": self.sources})
+
+    @property
     def recommendations(self) -> Recommendations:
         return Recommendations.read({"recommendations": self.recommendation_fields})
 
@@ -323,6 +333,8 @@ class ManifestV2:
         capabilities.update(deepcopy(self.capability_extensions))
         capabilities.update(deepcopy(self.retired))
         result: dict[str, Any] = {VERSION_KEY: self.version, "project": deepcopy(self.project), "capabilities": capabilities}
+        if self.sources or ("sources",) in self._present:
+            result["sources"] = deepcopy(self.sources)
         if self.environment or ("environment",) in self._present:
             result["environment"] = deepcopy(self.environment)
         if self.recommendation_fields or ("recommendations",) in self._present:

@@ -8,6 +8,8 @@ import subprocess
 
 import pytest
 
+pytestmark = pytest.mark.legacy
+
 SPEC = importlib.util.spec_from_file_location("release_protocol", Path(__file__).parents[1] / "scripts/release-protocol.py")
 assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)

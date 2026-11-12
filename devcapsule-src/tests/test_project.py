@@ -14,6 +14,8 @@ from devcapsule.project import (
     sanitize_name,
 )
 
+pytestmark = pytest.mark.legacy
+
 
 def test_sanitize_name_matches_shell_launcher_rules() -> None:
     assert sanitize_name("example-project_1.2") == "example-project_1.2"

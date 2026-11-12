@@ -13,7 +13,7 @@ def stale_resolution_inputs(
     lock: Mapping[str, Any],
     checkout: Mapping[str, Any],
     resolution: Mapping[str, Any],
-    workstation: Mapping[str, Any] | None = None,
+    home: Mapping[str, Any] | None = None,
     *,
     source_digest: str | None = None,
 ) -> tuple[str, ...]:
@@ -35,7 +35,7 @@ def stale_resolution_inputs(
     actual = resolution.get("sources", {})
     if not isinstance(actual, dict):
         raise ProjectConfigurationError("Generated resolution sources must be a table.")
-    expected = resolution_source_digests(manifest, lock, checkout, workstation)
+    expected = resolution_source_digests(manifest, lock, checkout, home)
     # Released schema-1 resolutions used a whole-manifest digest. Accept an
     # exact legacy match without rewriting pins or asking the user to resolve.
     accepted_manifest = {expected["manifest"]}
@@ -54,9 +54,9 @@ def stale_resolution_inputs(
         # complete derived meaning is the available evidence: compare it with
         # today's pure derivation while retaining the lock/checkout gates.
         legacy_digest = actual.get("manifest")
-        if isinstance(legacy_digest, str) and same_effective_resolution(manifest, lock, checkout, resolution, workstation):
+        if isinstance(legacy_digest, str) and same_effective_resolution(manifest, lock, checkout, resolution, home):
             accepted_manifest.add(legacy_digest)
     return tuple(
         name for name, digest in expected.items()
-        if (actual.get(name) not in accepted_manifest if name == "manifest" else actual.get(name) != digest)
+        if (actual.get(name) not in accepted_manifest if name == "manifest" else actual.get(name, "absent" if name.endswith("-config") else None) != digest)
     )

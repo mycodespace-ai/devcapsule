@@ -1,0 +1,135 @@
+{
+  "checked_at": "2026-10-31T09:27:25.859779+00:00",
+  "pages": {
+    "/build-info.json": {
+      "status": 200,
+      "url": "https://test-devcapsule.mycodespace.ai/build-info.json",
+      "body": {
+        "schema": 1,
+        "builtAt": "2026-10-31T09:25:45.948Z",
+        "content": {
+          "revision": "31d44fa473a86f608110caa53ee38c6aef40a717",
+          "dirty": false,
+          "sha256": "18cfb99c3fbd155abaf856588f0926bef653242ece1728e615fe45e336e5a3c2"
+        },
+        "implementation": {
+          "revision": "2bcfe6e22de7563bb9492205b1695b3e6a701651",
+          "dirty": false
+        },
+        "basePath": "/",
+        "mode": "production",
+        "contract": 1,
+        "current": "0.3.0",
+        "versions": [
+          {
+            "version": "devel",
+            "status": "development",
+            "source": "main",
+            "revision": "31d44fa473a86f608110caa53ee38c6aef40a717"
+          },
+          {
+            "version": "0.3.0",
+            "status": "supported",
+            "source": "docs-0.3.0",
+            "revision": "7a813b8050fe8975e4065f716c088d4a026b1cbe"
+          },
+          {
+            "version": "0.2.15",
+            "status": "deprecated",
+            "source": "docs-0.2.15",
+            "revision": "9e43ec73009b343e9ff71e76438de0bec32f364a"
+          },
+          {
+            "version": "0.2.14",
+            "status": "unsupported",
+            "source": "v0.2.14",
+            "revision": "abb785d7ad4069606fd3ab84009ca8efeabc22b9"
+          },
+          {
+            "version": "0.2.12",
+            "status": "unsupported",
+            "source": "a989155385026b2e5f80cedb5edc8e1e0f4a6bbd",
+            "revision": "a989155385026b2e5f80cedb5edc8e1e0f4a6bbd"
+          }
+        ],
+        "page_count": 238
+      }
+    },
+    "/": {
+      "status": 200,
+      "url": "https://test-devcapsule.mycodespace.ai/",
+      "mentions_0_3_0": true,
+      "release_downloads": []
+    },
+    "/docs/current/": {
+      "status": 200,
+      "url": "https://test-devcapsule.mycodespace.ai/docs/current/",
+      "mentions_0_3_0": true,
+      "release_downloads": []
+    },
+    "/releases/": {
+      "status": 200,
+      "url": "https://test-devcapsule.mycodespace.ai/releases/",
+      "mentions_0_3_0": true,
+      "release_downloads": []
+    },
+    "/releases/v0.3.0/": {
+      "status": 200,
+      "mentions_0_3_0": true,
+      "release_links": [
+        "https://github.com/ccozianu/devcapsule/actions/workflows/tests.yml",
+        "https://github.com/ccozianu/devcapsule/actions/workflows/tests.yml/badge.svg?branch=main",
+        "https://github.com/ccozianu/devcapsule/blob/31d44fa473a86f608110caa53ee38c6aef40a717/engineering-docs/releases/v0.3.0/notes.md",
+        "https://github.com/ccozianu/devcapsule/blob/main/DEVELOPING.md",
+        "https://github.com/ccozianu/devcapsule/blob/main/LICENSE",
+        "https://github.com/ccozianu/devcapsule/releases/tag/v0.3.0"
+      ]
+    },
+    "/docs/0.3.0/": {
+      "status": 200,
+      "mentions_0_3_0": true,
+      "release_links": [
+        "https://github.com/ccozianu/devcapsule/actions/workflows/tests.yml",
+        "https://github.com/ccozianu/devcapsule/actions/workflows/tests.yml/badge.svg?branch=main",
+        "https://github.com/ccozianu/devcapsule/blob/7a813b8050fe8975e4065f716c088d4a026b1cbe/DEVELOPING.md",
+        "https://github.com/ccozianu/devcapsule/blob/7a813b8050fe8975e4065f716c088d4a026b1cbe/docs/README.md",
+        "https://github.com/ccozianu/devcapsule/blob/7a813b8050fe8975e4065f716c088d4a026b1cbe/index.md",
+        "https://github.com/ccozianu/devcapsule/blob/main/DEVELOPING.md",
+        "https://github.com/ccozianu/devcapsule/blob/main/LICENSE"
+      ]
+    }
+  },
+  "candidate": {
+    "schema": 1,
+    "tag": "website-candidate-41188626026-1",
+    "runId": "41188626026",
+    "runAttempt": "1",
+    "contentSha": "31d44fa473a86f608110caa53ee38c6aef40a717",
+    "websiteSha": "2bcfe6e22de7563bb9492205b1695b3e6a701651",
+    "digest": "sha256:feb14cb499782540f4d7b051122201650d787bb89cb76c217547702b60ab90ca"
+  },
+  "workflow_result": "success",
+  "production_promotion": "completed by owner; independently verified",
+  "production": {
+    "checked_at": "2026-10-31T09:50:39.079808+00:00",
+    "url": "https://devcapsule.mycodespace.ai/build-info.json",
+    "current": "0.3.0",
+    "content": {
+      "revision": "31d44fa473a86f608110caa53ee38c6aef40a717",
+      "dirty": false,
+      "sha256": "18cfb99c3fbd155abaf856588f0926bef653242ece1728e615fe45e336e5a3c2"
+    },
+    "implementation": {
+      "revision": "2bcfe6e22de7563bb9492205b1695b3e6a701651",
+      "dirty": false
+    },
+    "promotion": {
+      "sourceRun": "https://github.com/ccozianu/devcapsule/actions/runs/41188626026",
+      "sourceRunAttempt": "1",
+      "release": "https://github.com/ccozianu/devcapsule/releases/tag/website-candidate-41188626026-1",
+      "archiveDigest": "sha256:feb14cb499782540f4d7b051122201650d787bb89cb76c217547702b60ab90ca",
+      "origin": "https://devcapsule.mycodespace.ai",
+      "transformation": "origin-only: canonical links, social metadata URLs, JSON-LD URLs, robots.txt sitemap reference, sitemap locations"
+    }
+  }
+}

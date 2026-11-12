@@ -1,0 +1,12 @@
+Created /home/devcapsule/.local/share/devcapsule/e2e-workspaces/e2e-ide-required-7fa4db67/.devcapsule/devcapsule.toml
+Project: e2e-ide-required-7fa4db67 — mailto:e2e@devcapsule.test/e2e-ide-required-7fa4db67
+Project mount: /workspace/e2e-ide-required-7fa4db67
+Requires: python python-ide
+Created /home/devcapsule/.local/share/devcapsule/e2e-workspaces/e2e-ide-required-7fa4db67/.devcapsule/devcapsule.linux-amd64.lock (base ubuntu-24.04@11 — docker.io/mycodespaceai/devcapsule-base@sha256:8c97d308b4ac8172ce91ef4f96406063bfcd85a55efb09d4a23e795b10a834a3)
+Recommended network = host for every checkout (Local graphical smoke requires host networking.).
+Your checkout: python-ide
+Answered for this checkout: base-image.
+Project recommendations applied to this checkout: network.
+Checkout record: /home/devcapsule/.config/devcapsule/projects/mailto%3Ae2e%40devcapsule.test/e2e-ide-required-7fa4db67/devcapsule.checkout.toml
+Resolved /home/devcapsule/.config/devcapsule/projects/mailto%3Ae2e%40devcapsule.test/e2e-ide-required-7fa4db67/devcapsule.resolved.toml from devcapsule.linux-amd64.lock
+Project initialized; 'devcapsule project run' starts it.

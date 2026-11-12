@@ -1,5 +1,5 @@
 ---
-status: fixed
+status: closed
 severity: minor
 target: 0.3.0
 owner: maintenance
@@ -173,3 +173,18 @@ exec and removal under the run's label.
 The preflight check for a stale resolution named above as a nicety is not
 added. Closes when the owner confirms on a 0.3.0 candidate; the
 2026-08-15 detached-successor record closes on the same run.
+
+## Downloaded RC9 verification — 2026-10-31
+
+The attached-successor regression passes with the published RC9 PEX for every CLI operation and supported init --regenerate for the isolated fresh clone. The original lifecycle, independent inspection, cleanup and own-record-unchanged assertions pass. No live checkout configuration was changed.
+
+[Final audit evidence](../../wip/2026-09-18-maintenance/evidence/2026-10-31-rc9/README.md#final-promotion-audit--2026-10-31).
+Verification is complete; the release acceptance/closure checkpoint remains
+pending the explicit final scope and provider dispositions.
+
+## Closed — 2026-10-31
+
+Closed on the RC9 verification above and the owner's final acceptance of
+that exact candidate on 2026-10-31. [Acceptance record](../../releases/v0.3.0.json).
+The fix is in RC9 source 475427da and main 4b59b10d; the documented test
+limits are retained. This supersedes the pending-closure sentence above.

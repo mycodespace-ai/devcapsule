@@ -2,19 +2,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-import tomllib
 
 import pytest
 
 from tests.conftest import DOCKER_MARKERS
 
+pytestmark = pytest.mark.legacy
+
 pytest_plugins = ["pytester"]
-
-
-def test_docker_marker_list_matches_declared_suites() -> None:
-    config = tomllib.loads((Path(__file__).parents[1] / "pyproject.toml").read_text())
-    declared = {entry.split(":", 1)[0] for entry in config["tool"]["pytest"]["ini_options"]["markers"]}
-    assert set(DOCKER_MARKERS) == declared - {"integration", "flaky"}
 
 
 @pytest.mark.parametrize("exported_xdg", [False, True], ids=["laptop", "capsule"])

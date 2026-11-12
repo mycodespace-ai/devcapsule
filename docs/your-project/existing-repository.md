@@ -1,78 +1,97 @@
 ---
-description: Open a repository you already have in a capsule, whether or not it carries a DevCapsule configuration, and what gets shared with it.
+description: Open an existing repository inside a capsule, whether it already commits .devcapsule/ or needs initialization, and see what crosses the boundary.
 role: your-project
 aliases:
   - /docs/guides/your-project/
 weight: 1
-updated: 2026-10-24
+updated: 2026-10-30
 ---
 # An existing repository
 
-[Install DevCapsule](../getting-started/install.md) first. The commands here
-run in your computer's terminal, from the project folder. Use a project you
-trust: its source folder is shared read/write with the capsule, and tools or
-agents running there can change it. Commit or back up work you care about
-before experimenting.
+Complete [Install DevCapsule](../getting-started/install.md) first, then run
+the commands below from your repository's root directory on your host. Only
+open repositories whose code you trust to run. The project folder is mounted
+read-write inside the capsule. Commit or back up work before experimenting;
+the capsule can also change the repository's `.git` directory.
 
-## A project that already has a DevCapsule configuration
+## A repository that already has `.devcapsule/`
 
-If the repository carries `.devcapsule/devcapsule.toml`, someone has
-already declared what the project needs. From its root:
+When the repository already commits `.devcapsule/devcapsule.toml` and a
+platform lock (`.devcapsule/devcapsule.<platform>.lock`), start directly with:
 
 ```bash
-~/.local/bin/devcapsule project run
+devcapsule project run
 ```
 
-`run` reads the shared manifest and lock, then derives this checkout's plan.
-At a terminal, it asks for missing required inputs, an IDE when none is
-selected or recommended, and any needed consent. A host-access recommendation
-is a question; it grants nothing. See
-[Granting and withdrawing access](../containment/granting-and-withdrawing.md).
+`project run` reads the shared manifest and lock and combines them with your
+checkout and home settings. At an interactive terminal, it prompts for any
+missing required decisions—such as your IDE choice (when the project neither
+requires nor recommends one), required environment variables, or base/vendor
+channel trust. Project host-access recommendations are shown with their reason
+for your decision; they never grant themselves automatically ([Granting and
+withdrawing access](../containment/granting-and-withdrawing.md)).
 
-The first successful review registers this path on your computer. A second
-checkout gets a separate record with a name derived from its directory.
-It inherits no answers from the first checkout. Use `project checkout
-register NAME` before the first run if you need a specific name.
-For a second checkout, commands that record configuration answers can require
-this explicit registration before the first run.
-The register command cannot rename an existing record.
+Completing that first review registers this checkout path in your local
+configuration home. If you clone or add a second worktree of the same
+repository on the same computer, it receives its own checkout record and
+isolated state directories without inheriting answers from the first checkout.
+To assign a specific checkout record name before first launch (useful before
+running pre-launch `project config` mutations on a second checkout), run:
 
-To inspect before answering, use `devcapsule project config show` or
-`devcapsule project config check`. Both leave an unregistered checkout unchanged.
-Without a manifest, `run` exits 2 and names `project init` as the remedy.
+```bash
+devcapsule project checkout register my-feature-wt
+```
 
-## A project without one
+`checkout register` creates a new record name only—it cannot rename an already
+registered checkout.
 
-Choose one IDE and initialize from the project root:
+To inspect what a checkout needs before answering anything, run `devcapsule
+project config show` or `devcapsule project config check`; neither writes a
+record on disk. `config check` exits with status `3` when decisions remain
+pending. Without `.devcapsule/devcapsule.toml`, all three commands exit with
+status `2` and point you to `devcapsule project init`.
 
-| Work you want to do | Initialize with |
+## A repository without `.devcapsule/`
+
+Pick the IDE and runtime capabilities your repository needs and initialize from
+its root directory (`--ide` accepts either an IDE capability or a component
+name):
+
+| Stack and IDE | Initialize command |
 |---|---|
-| JavaScript or TypeScript, VSCodium | `~/.local/bin/devcapsule project init --require node --ide frontend-ide` |
-| Python, PyCharm | `~/.local/bin/devcapsule project init --require python --ide python-ide` |
-| Java, IntelliJ IDEA | `~/.local/bin/devcapsule project init --require java --ide java-ide` |
+| Python with PyCharm | `devcapsule project init --require python --ide python-ide` |
+| JavaScript/TypeScript with VSCodium | `devcapsule project init --require node --ide frontend-ide` |
+| Any stack with Visual Studio Code | `devcapsule project init --require node --ide vscode-ide` |
+| Java with IntelliJ IDEA | `devcapsule project init --require java --ide java-ide` |
+| Java with Eclipse IDE | `devcapsule project init --require java --ide eclipse-ide` |
+| .NET with JetBrains Rider | `devcapsule project init --require dotnet --ide dotnet-ide` |
 
-IntelliJ uses the unified vendor distribution with free core functionality;
-paid features require your JetBrains license. Add `--offer browser-automation`
-to include Python Playwright and Chromium for browser-driven tests. The
-component provides `DEVCAPSULE_PLAYWRIGHT_PYTHON` as its Python executable and
-`PLAYWRIGHT_BROWSERS_PATH` for its installed browser.
+Complete any IDE sign-in or license setup inside the capsule. Add
+`--offer browser-automation` when contributors run browser tests with Python Playwright and bundled Chromium (exposed via
+`DEVCAPSULE_PLAYWRIGHT_PYTHON` and `PLAYWRIGHT_BROWSERS_PATH`).
 
-The prompts are the ones [your first session](../getting-started/first-session.md#1-make-a-first-workspace)
-explains. Then `~/.local/bin/devcapsule project run` opens the IDE.
+Answer the initialization prompts described in [Your first
+session](../getting-started/first-session.md#1-make-a-first-workspace), then
+launch with `devcapsule project run`.
 
-The capsule supplies the selected development tools. The project's own
-dependencies, databases and test commands still come from its README: run
-those setup commands in the IDE's terminal, inside the capsule, where they
-belong. A maintained project configuration can declare more of that setup;
-see [What a project declares](declare-needs.md).
+DevCapsule supplies the base OS, toolchains, IDE, and optional coding agents or
+Playwright. Project-specific package installs (`npm ci`, `pip install`, `mvn
+test`) and database migrations still follow your repository's README—run them
+inside the IDE's terminal in the capsule. To declare version minimums,
+environment inputs, and team recommendations, see [What a project
+declares](declare-needs.md).
 
-## What goes where
+## What goes in Git versus what stays local
 
-`.devcapsule/` holds the manifest and the platform lock: what the project
-needs and which exact versions satisfy it. They belong in Git with the
-project, so the next person gets the same environment. Your host
-permissions, private agent sign-ins and IDE state live outside the checkout,
-in your local DevCapsule storage; [Project versus personal](../configuration/project-versus-personal.md)
-draws the line.
+Commit `.devcapsule/devcapsule.toml` and `.devcapsule/devcapsule.<platform>.lock`
+together to share the project's pinned base and required or offered tools.
+Each checkout separately pins its personal IDE and added capabilities. Your host
+authorizations, channel trust, private environment variables, agent sign-ins,
+and IDE state stay in your local DevCapsule home outside the repository; see
+[Project versus personal](../configuration/project-versus-personal.md).
 
-**Next: [add a coding agent](../working-with-ai/choose-an-agent.md).**
+A repository that is not yours to configure is wrapped instead; see
+[Someone else's repository](someone-elses-repository.md).
+
+**Next: [choose a coding agent](../working-with-ai/choose-an-agent.md) or
+[declare project needs](declare-needs.md).**

@@ -38,6 +38,8 @@ from devcapsule.recursive_dogfood import RUNTIME_PLAN_PATH
 
 from tests.e2e.fresh_workspace import FreshWorkspace
 
+pytestmark = pytest.mark.legacy
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 # Realizing the environment may build the formation on first use.
 RUNNING_TIMEOUT = 900.0

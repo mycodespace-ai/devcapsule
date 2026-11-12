@@ -1,0 +1,5 @@
+{
+  "executable": "/home/devcapsule/worktrees/maintenance-ci/devcapsule-src/dist/devcapsule-local.pex",
+  "sha256": "afa47b651365a3e3520ee369d968971ddb61e2ef9d1df1ac2fb7750ef8eaf88a",
+  "version": "{\"build_mnemonic\":\"v0.3.0-local-linux-x86_64\",\"schema_version\":2,\"source_repository\":\"https://github.com/ccozianu/devcapsule\",\"source_revision\":\"unknown\",\"source_url\":\"unknown\",\"version\":\"0.3.0\"}\n"
+}

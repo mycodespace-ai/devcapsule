@@ -48,11 +48,11 @@ __all__ = [
 CURRENT_MANIFEST_SCHEMA_VERSION = 2
 
 # Tables in the order an owner reads them: who the project is, what it needs,
-# what it asks of the developer, what it recommends, the host access it asks
-# for with its reasons, the declared values, the workflow choice.  Tables this
-# writer does not know precede workflow in sorted order, so a newer owner's
-# field is never dropped by an older launcher's edit.
-MANIFEST_TABLE_ORDER = ("project", "capabilities", "environment", "recommendations", "host", "configuration", "workflow")
+# what it wraps, what it asks of the developer, what it recommends, the host
+# access it asks for with its reasons, the declared values, the workflow
+# choice.  Tables this writer does not know precede workflow in sorted order,
+# so a newer owner's field is never dropped by an older launcher's edit.
+MANIFEST_TABLE_ORDER = ("project", "capabilities", "sources", "environment", "recommendations", "host", "configuration", "workflow")
 
 # An environment variable name as POSIX shells and Docker accept it.
 ENVIRONMENT_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")

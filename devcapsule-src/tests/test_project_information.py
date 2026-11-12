@@ -14,6 +14,8 @@ from devcapsule.configuration.storage import checkout_record_paths
 from devcapsule.platforms import Platform
 from devcapsule.resolution_matrix import MATRICES
 
+pytestmark = pytest.mark.legacy
+
 
 @pytest.fixture
 def project(tmp_path, monkeypatch):

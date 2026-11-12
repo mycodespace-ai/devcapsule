@@ -5,6 +5,9 @@ from pathlib import Path, PurePosixPath
 from devcapsule.recursive_dogfood import ContainerInspection, Mount
 from devcapsule.recursive_host import HostDaemonLaunchContext
 from tests.e2e.test_contributor_bootstrap import ContributorDockerContext
+import pytest
+
+pytestmark = pytest.mark.legacy
 
 
 def test_contributor_host_uses_direct_owned_workspace_path(tmp_path: Path) -> None:

@@ -16,6 +16,7 @@ from devcapsule.components.eclipse import DEFINITION as ECLIPSE
 from devcapsule.components.playwright import DEFINITION as PLAYWRIGHT
 from devcapsule.components.postgresql_client import DEFINITION as POSTGRESQL_CLIENT
 from devcapsule.components.pycharm import DEFINITION as PYCHARM
+from devcapsule.components.vscode import DEFINITION as VSCODE
 from devcapsule.container_runtime.contract import ComponentRuntimeTemplate
 
 
@@ -29,6 +30,7 @@ INTERACTIVE_SURFACES: dict[str, ComponentDefinition] = {
     ECLIPSE.id: ECLIPSE,
     PYCHARM.id: PYCHARM,
     CODIUM.id: CODIUM,
+    VSCODE.id: VSCODE,
     INTELLIJ.id: INTELLIJ,
     RIDER.id: RIDER,
 }
@@ -37,6 +39,7 @@ COMPONENTS: dict[str, ComponentDefinition] = {
     ECLIPSE.id: ECLIPSE,
     PYCHARM.id: PYCHARM,
     CODIUM.id: CODIUM,
+    VSCODE.id: VSCODE,
     INTELLIJ.id: INTELLIJ,
     RIDER.id: RIDER,
     CODEX.id: CODEX,

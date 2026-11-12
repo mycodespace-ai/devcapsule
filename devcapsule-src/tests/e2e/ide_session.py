@@ -44,20 +44,33 @@ class IdeSurface:
     """A case-insensitive fragment of the IDE's X11 ``WM_CLASS``."""
     ready_timeout: float
     """Seconds to wait for the IDE window after the desktop URL appeared."""
+    consents: tuple[tuple[str, str], ...] = ()
+    """Per-checkout answers given at initialization, as ``(node, value)`` pairs:
+    a vendor download the surface needs, which a fresh home has not trusted."""
 
 
 SURFACES: tuple[IdeSurface, ...] = (
     IdeSurface("eclipse", ("eclipse-ide", "java", "browser-automation"), "eclipse", ready_timeout=420.0),
     IdeSurface("codium", ("frontend-ide", "node"), "codium", ready_timeout=180.0),
+    IdeSurface("vscode", ("vscode-ide", "node"), "code", ready_timeout=180.0,
+               consents=(("vscode-download", "true"),)),
     IdeSurface("pycharm", ("python-ide", "python"), "jetbrains-pycharm", ready_timeout=420.0),
     IdeSurface("rider", ("dotnet-ide", "browser-automation"), "jetbrains-rider", ready_timeout=420.0),
     IdeSurface("intellij", ("java-ide", "java", "browser-automation"), "jetbrains-idea", ready_timeout=420.0),
 )
 
 CREATOR = "e2e@devcapsule.test"
-DESKTOP_READY = re.compile(r"Contained display is ready; open it in a browser: (http://127\.0\.0\.1:\d+/vnc\.html\?\S+)")
+DESKTOP_READY = re.compile(
+    r"Contained display is ready; (?:open it in a browser: (http://127\.0\.0\.1:\d+/vnc\.html\?\S+)"
+    r"|opened in your browser\.|opened through the host-browser bridge\.)"
+)
 """The launcher's readiness line. It also announces the URL earlier, before the
-bridge listens; only the ready line means the page answers."""
+bridge listens; only the ready line means the page answers. Inside a capsule
+without a bridge the ready line names the URL. Elsewhere the launcher opens it,
+which the smoke's ``BROWSER=true`` makes a no-op, and the URL is the earlier
+announcement's."""
+DESKTOP_ANNOUNCED = re.compile(r"Contained display: (http://127\.0\.0\.1:\d+/vnc\.html\?\S+)")
+"""The launcher's first mention of the desktop URL, printed before it answers."""
 CONSOLE_READY = re.compile(r"Web console is ready; open it in a browser: (http://127\.0\.0\.1:\d+/\?token=\S+)")
 """The launcher's console readiness line; printed once the console answered its port."""
 LAUNCH_TIMEOUT = 600.0
@@ -160,16 +173,22 @@ def initialize_project(executable: Path, surface: IdeSurface, workspace: Path, e
 
     The project consents to the recommended base, or to the locally built
     base ``DEVCAPSULE_E2E_BASE_IMAGE`` names, as an unverified experiment,
-    and to local-test host networking.
+    to local-test host networking, and to the surface's own consents: a
+    vendor download the launcher would otherwise stop for, since the smoke
+    runs non-interactively and trusts nothing in the home.
     """
     environment = dict(os.environ, BROWSER="true")  # webbrowser runs `true URL`: no tab opens
     built_base = os.environ.get("DEVCAPSULE_E2E_BASE_IMAGE")
+    # DEVCAPSULE_SMOKE_PLATFORM creates the project for that capsule platform,
+    # such as linux-arm64 on Apple Silicon, whose new projects are linux-amd64.
+    platform = os.environ.get("DEVCAPSULE_SMOKE_PLATFORM")
     init = subprocess.run(
-        [str(executable), "project", "init",
+        [str(executable), "project", "init", *(["--platform", platform] if platform else []),
          *(flag for need in surface.needs for flag in ("--ide" if need.endswith("-ide") else "--require", need)),
          "--creator", CREATOR, "--slug", slug,
          "--authorize", "base-image", "default",
          "--authorize", "network", "host", "Local graphical smoke requires host networking.",
+         *(flag for node, value in surface.consents for flag in ("--authorize", node, value)),
          *(["--unverified"] if built_base else [])],
         cwd=workspace, env=environment, text=True, capture_output=True, stdin=subprocess.DEVNULL,
         check=False, timeout=300.0,
@@ -199,18 +218,22 @@ def stop_session(facts: SessionFacts) -> None:
 
 @contextmanager
 def launched_ide(executable: Path, surface: IdeSurface, workspace: Path,
-                 evidence: Path, container: str, *, own_session: bool = False) -> Iterator[SessionFacts]:
+                 evidence: Path, container: str, *, own_session: bool = False,
+                 run_arguments: tuple[str, ...] = ()) -> Iterator[SessionFacts]:
     """Launch an initialized project, also used for a bounded persistence relaunch.
 
     With ``own_session`` the launcher leads its own process group, as it
     does in a terminal, so that a test can deliver SIGINT to the group the
-    way Ctrl+C does, launcher and docker client alike.
+    way Ctrl+C does, launcher and docker client alike. ``run_arguments``
+    are given to ``project run`` as an adopter would type them, for a
+    launch that departs from the project's saved selection; ``surface`` is
+    then the IDE that launch is expected to run.
     """
     evidence.mkdir(parents=True, exist_ok=True)
     log_path = evidence / "launcher.log"
     with log_path.open("wb") as log:
         launcher = subprocess.Popen(
-            [str(executable), "project", "run", "--no-update-check", "--name", container],
+            [str(executable), "project", "run", "--no-update-check", "--name", container, *run_arguments],
             cwd=workspace, env=dict(os.environ, BROWSER="true"), stdout=log,
             stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=own_session,
         )
@@ -229,7 +252,7 @@ def launched_ide(executable: Path, surface: IdeSurface, workspace: Path,
 
 def wait_for_desktop_url(launcher: subprocess.Popen[bytes], launcher_log: Path) -> str:
     """Return the desktop URL once the launcher prints it; fail if it exits first."""
-    return _wait_for_ready_url(launcher, launcher_log, DESKTOP_READY, "desktop")
+    return _wait_for_ready_url(launcher, launcher_log, DESKTOP_READY, "desktop", announced=DESKTOP_ANNOUNCED)
 
 
 def wait_for_console_url(launcher: subprocess.Popen[bytes], launcher_log: Path) -> str:
@@ -238,13 +261,18 @@ def wait_for_console_url(launcher: subprocess.Popen[bytes], launcher_log: Path) 
 
 
 def _wait_for_ready_url(launcher: subprocess.Popen[bytes], launcher_log: Path, pattern: re.Pattern[str],
-                        what: str, timeout: float = LAUNCH_TIMEOUT) -> str:
+                        what: str, timeout: float = LAUNCH_TIMEOUT,
+                        announced: re.Pattern[str] | None = None) -> str:
     deadline = time.monotonic() + timeout
     while True:
         text = launcher_log.read_text(encoding="utf-8", errors="replace")
         found = pattern.search(text)
-        if found:
+        if found and found.group(1):
             return found.group(1)
+        if found and announced and (earlier := announced.search(text, 0, found.start())):
+            return earlier.group(1)
+        if found:
+            raise AssertionError(f"the {what} became ready without a URL announced before it:\n{text[-4000:]}")
         if launcher.poll() is not None:
             raise AssertionError(f"launcher exited {launcher.returncode} before publishing a {what} URL:\n{text}")
         if time.monotonic() > deadline:

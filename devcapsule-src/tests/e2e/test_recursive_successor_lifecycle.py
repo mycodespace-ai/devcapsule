@@ -21,6 +21,8 @@ from devcapsule.recursive_successor import (
 )
 from devcapsule.recursive_successor_plan import ExpectedSuccessorPlan
 
+pytestmark = pytest.mark.legacy
+
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SOURCE_REVISION = "0" * 40

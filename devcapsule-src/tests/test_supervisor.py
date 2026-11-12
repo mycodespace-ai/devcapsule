@@ -28,6 +28,13 @@ from devcapsule.container_runtime.supervisor import (
     SupervisorError,
 )
 
+# The supervisor is the capsule's entry process: it runs only inside Linux
+# capsules and relies on Linux signal primitives (sigwaitinfo).
+pytestmark = [
+    pytest.mark.legacy,
+    pytest.mark.skipif(sys.platform != "linux", reason="container-side code; capsules are Linux"),
+]
+
 DRIVER = Path(__file__).parent / "resources" / "supervisor_driver.py"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 

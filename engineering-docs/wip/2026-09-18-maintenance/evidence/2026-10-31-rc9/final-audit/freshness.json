@@ -1,0 +1,24 @@
+{
+  "checked_at": "2026-10-31T08:21:56.985630+00:00",
+  "sources": [
+    {
+      "component": "codex",
+      "url": "https://registry.npmjs.org/@openai/codex/latest",
+      "latest": "0.166.0",
+      "candidate_pin": "0.166.0"
+    },
+    {
+      "component": "claude",
+      "url": "https://downloads.claude.ai/claude-code-releases/latest",
+      "latest": "2.1.316",
+      "candidate_pin": "2.1.314"
+    },
+    {
+      "component": "antigravity",
+      "url": "https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests/linux_amd64.json",
+      "latest": "1.4.12",
+      "candidate_pin": "1.4.12"
+    }
+  ],
+  "disposition": "Retain exact RC9 pins for requested promotion; Claude 2.1.316 is a 0.3.1 freshness follow-up."
+}

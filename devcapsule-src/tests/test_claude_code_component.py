@@ -11,6 +11,9 @@ from devcapsule.components.claude_code import (
     ClaudeCodeComponent,
     runtime_template,
 )
+import pytest
+
+pytestmark = pytest.mark.legacy
 
 
 def locked_metadata() -> dict[str, object]:

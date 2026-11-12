@@ -107,7 +107,7 @@ to move: upgrade now, remind me later, or keep what is installed. If
 DevCapsule has not validated the newer version together with the rest of
 the selected set, the prompt says so once, plainly, before the choice;
 the developer may still choose now. Vendor trust is not asked here at
-all; it is given once per workstation under D-0011. The "changed
+all; it is given once per configuration home under [D-0011](d-0011-vendor-trust-once-per-configuration-home.md). The "changed
 acquisition consent" clause of the 2026-09-21 refinement is superseded
 accordingly. Targeted at 0.2.16 with the consent slice in
 `component-upgrades`.

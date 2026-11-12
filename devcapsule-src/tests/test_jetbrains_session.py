@@ -9,6 +9,8 @@ from devcapsule.components.intellij import DEFINITION
 from devcapsule.container_runtime.components.jetbrains import session_lock, recover_dead_socket
 from devcapsule.container_runtime.contract import RuntimePlan, Identity, RuntimePlanError
 
+pytestmark = pytest.mark.legacy
+
 
 def paths(tmp_path: Path) -> tuple[Path, Path]:
     config, system = tmp_path / "c", tmp_path / "s"

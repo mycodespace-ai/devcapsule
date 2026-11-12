@@ -19,6 +19,8 @@ from devcapsule.platforms import XdgHomes
 from devcapsule.materialization import parse_locked_environment
 from tests.test_project_commands import initialize_project, initialize_codium_project, LOCKED_BASE
 
+pytestmark = pytest.mark.legacy
+
 @pytest.fixture
 def project(tmp_path: Path) -> Path:
     root = tmp_path / "project"

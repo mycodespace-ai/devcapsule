@@ -22,6 +22,8 @@ from devcapsule.container_runtime.contract import (
     RuntimePlanError,
 )
 
+pytestmark = pytest.mark.legacy
+
 
 def template_mapping(component_id: str, container_path: str, *, overlay: bool = True) -> dict:
     return {

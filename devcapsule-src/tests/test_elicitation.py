@@ -19,6 +19,8 @@ from devcapsule.configuration.file_formats import (
     ProjectConfigurationError,
 )
 
+pytestmark = pytest.mark.legacy
+
 
 def _validator(value: str) -> str:
     if value == "invalid":

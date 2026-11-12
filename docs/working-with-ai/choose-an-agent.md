@@ -2,57 +2,81 @@
 description: Add Claude Code, OpenAI Codex or the Antigravity CLI to your checkout in one command, and let it work at full speed inside the capsule's boundary.
 role: agents
 weight: 1
-updated: 2026-10-25
+updated: 2026-10-30
 ---
 # Choose an agent
 
-DevCapsule supports three coding agents. Choose agents for your checkout.
-DevCapsule acquires them on the next launch and keeps their sign-in state between sessions.
+DevCapsule supports three coding agents. Select one or more for your checkout;
+DevCapsule installs them on the next launch and preserves their local state
+and settings across container restarts.
 
-| Agent | Add it to your checkout | Start it in the IDE terminal |
-|---|---|---|
-| Claude Code | `~/.local/bin/devcapsule project config add claude-code-agent` | `claude` |
-| OpenAI Codex | `~/.local/bin/devcapsule project config add codex-agent` | `codex` |
-| Antigravity CLI | `~/.local/bin/devcapsule project config add antigravity-agent` | `antigravity` |
+| Agent | Add it to your checkout | Start it in the IDE terminal | Download trust channel |
+|---|---|---|---|
+| Claude Code | `devcapsule project config add claude-code-agent` | `claude` | `claude-code` (`claude-code-download`) |
+| OpenAI Codex | `devcapsule project config add codex-agent` | `codex` | npm package (`@openai/codex`, SHA-256 verified) |
+| Antigravity CLI | `devcapsule project config add antigravity-agent` | `antigravity` | `antigravity-cli` (`antigravity-download`) |
 
-Run the `config add` command in your computer's terminal, from the
-project folder. It changes your checkout's selection and local version pins.
-It does not change the shared manifest or lock. Save your work, stop the
-capsule, then use `project run` to acquire the agent and start another session.
-Read any vendor terms before accepting them. See
-[Vendor software and trust](../configuration/software-approvals.md) for
-consent commands and the current limit on trusting personally selected agents.
+Run the table's `config add` command in a host terminal from your
+project directory (or request `add` from the running session's [web
+console](../sessions/web-console.md)). It updates your local checkout record
+and per-checkout component pins without changing `.devcapsule/devcapsule.toml`
+or the shared lock. If the project already offers the agent, use `config
+restore` when it is omitted. Required agents are already selected.
+The console records an accepted `add` request immediately; the running
+environment stays unchanged. Save your work, stop the capsule, and run
+`devcapsule project run` to start with the updated selection.
 
-Use your own provider account and plan. DevCapsule does not include an AI
-subscription and never imports a sign-in from your computer. How each agent
-signs in, and what its defaults are inside a capsule, is on
-[Sign in and defaults](sign-in-and-defaults.md).
+Claude Code and Antigravity CLI are proprietary binaries downloaded on your
+machine from pinned sources and verified by SHA-256. Review the origin shown
+in the trust prompt. For Antigravity, the URL alone does not prove Google owns
+the deployment. Trust a channel once across all projects in your configuration home (`devcapsule home
+trust accept claude-code` or `devcapsule home trust accept antigravity-cli`),
+or approve it for this checkout only (`devcapsule project config authorize
+claude-code-download true` / `antigravity-download true`) after reviewing the
+vendor's terms; see [Vendor software and
+trust](../configuration/software-approvals.md).
 
-## Why agents run at full speed here
+Bring your own provider account, subscription, or API key—DevCapsule does not
+bundle an AI plan and never imports credentials from your host automatically.
+See [Sign in and defaults](sign-in-and-defaults.md) for authentication and
+seeded settings.
 
-Every agent starts with tool approvals off: it edits files, runs tests and
-uses the terminal without asking you for each step. That posture is safe
-because the capsule is the sandbox. An agent can change your project folder,
-which Git protects, and its own persistent state. It cannot reach your home
-directory, your credentials, your Docker daemon or your desktop unless you
-granted that access explicitly; [Containment](../containment/the-boundary.md)
-lists what is shared and what is not. If you prefer approvals, turn them on
-in the agent's own settings; the setting is yours and survives launches.
+## Why agents run without step-by-step prompts here
+
+DevCapsule seeds each agent to run without interactive tool-approval prompts so
+it can read code, edit files, and run builds and tests autonomously. That
+posture relies on the container boundary rather than per-command dialogs:
+
+- Your host home directory, SSH keys, browser profile, other repositories, and
+  host desktop are unmounted by default ([The
+  boundary](../containment/the-boundary.md)).
+- Inside the capsule, the agent has full write access to the mounted repository
+  (`/workspace/<slug>`, including `.git`) and to this checkout's persistent
+  state. Push clean commits to a remote or keep an independent backup before
+  large autonomous runs, because local Git history inside a writable `.git`
+  directory can be modified by any process in the capsule.
+- Prefer step-by-step confirmation? Change the permission mode in the agent's
+  own settings file inside the capsule; DevCapsule preserves your explicit
+  setting across launches.
 
 ## A first request
 
-Try something small and reviewable in the IDE terminal:
+Start with a small, verifiable task in the IDE terminal:
 
-> Explain how this project runs, then suggest one small improvement and a
-> way to check it. Wait for me before changing files.
+> Explain how this project builds and runs its tests, then propose one small
+> improvement and how to verify it. Wait for my go-ahead before editing files.
 
-Read the result, run the project's checks, commit what you keep. Give the
-agent durable context with an instructions file at the project root; see
-[Instructions for agents](instructions-for-agents.md).
+Inspect the diff, run the test suite, and commit what you want to keep. Give
+every agent durable repository context with an instructions file at the project
+root; see [Instructions for agents](instructions-for-agents.md).
 
-## Subscriptions and choice
+## Using multiple agents or switching later
 
-Whichever your subscription covers. All three read a project instructions
-file, run inside the same boundary, and keep their sign-in per checkout. You
-can select more than one, and you can switch in a later session
-without losing anything; see [Review and change agents](review-and-change-agents.md).
+Give each agent the project instructions as described in
+[Instructions for agents](instructions-for-agents.md). They share the working
+tree and keep settings in separate directories (`~/.claude`, `~/.codex`,
+`~/.gemini`). These directories do not isolate agents from each other:
+they run as the same capsule user. You can install two or all three in the
+same checkout—for example, using one to implement and another to review—or
+switch later without losing saved sign-ins; see [Review and change
+agents](review-and-change-agents.md).

@@ -13,7 +13,7 @@ from pathlib import Path
 import tomllib
 from typing import Any, Mapping, Sequence
 
-from devcapsule.platforms import Platform
+from devcapsule.platforms import Platform, UnsupportedPlatformError
 from devcapsule.resolution_matrix import MATRICES, ResolutionMatrix
 from .capabilities import CapabilityPolicy, LocalCapabilities, capability_notes, resolution_recommendations
 from .capability_selection import compose_lock, effective_lock, generate_lock, local_pins, usable_lock, matrix_for, pin_selection
@@ -22,7 +22,10 @@ from .manifest import current_manifest
 from .manifest_document import capability_reasons, capability_table, manifest_preamble, render_manifest
 from .manifest_schemas import ManifestV2
 from .nodes import build_node_registry
-from .storage import atomic_write, checkout_record_paths, discover_project, load_toml, require_settled
+from .storage import (
+    atomic_write, checkout_record_paths, discover_project, load_toml, locked_platforms, platform_lock_path,
+    project_platform, require_settled,
+)
 
 
 def paths(root: Path) -> tuple[Path, Path, Path]:
@@ -31,75 +34,142 @@ def paths(root: Path) -> tuple[Path, Path, Path]:
     ``root`` is the project directory. This only constructs paths.
     """
     directory = root / ".devcapsule"
-    return (directory / "devcapsule.toml", directory / f"devcapsule.{Platform.current()}.lock",
+    return (directory / "devcapsule.toml", platform_lock_path(root, project_platform(root)),
             directory / ".capability-transaction.toml")
 
 
 def recover(root: Path) -> None:
     """Finish an interrupted shared edit, or do nothing if no journal exists.
 
-    The manifest chooses the before/after lock to restore. Refuse malformed
-    journals or independent edits with ProjectConfigurationError. Successful
-    recovery removes the journal. Use the same platform that began the edit;
-    callers must exclude concurrent writers. Filesystem errors propagate.
+    The manifest chooses the before or after side of every lock the journal
+    holds. Refuse malformed journals or independent edits with
+    ProjectConfigurationError. Successful recovery removes the journal.
+    Callers must exclude concurrent writers. Filesystem errors propagate.
     """
-    manifest_path, lock_path, journal = paths(root)
+    manifest_path, _, journal = paths(root)
     if not journal.exists():
         return
     transaction = load_toml(journal)
-    if set(transaction) != {"before-manifest", "after-manifest", "before-lock", "after-lock"} or any(
-        not isinstance(value, str) for value in transaction.values()
-    ):
-        raise ProjectConfigurationError("Malformed capability transaction; preserve it for recovery.")
+    locks = _journaled_locks(root, transaction)
     current = manifest_path.read_bytes().decode("utf-8") if manifest_path.exists() else ""
-    current_lock = lock_path.read_bytes().decode("utf-8") if lock_path.exists() else ""
-    if current_lock not in {transaction["before-lock"], transaction["after-lock"]}:
-        raise ProjectConfigurationError("Lock changed outside the pending transaction; refusing to overwrite it.")
+    for lock_path, (before, after) in locks.items():
+        current_lock = lock_path.read_bytes().decode("utf-8") if lock_path.exists() else ""
+        if current_lock not in {before, after}:
+            raise ProjectConfigurationError("Lock changed outside the pending transaction; refusing to overwrite it.")
     if current == transaction["after-manifest"]:
-        chosen = "after-lock"
+        committed = True
     elif current == transaction["before-manifest"]:
-        chosen = "before-lock"
+        committed = False
     else:
         raise ProjectConfigurationError("Configuration changed outside the pending transaction; refusing to overwrite it.")
-    # Manifest-only edits preserve even an absent or empty lock.
-    if transaction["before-lock"] != transaction["after-lock"]:
-        if transaction[chosen]:
-            atomic_write(lock_path, transaction[chosen], mode=0o644)
-        else:
-            lock_path.unlink(missing_ok=True)
+    for lock_path, (before, after) in locks.items():
+        restored = after if committed else before
+        # Manifest-only edits preserve even an absent or empty lock.
+        if before != after:
+            if restored:
+                atomic_write(lock_path, restored, mode=0o644)
+            else:
+                lock_path.unlink(missing_ok=True)
     journal.unlink()
 
 
-def promote(root: Path, manifest: dict[str, Any], lock: dict[str, Any] | None = None) -> None:
-    """Persist an already-validated manifest, and lock when given, with a recovery journal.
+def _journaled_locks(root: Path, transaction: Mapping[str, Any]) -> dict[Path, tuple[str, str]]:
+    """Each lock path the journal holds, with its before and after text.
+
+    A journal holds every platform lock under ``before-locks`` and
+    ``after-locks``; one written by a launcher of a single platform holds
+    that platform's lock as ``before-lock`` and ``after-lock``.
+    """
+    malformed = ProjectConfigurationError("Malformed capability transaction; preserve it for recovery.")
+    manifests = (transaction.get("before-manifest"), transaction.get("after-manifest"))
+    if not all(isinstance(value, str) for value in manifests):
+        raise malformed
+    if set(transaction) == {"before-manifest", "after-manifest", "before-lock", "after-lock"}:
+        sides = {str(project_platform(root)): (transaction["before-lock"], transaction["after-lock"])}
+    elif set(transaction) == {"before-manifest", "after-manifest", "before-locks", "after-locks"}:
+        before, after = transaction["before-locks"], transaction["after-locks"]
+        if not isinstance(before, dict) or not isinstance(after, dict) or set(before) != set(after):
+            raise malformed
+        sides = {key: (before[key], after[key]) for key in before}
+    else:
+        raise malformed
+    locks: dict[Path, tuple[str, str]] = {}
+    for key, (before_text, after_text) in sides.items():
+        if not isinstance(before_text, str) or not isinstance(after_text, str):
+            raise malformed
+        try:
+            platform = Platform.parse(key)
+        except UnsupportedPlatformError:
+            raise malformed from None
+        locks[platform_lock_path(root, platform)] = (before_text, after_text)
+    return locks
+
+
+def promote(root: Path, manifest: dict[str, Any], locks: Mapping[Platform, dict[str, Any]] | None = None) -> None:
+    """Persist an already-validated manifest, and the locks when given, with a recovery journal.
 
     Call ``check_documents`` first and exclude concurrent writers. Write the
-    lock before the manifest; attempt recovery on OSError. Failures propagate.
-    A pending journal raises ProjectConfigurationError. This updates shared
-    files only; it neither writes nor resolves a developer's checkout.
+    locks before the manifest; attempt recovery on OSError. Failures
+    propagate. A pending journal raises ProjectConfigurationError. This
+    updates shared files only; it neither writes nor resolves a developer's
+    checkout.
 
     The manifest is written by the one manifest writer: bare keys, the
     owner's table order, the leading comment block of the existing file
-    kept, and the supplied schema version. A ``lock`` of ``None`` keeps the
+    kept, and the supplied schema version. ``locks`` of ``None`` keeps every
     lock file's bytes exactly, for an edit that changes the manifest alone.
     """
-    manifest_path, lock_path, journal = paths(root)
+    manifest_path, _, journal = paths(root)
     ManifestV2.read(manifest, manifest_path)  # The one writer writes schema 2 and nothing else.
     require_settled(root)
     before_manifest = manifest_path.read_bytes().decode("utf-8") if manifest_path.exists() else ""
-    before_lock = lock_path.read_bytes().decode("utf-8") if lock_path.exists() else ""
-    transaction = {"before-manifest": before_manifest, "before-lock": before_lock,
-                   "after-manifest": render_manifest(manifest, preamble=manifest_preamble(before_manifest)),
-                   "after-lock": before_lock if lock is None else render_toml(lock)}
-    atomic_write(journal, render_toml(transaction))
+    after_manifest = render_manifest(manifest, preamble=manifest_preamble(before_manifest))
+    before_locks: dict[str, str] = {}
+    after_locks: dict[str, str] = {}
+    for platform, lock in (locks or {}).items():
+        lock_path = platform_lock_path(root, platform)
+        before_locks[str(platform)] = lock_path.read_bytes().decode("utf-8") if lock_path.exists() else ""
+        after_locks[str(platform)] = render_toml(lock)
+    atomic_write(journal, render_toml({"before-manifest": before_manifest, "after-manifest": after_manifest,
+                                       "before-locks": before_locks, "after-locks": after_locks}))
     try:
-        if lock is not None:
-            atomic_write(lock_path, transaction["after-lock"], mode=0o644)
-        atomic_write(manifest_path, transaction["after-manifest"], mode=0o644)
+        for platform, lock in (locks or {}).items():
+            atomic_write(platform_lock_path(root, platform), after_locks[str(platform)], mode=0o644)
+        atomic_write(manifest_path, after_manifest, mode=0o644)
     except OSError:
         recover(root)
         raise
     journal.unlink()
+
+
+def project_locks(root: Path) -> dict[Platform, dict[str, Any]]:
+    """Every platform lock the project carries, by platform.
+
+    An edit of the shared contract regenerates them all, so a lock committed
+    for another platform never falls behind the manifest (R-COMPAT-001). A
+    project with none fails as reading this host's lock does.
+    """
+    platforms = locked_platforms(root) or (project_platform(root),)
+    return {platform: load_toml(platform_lock_path(root, platform)) for platform in platforms}
+
+
+def regenerate_locks(policy: CapabilityPolicy, locks: Mapping[Platform, dict[str, Any]], *,
+                     recommendations: Mapping[str, str], allow_unverified: bool = False) -> dict[Platform, dict[str, Any]]:
+    """Each of ``locks`` regenerated for ``policy`` from its own platform's matrix.
+
+    A lock that cannot follow refuses the whole edit; with several, the
+    error names the platform.
+    """
+    generated: dict[Platform, dict[str, Any]] = {}
+    for platform, lock in locks.items():
+        try:
+            generated[platform] = generate_lock(policy, MATRICES[platform], previous=lock,
+                                                allow_unverified=allow_unverified, recommendations=recommendations)
+        except ProjectConfigurationError as exc:
+            if len(locks) == 1:
+                raise
+            raise ProjectConfigurationError(f"The project's {platform} lock cannot follow this edit: {exc}") from exc
+    return generated
 
 
 def check_documents(manifest: dict[str, Any], lock: dict[str, Any], *, check_resolutions: bool = True) -> tuple[str, ...]:
@@ -192,20 +262,23 @@ def configure(start: Path, *, required: Sequence[str] | None = None,
     local_edit = local is not None or without is not None or providers is not None
     if project_edit == local_edit:
         raise ProjectConfigurationError("Choose either project flags (--required/--optional) or local flags (--local/--without).")
-    matrix = MATRICES[Platform.current()]
+    matrix = MATRICES[project_platform(root)]
     if project_edit:
-        return configure_project(root, manifest, lock, matrix, required=required, optional=optional,
+        locks = project_locks(root)
+        for other in locks.values():
+            check_documents(manifest, other)
+        return configure_project(root, manifest, locks, required=required, optional=optional,
                                  preview=preview, allow_unverified=allow_unverified)
     return configure_local(root, manifest, lock, matrix, local=local, without=without, providers=providers,
                            preview=preview, allow_unverified=allow_unverified)
 
 
-def configure_project(root: Path, manifest: dict[str, Any], lock: dict[str, Any], matrix: ResolutionMatrix, *,
+def configure_project(root: Path, manifest: dict[str, Any], locks: Mapping[Platform, dict[str, Any]], *,
                       required: Sequence[str] | None, optional: Sequence[str] | None,
                       preview: bool, allow_unverified: bool) -> str:
-    """Replace the shared policy and regenerate the platform lock; see ``configure``.
+    """Replace the shared policy and regenerate every platform lock; see ``configure``.
 
-    ``manifest`` and ``lock`` are the validated current shared documents and
+    ``manifest`` and ``locks`` are the validated current shared documents and
     are not changed; ``manifest`` is used as the candidate's template.
     """
     policy = CapabilityPolicy.read(manifest)
@@ -217,9 +290,10 @@ def configure_project(root: Path, manifest: dict[str, Any], lock: dict[str, Any]
     candidate_manifest["capabilities"] = declarations
     candidate = CapabilityPolicy.read(candidate_manifest)
     candidate_manifest["capabilities"] = capability_table(candidate, capability_reasons(manifest), previous=manifest["capabilities"])
-    generated = generate_lock(candidate, matrix, previous=lock, allow_unverified=allow_unverified,
-                              recommendations=resolution_recommendations(candidate_manifest))
-    check_documents(candidate_manifest, generated)
+    generated = regenerate_locks(candidate, locks, allow_unverified=allow_unverified,
+                                 recommendations=resolution_recommendations(candidate_manifest))
+    for lock in generated.values():
+        check_documents(candidate_manifest, lock)
     if not preview:
         promote(root, candidate_manifest, generated)
     return ("Preview; no files changed.\n" if preview else "Updated shared capability policy and lock.\n") + render_toml(candidate_manifest["capabilities"])

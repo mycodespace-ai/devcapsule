@@ -14,7 +14,7 @@ from .storage import (
     checkout_record_paths,
     load_checkout,
     load_resolution,
-    load_workstation,
+    load_settings,
     lock_for,
     manifest_for,
 )
@@ -42,7 +42,7 @@ class ExecutionConfiguration:
             raise ProjectConfigurationError("Local resolution is missing; run 'devcapsule project run'.")
         checkout = load_checkout(input_path, manifest, root)
         resolution = load_resolution(output_path)
-        configuration = Configuration(manifest, lock, checkout, load_workstation())
+        configuration = Configuration(manifest, lock, checkout, load_settings())
         plan = Resolution(resolution)
         review = configuration.review()
         # Keep the complete, path-qualified recovery advice at the CLI boundary.

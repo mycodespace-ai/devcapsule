@@ -40,7 +40,7 @@ RuntimeEffects = dict[str, int | str]
 
 # The values the launcher owns on every project (CLI UX redesign work order,
 # answer 6): the container's memory limit and CPU count. They need no
-# declaration; a project may recommend them, a workstation has defaults for
+# declaration; a project may recommend them, a home has defaults for
 # them, a checkout may set them. ``memory`` carries the ``docker.memory-limit``
 # effect that a manifest's declared value used to carry under its own name;
 # such a declaration is read as the recommendation for ``memory`` and its

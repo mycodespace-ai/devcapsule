@@ -11,6 +11,8 @@ import pytest
 
 from devcapsule.materialization import UNPACKED_MARKER, unpacked_tree
 
+pytestmark = pytest.mark.legacy
+
 
 DIGEST = "a" * 64
 

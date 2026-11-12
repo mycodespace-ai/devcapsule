@@ -1,4 +1,4 @@
-"""Host-side acquisition and workstation-local component materialization."""
+"""Host-side acquisition and home-local component materialization."""
 
 from __future__ import annotations
 
@@ -22,6 +22,11 @@ from urllib.request import urlopen
 from devcapsule.compat import CliError
 from devcapsule.runtime_command import RuntimeCommand
 from devcapsule.build_info import read_pex_build_info
+from devcapsule.webconsole_bundle import (
+    LAUNCHER_WEBCONSOLE_PATH,
+    WebconsoleBundleError,
+    extract_webconsole_bundle,
+)
 from devcapsule.platforms import XdgHomes
 from devcapsule.components.catalog import (
     ComponentCatalogError,
@@ -54,6 +59,50 @@ from devcapsule.images.metadata import (
     METADATA_VERSION_LABEL,
     managed_labels,
 )
+
+__all__ = [
+    "ARTIFACT_FORMATS",
+    "Acquisition",
+    "ArtifactSpec",
+    "ArtifactUnavailable",
+    "COMPONENT_TEMPLATE_PATH",
+    "ENTRYPOINT_CONTRACT",
+    "FORMATION_SCHEMA_NAME",
+    "FORMATION_SCHEMA_VERSION",
+    "ImageDetails",
+    "LockedEnvironment",
+    "MATERIALIZATION_RECIPE_ID",
+    "MATERIALIZATION_RECIPE_VERSION",
+    "NPM_CACHE_PATH",
+    "NPM_INSTALL_OPTIONS",
+    "NpmProject",
+    "RUNTIME_COMMAND_PATH",
+    "RUNTIME_PLAN_PATH",
+    "SURFACE_MATERIALIZATIONS",
+    "SurfaceMaterialization",
+    "UNPACKED_DIRECTORY",
+    "UNPACKED_MARKER",
+    "acquire_artifact",
+    "cache_root",
+    "canonical_image_name",
+    "canonical_json",
+    "component_runtime_template",
+    "descriptor_differences",
+    "ensure_materialized_surface",
+    "formation_descriptor",
+    "formation_identity",
+    "npm_install_step",
+    "parse_locked_environment",
+    "runtime_config_drift",
+    "runtime_enforcement_spec",
+    "sha256_file",
+    "surface_materialization_spec",
+    "surface_profile",
+    "unpacked_tree",
+    "validate_base_image",
+    "validate_locked_artifact",
+    "verify_materialized_image",
+]
 
 
 @dataclass(frozen=True)
@@ -168,6 +217,16 @@ SURFACE_MATERIALIZATIONS: dict[str, SurfaceMaterialization] = {
         recipe_version="2",
         installation_path="/opt/codium",
         archive_probes=("codium", "bin/codium", "chrome-sandbox"),
+        requires_variant=False,
+        post_install=(),
+    ),
+    "vscode": SurfaceMaterialization(
+        component_id="vscode",
+        family="vscode",
+        recipe_id="vscode-local-materialization",
+        recipe_version="2",
+        installation_path="/opt/vscode",
+        archive_probes=("code", "bin/code", "chrome-sandbox"),
         requires_variant=False,
         post_install=(),
     ),
@@ -571,6 +630,7 @@ def surface_materialization_spec(
     recipe_version: str = MATERIALIZATION_RECIPE_VERSION,
     component_id: str = "pycharm",
     runtime_pex: Path | None = None,
+    webconsole_root: Path | None = None,
     runtime_command: RuntimeCommand = RuntimeCommand.STANDARD,
 ) -> ImageBuildSpec:
     profile = surface_profile(component_id)
@@ -636,6 +696,8 @@ def surface_materialization_spec(
             *((FileComponent(runtime_pex, ENTRYPOINT_CONTRACT[0], permissions=0o755),
                ExecComponent(("ln", "-sfn", ENTRYPOINT_CONTRACT[0], descriptor["runtime"]["public-command"])))
               if runtime_pex is not None else ()),
+            *((DirectoryComponent(webconsole_root, LAUNCHER_WEBCONSOLE_PATH),)
+              if webconsole_root is not None else ()),
             *( (EnvComponent(environment),) if environment else () ),
             EnvComponent((("PATH", "/opt/xtras/bin:${PATH}"),)),
             LabelComponent(
@@ -807,6 +869,12 @@ def ensure_materialized_surface(
             )
             npm_projects = _npm_projects(ancillary_files, temporary)
             native_packages = _prepare_native_packages(ancillary_files, temporary / "native-packages")
+            webconsole_root: Path | None = None
+            if runtime_pex is not None:
+                try:
+                    webconsole_root = extract_webconsole_bundle(runtime_pex, temporary / "webconsole")
+                except WebconsoleBundleError as exc:
+                    raise CliError(f"Cannot unpack the launcher web console from {runtime_pex}: {exc}") from exc
             build(
                 surface_materialization_spec(
                     base_reference=base_reference,
@@ -823,6 +891,7 @@ def ensure_materialized_surface(
                     recipe_version=recipe_version,
                     component_id=component_id,
                     runtime_pex=runtime_pex,
+                    webconsole_root=webconsole_root,
                     runtime_command=runtime_command,
                 )
             )

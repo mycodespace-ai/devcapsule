@@ -19,6 +19,8 @@ from devcapsule.configuration.file_formats import ConfigurationFileKind, Project
 from devcapsule.configuration.storage import ResolvedProject, checkout_name_for, checkout_record_name, discover_project, load_toml, manifest_for, recommendation_lock_for
 
 
+HOME_PATH = Path("/etc/devcapsule/home")
+
 CONTEXT_PATH = Path("/etc/devcapsule/launch-context.json")
 CONFIGURATION_PATH = Path("/etc/devcapsule/checkout")
 CHANNEL_PATH = Path("/run/devcapsule-configuration")
@@ -70,9 +72,11 @@ class LaunchConfiguration:
     def capture(cls, selected: ResolvedProject, identity: str, listing: dict[str, Any] | None = None) -> LaunchConfiguration:
         from devcapsule.project_information import configured_information
 
+        from devcapsule.configuration.storage import config_root
         checkout_name = checkout_name_for(selected.manifest, selected.checkout_path)
         return cls(selected.checkout_path.parent, {
             "format": 1, "project": deepcopy(selected.manifest["project"]),
+            "configuration-home": str(config_root().resolve()),
             "launcher-root": str(selected.root),
             "runtime-root": selected.resolution["runtime"]["project-mount"],
             "checkout-file": selected.checkout_path.name,
@@ -241,3 +245,16 @@ def require_launcher(start: Path, arguments: Sequence[str]) -> None:
             "This command needs launcher-owned configuration or state. Inside this capsule that "
             "configuration is read-only. Run outside the capsule: " + context.launcher_command(arguments)
         )
+
+
+def mounted_settings_path(env: Mapping[str, str] | None = None) -> Path | None:
+    """The launcher's settings as this capsule sees them: None outside a capsule or under a named home.
+
+    The capsule's own home, its data, state and cache among them, stays in
+    its own XDG directories; a launcher run inside the capsule writes there.
+    Only the launcher's settings are mounted, read-only.
+    """
+    from devcapsule.platforms import XdgHomes
+    if CONTEXT_PATH.is_file() and XdgHomes.from_environment(env).chosen_by != "DEVCAPSULE_CONFIG_HOME":
+        return HOME_PATH / "settings.toml"
+    return None

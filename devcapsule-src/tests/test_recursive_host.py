@@ -31,6 +31,8 @@ from devcapsule.recursive_host import (
     RecursiveStagingArea,
 )
 
+pytestmark = pytest.mark.legacy
+
 
 @dataclass
 class HostLayout:

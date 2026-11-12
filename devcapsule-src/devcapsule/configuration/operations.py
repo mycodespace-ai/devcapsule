@@ -30,7 +30,7 @@ from devcapsule.project import sanitize_name
 from devcapsule.platforms import Platform, UnsupportedPlatformError
 from devcapsule.resolution_matrix import MATRICES, ResolutionMatrix
 
-from .trust import WorkstationTrust
+from .trust import HomeTrust
 from .authorization import (
     AuthorizationDeclaration,
     CURATED_HOST_RECOMMENDATIONS,
@@ -66,12 +66,14 @@ from .nodes import (
     build_node_registry,
 )
 from .storage import (
+    platform_lock_path,
+    project_platform,
     atomic_write,
     checkout_record_paths,
     load_checkout,
     load_resolution,
     load_toml,
-    load_workstation,
+    load_settings,
     lock_for,
     manifest_for,
     manifest_source_digest,
@@ -80,13 +82,10 @@ from .storage import (
 from .values import checkout_omitted_values, normalize_configuration_value
 
 
-def _current_matrix() -> ResolutionMatrix:
-    """This host's resolution matrix, with platform failures as user errors."""
+def _project_matrix(root: Path) -> ResolutionMatrix:
+    """The resolution matrix of the platform this host runs the project at ``root`` as."""
 
-    try:
-        return MATRICES[Platform.current()]
-    except UnsupportedPlatformError as exc:
-        raise ProjectConfigurationError(str(exc)) from exc
+    return MATRICES[project_platform(root)]
 
 __all__ = [
     "CheckoutRecord",
@@ -220,11 +219,11 @@ def resolve_checkout(start_path: Path) -> ResolveReport:
         atomic_write(input_path, render_checkout(manifest, root, {}, {}))
         registered = input_path
     checkout = load_checkout(input_path, manifest, root)
-    workstation = load_workstation()
-    configuration = Configuration(manifest, lock, checkout, workstation)
+    home = load_settings()
+    configuration = Configuration(manifest, lock, checkout, home)
     configuration.review().require_ready(root)
     resolution = configuration.resolve()
-    base_selection = (authorized_base_selection(lock, checkout, trust=WorkstationTrust.read(workstation))
+    base_selection = (authorized_base_selection(lock, checkout, trust=HomeTrust.read(home))
                       if "base" in lock else None)
     if base_selection is not None and base_selection.local_image_identity is not None:
         local_base = required_local_image(base_selection.reference)
@@ -279,6 +278,9 @@ class InitializeRequest:
     allow_unverified: bool = False
     # None: decide from whether stdin is a terminal.
     interactive: bool | None = None
+    # The platform whose lock to write; None: the one the project runs as
+    # here, or, for a new project on a host of several platforms, asked.
+    platform: Platform | None = None
 
 
 @dataclass(frozen=True)
@@ -340,7 +342,7 @@ class InitializeReport:
         else:
             lines.append(
                 "Project initialized. Choose your IDE with 'devcapsule project config ide IDE' "
-                "(python-ide, frontend-ide, java-ide, eclipse-ide or dotnet-ide), then 'devcapsule project run'."
+                "(python-ide, frontend-ide, vscode-ide, java-ide, eclipse-ide or dotnet-ide), then 'devcapsule project run'."
             )
         return "\n".join(lines)
 
@@ -402,12 +404,16 @@ def initialize_project(
         raise ProjectConfigurationError(f"Project directory does not exist: {root}")
     require_settled(root)
     manifest_path = root / ".devcapsule" / "devcapsule.toml"
-    try:
-        platform = Platform.current()
-    except UnsupportedPlatformError as exc:
-        raise ProjectConfigurationError(str(exc)) from exc
-    lock_path = root / ".devcapsule" / f"devcapsule.{platform}.lock"
-    matrix = _current_matrix()
+    elicitor = Elicitor(
+        _init_command_line(request),
+        interactive=request.interactive,
+        input_stream=input_stream,
+        output_stream=output_stream,
+    )
+    # The platform comes first: its matrix answers every later question.
+    platform = _elicit_platform(elicitor, root)
+    lock_path = platform_lock_path(root, platform)
+    matrix = MATRICES[platform]
 
     existing_manifest: dict[str, Any] | None = None
     existing_lock: dict[str, Any] | None = None
@@ -450,12 +456,6 @@ def initialize_project(
                 "the 'config' family changes individual answers."
             )
 
-    elicitor = Elicitor(
-        _init_command_line(request),
-        interactive=request.interactive,
-        input_stream=input_stream,
-        output_stream=output_stream,
-    )
     identity = _elicit_identity(elicitor, root, existing_manifest, matrix)
     authored = frozenset(answer.name for answer in request.answers if answer.justification is not None)
     # Fail now if identity or requirements are unanswered: the lock cannot be
@@ -576,6 +576,59 @@ def initialize_project(
     )
 
 
+def _elicit_platform(elicitor: Elicitor, root: Path) -> Platform:
+    """The platform whose lock init writes, asked when this host runs several.
+
+    A project with a lock this host runs keeps that platform unless
+    ``--platform`` names another; otherwise a host of one platform takes it,
+    and a host of several asks, its native platform the default and the
+    unattended answer. Init completes the checkout for the lock it writes, so
+    the platform must be the one the project runs as once that lock exists.
+    """
+    runnable = Platform.runnable()
+    native = runnable[0]
+    locked = next((platform for platform in runnable if platform_lock_path(root, platform).is_file()), None)
+    choices = " or ".join(
+        f"{platform} ({'native' if platform is native else 'emulated'})" for platform in runnable
+    )
+    answer = elicitor.seek(
+        "platform",
+        description=f"Capsule platform for this project: {choices}",
+        remedy="--platform PLATFORM",
+        existing=str(locked) if locked is not None else None,
+        default=str(native) if len(runnable) == 1 else None,
+        empty_answer=str(native),
+        omitted_answer=str(native),
+        validate=_platform_validator(runnable),
+    )
+    if answer is None:  # Input ended at the question.
+        elicitor.finish(require_all_consumed=False)
+        raise AssertionError("an unanswered platform question must fail the elicitation")
+    platform = Platform.parse(answer.value)
+    runs_as = next(candidate for candidate in runnable
+                   if candidate is platform or platform_lock_path(root, candidate).is_file())
+    if runs_as is not platform:
+        raise ProjectConfigurationError(
+            f"On this host the project runs as {runs_as}, which it has a lock for, "
+            f"so init cannot add a {platform} lock here."
+        )
+    return platform
+
+
+def _platform_validator(runnable: tuple[Platform, ...]) -> Any:
+    def validate(value: str) -> str:
+        try:
+            candidate = Platform.parse(value.strip())
+        except UnsupportedPlatformError as exc:
+            raise ProjectConfigurationError(str(exc)) from exc
+        if candidate not in runnable:
+            names = ", ".join(str(platform) for platform in runnable)
+            raise ProjectConfigurationError(f"This host runs {names} capsules, not {candidate}.")
+        return str(candidate)
+
+    return validate
+
+
 def _initialize_report(
     manifest_path: Path, manifest_action: str, identity: _ProjectIdentity, lock_path: Path, lock_action: str,
     *, base_display: str, recommendations: list[tuple[str, str]], selection: _OwnerSelection,
@@ -653,7 +706,7 @@ def _existing_selection(root: Path, manifest: Mapping[str, Any] | None) -> _Owne
     if not input_path.is_file():
         return _OwnerSelection(None, ())
     local = LocalCapabilities.read(load_toml(input_path))
-    matrix = _current_matrix()
+    matrix = _project_matrix(root)
     surfaces = set(matrix.ide_capabilities())
     ide = next((name for name in local.selected if name in surfaces), None)
     return _OwnerSelection(ide, tuple(name for name in local.selected if name not in surfaces))
@@ -776,6 +829,8 @@ def _init_command_line(request: InitializeRequest) -> dict[AnswerKey, str]:
         command_line[("offer", "value")] = " ".join(request.offer)
     if request.ide is not None:
         command_line[("ide", "value")] = request.ide
+    if request.platform is not None:
+        command_line[("platform", "value")] = str(request.platform)
     for key, value in (
         ("name", request.project_name),
         ("slug", request.slug),
@@ -831,7 +886,7 @@ def _reject_undeclared_answers(
 
     ``authoring`` names the curated host recommendations this invocation may
     still record. Such a name is an authorization node only once the project
-    recommends it (``network`` has no workstation default), and the
+    recommends it (``network`` has no home default), and the
     recommendation question consumes the answer that authors it, so an
     ``--authorize`` under one of these names is admitted here.
     """

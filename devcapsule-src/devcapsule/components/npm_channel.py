@@ -1,30 +1,58 @@
 """Pinned npm meta-package + platform-alias distribution, without running npm."""
 from __future__ import annotations
 
+from collections.abc import Callable
+from contextlib import AbstractContextManager
 import json
 import re
-from typing import Any
+from typing import Any, BinaryIO
 from urllib.error import URLError
 from urllib.parse import quote, urlparse
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 from devcapsule.compat import CliError
 from devcapsule.components.channels import ChannelNotice, ChannelReport, ChannelSelection, ChannelVersion
 
+__all__ = [
+    "ABBREVIATED_METADATA_ACCEPT",
+    "MAX_METADATA_BYTES",
+    "METADATA_TIMEOUT_SECONDS",
+    "NpmChannel",
+    "UrlOpener",
+]
+
+ABBREVIATED_METADATA_ACCEPT = "application/vnd.npm.install-v1+json"
+"""Registry media type carrying ``versions``, ``deprecated``, and ``dist-tags`` without full release manifests."""
+
+MAX_METADATA_BYTES = 16 * 1024 * 1024
+METADATA_TIMEOUT_SECONDS = 15.0
+
+UrlOpener = Callable[..., AbstractContextManager[BinaryIO]]
+
 
 class NpmChannel:
-    def __init__(self, package: str, platform_aliases: dict[str, str], *, node_engine: str = ">=16"):
+    def __init__(
+        self,
+        package: str,
+        platform_aliases: dict[str, str],
+        *,
+        node_engine: str = ">=16",
+        opener: UrlOpener | None = None,
+    ):
         self.package = package
         self.platform_aliases = platform_aliases
         self.node_engine = node_engine
         self.source = "https://registry.npmjs.org/" + quote(package, safe="@")
+        self._opener = opener
 
     def _metadata(self, version: str = "") -> dict[str, Any]:
         url = self.source + ("/" + quote(version, safe="") if version else "")
+        target: str | Request = url if version else Request(url, headers={"Accept": ABBREVIATED_METADATA_ACCEPT})
+        open_url: UrlOpener = urlopen if self._opener is None else self._opener
         try:
-            with urlopen(url, timeout=15) as response:
-                payload = response.read(16 * 1024 * 1024 + 1)
-            if len(payload) > 16 * 1024 * 1024:
+            with open_url(target, timeout=METADATA_TIMEOUT_SECONDS) as response:
+                payload = response.read(MAX_METADATA_BYTES + 1)
+            if len(payload) > MAX_METADATA_BYTES:
                 raise ValueError("metadata exceeds 16 MiB")
             value = json.loads(payload)
             if not isinstance(value, dict):

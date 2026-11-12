@@ -30,6 +30,8 @@ from devcapsule.configuration.storage import (
 )
 from devcapsule.project import project_namespace
 
+pytestmark = pytest.mark.legacy
+
 
 LOCKED_BASE = f"docker.io/example/devcapsule-base@sha256:{'b' * 64}"
 
@@ -943,7 +945,7 @@ def test_host_browser_authorization_persists_and_drives_run(tmp_path: Path, caps
 
     with patch.dict(os.environ, env, clear=False):
         initialize_project(project)
-        # The manifest recommends nothing: host-browser is a workstation
+        # The manifest recommends nothing: host-browser is a home
         # capability the developer may authorize without project advice.
         assert (
             cli.main(
@@ -1156,7 +1158,7 @@ def test_project_config_set_uses_declared_metadata_and_resolves_runtime_effect(
 def test_authorize_records_denial_as_a_value(tmp_path: Path, capsys) -> None:
     """The 2026-09-02 denial-grammar bug, closed by the 2026-09-03 'none'
     ruling: denial is a value (bool false, or the string node's deny
-    spelling), so a checkout's recorded denial outranks a workstation-level
+    spelling), so a checkout's recorded denial outranks a home-level
     allow; 'none' resolves to the deny value at decision time."""
 
     project = tmp_path / "project"
@@ -2212,7 +2214,7 @@ def test_network_answer_stales_when_recommendation_appears_and_disappears(
         )
         for text, source, description in (
             (original_manifest + recommendation, "manifest", "Reach host-bound development services."),
-            (original_manifest, "workstation default", "Share the host network namespace"),
+            (original_manifest, "home default", "Share the host network namespace"),
         ):
             manifest_path.write_text(text)
             write_formation_lock(project)
@@ -2229,7 +2231,7 @@ def test_network_answer_stales_when_recommendation_appears_and_disappears(
             assert "kept" in network["source"]
             assert cli.main([*command, "authorize", "network", value]) == 0
             digest = tomllib.loads(record.read_text())["authorization"]["network"]["recommendation-digest"]
-            assert (digest == default_digest) == (source == "workstation default")
+            assert (digest == default_digest) == (source == "home default")
             assert run_until_prepared(project) == 0
             resolved = tomllib.loads(record.with_name("devcapsule.resolved.toml").read_text())
             assert resolved["authorization"]["network"] == value
@@ -2493,6 +2495,7 @@ def test_every_project_leaf_declares_its_capsule_access() -> None:
     assert declared[("config", "show")] is CapsuleAccess.INSPECTS
     assert declared[("versions", "show")] is CapsuleAccess.INSPECTS
     assert declared[("info",)] is CapsuleAccess.INSPECTS
+    assert declared[("diagnose",)] is CapsuleAccess.INSPECTS
     assert declared[("run",)] is CapsuleAccess.MUTATES
     assert declared[("versions", "select")] is CapsuleAccess.MUTATES
     assert declared[("init",)] is CapsuleAccess.CREATES_HERE

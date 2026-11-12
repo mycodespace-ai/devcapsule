@@ -130,8 +130,16 @@ the only file outside `docs/` the consumer reads from a version's source.
 - A development version `X.Y.Z.devN` is allowed only for the entry whose
   `version` is `devel`.
 - Otherwise the build fails naming the entry, the ref, and both versions,
-  unless the entry's `source-version` equals what the ref declares. That is
-  the 0.2.12 case and the only intended use of the field.
+  unless the entry's `source-version` equals what the ref declares. This
+  covers the 0.2.12 case. On `devel`, `source-version` names the release
+  most recently promoted. The promotion helper writes it so a release
+  checkout passes the check that reads each checkout as `main`. Keep it
+  on `main`, where the declared development version already passes.
+
+The 2026-10-27 release documentation work order amends this producer copy.
+The `devel` use of `source-version` and the pre-tag documentation ref are
+proposals for the consumer's authoritative contract. They use its existing
+source-version check; they require no consumer code change.
 
 ### 4.3 The versioned tree at each ref
 
@@ -278,7 +286,7 @@ unversioned pages and the manifest; the manifest fixes every version's
 source. When and by whom that operation runs is the release runbook's
 business, not the contract's: the runbook's obligations, from the
 documentation-currency issue, are that the release's `docs/` is true before
-the final tag, that the manifest promotes the version after it, and that
+the final tag, that the manifest promotes the version before it, and that
 publication follows the final tag. The interface here is what makes the last
 of those automatable.
 
@@ -289,9 +297,11 @@ of those automatable.
 **Documentation corrections to a released version (P5.2).** The definition
 closes a release branch after its final tag. Rather than bend that rule, the
 producer's local workflow declares one project-owned ref kind:
-`docs-<version>`, forked from the final tag, carrying documentation-only
-commits, never merged anywhere, named in the manifest as that version's
-`source` when it exists. The candidate gate does not apply to it; the
+`docs-<version>`, forked from the release branch at the promotion commit
+before the final tag. The final-tag job checks that its `docs/` tree equals
+the tag's. It carries later documentation-only commits, is never merged
+anywhere, and is named in the manifest as that version's `source` from
+promotion. The candidate gate does not apply to it; the
 consumer's build check does. This needs one entry in `WORKFLOW-LOCAL.md`,
 which is where the definition says project refs are declared, and no change
 to the definition. Until such a ref exists for a version, its source is the

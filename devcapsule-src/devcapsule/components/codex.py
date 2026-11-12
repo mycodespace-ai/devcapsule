@@ -71,7 +71,8 @@ class CodexComponent(ComponentDefinition):
     """Trusted Codex component implementation."""
 
     def distribution_channel(self) -> NpmChannel:
-        return NpmChannel(CODEX_PACKAGE, {"linux-amd64": "@openai/codex-linux-x64"})
+        return NpmChannel(CODEX_PACKAGE, {"linux-amd64": "@openai/codex-linux-x64",
+                                          "linux-arm64": "@openai/codex-linux-arm64"})
 
     @property
     def id(self) -> str:

@@ -1,0 +1,83 @@
+[
+  {
+    "name": "pycharm",
+    "version": "2026.2.4",
+    "url": "https://download.jetbrains.com/python/pycharm-2026.2.4.tar.gz",
+    "sha256": "87d39ae1125f7298e8f8c4b96aac836043eb15053f8dc5d7c52356eaab5762a8",
+    "size": 1298582879,
+    "verified-sha256": "87d39ae1125f7298e8f8c4b96aac836043eb15053f8dc5d7c52356eaab5762a8",
+    "verified-sha512": "27f4ac252a371f69a1c2afef1e43077e3cad0c565d34de623b7ba815ed06dc67daf5663e6f7fe3acf5e0c4c3a4a5b5ffb958f9d638d80b664f6ed5dbba1d7ac8"
+  },
+  {
+    "name": "intellij",
+    "version": "2026.2.4",
+    "url": "https://download.jetbrains.com/idea/idea-2026.2.4.tar.gz",
+    "sha256": "cc6b29ddb82c7dcc656d5c728cefb2c917ac767eb4b8368f1208732846fbb5bd",
+    "size": 1629230546,
+    "verified-sha256": "cc6b29ddb82c7dcc656d5c728cefb2c917ac767eb4b8368f1208732846fbb5bd",
+    "verified-sha512": "9651759d33487e1ced32dadc41ce2b5e8e7a164df5684c5ade8dd5a8b7ebbb0ddbb4f61356822ef4c14dd8c42d8dc51b85ceff3eb0b169bbaa23b60e58ff87ef"
+  },
+  {
+    "name": "rider",
+    "version": "2026.2.4",
+    "url": "https://download.jetbrains.com/rider/JetBrains.Rider-2026.2.4.tar.gz",
+    "sha256": "6e5ac7238a5b95f905b9a1404c42eb4d7bc5566d950750b0078f20bd78a3f599",
+    "size": 2375726547,
+    "verified-sha256": "6e5ac7238a5b95f905b9a1404c42eb4d7bc5566d950750b0078f20bd78a3f599",
+    "verified-sha512": "c31b8f3ee669afa6c504314e172996b809bfa9744a6b3b9f96757e0c3eb7a53eaa8b82f516ec28cf6bc15806d11962792b0774610377d5ac6aaf7486d96669c8"
+  },
+  {
+    "name": "codex",
+    "version": "0.166.0",
+    "url": "https://registry.npmjs.org/@openai/codex/-/codex-0.166.0.tgz",
+    "sha512": "d92ce5a75975733e535f571ca57e19a24dc366ba2df717997b4926fbaff5bfc266ab1003c3227128125a878741ca6930b52db98ffbba762a49bac4ce23ded9f1",
+    "size": 4992,
+    "verified-sha256": "67ee6f4069d9328956401f54ac202c20369233159058af9f4ec1af731b87f5b7",
+    "verified-sha512": "d92ce5a75975733e535f571ca57e19a24dc366ba2df717997b4926fbaff5bfc266ab1003c3227128125a878741ca6930b52db98ffbba762a49bac4ce23ded9f1"
+  },
+  {
+    "name": "codex-linux",
+    "version": "0.166.0-linux-x64",
+    "url": "https://registry.npmjs.org/@openai/codex/-/codex-0.166.0-linux-x64.tgz",
+    "sha512": "0b10e6dfe0f57296c625e1eb77320da06fb7c27f4156770fe2aa5969a3589317bc88fb5124e6320899e73e8563591201bc8f6f3ca6d1a227ec312039c43694a7",
+    "size": 172325449,
+    "verified-sha256": "cbc00a26d3d0e2ceefc4be8891f8a81ef1e349b3b175bc0ae308762bc001fd93",
+    "verified-sha512": "0b10e6dfe0f57296c625e1eb77320da06fb7c27f4156770fe2aa5969a3589317bc88fb5124e6320899e73e8563591201bc8f6f3ca6d1a227ec312039c43694a7"
+  },
+  {
+    "name": "claude",
+    "version": "2.1.314",
+    "url": "https://downloads.claude.ai/claude-code-releases/2.1.314/linux-x64/claude",
+    "sha256": "4487042b4c4f5d88d4568f68ae98aae0b1ffae58864cf57fb868641bc5f84594",
+    "size": 298229464,
+    "verified-sha256": "4487042b4c4f5d88d4568f68ae98aae0b1ffae58864cf57fb868641bc5f84594",
+    "verified-sha512": "11c2b65e29d88d1baa67332bb6e740fbd39dcefb1fb24b321def8fc9112a7ef8d5fa0806fecf90ccb2f9e0ff1b9597a4f9f3aa9ef934cadffe1ad30d923ea7e8"
+  },
+  {
+    "name": "antigravity",
+    "version": "1.4.12",
+    "url": "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.4.12-4768735748292608/linux-x64/cli_linux_x64.tar.gz",
+    "sha512": "ea01c73b772187bca928852cf96235f0d846d6da5ebdac188b9ae719597465737f325540d483ee5f3f62d151029001713344972a187ddfb98cc7b97f7204b7f4",
+    "size": 68051214,
+    "verified-sha256": "3368d1923fc869f21ec8fce83252a8c96c89283aac9393958ac91fbf7a3949e4",
+    "verified-sha512": "ea01c73b772187bca928852cf96235f0d846d6da5ebdac188b9ae719597465737f325540d483ee5f3f62d151029001713344972a187ddfb98cc7b97f7204b7f4"
+  },
+  {
+    "name": "codium",
+    "version": "1.143.17232",
+    "url": "https://github.com/VSCodium/vscodium/releases/download/1.143.17232/VSCodium-linux-x64-1.143.17232.tar.gz",
+    "sha256": "ca1895aa040bd91a09c709d79eac7862d8c1aa0237fdc25b503deeb8bcd87efd",
+    "size": 214776735,
+    "verified-sha256": "ca1895aa040bd91a09c709d79eac7862d8c1aa0237fdc25b503deeb8bcd87efd",
+    "verified-sha512": "70839e493d45a231381301366b9058dd8d80f1c509e0c50cbee2b3a2e7af9d9f29a6bc7cc2a084785c591dbb62ce5b375cce49bd1db525fe31ae9cc5bb5c68d9"
+  },
+  {
+    "name": "vscode",
+    "version": "1.144.0",
+    "url": "https://vscode.download.prss.microsoft.com/dbazure/download/stable/2c33b50b16c472efe58357d1d2a8a5414bc23fbf/code-stable-x64-1793133762.tar.gz",
+    "sha256": "17b72a7e6f40a5b5dce9850f10eea13ce734a63052b67fa021cc01e715ad4cf1",
+    "size": 373229769,
+    "verified-sha256": "17b72a7e6f40a5b5dce9850f10eea13ce734a63052b67fa021cc01e715ad4cf1",
+    "verified-sha512": "431cb27d14349a753afb3100cfa42b07f224fe5164b7f335bf16bfb4aa7feb8e1c2cff79b44450ec8ddbf68fd8d760f4d743d7de07c599d3add899a84e95cfbf"
+  }
+]

@@ -10,6 +10,8 @@ import pytest
 
 import tomllib
 
+pytestmark = pytest.mark.legacy
+
 # CI supplies the tag-derived version; local builds use the source baseline.
 PACKAGE_VERSION = os.environ.get("DEVCAPSULE_EXPECTED_RELEASE_VERSION") or tomllib.loads(
     (Path(__file__).resolve().parents[2] / "pyproject.toml").read_text(

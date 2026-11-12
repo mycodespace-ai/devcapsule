@@ -27,6 +27,8 @@ from devcapsule.container_runtime.entrypoint import run
 
 from tests.test_runtime_entrypoint import SupervisorCapture, captured_supervisor, runtime_document
 
+pytestmark = pytest.mark.legacy
+
 _ = captured_supervisor  # re-exported fixture
 
 

@@ -1,31 +1,39 @@
 ---
-description: Start a project from an empty folder with the IDE, language and agent you want, and commit its environment with the code.
+description: Start a new project from an empty directory with your chosen IDE, runtime, and coding agent, and commit .devcapsule/ with the first commit.
 weight: 2
-updated: 2026-10-24
+updated: 2026-10-30
 ---
 # A new project
 
-Make the folder, initialize it with what the project needs, open it. The
-environment declaration is born with the project and travels with it.
+Create the directory, initialize Git and DevCapsule with the runtime and IDE
+you want, and launch the capsule:
 
 ```bash
 mkdir -p ~/projects/my-app
 cd ~/projects/my-app
 git init
-~/.local/bin/devcapsule project init --require node --ide frontend-ide
-~/.local/bin/devcapsule project run
+devcapsule project init --require node --ide frontend-ide
+devcapsule project run
 ```
 
-For Python and PyCharm, use `--require python --ide python-ide` instead.
-To start with an agent from the first launch, answer *yes* when
-`init` offers the default agent, or add one afterwards with one command; see
-[Choose an agent](../working-with-ai/choose-an-agent.md).
+Change the values of `--require` and `--ide` to match your stack. Examples
+include `--require python --ide python-ide`, `--require java --ide java-ide` (or `eclipse-ide`), or
+`--require dotnet --ide dotnet-ide` (and `--ide vscode` or `--ide pycharm`
+component names also work).
 
-Commit `.devcapsule/` with your first commit. It is the project's
-environment. Anyone who clones the repository starts with `devcapsule project
-run`. The launcher asks for their own choices and registers the checkout.
-The shared lock supplies the project's tool versions.
+To include a coding agent on your checkout from the first launch, either accept
+the default agent (`antigravity-agent`) during interactive `project init`, pass
+`--with codex-agent` or `--with claude-code-agent` on `project init`, or add
+one later with `devcapsule project config add codex-agent`; see [Choose an
+agent](../working-with-ai/choose-an-agent.md).
 
-What you can declare beyond the IDE and the language, and how services such
-as a database fit, are [What a project declares](declare-needs.md) and
-[Services and ports](services-and-ports.md).
+Commit `.devcapsule/devcapsule.toml` and `.devcapsule/devcapsule.<platform>.lock`
+in your initial Git commit. Anyone who clones the repository later starts with
+`devcapsule project run`: the shared lock supplies the exact base and component
+versions for the shared capabilities. Personal IDE and added-agent pins live
+in each checkout's record. The launcher prompts each developer for their
+choices and registers their checkout locally.
+
+To add version minimums, environment variable declarations, recommendations, or
+companion services as the project grows, read [What a project
+declares](declare-needs.md) and [Services and ports](services-and-ports.md).

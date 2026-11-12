@@ -1,11 +1,8 @@
 name: Tests and coverage
 
-# The unit suite with coverage runs on every push to main and on every pull
-# request against main or a release branch, so a contributor sees the result
-# and the coverage summary before the merge; the badge is published from main
-# alone. The owner may make the "Python 3.12" check required in the
-# repository rules. First run under the release-branch trigger: pull request
-# #226, 2026-10-18, run 39146118222.
+# Required check migration: establish ci-gate on a real PR, then have the
+# owner replace only the old Python 3.12 requirement. Preserve other checks.
+# Coverage is advisory; failures to run tests or produce reports still fail.
 on:
   push:
     branches:
@@ -14,6 +11,7 @@ on:
     branches:
       - main
       - release-*
+  merge_group:
   workflow_dispatch:
     inputs:
       checkout_ref:
@@ -31,9 +29,93 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Select verification jobs
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      python: ${{ steps.route.outputs.python }}
+      docs: ${{ steps.route.outputs.docs }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || inputs.checkout_ref || github.sha }}
+      - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
+        if: github.event_name == 'pull_request'
+        id: filter
+        with:
+          predicate-quantifier: every
+          filters: .github/ci-paths.yml
+      # tests/test_ci_reporting.py runs this script with each kind of input.
+      - name: Validate route or select full verification
+        id: route
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
+          PYTHON_CHANGED: ${{ steps.filter.outputs.python }}
+          DOCS_CHANGED: ${{ steps.filter.outputs.docs }}
+        run: |
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            python=true
+            docs=true
+          elif [[ ! "$CHANGED_FILES" =~ ^[0-9]+$ ]]; then
+            echo "The pull request event carries no changed-file count." >&2
+            exit 1
+          elif (( CHANGED_FILES > 3000 )); then
+            # GitHub lists at most 3000 files of a pull request, so the filter
+            # saw only part of this one. Run everything.
+            python=true
+            docs=true
+          else
+            for value in "$PYTHON_CHANGED" "$DOCS_CHANGED"; do
+              if [[ "$value" != true && "$value" != false ]]; then
+                echo "The path filter produced no valid route: '$value'." >&2
+                exit 1
+              fi
+            done
+            python=$PYTHON_CHANGED
+            docs=$DOCS_CHANGED
+          fi
+          printf 'python=%s\ndocs=%s\n' "$python" "$docs" >> "$GITHUB_OUTPUT"
+
+  docs-build:
+    name: Website verification
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    runs-on: ubuntu-24.04
+    env:
+      SITE_MODE: preview
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || inputs.checkout_ref || github.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Fetch documentation refs and the pinned website implementation
+        run: |
+          git fetch origin '+refs/heads/docs-*:refs/heads/docs-*'
+          git config submodule.website.url https://github.com/mycodespace-ai/devcapsule-website.git
+          git submodule update --init website
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: ./scripts/website.sh install
+      - run: npm --prefix website test
+      - run: ./scripts/website.sh build
+
   pytest:
     name: Python 3.12
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      # The coverage numbers are written into the pull request's description.
+      pull-requests: write
     defaults:
       run:
         working-directory: devcapsule-src
@@ -47,7 +129,8 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.checkout_ref || github.ref }}
+          ref: ${{ github.event.pull_request.head.sha || inputs.checkout_ref || github.sha }}
+          fetch-depth: 0
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -62,12 +145,47 @@ jobs:
           python -m pip install -r dev-requirements.txt
           python -m pip install -e . --no-deps
 
+      # Unit-test conventions of WORKFLOW-LOCAL.md: placement, docstrings,
+      # and legacy files that only shrink against the PR's exact base.
+      - name: Check test conventions
+        env:
+          DEVCAPSULE_DIFF_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
+        run: python scripts/validate_unittests_follow_conventions.py
+
       - name: Run tests with coverage
         run: >-
           python -m pytest tests/
           --cov-report=term-missing
           --cov-report=xml:coverage.xml
           --cov-report=html:htmlcov
+
+      # Test PR head and compare its merge-base with the event's exact base SHA.
+      # This keeps coverage and annotation coordinates on the same PR revision.
+      - name: Compute advisory diff coverage
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git cat-file -e "$PR_BASE_SHA^{commit}"
+          git merge-base "$PR_BASE_SHA" HEAD
+          diff-cover coverage.xml --compare-branch="$PR_BASE_SHA" \
+            --ignore-staged --ignore-unstaged \
+            --format markdown:diff-cover.md,json:diff-cover.json
+          python scripts/diff_coverage_annotations.py
+
+      # Both figures go into the PR description between marker comments, so
+      # a merge that takes the description as its message carries them too.
+      # A pull request from a fork gets a read-only token that cannot edit its
+      # description; the job summary and the uploaded reports still have them.
+      - name: Publish coverage numbers to the pull request
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python -m coverage json -o coverage.json
+          python scripts/publish_coverage_numbers_to_pr.py
 
       - name: Publish coverage summary
         if: ${{ always() && hashFiles('devcapsule-src/.coverage') != '' }}
@@ -85,14 +203,33 @@ jobs:
           name: python-coverage
           path: |
             devcapsule-src/coverage.xml
+            devcapsule-src/coverage.json
             devcapsule-src/htmlcov/
+            devcapsule-src/diff-cover.md
+            devcapsule-src/diff-cover.json
           if-no-files-found: error
           retention-days: 30
+
+  ci-gate:
+    name: ci-gate
+    needs: [changes, docs-build, pytest]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Manual runs may test an old ref without the gate script. Use the
+          # implementation belonging to this workflow, not the test target.
+          ref: ${{ github.workflow_sha }}
+      - name: Require successful routing and applicable jobs
+        env:
+          CI_NEEDS: ${{ toJSON(needs) }}
+        run: python3 devcapsule-src/scripts/ci_gate.py
 
   publish-coverage-badge:
     name: Publish coverage badge
     needs: pytest
-    if: github.event_name == 'push' && github.repository == 'ccozianu/devcapsule'
+    if: github.event_name == 'push' && github.repository == 'mycodespace-ai/devcapsule'
     runs-on: ubuntu-24.04
     permissions:
       contents: write

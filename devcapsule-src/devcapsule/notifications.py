@@ -404,7 +404,8 @@ def store_in_environment(environ: Mapping[str, str] = os.environ) -> Notificatio
         decisions = environ.get(DECISIONS_ENV)
         return NotificationStore(directory, Path(decisions).resolve() if decisions else directory.parent / "decisions")
     # Resolve the environment's base, keeping the application directories no-follow.
-    state = XdgHomes.from_environment(environ).state.parent.resolve() / "devcapsule"
+    root = XdgHomes.from_environment(environ).state
+    state = root.parent.resolve() / root.name
     decisions = environ.get(DECISIONS_ENV)
     return NotificationStore(state / "notifications", Path(decisions).resolve() if decisions else state / "decisions")
 

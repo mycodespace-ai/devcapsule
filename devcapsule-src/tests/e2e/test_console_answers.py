@@ -25,6 +25,8 @@ import pytest
 from devcapsule.host_daemon import current_container, requires_translation, translate_bind_sources
 from tests.e2e.ide_session import SURFACES, command, ide_session, wait_for_console_url, workspace_root
 
+pytestmark = pytest.mark.legacy
+
 EVIDENCE_ROOT = Path(__file__).resolve().parents[2] / "dist" / "e2e-evidence" / "console-smoke"
 SURFACE = next(surface for surface in SURFACES if surface.name == "codium")
 

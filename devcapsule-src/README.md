@@ -264,7 +264,7 @@ release_dir="$PWD/dist/releases/$release_tag"
 mkdir -p "$release_dir"
 for asset in devcapsule.pex devcapsule.pex.sha256 release-manifest.json; do
   curl --fail --location --output "$release_dir/$asset" \
-    "https://github.com/ccozianu/devcapsule/releases/download/$release_tag/$asset" || exit 1
+    "https://github.com/mycodespace-ai/devcapsule/releases/download/$release_tag/$asset" || exit 1
 done
 (cd "$release_dir" && sha256sum --check devcapsule.pex.sha256) || exit 1
 chmod 0755 "$release_dir/devcapsule.pex"
@@ -544,9 +544,12 @@ devcapsule project checkout decisions check DECISIONS-DIR/ID.json
 devcapsule project checkout decisions hand-off DECISIONS-DIR/ID.json
 ```
 
-Each runs `python -m devcapsule_webconsole.decisions` with the console the
-base installs under `/opt/devcapsule-webconsole`, or the checkout's mounted
-console source when the runtime plan names one. `hand-off` prints the
+Each runs `python -m devcapsule_webconsole.decisions` with the console
+interpreter under `/opt/devcapsule-webconsole` and the launcher-delivered
+package at `/opt/devcapsule/webconsole` (or the checkout's mounted console
+source when an unbuilt source run or `DEVCAPSULE_DEV_WEBCONSOLE=1` sets
+`console.source_path`, falling back to the base image's copy when neither is
+present). `hand-off` prints the
 decision as numbered chat text ending with the link into the console, with
 the run's token; the link belongs in the chat, never in a record. Outside a
 capsule the command says where the module is. The contract is
@@ -889,7 +892,7 @@ will continue to use immutable digests.
 
 The immutable v026 image uses agent-neutral base recipe version 5, embeds the
 self-contained DevCapsule PEX released from source revision `91d50b1...` at
-the canonical `ccozianu/devcapsule` repository, and contains the supported
+the canonical `mycodespace-ai/devcapsule` repository, and contains the supported
 Python, Node.js, Java, Maven, and PostgreSQL client toolchain. It contains no
 ambient agent CLI.
 

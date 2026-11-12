@@ -1,0 +1,23 @@
+"devcapsule-checkout-schema-version" = 1
+
+["authorization"]
+
+["authorization"."base-image"]
+"lock-digest" = "3298373f3fde1871aa10cd13ee42f9d957d99ed23cd92d7e121ed91fbde2d04a"
+"reference" = "docker.io/mycodespaceai/devcapsule-base@sha256:8c97d308b4ac8172ce91ef4f96406063bfcd85a55efb09d4a23e795b10a834a3"
+
+["authorization"."network"]
+"recommendation-digest" = "87b5e1ed95e48759fcec2bbc70efc42bef25c4634266012bae7ca9af31a65916"
+"value" = "host"
+
+["capabilities"]
+"lock" = "\"capabilities-digest\" = \"15544b2955fcd51c92d662a96bed7665f68228d4d6ece71bfb4df6ab45a51d6f\"\n\"devcapsule-lock-format-version\" = 1\n\"platform\" = \"linux-amd64\"\n\"resolution-matrix-version\" = \"embedded-29\"\n\n[\"base\"]\n\"build-mnemonic\" = \"v0.3.0-rc6\"\n\"contract\" = \"ubuntu-24.04@11\"\n\"recipe-source\" = \"devcapsule-src/devcapsule/images/base.py\"\n\"reference\" = \"docker.io/mycodespaceai/devcapsule-base@sha256:8c97d308b4ac8172ce91ef4f96406063bfcd85a55efb09d4a23e795b10a834a3\"\n\n[\"capability-providers\"]\n\"python-ide\" = [\"pycharm\"]\n\n[\"components\"]\n\"interactive-surface\" = \"pycharm\"\n\n[\"components\".\"pycharm\"]\n\"delivery-policy\" = \"local-materialization\"\n\"sha256\" = \"4a37cb2d15703553c61e814d8e014bfa47308508470de5f968c4e9645b771675\"\n\"url\" = \"https://download.jetbrains.com/python/pycharm-2026.2.0.1.tar.gz\"\n\"variant\" = \"professional\"\n\"version\" = \"2026.2.0.1\"\n\n[\"materialization\"]\n\"recipe\" = \"jetbrains-local-materialization\"\n\"recipe-version\" = \"1\"\n"
+"selected" = ["python-ide"]
+"without" = []
+
+["checkout"]
+"path" = "/home/devcapsule/.local/share/devcapsule/e2e-workspaces/e2e-ide-required-7fa4db67"
+
+["project"]
+"creator" = "mailto:e2e@devcapsule.test"
+"slug" = "e2e-ide-required-7fa4db67"

@@ -1,0 +1,112 @@
+{
+  "checked_at": "2026-10-31T08:22:36.096752+00:00",
+  "pex_sha256": "413b1d45bac9c39b6fa5fab68090e43550c9e255108de48b387c50a715c4fcf2",
+  "runtime_inspection": [
+    {
+      "cwd": "/workspace/301e4208ef81-ChatGPT_Codex",
+      "command": [
+        "project",
+        "config",
+        "show",
+        "--json"
+      ],
+      "exit_code": 0,
+      "valid_json": true
+    },
+    {
+      "cwd": "/workspace/301e4208ef81-ChatGPT_Codex",
+      "command": [
+        "project",
+        "versions",
+        "show",
+        "--json"
+      ],
+      "exit_code": 0,
+      "valid_json": true
+    },
+    {
+      "cwd": "/workspace/301e4208ef81-ChatGPT_Codex",
+      "command": [
+        "project",
+        "info",
+        "--json"
+      ],
+      "exit_code": 0,
+      "valid_json": true
+    },
+    {
+      "cwd": "/workspace/301e4208ef81-ChatGPT_Codex/devcapsule-src",
+      "command": [
+        "project",
+        "config",
+        "show",
+        "--json"
+      ],
+      "exit_code": 0,
+      "valid_json": true
+    },
+    {
+      "cwd": "/workspace/301e4208ef81-ChatGPT_Codex/devcapsule-src",
+      "command": [
+        "project",
+        "versions",
+        "show",
+        "--json"
+      ],
+      "exit_code": 0,
+      "valid_json": true
+    },
+    {
+      "cwd": "/workspace/301e4208ef81-ChatGPT_Codex/devcapsule-src",
+      "command": [
+        "project",
+        "info",
+        "--json"
+      ],
+      "exit_code": 0,
+      "valid_json": true
+    },
+    {
+      "cwd": "/opt",
+      "command": [
+        "project",
+        "config",
+        "show",
+        "--json"
+      ],
+      "exit_code": 0,
+      "valid_json": true
+    },
+    {
+      "cwd": "/opt",
+      "command": [
+        "project",
+        "versions",
+        "show",
+        "--json"
+      ],
+      "exit_code": 0,
+      "valid_json": true
+    },
+    {
+      "cwd": "/opt",
+      "command": [
+        "project",
+        "info",
+        "--json"
+      ],
+      "exit_code": 0,
+      "valid_json": true
+    },
+    {
+      "command": [
+        "project",
+        "not-a-subcommand"
+      ],
+      "exit_code": 2,
+      "unknown_command_diagnostic": true,
+      "launcher_guard_absent": true,
+      "diagnostic": "devcapsule: devcapsule project: unknown command 'not-a-subcommand'; commands: checkout, config, diagnose, info, init, list, recursive-e2e, run, state, versions."
+    }
+  ]
+}

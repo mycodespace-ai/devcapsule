@@ -133,8 +133,44 @@ class CapabilityPolicy:
         minimums = dict(self.minimums)
         return tuple(f"{name}>={minimums[name]}" if name in minimums else name for name in self.required)
 
+    def departing(self, departures: tuple[RequirementDeparture, ...]) -> CapabilityPolicy:
+        """The policy one launch derives from: the departed requirements set aside, nothing else changed.
+
+        The project's declaration is untouched; this is the launch's view of
+        it. A departure names a required capability; one that names nothing
+        the policy requires changes nothing.
+        """
+        departed = {departure.capability for departure in departures}
+        if not departed & set(self.required):
+            return self
+        return CapabilityPolicy(tuple(name for name in self.required if name not in departed), self.optional,
+                                tuple(item for item in self.minimums if item[0] not in departed))
+
     def document(self) -> dict[str, Any]:
         return {"required": list(self.requirements()), "optional": list(self.optional)}
+
+
+IDE_REQUIREMENT = "ide-requirement"
+
+
+@dataclass(frozen=True)
+class RequirementDeparture:
+    """One named departure from the project's contract, accepted by the developer for one launch.
+
+    ``policy`` identifies the check set aside; the first and only one is
+    :data:`IDE_REQUIREMENT`, the project's required IDE replaced by another
+    IDE (``project run --ide IDE --force``). ``capability`` is the required
+    capability set aside and ``replacement`` the capability the launch runs
+    instead. A departure is not satisfaction: the launch's records say which
+    requirement it set aside. It is never saved; the next launch derives
+    from the project's declaration again.
+    """
+    policy: str
+    capability: str
+    replacement: str
+
+    def document(self) -> dict[str, str]:
+        return {"policy": self.policy, "required": self.capability, "launched": self.replacement}
 
 
 @dataclass(frozen=True)

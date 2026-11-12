@@ -1,0 +1,59 @@
+{
+  "artifacts": {
+    "devcapsule.pex": "f59e05cdbb5ab157641aae5a27f269f963400a650c1ae3db1650e1881a6df714"
+  },
+  "base-references": [
+    "docker.io/mycodespaceai/devcapsule-base@sha256:d7047ced8556cd35964fcc058a1101cf2b5b202f7a5daa2fdd434dcda5ed82c9"
+  ],
+  "frozen-inputs": {
+    "distributions": {
+      "annotated_types-0.7.0-py3-none-any.whl": "0266aff6ccf0882a4174e6e6a78b55166637f07d8f9cac1fb37e6a893d5bbc7a",
+      "pydantic-2.13.4-py3-none-any.whl": "25cebe815e819db0792fa7d04367035fcac696b03388e57c0a2a4c553f700429",
+      "pydantic_core-2.46.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": "a38810a1fc628ea053ad53c16ddaadbe6a87c15ddd66884428ed2d8652453462",
+      "python_on_whales-0.81.0-py3-none-any.whl": "599c82ffb08ca10c655ac95eb4369ded0c07ffb96a14293fa010b576c40d2b6c",
+      "typing_extensions-4.16.0-py3-none-any.whl": "9804846b9fd8a78a061cd71e718cb1bebeb66083ed04e6f44b8fa5d64fe6f569",
+      "typing_inspection-0.4.2-py3-none-any.whl": "99fc01324dbf9249637799994497d65831118f1ba48f220561939dafacf8a1bc"
+    },
+    "files": {
+      "dev-requirements.txt": "d4ca1922d75b6730117488500283078cc6dcc428201dad9cc666ce55c7905685",
+      "pyproject.toml": "2ecbecb9867d6c2fc1fe2db5ce543dbb013e73fa1370f308a45b70332342cf39",
+      "requirements.txt": "1863b864ffbb44010d53a159231c45ded63c675a156ad3908a56b0ced98c4c72",
+      "scripts/build-pex.sh": "b3db63185ec330a1515e8f16b1b2802a32f2dccbec5fc18e83062673e6c2d13f"
+    },
+    "python": {
+      "hash": "5acfa3e9ba26b51ae161c83aff278da915b590d22373a424b2ba55b8afe91fcc",
+      "name": "cpython-3.12.14+20260814-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+    }
+  },
+  "prerelease": false,
+  "promotion": {
+    "main-revision": "31d44fa473a86f608110caa53ee38c6aef40a717",
+    "path": "engineering-docs/releases/v0.3.0.json",
+    "record": {
+      "accepted-by": "Costin Cozianu",
+      "candidate-sha256": "413b1d45bac9c39b6fa5fab68090e43550c9e255108de48b387c50a715c4fcf2",
+      "candidate-tag": "v0.3.0-rc9",
+      "evidence": [
+        "On 2026-10-31 Costin Cozianu requested final 0.3.0 publication after the verified RC9 restart, then answered \"Yes to both questions, let's move ahead\" to the final scope/provider dispositions. C17 and the nine undecided September 28 documentation proposals move to 0.3.1 planning; RC9 is accepted with the documented provider/editor verification limits. This does not assert additional unobserved provider actions.",
+        "RC9 publication succeeded: https://github.com/ccozianu/devcapsule/actions/runs/41181720227 ; downloaded assets, checksum and source identity verified. Candidate source integrated through PR #331 at main 4b59b10daede8b77ff7c7aee753b9df483d62458.",
+        "Eight downloaded-PEX E2E tests passed, including clean-machine, component-cache, exact launcher delivery and runtime/display lifecycle; the two-capsule shared-browser authentication regression passed against the fixed published base. Evidence: engineering-docs/wip/2026-09-18-maintenance/evidence/2026-10-31-rc9/published/.",
+        "Owner restarted after clearing the saved RC0 local-base override. Running PEX matches RC9; actual environment layers match published base image 5405ee00017d77b907fb78c44eab94a819e536c4c0acb600b28dee86b2ff0e68; installed console security code matches the fix. Console authenticated/anonymous probes pass; host-X11 rather than noVNC is selected.",
+        "Nine in-capsule inspection commands pass across project root, descendant and /opt; unknown subcommand gives the correct diagnostic. Packaged RC9 passed 18 unpacked-cache/network regression cases; published-PEX recursive successor launches, inspects and cleans up in a fresh isolated workspace. Fresh Codium launch accepts run-once host networking with no project recommendation and saved access denied.",
+        "Full source gate before RC9: 2645 unit, 18 packaging and 374 console tests plus type/syntax/CLI/PEX/docs checks. Website checked 252 pages and 21031 links/assets/anchors. Release notes, promoted manifest and docs branch match RC9; release-docs check passes.",
+        "Final freshness recheck: Codex 0.166.0 and Antigravity 1.4.12 unchanged; Claude latest 2.1.316 versus tested 2.1.314. Hold tested RC9 pins for the requested final promotion; review newer Claude during 0.3.1 preparation. Provider/editor verification limits remain explicit."
+      ],
+      "integration": {
+        "baseline": "3c91183ffd2130f6c7b40d2f9e3fd41588f977eb",
+        "method": "ancestry"
+      },
+      "schema-version": 1,
+      "source-revision": "475427da033633ff5ee0e44e09face700630bf36",
+      "tag": "v0.3.0"
+    }
+  },
+  "release-branch": "release-0.3.0",
+  "schema-version": 2,
+  "source-revision": "475427da033633ff5ee0e44e09face700630bf36",
+  "tag": "v0.3.0",
+  "version": "0.3.0"
+}

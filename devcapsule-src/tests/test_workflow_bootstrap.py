@@ -14,6 +14,8 @@ from devcapsule.workflow_bootstrap import (
     project_workflow_type,
 )
 
+pytestmark = pytest.mark.legacy
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 

@@ -10,6 +10,8 @@ from python_on_whales import docker
 from python_on_whales.exceptions import DockerException
 
 from devcapsule.compat import CliError
+from devcapsule.host_daemon import daemon_architecture
+from devcapsule.platforms import Platform
 from devcapsule.images.build import BuildxImageBuilder, ImageBuildSpec
 from devcapsule.images.metadata import inspect_local_image
 from devcapsule.materialization import (
@@ -27,7 +29,7 @@ from devcapsule.configuration.authorization import (
     authorized_base_selection,
     review_authorizations,
 )
-from devcapsule.configuration.trust import WorkstationTrust
+from devcapsule.configuration.trust import HomeTrust
 from devcapsule.runtime_artifact import runtime_artifact
 from devcapsule.runtime_command import RuntimeCommand
 
@@ -63,19 +65,20 @@ def realize_environment(
     materialize: Materialize | None = None,
     report: Callable[[str], None] | None = None,
     prepare_base: Callable[[ImageDetails], None] | None = None,
-    trust: WorkstationTrust | None = None,
+    trust: HomeTrust | None = None,
 ) -> RealizedEnvironment:
     """Strictly reuse or materialize the canonical image for one resolved project."""
 
     from devcapsule.configuration.capabilities import CapabilityPolicy
     if (base_override is not None and "capabilities" in selected.manifest
-            and CapabilityPolicy.read(selected.manifest).minimums):
+            and CapabilityPolicy.read(selected.manifest).departing(selected.departures).minimums):
         if base_override != selected.lock.get("base", {}).get("reference"):
             raise CliError("A base override cannot establish the project's minimum-version guarantee; use its pinned compatible base.")
     locked = parse_locked_environment(selected.lock)
-    from devcapsule.configuration.storage import load_workstation
+    capsule_platform = Platform.parse(locked.platform)
+    from devcapsule.configuration.storage import load_settings
     if trust is None:
-        trust = WorkstationTrust.read(load_workstation())
+        trust = HomeTrust.read(load_settings())
     reviews = review_authorizations(selected.manifest, selected.lock, selected.checkout, trust)
     problems = [
         item for item in reviews if item.problem is not None
@@ -114,7 +117,7 @@ def realize_environment(
     elif local_authorization:
         obtain = required_local_image
     else:
-        obtain = ensure_local_image
+        obtain = lambda reference: ensure_local_image(reference, capsule_platform)
     inspect = inspect_image or optional_local_image
     require = require_image or required_local_image
     base = obtain(base_reference)
@@ -138,7 +141,7 @@ def realize_environment(
         # One context root for every build: BuildKit's incremental transfer of
         # the IDE trees is keyed on this path, see BuildxImageBuilder.
         builder = BuildxImageBuilder(context_root=selected_cache / "build-contexts" / "context")
-        build = lambda spec: builder.build(spec, network="none")
+        build = lambda spec: builder.build(spec, network="none", platform=capsule_platform)
     materialize_environment = materialize or ensure_materialized_surface
     # Explanation/reporting hooks ride only the real materializer; injected
     # test materializers keep their narrower signature.
@@ -146,7 +149,7 @@ def realize_environment(
         {}
         if materialize is not None
         else {
-            "runtime_pex": runtime_artifact(),
+            "runtime_pex": runtime_artifact(capsule_platform),
             "runtime_command": RuntimeCommand(runtime.get("devcapsule-command", RuntimeCommand.STANDARD)),
             "report": report,
             "list_formations": lambda: component_formations(locked.component_id),
@@ -178,10 +181,11 @@ def realize_environment(
     )
 
 
-def ensure_local_image(reference: str) -> ImageDetails:
+def ensure_local_image(reference: str, platform: Platform) -> ImageDetails:
+    """The local image at ``reference``, pulled for the lock's ``platform`` when absent."""
     try:
         if not docker.image.exists(reference):
-            docker.image.pull(reference)
+            docker.image.pull(reference, platform=platform.emulated_docker_platform(daemon_architecture()))
     except DockerException as exc:
         raise CliError(f"Cannot obtain Docker image {reference!r}: {exc}") from exc
     return required_local_image(reference)
@@ -246,7 +250,7 @@ def omit_unavailable_optional(selected: ResolvedProject, url: str) -> ResolvedPr
     from devcapsule.configuration.capabilities import CapabilityPolicy, LocalCapabilities
     from devcapsule.configuration.capability_selection import matrix_for, usable_lock
     from devcapsule.configuration.model import Configuration
-    policy = CapabilityPolicy.read(selected.manifest)
+    policy = CapabilityPolicy.read(selected.manifest).departing(selected.departures)
     if not policy.optional:
         return None
     matrix = matrix_for(selected.lock)
@@ -265,7 +269,7 @@ def omit_unavailable_optional(selected: ResolvedProject, url: str) -> ResolvedPr
     lock, _ = usable_lock(policy, selected.lock, choice)
     checkout = deepcopy(selected.checkout)
     checkout.setdefault("capabilities", {})["without"] = list(choice.without)
-    from devcapsule.configuration.storage import load_workstation
-    configuration = Configuration(selected.manifest, lock, checkout, load_workstation())
+    from devcapsule.configuration.storage import load_settings
+    configuration = Configuration(selected.manifest, lock, checkout, load_settings(), departures=selected.departures)
     configuration.review().require_ready(selected.root)
     return replace(selected, lock=lock, checkout=checkout, resolution=configuration.resolve().document())

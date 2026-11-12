@@ -1,0 +1,63 @@
+{
+  "tag": "mycodespaceai/devcapsule-base:v0.3.0-base-20261031",
+  "registry_digest": "sha256:d7047ced8556cd35964fcc058a1101cf2b5b202f7a5daa2fdd434dcda5ed82c9",
+  "image_id": "sha256:5405ee00017d77b907fb78c44eab94a819e536c4c0acb600b28dee86b2ff0e68",
+  "builder": {
+    "build_mnemonic": "v0.3.0-local-linux-x86_64",
+    "schema_version": 2,
+    "source_repository": "https://github.com/ccozianu/devcapsule",
+    "source_revision": "12a30fa60322de585810048881ee166fcdb26854",
+    "source_url": "https://github.com/ccozianu/devcapsule/commit/12a30fa60322de585810048881ee166fcdb26854",
+    "version": "0.3.0"
+  },
+  "builder_pex_sha256": "3d61ba0994f69bd10eb87a31e5fd52b1cdd920327d7b6a2a732b68e3efa6e27f",
+  "labels": {
+    "devcapsule.base.display": "contained",
+    "devcapsule.base.recipe": "ubuntu-24.04",
+    "devcapsule.base.recipe-source": "devcapsule-src/devcapsule/images/base.py",
+    "devcapsule.base.recipe-status": "ready",
+    "devcapsule.base.recipe-version": "11",
+    "devcapsule.base.runtime": "launcher-supplied",
+    "devcapsule.base.services": "docker-cli,java,maven,node,postgresql-client,python",
+    "devcapsule.base.webconsole": "/opt/devcapsule-webconsole",
+    "devcapsule.component.maven.home": "/opt/maven/current",
+    "devcapsule.component.maven.license": "Apache-2.0",
+    "devcapsule.component.maven.version": "3.9.16",
+    "devcapsule.component.postgresql-client.license": "PostgreSQL",
+    "devcapsule.component.temurin.home": "/opt/java/current",
+    "devcapsule.component.temurin.license": "GPL-2.0-with-classpath-exception",
+    "devcapsule.component.temurin.version": "25.0.4+7",
+    "devcapsule.image.canonical-name": "mycodespaceai/devcapsule-base:v0.3.0-base-20261031",
+    "devcapsule.image.kind": "base",
+    "devcapsule.image.managed": "true",
+    "devcapsule.metadata.version": "1",
+    "devcapsule.source.repository": "https://github.com/ccozianu/devcapsule",
+    "devcapsule.source.revision": "12a30fa60322de585810048881ee166fcdb26854",
+    "devcapsule.source.url": "https://github.com/ccozianu/devcapsule/commit/12a30fa60322de585810048881ee166fcdb26854",
+    "org.opencontainers.image.revision": "12a30fa60322de585810048881ee166fcdb26854",
+    "org.opencontainers.image.source": "https://github.com/ccozianu/devcapsule",
+    "org.opencontainers.image.version": "v0.3.0-local-linux-x86_64"
+  },
+  "installed_console": {
+    "console_security_sha256": "e59ca05eafe62414fcbdd57aa7a1c411cb0d42aa988a97042bea1b591b5d1850",
+    "sample_cookie_name": "devcapsule-console-token-12345",
+    "installed_path": "/opt/devcapsule-webconsole/venv/lib/python3.12/site-packages/devcapsule_webconsole/security.py"
+  },
+  "previous_layers": [
+    "sha256:65e5d715ea720349e6475f91651a0956279fc295a45fd73aa04f1cec046281a1",
+    "sha256:5f60b8e404c3fce79ccda3e49c0c8891786026e401ac355c039e4820d0652188",
+    "sha256:d2c876a5753b583c8e396179ef73a21531c1ec4b5d8f9770d5e5044758c3a27b",
+    "sha256:5984dfc1f94ee8d811d9c446f68e8817fe631154b657369e9a9e94b5b67553ee",
+    "sha256:a41f8c641105e1c4b15fae6e91ee794079ae9ab97537273de764fd9dffb17766",
+    "sha256:c51807ddc08dfccc2facb7d56c9ece3a2c8a51a6151631f1a46d9a8abdc133ed"
+  ],
+  "rebuilt_layers": [
+    "sha256:65e5d715ea720349e6475f91651a0956279fc295a45fd73aa04f1cec046281a1",
+    "sha256:5f60b8e404c3fce79ccda3e49c0c8891786026e401ac355c039e4820d0652188",
+    "sha256:d2c876a5753b583c8e396179ef73a21531c1ec4b5d8f9770d5e5044758c3a27b",
+    "sha256:5984dfc1f94ee8d811d9c446f68e8817fe631154b657369e9a9e94b5b67553ee",
+    "sha256:a41f8c641105e1c4b15fae6e91ee794079ae9ab97537273de764fd9dffb17766",
+    "sha256:89673ce4351fa48fbff1ee6f317e0988e032a5b98f2a5cabb09a22494706bc01"
+  ],
+  "registry_pull_matches_built_image": true
+}

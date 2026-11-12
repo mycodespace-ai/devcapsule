@@ -43,6 +43,8 @@ from devcapsule.configuration.storage import (
     manifest_for,
 )
 
+pytestmark = pytest.mark.legacy
+
 FIXTURE = Path(__file__).parent / "resources/compat/v0.2.11"
 OLD_LOCK = tomllib.loads((FIXTURE / "project/.devcapsule/devcapsule.linux-amd64.lock").read_text())
 OLD_BASE = OLD_LOCK["base"]["reference"]

@@ -78,6 +78,15 @@ the checkout-local environment described in the [developer environment](../../de
    Fixture tests cannot supply that acceptance. Before accepting a candidate,
    satisfy *Documentation Is Part Of The Release* below: the release branch's
    `docs/` describes this version and passes the website's build check.
+   Before the last candidate, write `engineering-docs/releases/vX.Y.Z/notes.md`
+   and run `devcapsule-src/.venv/bin/python devcapsule-src/scripts/release-docs.py promote X.Y.Z`
+   on the release branch. Read the printed lifecycle moves. Use repeatable
+   `--hold VERSION` only for an owner-authorized status exception.
+   Commit the notes and promotion, then push the documentation branch with
+   `git push origin HEAD:refs/heads/docs-X.Y.Z`. The helper changes no Git ref.
+   Merge the release branch into `main` before tagging that candidate.
+   This places the promoted manifest and notes in the exact source that
+   can later be accepted and tagged as final.
    Make release-blocking fixes on
    the release branch, account for the bug on main using the appropriate method,
    and publish the next RC number without changing earlier tags. Repeat until
@@ -98,10 +107,15 @@ the checkout-local environment described in the [developer environment](../../de
    merge alone does not authorize leaving the bug in main. Do not rebase the
    tested candidate to make it match main.
 6. **Publish the final tag at the accepted candidate commit.** Use the final
-   tagging commands below, and not before `engineering-docs/releases/vX.Y.Z/notes.md`
-   exists on the release branch. Wait for the final backend run to finish. It
-   rebuilds version metadata, checks frozen inputs against the RC, and repeats
-   the automated gates. A pushed tag alone does not mean a successful release.
+   tagging commands below. As the last check before creating the tag, run
+   `devcapsule-src/.venv/bin/python devcapsule-src/scripts/release-docs.py check X.Y.Z`
+   against the accepted candidate's checkout. The final-tag job repeats the
+   check and compares the documentation branch's `docs/` tree with the tag.
+   A failure stops publication. Wait for the final backend run to finish.
+   It rebuilds version metadata, checks frozen inputs against the RC, and
+   repeats the automated gates. It uses the release notes as the GitHub body
+   and dispatches the test website after publication. A pushed tag alone
+   does not mean a successful release.
 7. **Verify delivery.** Confirm the GitHub release is non-draft and is a final
    release, with all three assets. Download them into a fresh directory, check
    `sha256sum --check devcapsule.pex.sha256`, make the PEX executable, and run
@@ -112,9 +126,10 @@ the checkout-local environment described in the [developer environment](../../de
    final publication the release branch closes; resume ordinary work on a fresh
    `ws-<name>/...` branch from main or conclude the driving workstream; `main`
    has carried the next development version since the cut.
-   Then promote the version in `docs/versions.yaml` on main, demote the
-   previous ones, and publish the website, per *Documentation Is Part Of The
-   Release*.
+   Verify the dispatched test website. The owner reads it and promotes its
+   candidate to production in the website repository. The manifest already
+   reached `main` through the pre-final merge. Both website modes check
+   published downloads, so a build before the final release fails harmlessly.
 
 ## Documentation Is Part Of The Release
 
@@ -133,16 +148,25 @@ obligations of the driving workstream, in the order the checklist meets them:
    `engineering-docs/releases/vX.Y.Z/notes.md` on the release branch: plain
    Markdown for adopters, what changed for them, compatibility exceptions
    with remedies, tested agent versions and holdbacks from the freshness
-   review, deferred items. The GitHub release body is this file. Automating
-   that in the backend is release-tooling work, tracked in the 0.2.16
-   planning; until then the operator pastes it.
-3. **After the final tag, the manifest and the site follow.** On `main`,
-   `docs/versions.yaml` gains or promotes the version to `supported` and
-   `current` and demotes the previous ones under the owner's pre-V1 notice;
-   then the website is published, test deployment and candidate from this
-   repository's Website workflow, production promotion by the owner's
-   single run in the website repository. Publication on the tag itself is
-   a follow-up in the 0.2.16 planning.
+   review, deferred items. `release-docs.py check X.Y.Z` refuses missing or
+   empty notes and `<...>` placeholders. The final job passes the output of
+   `release-docs.py notes X.Y.Z`, without front matter, to `--notes-file`.
+   Candidates retain GitHub's generated notes.
+3. **Before the final tag, promote the manifest; after publication, build
+   the site.** Run `release-docs.py promote X.Y.Z` on the release branch.
+   It makes the version `current` and `supported`, demotes the previous
+   supported version to `deprecated`, and demotes deprecated versions to
+   `unsupported`. It sets `devel`'s `source-version` to the promoted release.
+   Commit it with the notes before the last candidate. Push `docs-X.Y.Z`
+   at that commit, then merge to `main` before the candidate tag.
+   The final-tag job checks the manifest, notes, and documentation ref
+   before publication. After publication, it dispatches this repository's
+   Website workflow on `main`, in `production` mode, for the test domain
+   `https://test-devcapsule.mycodespace.ai` and base path `/`.
+   Both website modes run `release-docs.py published`. Every listed
+   non-development version must have a non-draft final GitHub release
+   with `devcapsule.pex`. The owner reads the test deployment and promotes
+   its candidate in the website repository.
 
 The contract these follow is [the content–website contract, version 1](../../specifications/product/content-website-contract.md);
 the ideal structure of the documentation is in
@@ -301,7 +325,13 @@ The tag workflow:
 2. Recovers exact existing assets, or builds the self-contained PEX.
 3. Records source identity, base digests, checksum, build-input hashes, dependency
    distribution fingerprints and the embedded Python fingerprint in the manifest.
-4. Runs the packaging integration tests against the built PEX. Nothing in
+4. Runs the integration tests that need no Docker against the built PEX,
+   and, since 2026-11-06, requires on `main`, read as the acceptance record
+   is read, the record of a run of the integration tests marked `docker`
+   on the candidate's source revision, under
+   `engineering-docs/releases/vX.Y.Z/test-runs.json` (*Release
+   Policy* rule 9 in `WORKFLOW-LOCAL.md`; the workflow's check of the
+   record is the maintenance workstream's next slice). Nothing in
    the workflow runs Docker: a hosted runner is an environment nobody
    controls, and a proof that depends on it gates the candidate on the runner
    (owner ruling 2026-09-24, after rc2 of 0.2.14 failed on a Docker build
@@ -324,6 +354,16 @@ uploads from the retained Actions artifact. Reruns verify and test the existing
 bytes; they never replace published candidate assets or move tags.
 
 ## Acceptance And Final Promotion
+
+Since 2026-11-06, *Release Policy* rule 10 in `WORKFLOW-LOCAL.md`: at
+least one end-to-end test runs against the downloaded candidate, the run
+goes into `engineering-docs/releases/vX.Y.Z/test-runs.json` on `main` with
+the candidate's checksum, the release notes carry the section *End-to-end
+tests run* rendered from that record, with the argument for a subset when
+fewer than all ran, and the final-tag job checks record against notes and
+revision. The record's schema, the renderer and the check are the
+maintenance workstream's next slice; until they land the reviewer holds
+the rule.
 
 Accept an exact candidate's checksum and source commit with smoke/E2E evidence.
 Generate the reviewable record on the release branch after candidate acceptance:

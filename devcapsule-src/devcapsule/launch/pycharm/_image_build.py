@@ -24,6 +24,7 @@ from devcapsule.images.build import (
     resource_to_tempdir,
 )
 from devcapsule.images.tooling import NODE_CURRENT_BIN, node_tooling_component
+from devcapsule.platforms import Platform
 
 DEFAULT_BASE_IMAGE = "ubuntu:24.04"
 DEFAULT_IMAGE = "pycharm-isolated:latest"
@@ -162,7 +163,7 @@ def build_pycharm_image(options: PycharmImageBuildOptions, builder: BuildxImageB
         build_root = Path(stack.enter_context(tempfile.TemporaryDirectory(prefix="devcapsule-pycharm-build-")))
         pycharm_root = normalize_pycharm_source(options.pycharm, build_root)
         spec = build_pycharm_image_spec(options, pycharm_root=pycharm_root, assets_root=assets_dir)
-        builder.build(spec, network=options.network)
+        builder.build(spec, platform=Platform.current(), network=options.network)
     return 0
 
 

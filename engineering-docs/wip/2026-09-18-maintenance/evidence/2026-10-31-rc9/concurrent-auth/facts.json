@@ -1,0 +1,39 @@
+{
+  "pex_sha256": "c7186b5a1739eb8dff3f175a31419b59481e4ea062850ae2530da60d415acfa1",
+  "builder": {
+    "build_mnemonic": "v0.3.0-local-linux-x86_64",
+    "schema_version": 2,
+    "source_repository": "https://github.com/ccozianu/devcapsule",
+    "source_revision": "unknown",
+    "source_url": "unknown",
+    "version": "0.3.0"
+  },
+  "console_ports": [
+    35713,
+    43707
+  ],
+  "cookie_names": [
+    "devcapsule-console-token-35713",
+    "devcapsule-console-token-43707"
+  ],
+  "ide_windows": [
+    {
+      "id": 6291459,
+      "class": "codium codium",
+      "name": "Welcome - e2e-ide-codium-e7762c9b - VSCodium"
+    },
+    {
+      "id": 6291459,
+      "class": "codium codium",
+      "name": "VSCodium"
+    }
+  ],
+  "environment_images": [
+    "sha256:d43faae343ac254ca599b601c597cc71a23f53d08942c4d03e74dd7459801142",
+    "sha256:d43faae343ac254ca599b601c597cc71a23f53d08942c4d03e74dd7459801142"
+  ],
+  "shared_browser_context": true,
+  "tokenless_navigation_and_reload": true,
+  "desktop_reload_and_reconnect": true,
+  "sibling_credentials_refused": true
+}

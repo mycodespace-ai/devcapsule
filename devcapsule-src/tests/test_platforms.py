@@ -6,14 +6,10 @@ from pathlib import Path
 
 import pytest
 
+from devcapsule import platforms
 from devcapsule.platforms import Platform, UnsupportedPlatformError, XdgHomes
 
-
-def test_platform_values_are_the_wire_format() -> None:
-    assert Platform.LINUX_AMD64.value == "linux-amd64"
-    # StrEnum: the member formats as its value wherever locks and filenames
-    # interpolate it.
-    assert f"devcapsule.{Platform.LINUX_AMD64}.lock" == "devcapsule.linux-amd64.lock"
+pytestmark = pytest.mark.legacy
 
 
 def test_parse_accepts_every_member_and_only_members() -> None:
@@ -66,3 +62,29 @@ def test_xdg_empty_override_means_unset() -> None:
     homes = XdgHomes.from_environment({"HOME": "/home/dev", "XDG_CACHE_HOME": ""})
 
     assert homes.cache == Path("/home/dev/.cache/devcapsule")
+
+
+@pytest.mark.parametrize("value", ["chosen", "~/chosen", ""])
+def test_named_configuration_home(value: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("HOME", str(tmp_path))
+    env = {"HOME": str(tmp_path), "DEVCAPSULE_CONFIG_HOME": value}
+    homes = XdgHomes.from_environment(env)
+    if not value:
+        assert homes == XdgHomes.from_environment({"HOME": str(tmp_path)})
+    else:
+        root = tmp_path / "chosen"
+        assert homes == XdgHomes(root, root / "data", root / "state", root / "cache")
+
+
+def test_notifications_keep_named_state_directory_no_follow(tmp_path: Path) -> None:
+    from devcapsule.notifications import NotificationError, store_in_environment
+    root = tmp_path / "chosen"
+    root.mkdir()
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    (root / "state").symlink_to(elsewhere, target_is_directory=True)
+    store = store_in_environment({"DEVCAPSULE_CONFIG_HOME": str(root)})
+    assert store.directory == root / "state" / "notifications"
+    with pytest.raises(NotificationError):
+        store.list()

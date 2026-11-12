@@ -23,6 +23,8 @@ from devcapsule.configuration.file_formats import ProjectConfigurationError, ren
 from devcapsule.configuration.storage import interrupted_activation, load_toml, manifest_for
 from tests.test_upgrade_recovery import checkout, install_external_fakes, invoke, review  # noqa: F401
 
+pytestmark = pytest.mark.legacy
+
 CLAUDE_TERMS = "https://www.anthropic.com/legal/commercial-terms"
 ANTIGRAVITY_TERMS = "https://antigravity.google/terms/"
 GUIDE = "https://devcapsule.mycodespace.ai/docs/current/configuration/software-approvals/"
@@ -79,7 +81,8 @@ def test_a_bumped_approved_download_is_a_software_approval(checkout) -> None:
 def test_trusted_vendor_suppresses_the_version_approval_offer(checkout, monkeypatch) -> None:
     project, record, _ = checkout
     approved_then_bumped(project, record)
-    assert invoke(project, "config", "trust", "accept", "claude-code") == 0
+    from tests.test_trust import accept
+    assert accept(project, "claude-code") == 0
     _, manifest = manifest_for(project)
     assert offer.pending_for(project, manifest) == ()
     monkeypatch.setattr(offer, "confirmation_key", lambda: pytest.fail("trusted vendor asked again"))
@@ -236,7 +239,7 @@ def test_run_with_other_pending_decisions_refuses_as_before(checkout, monkeypatc
     assert invoke(project, "run", "--no-update-check") == 3
     captured = capsys.readouterr()
     assert "Approve all of them?" not in captured.out
-    # The download's channel is the workstation's question (D-0011), named by its channel.
+    # The download's channel is the home's question (D-0011), named by its channel.
     assert "antigravity-cli" in captured.err and "Nothing was written" in captured.err
     assert "--trust antigravity-cli" in captured.err
     assert run_until_prepared(project) == 3

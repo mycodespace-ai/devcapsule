@@ -1,144 +1,138 @@
 ---
-description: What an update check can and cannot establish, where the freshness signals come from, and what to do when a component is unknown or stale.
+description: What an update check can and cannot establish, which vendor feeds DevCapsule reads, and how the maintained status fallback works.
 aliases:
   - /docs/guides/component-freshness/
 weight: 3
-updated: 2026-09-28
+updated: 2026-10-30
 ---
 # How DevCapsule checks component freshness
 
-This describes the implementation shipped in {{tag}}. It checks vendor metadata
-for six curated components and offers maintained guidance when those checks
-fail. The operational improvements described at the end are intended for V1;
-they are not guarantees of the current service.
+In {{tag}}, DevCapsule checks upstream vendor metadata for supported catalog
+components and falls back to a maintained compatibility feed when a vendor
+endpoint fails or changes format.
 
 ## What an update check establishes
 
-DevCapsule keeps these facts separate:
+`devcapsule project versions check` keeps six facts distinct instead of rolling
+them into one badge:
 
 | Fact | What it tells you |
 |---|---|
-| Available version | A vendor source advertises a release for your platform. |
-| Support or withdrawal | The source explicitly reports support, deprecation or absence from its registry. |
-| Security notice | A channel supplies an explicit notice; version age alone is insufficient. |
-| DevCapsule validation | We have evidence about a particular version set. A vendor release does not supply that evidence. |
-| Local successful use | Your ordinary session exited successfully with that exact set; this does not test every feature. |
-| Observation age | When the check actually ran, and when it last succeeded. Old evidence remains old after a network failure. |
+| Available version | A vendor endpoint advertises a release for your platform. |
+| Support or withdrawal | The upstream source explicitly marks a version supported, deprecated, or unlisted. |
+| Security notice | The distribution channel carries an explicit security notice; version age alone never fabricates one. |
+| DevCapsule validation | Whether the embedded resolution matrix has verified that exact combination. A vendor release does not provide that evidence. |
+| Local successful use | Whether an ordinary session on this checkout exited with status `0` using that exact version set. |
+| Observation age | When the check last ran and when it last succeeded. A network failure leaves older observations stamped with their original time. |
 
-A newer version does not by itself make your version unsupported or unsafe.
-Conversely, no reported update does not certify security. There is currently no
-independent vulnerability feed. Read the explanation alongside a status label:
-`available` is not a security endorsement, and `unknown` can mean that support
-was not assessed even when a newer release was discovered.
+A newer upstream version does not make your pinned version broken or unsafe,
+and `"no update reported"` does not certify that software is free of
+vulnerabilities—DevCapsule does not query an external CVE database. Read the
+text beside each status label: `available` is not a security endorsement, and
+`unknown` can appear when upstream support status is not published even though
+a newer version was found.
 
 ## Where the signals come from
 
-These are interfaces our adapters consume, not a universal vendor commitment to
-keep them stable. DevCapsule does not operate a registry in which vendors must
-publish component lifecycle information.
+Each discovery adapter reads public vendor metadata rather than downloading
+installers:
 
-| Component | Source consumed by the adapter | Meaning and limits |
+| Component | Upstream metadata read | What it covers and its limits |
 |---|---|---|
-| PyCharm | [JetBrains release JSON](https://data.services.jetbrains.com/products/releases?code=PY&latest=true&type=release) | Latest release and platform download/checksum links; no general support or security verdict. |
-| VSCodium | [GitHub latest-release JSON](https://api.github.com/repos/VSCodium/vscodium/releases/latest) | Stable, non-draft release with the expected platform archive. |
-| Codex | [npm package metadata](https://registry.npmjs.org/@openai%2fcodex) | `latest`, exact versions and vendor deprecation. A changed `latest` tag is a candidate, not necessarily a numerically newer version. Absence means unlisted, not that installed software cannot run. |
-| Claude Code | [Vendor latest-version pointer](https://downloads.claude.ai/claude-code-releases/latest) and that version's `manifest.json` | The `latest` channel and a platform artifact; not the separate stable channel. |
-| Antigravity CLI | [Vendor platform updater manifest](https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests/linux_amd64.json) | The platform manifest's version and download metadata. |
-| PostgreSQL client | [PostgreSQL version JSON](https://www.postgresql.org/versions.json) | Latest minor and upstream support/end-of-life for the selected major. |
+| PyCharm | [JetBrains release JSON](https://data.services.jetbrains.com/products/releases?code=PY&latest=true&type=release) | Latest release version, download URL, and SHA-256 link; carries no general support window or security feed. |
+| IntelliJ IDEA | [JetBrains release JSON](https://data.services.jetbrains.com/products/releases?code=IIU&latest=true&type=release) | Latest release version and platform download/checksum links; no general support window or security feed. |
+| Rider | [JetBrains release JSON](https://data.services.jetbrains.com/products/releases?code=RD&latest=true&type=release) | Latest release version and platform download/checksum links; no general support window or security feed. |
+| Eclipse | [Eclipse package index](https://www.eclipse.org/downloads/packages/) | Latest stable Java package for the platform; availability does not establish installed-version support. |
+| VSCodium | [GitHub latest-release JSON](https://api.github.com/repos/VSCodium/vscodium/releases/latest) | Latest stable, non-draft release containing the platform archive. |
+| Visual Studio Code | [Microsoft stable update JSON](https://update.code.visualstudio.com/api/update/linux-x64/stable/latest) | Latest stable `tar.gz` archive URL and SHA-256 checksum for the platform. |
+| Codex | [npm package metadata](https://registry.npmjs.org/@openai%2fcodex) | `latest` dist-tag, exact versions, and npm deprecation strings. Unlisting means absent from npm, not that an already cached copy stops working. |
+| Claude Code | [Anthropic latest pointer](https://downloads.claude.ai/claude-code-releases/latest) and release `manifest.json` | Current `latest` release channel and platform artifact checksums (not the separate `stable` channel). |
+| Antigravity CLI | [Platform updater manifest](https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests/linux_amd64.json) | Current version and download metadata for the platform. |
+| PostgreSQL client | [PostgreSQL version JSON](https://www.postgresql.org/versions.json) | Latest upstream minor version and major-version end-of-life dates. |
+| .NET SDK | [Microsoft release index](https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json) | Latest stable SDK from active or maintenance channels; selection needs a reviewed lock update. |
+| Playwright | [PyPI package metadata](https://pypi.org/pypi/playwright/json) | Latest release with a non-yanked wheel; selection needs matching wheel and browser pins. |
 
-The discovery-only adapters compare dotted numeric versions where appropriate.
-They fetch metadata, not installers. PostgreSQL deserves particular care: the
-current base lock records only the major version. It cannot establish the
-installed minor or distribution security backports, so it does not manufacture
-a minor-upgrade candidate. Updating that client requires base delivery work.
+PostgreSQL client comes from the base image, whose lock records only the major
+version. Because the lock cannot tell which Ubuntu package revision or security
+backport is inside the base, the check reports major-version support dates
+without inventing minor-version upgrade prompts.
 
-Only Codex currently supports preparation and selection through the component
-upgrade interface. Other components report discovery and delivery limits; there
-is no command that installs all discovered upgrades.
+Today, **Codex** supports end-to-end preview, preparation, and local selection
+through `devcapsule project versions`. The remaining adapters report upstream
+availability and notices; there is no `"upgrade everything"` command.
 
-## What to do as a user
+## Running a check
 
-From your project checkout on the host:
+From your checkout on the host:
 
 ```sh
 devcapsule project versions show
 devcapsule project versions check
 ```
 
-`show` is offline. It also works inside a capsule relaunched with the updated
-launcher, where it distinguishes running software from the next-launch selection.
-`check` needs the launcher context and contacts vendor sources. Interactive
-launch also attempts a daily check; noninteractive launch does not. Skipping
-the automatic check with `--no-update-check` leaves cached notices available.
+`versions show` is completely offline and also works inside a capsule, where it
+separates the running container's software from the host's next-launch
+selection. `versions check` runs on the host and queries feeds for components
+in your selected lock. It saves observations without changing that selection.
+Interactive `devcapsule project run` refreshes the check after a day, or when
+the selected version set changes. Pass `--no-update-check` to skip the live
+check for one launch while keeping cached critical notices active. Non-interactive launches never poll
+upstream feeds.
 
-For a Codex candidate, follow the [preview, selection and recovery guide](component-upgrades.md#preview-then-choose).
-An explicit critical notice brings a decision into interactive launch; it does
-not silently replace your tools. Discovery-only components cannot be installed
-by accepting a Codex-style upgrade prompt.
+To try a newer Codex version on one checkout, follow
+[Try a component upgrade and recover](component-upgrades.md#preview-then-choose).
+When an upstream channel carries a critical security or deprecation notice,
+interactive `project run` asks how you want to proceed rather than swapping
+tools behind your back.
 
-If a check is inconclusive, inspect its explanation and last-successful time.
-DevCapsule consults the compatibility feed automatically and links to the
-[maintained component status page](https://github.com/ccozianu/devcapsule/tree/component-status).
-A matching diagnosis can recommend a
-released CLI fix or link to a known issue and workarounds. Updating DevCapsule
-to repair discovery does not itself upgrade the affected component.
+## Maintained status fallback when a vendor check fails
 
-Without current matching guidance, status stays unknown. Retry after a transient
-network problem; if it persists, consult the linked issue or report the component,
-CLI version, platform, check time and sanitized error. A timeout alone does not
-prove that a vendor changed its interface. Existing software remains selected
-and ordinary offline launch remains possible.
+Vendor release endpoints change from time to time without warning. When an
+adapter hits an HTTP error, timeout, or unexpected payload shape, the launcher
+fetches DevCapsule's versioned fallback feed and links to the
+[maintained component status page](https://github.com/mycodespace-ai/devcapsule/tree/component-status):
 
-## How the maintained fallback works
+- Matching happens locally against the adapter ID, launcher version, and
+  platform. DevCapsule sends no project metadata or installed component list.
+- A matching maintainer diagnosis can point to a newer DevCapsule release that
+  fixes the adapter, or link to an open issue and workaround.
+- Updating the `devcapsule` launcher fixes the check; it never alters your
+  project lock or upgrades components on its own.
+- If no current diagnosis matches, status stays `unknown` with the timestamp of
+  the last good check. Transient network errors never block an offline launch.
 
-Each shipped discovery adapter has an identity. On a vendor exception, HTTP error
-or unexpected metadata shape, the client fetches one fixed versioned feed and
-matches diagnoses to its adapter, CLI version and platform locally. No project
-configuration or installed-version query is sent. Clients predating this feature
-need a normal CLI upgrade before they can use it.
+The feed is read from the DevCapsule website,
+`https://devcapsule.mycodespace.ai/status/compatibility-v1.json`. Three sources
+answer in turn, and the report says which one did:
 
-The backend action probes the current adapters daily and publishes a status page
-and feed together on the `component-status` branch. Observations record what
-happened; diagnoses are reviewed explanations authored by maintainers. A failed
-probe neither invents a diagnosis nor erases the last success. A successful probe
-of today's adapter does not certify every older installed adapter.
+1. The published feed, fetched once per check with an eight-second timeout
+   and a one-megabyte bound. A successful fetch is kept in your cache home,
+   `~/.cache/devcapsule/compatibility-v1.json` by default, and shared by every
+   project on the machine.
+2. The cached feed, when the fetch fails. Like the published one it is valid
+   for three days from its generation.
+3. The feed built into the launcher at release time, when nothing is cached.
+   It is a snapshot of the maintainers' diagnoses as of the build; each applies
+   within its own review window, and the report names it as built in.
 
-Feed expiry and diagnosis review expiry are independent. Cached guidance keeps
-its original timestamps; downloading or republishing it does not renew a
-diagnosis. Stale or malformed metadata cannot authorize an upgrade recommendation.
-The feed never installs software, replaces adapter URLs or changes selections.
+The launcher starts and the check completes whichever of the three answers,
+or none. To read a different publication, for example a test site, set
+`DEVCAPSULE_STATUS_URL` for every check, or pass `--status-url` to one
+`devcapsule project versions check`.
 
-Contributors should preserve these contracts when changing parsers and bump the
-adapter identity when its endpoint or interpretation changes. Keep older affected
-identities in maintained diagnoses and preserve the v1 endpoint for older clients.
-See the [service contract and operator runbook](../../component-status/README.md)
-for schema, review and publication details.
+## Current service limits before V1
 
-## Operating today and the V1 objective
+A scheduled GitHub Action probes the adapters once a day and publishes fresh
+observations alongside maintainer-reviewed diagnoses on the `component-status`
+branch. Feed timestamps and diagnosis review windows expire independently—a
+republished feed does not extend an unreviewed diagnosis, and expired or
+malformed feed data never triggers an upgrade prompt.
 
-The initial publication happens after owner merge to main and a successful
-**Component update status** action. A workflow file on main enables the configured
-triggers; no separate action installation is required. Repository permissions
-must still allow publication. The owner verifies the generated public resources.
+Before V1, this status feed is best-effort rather than an externally monitored
+service:
 
-| Concern | Current implementation | Intended V1 outcome |
+| Area | Shipped in {{tag}} | Planned for V1 |
 |---|---|---|
-| Freshness | Daily publication; feed expires after 72 hours. | Public, usable status with an observation for each supported component no older than 48 hours. |
-| Vendor check failure | Published as inconclusive with history; does not fail the action. | Bounded retries, maintainer notification for persistent failure, and maintained user guidance. |
-| Publication failure | Fails the action; previous feed remains until expiry. | An actionable notification with an owner and recovery procedure. |
-| Job never runs, or public resource breaks | Readers can notice old timestamps; no independent monitor. | A monitor outside the publishing system detects missing, stale or unusable resources before the deadline. |
-| Alert delivery | No verified owner email or other alert route configured by this change. | Independently verified detection and notification paths, exercised by failure drills. |
-
-The 48-hour objective concerns fresh observations, including truthful failure
-observations. A fresh report of a broken vendor interface satisfies reporting
-freshness but still requires incident response. Merely advancing the feed's
-generation time while retaining old observations is insufficient.
-
-These are service-level objectives we intend to implement and measure, not a
-contractual SLA or a claim of current operational coverage. GitHub job failures
-alone do not establish that the repository owner receives email, and a job that
-never starts cannot report its own failure. The goal is that one failure cannot
-both break the service and silently suppress detection. Monitor provider, alert
-destinations, escalation thresholds and the supported older-client window remain
-decisions for the V1 work, recorded in
-[R-UPGRADE-002](../../engineering-docs/requirements/product/r-upgrade-002-status-operational-reliability.md).
+| Observation freshness | Daily probe; published feed expires after 72 hours. | Fresh observation for every supported component within 48 hours. |
+| Upstream probe failure | Recorded as inconclusive with history preserved. | Bounded retries, maintainer alerting on sustained failure, and published guidance. |
+| Feed publication or scheduler failure | Readers can see stale timestamps; no external watchdog yet. | Independent external monitoring and verified maintainer alert delivery. |
