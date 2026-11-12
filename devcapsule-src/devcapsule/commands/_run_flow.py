@@ -27,7 +27,7 @@ from copy import deepcopy
 import getpass
 from pathlib import Path
 import sys
-from typing import Any, Callable, TextIO
+from typing import Any, Callable, Mapping, TextIO
 
 from devcapsule.commands._launch_review import (
     LaunchReview, Prepared, RunFlags, capability, channel_for, refuse_contradictory_flags, render_pending,
@@ -57,17 +57,20 @@ def prepare_launch(
     output_stream: TextIO | None = None,
     print_only: bool = False,
     check_display: bool = True,
+    home: Mapping[str, Any] | None = None,
 ) -> Prepared:
     """Prepare a launch in three phases: read, decide in memory, write.
 
     ``print_only`` never asks or writes. Without a terminal, an unanswered
     blocking decision raises :class:`DecisionPending` before any write.
+    ``home`` is the home's settings document when the caller holds it; left
+    out, phase 1 reads it (see ``load_state``).
     """
     # A command line that contradicts itself is refused before anything is read.
     refuse_contradictory_flags(flags)
 
     # Phase 1, read: the project, the home and the checkout's record, and what the terminal is.
-    state = read_launch_state(start)
+    state = read_launch_state(start, home=home)
     interactive = sys.stdin.isatty() if interactive is None else interactive
     reader = input_stream.readline if input_stream is not None else lambda: sys.stdin.readline()
     output = output_stream if output_stream is not None else sys.stdout
@@ -87,15 +90,16 @@ def prepare_launch(
     return review.prepared() if print_only else save_launch(review)
 
 
-def read_launch_state(start: Path) -> CheckoutState:
+def read_launch_state(start: Path, *, home: Mapping[str, Any] | None = None) -> CheckoutState:
     """Phase 1 of a launch's preparation: read the project at ``start``, the home and the checkout's record.
 
     A checkout that has no record yet is given the path its record will have,
     which can mean looking for a free name among the project's checkouts.
-    Nothing is written.
+    Nothing is written. ``home`` is the home's settings document when the
+    caller holds it; left out, it is read.
     """
     root, manifest = manifest_for(start)
-    state = load_state(root, manifest)
+    state = load_state(root, manifest, home=home)
     register_checkout(state, write=False)
     return state
 

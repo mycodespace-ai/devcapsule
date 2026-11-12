@@ -59,7 +59,7 @@ from .storage import (
     find_checkout_record,
     load_checkout,
     load_toml,
-    load_settings, config_root,
+    load_settings, config_root, validate_settings,
     named_checkout_record_paths,
     recommendation_lock_for,
     resolved_record_path,
@@ -269,17 +269,28 @@ def _this_host() -> Host:
                 environment=dict(os.environ), directory=host_directory)
 
 
-def load_state(root: Path, manifest: dict[str, Any]) -> CheckoutState:
+def load_state(root: Path, manifest: dict[str, Any], *, home: Mapping[str, Any] | None = None) -> CheckoutState:
     """Read one checkout's documents and surroundings into memory. Nothing is written.
 
     This is the reading half of every command that works on a checkout: the
     platform and its committed lock from the project, the settings from the
     home, the checkout's record or the path it would get, the environment
     saved with its Docker arguments, and the console's deferred requests.
+
+    ``home`` is the home's settings document, for a caller that holds it
+    already; the home's file is then not read. An empty document is a home
+    with no settings file. Any other is admitted as a settings file is.
+    Owner ruling of 2026-11-12: legacy tests of the launch pass it, to say
+    what their home has accepted. No command passes it yet.
     """
     platform = project_platform(root)
     lock_path, shared_lock = recommendation_lock_for(root, manifest)
-    home = load_settings()
+    if home is None:
+        settings = load_settings()
+    else:
+        settings = deepcopy(dict(home))
+        if settings:
+            validate_settings(settings, config_root() / "settings.toml")
     record = find_checkout_record(manifest, root)
     input_path: Path | None = record
     if record is not None:
@@ -301,7 +312,7 @@ def load_state(root: Path, manifest: dict[str, Any]) -> CheckoutState:
             saved_environment = {}
     return CheckoutState(
         root=root, manifest=manifest, platform=platform, lock_path=lock_path, shared_lock=shared_lock,
-        home=home, home_path=config_root(), host=_this_host(), input_path=input_path, registered=record is not None,
+        home=settings, home_path=config_root(), host=_this_host(), input_path=input_path, registered=record is not None,
         checkout=checkout, saved_environment=saved_environment,
         deferred=tuple(deferred_rows(input_path, root)),
     )
