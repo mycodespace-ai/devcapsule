@@ -239,8 +239,10 @@ each caught.
 `nox -s typecheck tests` in the capsule: 3105 passed, 3 expected to fail,
 10 unexpectedly passed. The holding pen has four files with 8 marks on 11
 cases: 9 pass, 2 fail for the mounted settings. The open record of
-2026-10-18 says what is still missing: captures written by 0.2.14, 0.2.15
-and 0.3.0. One observation there for the owner: the `v026-formation`
+2026-10-18 says what is still missing. The owner then ruled that
+compatibility with 0.2.14, 0.2.15 and earlier may be dropped, and that the
+compatibility promise gets a defined story and packaging after 0.3.1; see
+Open Threads. One observation there for the owner: the `v026-formation`
 capture does not pass the check.
 
 **The capability-commands holding-pen test, rewritten, 2026-11-12.** The
@@ -5288,6 +5290,12 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
+- Owner ruling, 2026-11-12: compatibility with 0.2.14, 0.2.15 and earlier
+  may be dropped. The compatibility promise to users needs a defined story
+  and a packaging, targeted for after 0.3.1; not started and not yet
+  planned with project-management. Until then the pre-0.3 captures and
+  their tests stand without being a promise. Recorded in
+  [the 2026-10-18 record](../../bugs/devcapsule/2026-10-18-no-test-proves-old-projects-launch-with-new-releases.md).
 - Paused for owner travel on 2026-10-31. No work continues during the break.
 - On return, confirm the first 0.3.1 slice; release-independent test fixtures
   are proposed. The nine documentation proposals still need item-level

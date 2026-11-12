@@ -79,10 +79,30 @@ committed, written from matrix `embedded-28`.
 
 Still open, against the expected behaviour above:
 
-- No capture was written by a released 0.2.14, 0.2.15 or 0.3.0 client.
+- No capture was written by a released 0.3.0 client. For 0.2.14 and 0.2.15
+  see the ruling below.
 - No checkout record or authorization of a capture is read by the new
   test; `tests/test_upgrade_recovery.py` does that for `v0.2.11` only.
 - The release runbook names no capture step.
 - `v026-formation`, the hand-authored adopter shape, does not pass the
   check: `components.codex.npm-package must be '@openai/codex'`. Not
   judged here; the standing test of that capture covers inspection only.
+
+## Owner ruling, 2026-11-12
+
+Compatibility with 0.2.14, 0.2.15 and earlier releases may be dropped. No
+capture from them is required, and the expected behaviour above no longer
+names them.
+
+What DevCapsule promises its users about compatibility is not yet defined.
+It needs a story, which releases a project and a checkout stay usable
+across and what a user does when they do not, and a packaging, how the
+promise is stated, shipped and tested. The owner targets that for after
+0.3.1. Until it exists:
+
+- R-COMPAT-001 and R-CONFIG-001 stand as written; the story revises them.
+- The captures `v026.2`, `v0.2.11` and `v026-formation` and the tests that
+  read them stand. They are not a promise. A change that has to break one
+  retires the capture and says so; it is not blocked by it.
+- This record stays open as the test half of that work. Its close criteria
+  are rewritten when the story is.
