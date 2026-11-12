@@ -16,6 +16,13 @@ place or shrunk one function at a time, and touching one, or adding,
 changing or deleting a test in a `tests/unit/` file of the same name,
 retires the entire legacy file into the mirror.
 
+*Host Inputs* in the same file binds new and changed tests further: only an
+entry layer reads the host, the modules below it take what it read as
+required values, and a unit test builds those values and patches nothing.
+`tests/unit/devcapsule/container_runtime/test_session.py` is the model: no
+`monkeypatch`, and every host input a constructor argument. The entry
+layers are tested as programs; see [Integration tests](integration-tests.md).
+
 ## Running them
 
 ```text

@@ -235,6 +235,39 @@ capsule for reasons that were not bugs.
    1 to 4 on every new or changed test, and to name for each what would
    make it fail for a reason that is not a bug.
 
+## Host Inputs
+
+Owner direction, 2026-11-11, after one pull request gave tests their host
+inputs through parameters that only tests passed, and the next through
+patches.
+
+1. Only an entry layer reads the host. An entry layer is a `main` function,
+   a command's `run`, or the one function that such a layer calls first.
+   The host is all that code can read without an argument: the environment,
+   the caller's user, the clock, the network, another program, and a path
+   that the code names itself.
+2. Every other module takes these as values, in required arguments. Give no
+   parameter a default that reads the host. Add no parameter that only a
+   test passes. Pass a value that is costly to read as a function without
+   arguments.
+3. Bind the values that several operations share in a frozen dataclass. Its
+   constructor stores them and does nothing else.
+4. Separate each decision from its effect. Write the decision as a function
+   of values that returns what to do. Let the entry layer do what it
+   returns.
+5. A new or changed unit test builds values, passes them and asserts what
+   comes back. Do not use `monkeypatch` or `unittest.mock`. Do not assign
+   to an attribute of a module or a class, or to `os.environ`. A file under
+   `tmp_path` and a socket that the test opens on loopback are values. This
+   narrows *Unit Tests*, rule 2: such a test sets a host input only by
+   passing it.
+6. Keep an entry layer a short sequence of statements that takes no
+   decision of its own. Test it with an integration test that starts the
+   real program in an environment that the test builds.
+7. State in the pull request what the hosted gate does not catch after the
+   change. In a Pair Review Loop, the brief instructs the reviewer to
+   verify rules 1 to 6 on the changed code and its tests.
+
 ## Reasoning And Code Navigation
 
 1. Start with the behavior's contract: ownership, inputs, preconditions,

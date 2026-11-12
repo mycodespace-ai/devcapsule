@@ -262,6 +262,57 @@ process. Git on a scratch repository can pass both, and even then its
 commit dates come from the clock unless the test sets them. A Docker
 build passes neither.
 
+## Host Inputs
+
+**Rule.** Only the top layer of a program reads the host: the environment,
+the user, the clock, the network, other programs, the paths the code knows
+by name. It hands what it read to the modules below as ordinary values, and
+they require them. A class binds the values that are used again and again,
+and its constructor only stores them. A module decides and returns what
+should happen; the top layer makes it happen. A unit test therefore builds
+values, calls the unit and looks at the answer, and patches nothing. The
+top layer stays a few plain statements, and an integration test runs it as
+the real program. The pull request says what the hosted gate stopped
+catching, and the reviewer checks all of this.
+
+**Intended effect.** An inner module does not know that a value came from
+an environment variable, so no test needs to set that variable or to
+replace `os.getenv` to reach it. A test reads as a table of inputs and
+outputs. It cannot leak into the next test, because it changed nothing
+that the next test shares. It survives a refactoring of how the unit reads
+its inputs, because the unit no longer reads them. The part of the code
+that can only be tested with the real host is small enough to read in one
+screen and is tested as a program.
+
+**Motivation.** PR #18 retired four legacy test files and, to keep its new
+tests from patching the package, gave eight production signatures twenty
+keyword parameters that no production caller passed. Every test passed the
+parameter, so no test ran the default, which is the branch a release ships.
+The first version of PR #26 removed the parameters and patched each host
+input where the code read it, with `monkeypatch`, twenty-six times. The
+owner rejected both on 2026-11-11: a patch changes a global for the length
+of a test and ties the test to how the unit reads its input, and a
+parameter with a host-reading default hides the same global behind a
+signature. The direction was the one Haskell forces and Spring came to
+late: a dependency is a value passed at construction, and only a very top
+layer, written declaratively, maps the host to those values. When the
+agent proposed to forbid classes made only to have a constructor, the
+owner corrected it: Python has no functors, and a class is how values that
+are used again and again get bound. The rewrite of PR #26 is the worked
+example. `CapsuleUser`, `ConsoleInstallation`, `Session` and
+`DecisionTools` bind the values; `entrypoint.run` reads `os.geteuid()` and
+`os.environ` once and performs what the session answers; the list of owner
+changes that a test used to record from a patched `os.chown` is now the
+return value of `CapsuleUser.owner_changes`. The touched test files went
+from twenty-six `monkeypatch` uses to none. The cost is stated because it
+is real: of the twenty-six faults planted in the first version, the hosted
+unit gate caught twenty-five with patches and catches twenty-one without;
+integration tests that the hosted gate does not run catch two more, and
+three are caught by nothing. That is why rule 7 asks for the statement and
+why the entry layer must stay small. A value that is costly to read, the
+installed version for instance, is passed as a function so that the top
+layer does not pay for it on every start.
+
 ## Reasoning And Code Navigation
 
 **Rule.** Start from the contract, state the uncertainty, navigate from the

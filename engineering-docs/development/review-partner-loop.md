@@ -128,6 +128,12 @@ Improve it on your branch, focused on exactly three things, in this order:
    postcondition; its docstring states the contract. For each, name what
    would make it fail for a reason that is not a bug. A finding here is a
    finding; "confined to tests" does not dismiss it.
+5. The changed code and its tests against *Host Inputs* in
+   `WORKFLOW-LOCAL.md`, rules 1 to 6: name every read of the host outside
+   an entry layer, every parameter default that reads it, every parameter
+   that only a test passes, every constructor that does more than store,
+   every decision taken inside an entry layer, and every patch in a new or
+   changed test.
 
 Stay inside the PR's scope: <the scope in one sentence>. Do not change
 <the neighbours>. Do not widen <the contract>; if you believe it is wrong,
