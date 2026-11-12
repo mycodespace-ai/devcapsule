@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, no fix started; one major bug in fixing, the Python route and its guard, merged through #25 with the local gate's routing open; a follow-up to PR #18 on `ws-maintenance/host-inputs-at-source`, by Pair Review, for the owner's review; rewritten 2026-11-12 on the owner's direction so that host inputs are values and no touched test patches; the rule *Host Inputs* written into `WORKFLOW-LOCAL.md` on the owner's word and the rewrite reviewed by the partner through #28, merged at `83d238b8`; the owner's reading of #26 and rulings on the rule's open readings are next; *Unit Tests* rules 8 and 9 added on the owner's word and held by machine, the command line only in `test_cli.py` with eight files in a debt list, and no network in a unit test
+State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, no fix started; one major bug in fixing, the Python route and its guard, merged through #25 with the local gate's routing open; a follow-up to PR #18 on `ws-maintenance/host-inputs-at-source`, by Pair Review, for the owner's review; rewritten 2026-11-12 on the owner's direction so that host inputs are values and no touched test patches; the rule *Host Inputs* written into `WORKFLOW-LOCAL.md` on the owner's word and the rewrite reviewed by the partner through #28, merged at `83d238b8`; the owner's reading of #26 and rulings on the rule's open readings are next; *Unit Tests* rules 8 and 9 added on the owner's word and held by machine, the command line only in `test_cli.py` with eight files in a debt list, and no network in a unit test; a first slice of the owner's read-then-decide direction on `ws-maintenance/launch-phases`, with the launch's decisions testable from values and the six legacy files of the 17 still to retire
 
 Definition read: WORKFLOW.md@e83f22a20701, WORKFLOW-LOCAL.md@4e9a93c9f73a
 
@@ -12,9 +12,97 @@ Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/host-inputs-at-source` from release-0.3.1 2f1109db, PR #26 open, the owner merges; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/launch-phases` from `ws-maintenance/host-inputs-at-source` c92d5254, stacked on PR #26; `ws-maintenance/host-inputs-at-source` from release-0.3.1 2f1109db, PR #26 open, the owner merges; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## A launch's preparation in three phases: read, decide in memory, write — 2026-11-12
+
+Owner direction, 2026-11-12, on the 17 standing failures: the processing of
+configuration reads its files and the command line into memory first, and
+then decides; a test of a decision sets its precondition as data in memory
+and skips the reading, which is tested apart. This section records the first
+slice, on `ws-maintenance/launch-phases`, stacked on PR #26.
+
+**What the check of the direction found.**
+
+- The code was half-way there: `prepare_launch` loaded a `CheckoutState`,
+  reviewed in memory and wrote at the end. What kept a test from skipping
+  the reading was that the state's constructor did the reading, and that
+  the state's methods read again: the home's directory, the record's
+  existence and the console's requests, on every listing.
+- There are three phases, not two. The writes are the third, and
+  "writes nothing" in a test's name is a statement about it.
+- The product does not use Pydantic. It is in `requirements.txt` only as a
+  dependency of `python-on-whales`. The documents are dictionaries checked
+  by code of our own, so the reading does need its own tests.
+- The 17 do not turn green by this refactoring alone. They are legacy tests
+  that call `prepare_launch` or the command line with a path, so they read
+  the mounted settings whatever the code below does. Each must be rewritten
+  on the decision phase, and rule 5 makes that the retirement of its whole
+  file: six files, 191 tests, 3172 lines.
+
+**The product code.**
+
+- `configuration/derivation.py`: `CheckoutState` is a dataclass of values,
+  with the home's directory, whether the record exists, and the console's
+  deferred requests among them. `load_state` does all the reading and is
+  the only reader. No caller changed.
+- `commands/_launch_review.py`, new: `review_launch(state, flags, ask=...)`
+  is the decision phase. It returns a `LaunchReview`, or refuses, and writes
+  nothing. `ask` is how a decision reaches the developer; None when there is
+  no terminal. `RunFlags` and `Prepared` moved here and are still exported
+  by `_run_flow`.
+- `commands/_run_flow.py`: `prepare_launch` is the three phases in order:
+  `read_launch_state`, `review_launch`, `save_launch`. The terminal dialogue
+  stays here and is passed to the review as `ask`.
+
+**The tests.** `tests/unit/devcapsule/commands/test_launch_review.py`, 18
+tests, none with a project directory, a home, `tmp_path` or a patch. Each
+builds its checkout in memory with the operations `project init` uses:
+`generate_lock` for the lock, `with_selection` and `authorize` for the
+record. A state built that way was compared with the one `load_state` reads
+from a project `init` wrote: manifest, lock and record are equal. The two
+tests the owner named are among them, and they pass in the owner's capsule,
+where their legacy forms are 2 of the 17.
+
+**Evidence.** The whole unit suite, 3008 tests before, passes as before
+with the 17 standing failures; with the fallback to the mounted settings
+switched off by a diagnostic plugin, it fails only the two tests of the
+fallback itself, before and after. 22 faults planted in the changed code: 3
+caught by the new tests, two of them after an assertion was added for each,
+14 by legacy tests, 5 by nothing:
+
+- the refusal of contradictory flags before the reading, which the review
+  repeats; only the order of two refusals could show it;
+- "no terminal" checked a second time in the loop, redundant before this
+  change too;
+- the state brought up to date after the developer applies, and after they
+  discard, a console request during a review; the two lines are new, and
+  the console's storage reads the home from the environment, so no test can
+  reach them from values yet;
+- the saved environment not loaded: the reading is unchanged, and no unit
+  test covers it.
+
+**What the decision phase still takes from the host**, named in the new
+module's docstring: the listing asks `os.environ` whether a host variable is
+set and the file system whether a bound directory exists; `derive_plan`
+asks the Docker daemon for a local base image; accepting a channel reads the
+clock; a run-once authorization is printed to standard error; the answer to
+a console request runs a command that writes.
+
+**Differences in behaviour.** Two orders of refusal: a checkout that cannot
+be given a free record name is now refused before a wrong IDE is, and the
+console's requests are read once per review, so one that arrives during a
+review is seen at the next run.
+
+**Not done.** The retirement of the six legacy files. `load_state` still
+finds the home through the environment, so the reading has no test from
+values yet. `_run_flow.py` has no mirror test, since its legacy twin
+`tests/test_run_flow.py` stands.
+
+**Next action.** The owner's: the order in which the six files are retired,
+and whether the 17 wait for that or get the one-line fixture change first.
 
 ## Two rules held by machine: no network in a unit test, the command line only in `test_cli.py` — 2026-11-12
 
