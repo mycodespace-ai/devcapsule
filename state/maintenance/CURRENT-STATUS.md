@@ -6,7 +6,7 @@ Start date: 2026-09-18
 
 State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, no fix started; one major bug in fixing, the Python route and its guard, merged through #25 with the local gate's routing open; a follow-up to PR #18 on `ws-maintenance/host-inputs-at-source`, by Pair Review, for the owner's review; rewritten 2026-11-12 on the owner's direction so that host inputs are values and no touched test patches; the rule *Host Inputs* written into `WORKFLOW-LOCAL.md` on the owner's word and the rewrite reviewed by the partner through #28, merged at `83d238b8`; the owner's reading of #26 and rulings on the rule's open readings are next; *Unit Tests* rules 8 and 9 added on the owner's word and held by machine, the command line only in `test_cli.py` with eight files in a debt list, and no network in a unit test; a first slice of the owner's read-then-decide direction on `ws-maintenance/launch-phases`, with the launch's decisions testable from values and the six legacy files of the 17 still to retire
 
-Definition read: WORKFLOW.md@e83f22a20701, WORKFLOW-LOCAL.md@4e9a93c9f73a
+Definition read: WORKFLOW.md@e83f22a20701, WORKFLOW-LOCAL.md@e84d2678942b
 
 Integration target: `main`
 
@@ -104,6 +104,28 @@ Left out, this process and this machine are asked, as before. The launch
 passes them from the `Host`. The rule's text is not amended; each default
 names the ruling in its docstring.
 
+**The owner's second ruling, 2026-11-12: option 2 as well.** Rule 5 of
+*Unit Tests* now lets a call in a legacy test gain or lose keyword
+arguments when the function's signature changes in the same pull request,
+and nothing else. The checker holds the form: it compares the two versions
+of the test as syntax and accepts a difference only in which keyword
+arguments calls in the body name; a change of layout alone is still
+refused. That the signature changed is the reviewer's to see. The optional
+arguments of option 3 stay, and rule 2 of *Host Inputs* names the two
+functions that keep them. No legacy call was changed under the allowance
+yet.
+
+**`tests/test_ide_requirement_override.py` passes in the capsule.** Its own
+`home` fixture now names the home, `DEVCAPSULE_CONFIG_HOME` under the
+test's directory. A named home is the product's own way to say that a home
+is the whole truth, so the fallback to the mounted settings does not apply.
+No test function changed and no product code. All 33 cases pass; the
+capsule's standing failures are 15. The earlier trial of the same variable
+in the suite's shared fixture broke 31 tests that assert the XDG layout;
+none of them is in this file. By that trial's log, the same line in the
+other five files would turn 14 of the 15 green; one test of
+`tests/test_run_flow.py` asserts the layout.
+
 **`tests/test_ide_requirement_override.py`, ordered retired whole. It is not
 yet.** Of its 26 test functions, 12 now have a form that needs no file, no
 home and no patch: 10 in `test_launch_review.py`, 1 as three tests in the
@@ -126,8 +148,7 @@ product, because each reaches something the code takes from a global:
 5. One tests `realize_environment`, whose mirror file has a legacy twin of 9
    tests; adding a test there retires that twin too.
 
-Until then rule 5 keeps the legacy file whole, the 12 tests stand twice, and
-2 of the capsule's 17 failures stay.
+Until then rule 5 keeps the legacy file whole and the 12 tests stand twice.
 
 **Differences in behaviour.** Two orders of refusal: a checkout that cannot
 be given a free record name is now refused before a wrong IDE is, and the
