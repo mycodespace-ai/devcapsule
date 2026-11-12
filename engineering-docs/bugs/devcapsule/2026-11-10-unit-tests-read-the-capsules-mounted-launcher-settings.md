@@ -202,16 +202,21 @@ What changed is that the tests which failed now say what their home is.
   read the home as before. Seven, which drive the command line, get a named
   home from their own file's fixture, `DEVCAPSULE_CONFIG_HOME` under the
   test's directory, in five legacy files.
-- The test that downloaded vendor artifacts uses a fixture of
-  `tests/test_capability_minimums.py`, which names its home too. It stops at
-  the consent it expects and opens no connection. The network guard of
-  `tests/conftest.py`, new in pull request #26, now fails any unit test that
-  tries.
-- `nox -s tests` passes inside the owner's capsule: 3083 passed, 10 expected
-  to fail, 11 unexpectedly passed, in 175 seconds where it took 815.
+- The test that downloaded vendor artifacts is rewritten. It was the one
+  test of `tests/unit/devcapsule/legacy_refactoring/test_capability_minimums.py`
+  and drove the command line. It is now two tests of the launch review that
+  build their checkout in memory, and its file is deleted. The network guard
+  of `tests/conftest.py`, new in pull request #26, fails any unit test that
+  tries the network.
+- The product changed too, on the owner's word: `project run
+  --print-command` no longer pulls the base image, downloads artifacts or
+  builds the environment. It prints the command of an environment that is
+  on the machine, and otherwise names what a launch would fetch and exits 2.
+- `nox -s tests` passes inside the owner's capsule: 3088 passed, 10 expected
+  to fail, 10 unexpectedly passed, in 175 seconds where it took 815.
 
 Against the close criteria: 1 holds for the owner's capsule as it is today.
-2 and 3 do not. Fourteen marks of this cause remain; eleven of their tests
+2 and 3 do not. Thirteen marks of this cause remain; ten of their tests
 now pass. They are in mirror files whose legacy twins stand, so the gate
 refuses a change to them until those twins are retired. 4 does not hold:
 `private_user_directories` is unchanged, and a test that uses neither a
