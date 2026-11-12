@@ -126,6 +126,31 @@ none of them is in this file. By that trial's log, the same line in the
 other five files would turn 14 of the 15 green; one test of
 `tests/test_run_flow.py` asserts the layout.
 
+**`tests/test_run_flow.py`: its 8 failures fixed with the configuration in
+memory, 2026-11-12.** The owner's correction of the fix above: a test says
+what its home holds by constructing it, not through the environment.
+`prepare_launch` takes the home's settings document as `home`, and passes
+it through `read_launch_state` to `load_state`, which then does not read
+the home's file. An empty document is a home with no settings file; any
+other is admitted as a file is. The four failing tests pass `home={}` on
+their five calls. This is the first use of rule 5's allowance, and the
+checker accepts it. All 48 cases of the file pass in the capsule; the
+standing failures are 7, in four files. Six new tests of `load_state` in
+`tests/unit/devcapsule/configuration/test_derivation.py`.
+
+No command passes `home`: only tests do, which rule 2 of *Host Inputs*
+forbids in general and the owner allowed here. The default, reading the
+home, is still what the other 20 calls of the file run. Five planted
+faults: two caught by the new mirror tests, one more after a test was
+added, and two caught only by the four legacy tests inside a capsule. Those
+two are the lines by which `prepare_launch` and `read_launch_state` pass
+`home` on; on the hosted runner a home is empty either way, so the hosted
+gate does not catch their loss.
+
+Of the 7 that remain, one calls `prepare_launch` and takes the same fix
+(`tests/test_trust.py`); five go through `cli.main` and one calls
+`write_settings`, which reads the mounted settings itself before it merges.
+
 **`tests/test_ide_requirement_override.py`, ordered retired whole. It is not
 yet.** Of its 26 test functions, 12 now have a form that needs no file, no
 home and no patch: 10 in `test_launch_review.py`, 1 as three tests in the
