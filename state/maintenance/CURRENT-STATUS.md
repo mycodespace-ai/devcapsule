@@ -175,6 +175,50 @@ one table changed. Its docstring now says so.
 The standing failures are 5, in four files, and all five drive `cli.main`.
 No call in them can be handed a value.
 
+**`project run --print-command` fetches nothing, 2026-11-12.** Owner
+direction: whoever asks for the command to be printed did not ask for the
+environment to be downloaded. Until now `--print-command` did all a launch
+does before `docker run`: it pulled the base image, downloaded the
+artifacts and built the environment's image, and `docs/reference/cli.md`
+said so. Now `realize_environment` and `ensure_materialized_surface` take
+`fetch`; `--print-command` passes false. An environment that is on the
+machine has its command printed. A missing base image, a missing
+environment image, or one whose boot configuration needs its rebuild ends
+the command with exit 2 and a message that names what a launch would pull,
+download and build, and the launch command to run once. The option's help,
+the reference page and the package README say the same.
+
+- Tests: three mirror tests of the look without fetching in
+  `test_materialization.py`; one integration test,
+  `tests/integration/test_print_command_cli.py`, that runs the built launcher
+  with a stand-in script where `docker` is and proxies that point at a closed
+  port. The launcher asks the stand-in one thing, whether the base image is
+  local.
+- Evidence: the real command in the owner's capsule, on a project never
+  launched, ends in 0.4 s with exit 2, names the image and three artifacts,
+  and writes no file to the cache. Two faults planted in the wiring, each
+  with the executable rebuilt, fail the integration test.
+- Not covered by an automated test: the one line by which
+  `realize_environment` hands `fetch` to the materializer. Its mirror file
+  has a legacy twin, and the function finds the runtime executable through
+  the environment. The capsule run above is its evidence.
+- Not done: printing the command of an environment that is not built. Its
+  image name follows from the lock alone, but the display and the console
+  are read from image labels, so that preview could differ from the launch.
+
+**The downloading test, rewritten.** The owner's second point: the test
+that reached that download was the only test of its holding-pen file, and
+belongs in a proper unit test that downloads nothing. It is now two tests
+of `review_launch` in `test_launch_review.py`, in memory. The file
+`tests/unit/devcapsule/legacy_refactoring/test_capability_minimums.py` and
+its empty target module are deleted, and the command-line debt list has 7
+files. The fixture line added to `tests/test_capability_minimums.py` for
+that test is taken out again. `nox -s tests` in the capsule: 3088 passed,
+10 expected to fail, 10 unexpectedly passed. The integration tests that
+need no Docker: 124 passed, 3 skipped, 1 failed; the failure is the
+standing one of `test_pex_runtime.py`, which builds its environment in the
+test's body from `os.environ` and so reads the mounted settings.
+
 **The last five, and the unit session green in the capsule, 2026-11-12.**
 The five that remained drive `cli.main`, where no call can be handed a
 value. On the owner's word their files' fixtures name the home, as the
