@@ -476,3 +476,52 @@ def test_main_refuses_a_line_added_to_the_debt_list(tmp_path: Path, capsys: pyte
     assert conventions.main(["--base", "main", "--project-root", str(root)]) == 1
     captured = capsys.readouterr()
     assert captured.err == f"{DEBT_LIST}: tests/unit/devcapsule/test_other.py was added; the list loses lines and never gains one\n"
+
+
+
+# Rule 3's one allowance: a call in a legacy test may gain or lose keyword arguments.
+
+LEGACY_HEAD = "import pytest\npytestmark = pytest.mark.legacy\n"
+
+
+def _legacy_breaches(root: Path, before: str, after: str) -> list[str]:
+    """The breaches of a legacy file whose only test function went from ``before`` to ``after``."""
+    base = _module("tests/test_old.py", LEGACY_HEAD + before)
+    head = _module("tests/test_old.py", LEGACY_HEAD + after)
+    return conventions.check([head], {head.path: base}, root)
+
+
+@pytest.mark.parametrize(("before", "after"), [
+    ("def test_one():\n    assert listing(document) == 1\n",
+     "def test_one():\n    assert listing(document, host_environment=ENVIRONMENT) == 1\n"),
+    ("def test_one():\n    assert plan(checkout, runtime_root=ROOT, caller_uid=0) == 1\n",
+     "def test_one():\n    assert plan(checkout) == 1\n"),
+    ("def test_one():\n    result = outer(inner(1), 2)\n    assert result\n",
+     "def test_one():\n    result = outer(\n        inner(1, directory=lookup),\n        2,\n    )\n    assert result\n"),
+    ("class TestThing:\n    def test_one(self):\n        assert listing(document) == 1\n",
+     "class TestThing:\n    def test_one(self):\n        assert listing(document, directory=lookup) == 1\n"),
+])
+def test_a_legacy_test_may_follow_a_signature_by_its_calls_keyword_arguments(tmp_path: Path, before: str, after: str) -> None:
+    """A legacy test whose calls gained a keyword argument, lost some, gained one in a nested call laid out
+    anew, or gained one inside a test class, is no breach."""
+    assert _legacy_breaches(tmp_path, before, after) == []
+
+
+@pytest.mark.parametrize(("before", "after"), [
+    ("def test_one():\n    assert listing(document) == 1\n", "def test_one():\n    assert listing(other, host_environment=E) == 1\n"),
+    ("def test_one():\n    assert listing(document, home=HOME) == 1\n", "def test_one():\n    assert listing(document, home=OTHER, directory=d) == 1\n"),
+    ("def test_one():\n    assert listing(document) == 1\n", "def test_one():\n    assert listing(document, directory=d) == 2\n"),
+    ("def test_one():\n    assert listing(document) == 1\n", "def test_one():\n    setup()\n    assert listing(document, directory=d) == 1\n"),
+    ("def test_one():\n    assert listing(document, **options) == 1\n", "def test_one():\n    assert listing(document, **others) == 1\n"),
+    ("def test_one():\n    assert listing(document) == 1\n", "def test_one():\n    assert listing(\n        document,\n    ) == 1  # reworded\n"),
+    ("@pytest.mark.parametrize('x', [1])\ndef test_one(x):\n    assert listing(x) == 1\n",
+     "@pytest.mark.parametrize('x', [1], ids=['one'])\ndef test_one(x):\n    assert listing(x, directory=d) == 1\n"),
+    ("def test_one(tmp_path):\n    assert listing(tmp_path) == 1\n", "def test_one(tmp_path, capsys):\n    assert listing(tmp_path, directory=d) == 1\n"),
+])
+def test_any_other_change_to_a_legacy_test_is_still_a_breach(tmp_path: Path, before: str, after: str) -> None:
+    """A legacy test is still refused when, beside or without a keyword argument that moved, a positional
+    argument changed, a kept keyword's value changed, an expected value changed, a statement was added, a ``**``
+    argument changed, only the layout and a comment changed, a decorator changed, or the test's own parameters
+    changed."""
+    breaches = _legacy_breaches(tmp_path, before, after)
+    assert len(breaches) == 1 and "changed in a legacy file" in breaches[0]

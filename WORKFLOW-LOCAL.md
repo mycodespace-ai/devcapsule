@@ -218,7 +218,10 @@ capsule for reasons that were not bugs.
    until it declares one: `__all__`, or a module docstring that names the
    public operations and leaves the rest private.
 5. Existing test files carry `pytestmark = pytest.mark.legacy`. Do not
-   add, change or delete individual test functions in a legacy file. The
+   add, change or delete individual test functions in a legacy file.
+   Owner direction, 2026-11-12: one change is allowed. When a pull request
+   changes the signature of a function, a call to it in a legacy test may
+   gain or lose keyword arguments. Change nothing else in the test. The
    mirror of a legacy file `tests/test_<name>.py` is every
    `tests/unit/<path>/test_<name>.py`; the gate pairs them by file name
    alone. When a change edits a test in a legacy file or adds, changes or
@@ -262,7 +265,9 @@ patches.
 2. Every other module takes these as values, in required arguments. Give no
    parameter a default that reads the host. Add no parameter that only a
    test passes. Pass a value that is costly to read as a function without
-   arguments.
+   arguments. Owner direction, 2026-11-12: `assess_checkout` and
+   `Configuration` keep such a default until the legacy tests that call
+   them are retired.
 3. Bind the values that several operations share in a frozen dataclass. Its
    constructor stores them and does nothing else.
 4. Separate each decision from its effect. Write the decision as a function

@@ -266,6 +266,22 @@ process. Git on a scratch repository can pass both, and even then its
 commit dates come from the clock unless the test sets them. A Docker
 build passes neither.
 
+The allowance in rule 5 was added on 2026-11-12. Rule 5 made every change
+to a function's signature cost the whole legacy file of each test that
+called it: in PR #26 one removed keyword retired a file of 22 tests, and
+making the listing take the host's environment as an argument would have
+retired five files for nineteen one-line calls. The owner's ruling: a call
+in a legacy test may follow the signature, by keyword arguments added or
+removed, and by nothing else. The test stays legacy and asserts what it
+asserted; when the new argument is the host itself, the call now says so.
+The gate holds the form of the change, by comparing the two versions of
+the test as syntax: positional arguments, the values of the keywords that
+stay, every other statement, the decorators and the test's own parameters
+must be the same, and a change of layout alone is still refused. That the
+signature did change is left to the reviewer. Beside it the owner allowed,
+for two functions that five legacy files call, an argument that is optional
+until those files are retired; see *Host Inputs*.
+
 The rules on the command line and on the network were added on 2026-11-12,
 from one test. `test_offered_agent_still_needs_consent_and_can_be_omitted`
 calls `cli.main` four times and expects the second call to stop for consent
@@ -340,6 +356,13 @@ three are caught by nothing. That is why rule 7 asks for the statement and
 why the entry layer must stay small. A value that is costly to read, the
 installed version for instance, is passed as a function so that the top
 layer does not pay for it on every start.
+
+One exception stands by the owner's ruling of 2026-11-12. `assess_checkout`
+and `Configuration` take what the host says, its environment and its
+directories, as arguments that may be left out, and then ask this machine
+themselves. Five legacy test files call them nineteen times and rely on
+that. The launch passes the arguments. The defaults go when those files are
+retired, or sooner by the allowance of *Unit Tests* rule 5.
 
 ## Reasoning And Code Navigation
 

@@ -14,7 +14,9 @@ gate's check; its summary line counts the files still marked `legacy`. The
 flat files under `tests/` are those legacy files: they are never edited in
 place or shrunk one function at a time, and touching one, or adding,
 changing or deleting a test in a `tests/unit/` file of the same name,
-retires the entire legacy file into the mirror.
+retires the entire legacy file into the mirror. One change to a legacy test
+is let through: a call that gains or loses keyword arguments, to follow a
+function whose signature changed in the same pull request.
 
 *Host Inputs* in the same file binds new and changed tests further: only an
 entry layer reads the host, the modules below it take what it read as

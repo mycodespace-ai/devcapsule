@@ -16,7 +16,10 @@ The checks, in the order the section states its rules:
 3. **Whole-file legacy retirement.** A legacy file, one whose module-level
    ``pytestmark`` includes ``legacy``, is compared with the base revision:
    no test function is added, changed or removed while the file remains, and
-   no marker other than ``legacy`` is added. A legacy file the base does not
+   no marker other than ``legacy`` is added. One change to a test is let
+   through: calls in its body that gain or lose keyword arguments, which is
+   how a legacy test follows a function whose signature changed. That the
+   signature did change is the reviewer's to see. A legacy file the base does not
    have is refused. Adding, changing or deleting a test in ``tests/unit/<path>/test_<name>.py``
    while a flat legacy unit-test file ``tests/test_<name>.py`` still exists is
    also refused, the two paired by file name alone; refurbish the entire
@@ -41,6 +44,7 @@ import ast
 import os
 import subprocess
 import sys
+import textwrap
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -330,7 +334,7 @@ def _check_legacy(module: TestModule, base: TestModule | None) -> list[str]:
                 f"{module.path}: {name} was added to a legacy file; "
                 f"refurbish the whole legacy file into {UNIT_MIRROR} and delete {module.path}"
             )
-        elif source != base.functions[name]:
+        elif source != base.functions[name] and not _only_call_keywords_differ(base.functions[name], source):
             breaches.append(
                 f"{module.path}: {name} changed in a legacy file; "
                 f"refurbish the whole legacy file into {UNIT_MIRROR} and delete {module.path}"
@@ -344,6 +348,59 @@ def _check_legacy(module: TestModule, base: TestModule | None) -> list[str]:
     for marker in sorted(module.markers - base.markers - {LEGACY_MARKER}):
         breaches.append(f"{module.path}: marker {marker!r} was added to a legacy file")
     return breaches
+
+
+def _only_call_keywords_differ(before: str, after: str) -> bool:
+    """Whether two versions of a test function differ by keyword arguments of calls in the body, and by nothing else.
+
+    This is the one change rule 3 lets through. True needs at least one call
+    that gained or lost a keyword argument: a change of layout or of a
+    comment alone is still a change to a legacy test. The decorators and the
+    function's own parameters must be the same.
+    """
+    try:
+        old, new = (ast.parse(textwrap.dedent(source)).body[0] for source in (before, after))
+    except SyntaxError:
+        return False
+    if not isinstance(old, (ast.FunctionDef, ast.AsyncFunctionDef)) or type(old) is not type(new):
+        return False
+    assert isinstance(new, (ast.FunctionDef, ast.AsyncFunctionDef))
+    def header(function: ast.FunctionDef | ast.AsyncFunctionDef) -> tuple[str, str, list[str]]:
+        return function.name, ast.dump(function.args), [ast.dump(item) for item in function.decorator_list]
+
+    if header(old) != header(new) or len(old.body) != len(new.body):
+        return False
+    moved: list[str] = []
+    same = all(_same_but_for_call_keywords(mine, theirs, moved) for mine, theirs in zip(old.body, new.body))
+    return same and bool(moved)
+
+
+def _same_but_for_call_keywords(old: object, new: object, moved: list[str]) -> bool:
+    """Compare two syntax trees node by node; a call may differ in which keyword arguments it names.
+
+    ``moved`` collects the name of every keyword argument found on one side
+    only. A keyword argument both sides name must have the same value, and so
+    must every positional argument and every ``**`` argument.
+    """
+    if isinstance(old, list) and isinstance(new, list):
+        return len(old) == len(new) and all(_same_but_for_call_keywords(a, b, moved) for a, b in zip(old, new))
+    if not isinstance(old, ast.AST) or not isinstance(new, ast.AST):
+        return old == new  # a name, a constant's value, an operator's absence
+    if type(old) is not type(new):
+        return False
+    if isinstance(old, ast.Call) and isinstance(new, ast.Call):
+        named_old = {keyword.arg: keyword.value for keyword in old.keywords if keyword.arg is not None}
+        named_new = {keyword.arg: keyword.value for keyword in new.keywords if keyword.arg is not None}
+        moved.extend(sorted(named_old.keys() ^ named_new.keys()))
+        spread_old = [keyword.value for keyword in old.keywords if keyword.arg is None]
+        spread_new = [keyword.value for keyword in new.keywords if keyword.arg is None]
+        return (_same_but_for_call_keywords(old.func, new.func, moved)
+                and _same_but_for_call_keywords(old.args, new.args, moved)
+                and _same_but_for_call_keywords(spread_old, spread_new, moved)
+                and all(_same_but_for_call_keywords(named_old[name], named_new[name], moved)
+                        for name in named_old.keys() & named_new.keys()))
+    # ``_fields`` are a node's children and values; line and column numbers are not among them.
+    return all(_same_but_for_call_keywords(getattr(old, name, None), getattr(new, name, None), moved) for name in old._fields)
 
 
 def _check_mirror_against_legacy(
