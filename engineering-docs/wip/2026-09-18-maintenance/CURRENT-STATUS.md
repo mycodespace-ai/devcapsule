@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, no fix started; one major bug in fixing, the Python route and its guard, merged through #25 with the local gate's routing open; a follow-up to PR #18 on `ws-maintenance/host-inputs-at-source`, by Pair Review, for the owner's review
+State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, no fix started; one major bug in fixing, the Python route and its guard, merged through #25 with the local gate's routing open; a follow-up to PR #18 on `ws-maintenance/host-inputs-at-source`, by Pair Review, for the owner's review; rewritten 2026-11-12 on the owner's direction so that host inputs are values and no touched test patches, the rewrite not yet reviewed by the partner
 
 Definition read: WORKFLOW.md@e83f22a20701, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
@@ -16,7 +16,159 @@ Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selecti
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
+## PR #26 rewritten: host inputs are values, and no touched test patches — 2026-11-12
+
+On 2026-11-11 the owner read the first judgment of the section below and
+rejected its premise. The direction, in the owner's words: a value that an
+inner module would be patched to supply, an environment variable for example,
+"should have been a parameter at construction"; "only a very top layer does
+the mapping", in a declarative style, with at most a small convenience method
+that is obviously right; the inner module is "unaware that the value comes
+from an OS env var"; a unit test "simply needs to construct regular values";
+and classes exist "to bind values that are used again and again". The owner
+then asked for PR #26 to be rewritten on those lines, with lessons and rules
+to follow from the result. This section records the rewrite. It supersedes
+judgments 1 to 3 of the section below; the product code of that section is
+replaced, not kept beside the new one.
+
+**Delivery.** The same branch and pull request,
+`ws-maintenance/host-inputs-at-source` and
+[PR #26](https://github.com/mycodespace-ai/devcapsule/pull/26).
+
+**The product code.**
+
+- `container_runtime/identity.py`: `CapsuleUser(identity, caller_uid)`
+  replaces `foreground_command`. `command` wraps a child's command behind
+  `gosu` for a root caller. `owner_changes` returns the `(path, uid, gid)`
+  changes that give new directories to the capsule user. Nothing in the
+  module reads the operating system.
+- `container_runtime/filesystem.py`: `create_directories(plan)` creates the
+  directories and returns the ones it created. `prepare_filesystem(plan, user)`
+  performs the owner changes `CapsuleUser.owner_changes` decides, in a loop
+  with no branch. `RUNTIME_ROOT`, added on 2026-11-11 so a test could patch
+  it, is removed.
+- `container_runtime/console.py`: `ConsoleInstallation(python, launcher_source)`
+  holds the two image paths; `package_path` and `child` are its methods and
+  replace `console_package_path` and `console_child`. `of_image()` builds the
+  one at the image's fixed paths. `probe_address` is a public function.
+- `container_runtime/session.py`, new: `Session(plan, job, user, console)`
+  decides everything `run` used to decide inline: the filesystem plan, the
+  surface's launch with the files and variables it needs, the variables to
+  set given the existing ones, whether the contained display is shown,
+  whether the JetBrains profile lock is held, the log settings, and the
+  children in start order with their log files.
+- `container_runtime/entrypoint.py`: `run` reads `os.geteuid()` and
+  `os.environ` once, builds the session, and performs its answers in
+  sequence. `log_rotation` and `logged_children` moved into `Session`.
+- `console_tools.py`: `DecisionTools(in_capsule, console, runtime_plan_path)`
+  with `command` and `run` replaces the two functions and their four optional
+  parameters. `CheckoutDecisionsCommand.run` reads the environment variable
+  and names the image's paths.
+- `build_info.py`: `distribution_build_info(package_locations, pyproject_path,
+  installed_version)` and `embedded_build_info(package_locations)` take every
+  location as a value; `installed_version` is a function, asked only when
+  needed, as before. `current_build_info()` and `is_built_distribution()`
+  take no argument and name the running distribution's locations. The record's
+  file name is inside the tested function. `build_info_text` is the text
+  form `version` prints.
+
+**The tests.** The mirror files of these units, and the three integration
+files, hold no `monkeypatch` use; the files held 26 before. A test builds a
+`CapsuleUser`, a `ConsoleInstallation` over files in its own directory, or a
+`Session`, and asserts on what the call returns.
+
+- The readiness probe is tested against a real socket on loopback. The 0.2
+  second timeout, which only a stand-in connection could observe, is no longer
+  asserted.
+- `run`, `VersionCommand.run` and `CheckoutDecisionsCommand.run` have no
+  mirror test. Three integration files start the real programs in a process
+  whose environment the test builds: a headless session and an interactive
+  one with a stand-in program where the IDE is installed, `devcapsule version`,
+  and `project checkout decisions`.
+- `tests/unit/devcapsule/commands/test_version.py` is deleted: its two tests
+  patched `current_build_info`, and the text and JSON forms are now tested on
+  `build_info.py`.
+
+**Rule 5.** `tests/test_runtime_entrypoint.py` called `foreground_command`
+and `prepare_filesystem` with their old signatures and patched
+`identity.os.geteuid`. The whole file is refurbished: its 22 tests are in
+the mirrors of `contract`, `filesystem`, `identity`, `session`, `entrypoint`,
+`graphics` and `components/jetbrains`, and the file is deleted. `graphics.py`
+and `components/jetbrains.py` declare `__all__` for that. The convention
+check counts 102 legacy files and 1350 legacy tests, from 103 and 1372, with
+0 breaches. Two consequences outside the mirror:
+
+- `tests/test_contained_display.py`, legacy, imported three helpers from the
+  deleted file. They are now defined in it, and its fixture patches
+  `entrypoint.os.geteuid`. No test function of the file changed.
+- `tests/conftest.py` patched `console.LAUNCHER_CONSOLE_SOURCE` for every
+  test. No unit test reads that constant through an entry layer any more, so
+  the patch is removed.
+
+`tests/test_vscode_component.py` and `tests/test_eclipse_component.py`,
+legacy, still call `run` under their own patches and pass unchanged.
+
+**Evidence.** 43 faults were planted one at a time in a scratch copy: the 26
+of 2026-11-11, placed where the same decision lives now, and 17 more in the
+performing layer and the session.
+
+| Caught by | Of the first 26 | Of all 43 |
+| --- | --- | --- |
+| the mirror files, which patch nothing | 19 | 26 |
+| legacy unit files that reach `run` under patches | 2 | 4 |
+| the integration files | 2 | 8 |
+| nothing | 3 | 5 |
+
+The hosted pull-request gate runs the first two rows: 21 of the first 26,
+where the patched tests of 2026-11-11 caught 25. The five that no test
+catches:
+
+- the readiness probe's timeout made a hundred times longer, and removed;
+- `checkout decisions` dropping its arguments, which shows only where the
+  image has a console;
+- the uid and gid swapped in the one `os.chown` call, which runs only for root;
+- the stamped record looked for outside the package, which shows only in a
+  built executable.
+
+**Validation, in the capsule.** `nox -s tests`: 17 failed, 2959 passed; the
+17 are the standing ones of the blocking bug, the same test for test as
+before the rewrite. `nox -s typecheck smoke pex docs-contract`: all pass,
+mypy over 341 files. The integration tests that need no Docker: 116 passed,
+3 skipped, 1 failed; the failure is in `test_pex_runtime.py`, which runs the
+existing `dist/devcapsule-local.pex` and finds the capsule's trust already
+accepted, the family of the blocking bug. Not run: `nox -s webconsole`, the
+end-to-end sessions, `nox -s build` as one session.
+
+**Judgments taken for the owner.**
+
+1. A lazy input stays lazy: `installed_version` is passed as a function, so
+   a built executable does not read its installed metadata on every start.
+2. `run` keeps its signature and stays the layer that reads the host. Two
+   legacy files therefore keep passing without an edit; the alternative was
+   to refurbish 644 more lines of unrelated component tests in this change.
+3. The command classes are not given a constructor. The framework calls them
+   as classes; changing that is a change to every command.
+4. `display.py` and `diagnose.py` still read `os.geteuid`, a fixed socket
+   directory and `CONSOLE_PYTHON` themselves. They were not in PR #18.
+
+**Proposals, not implemented.**
+
+- Run the integration tests that need no Docker in the hosted pull-request
+  gate. Three of the files are the only tests of the layer that reads the
+  host, and they take five seconds.
+- Give the command framework a context that `cli.main` builds from the
+  process, so a command reads `context.environ` and a test passes one.
+- Apply the same change to `display.py`, whose legacy tests patch three names.
+
+**Review.** The rewrite has not been reviewed by the partner. PR #27 reviewed
+the code this section replaces.
+
+**Next action.** The owner reads PR #26; lessons and a rule for *Unit Tests*
+follow from that reading, on the owner's word.
+
 ## PR #18's test-only parameters removed; the tests set the host at its source — 2026-11-11
+
+Superseded in part on 2026-11-12: the product code and judgments 1 to 3 of this section are replaced by the section above.
 
 On 2026-11-10 the owner asked for an independent assessment of
 [PR #18](https://github.com/mycodespace-ai/devcapsule/pull/18), then asked
