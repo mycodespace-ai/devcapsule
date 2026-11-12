@@ -146,3 +146,29 @@ def test_a_checkouts_own_grant_answers_a_vendor_download_under_a_home_that_trust
     review = _download_review(lock, _checkout_answering(lock, download=True), HomeTrust())
 
     assert (review.status, review.value, review.problem) == ("authorized", True, None)
+
+
+def test_a_trusted_channel_does_not_cover_an_artifact_that_moved_to_another_origin() -> None:
+    """A home accepted Claude Code's channel as one lock named it. Under a lock whose artifact comes from
+    another origin the acceptance does not answer the download: it is unanswered again, with a problem."""
+    accepted = _lock_with_claude_code()
+    moved = _lock_with_claude_code()
+    moved["components"]["claude-code"]["artifacts"]["linux-amd64"]["url"] = "https://mirror.example.test/claude"
+
+    review = _download_review(moved, _checkout_answering(moved, download=None), _trusting_every_channel_of(accepted))
+
+    assert (review.status, review.trusted_channel) == ("missing-required", None)
+    assert review.problem is not None
+
+
+def test_a_trusted_channel_covers_another_version_from_the_same_origin() -> None:
+    """The same acceptance answers the download of a later version that comes from the origin accepted: trust
+    is given to the channel, not to a version."""
+    accepted = _lock_with_claude_code()
+    later = _lock_with_claude_code()
+    later["components"]["claude-code"]["version"] = "2.2.0"
+    later["components"]["claude-code"]["artifacts"]["linux-amd64"] = {"url": "https://downloads.claude.ai/later/claude", "sha256": "d" * 64}
+
+    review = _download_review(later, _checkout_answering(later, download=None), _trusting_every_channel_of(accepted))
+
+    assert (review.status, review.trusted_channel, review.problem) == ("trusted", "claude-code", None)

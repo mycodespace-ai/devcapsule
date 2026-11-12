@@ -19,6 +19,5 @@ python:
   # Each entry leaves when its reader builds its own input.
   - '.devcapsule/**'  # tests/test_base_contract.py
   - 'component-status/**'  # tests/test_component_status.py
-  - 'docs/**'  # the [docs] case of tests/unit/devcapsule/legacy_refactoring/test_home.py walks all of docs/;
-               # tests/test_release_docs.py reads docs/versions.yaml
+  - 'docs/versions.yaml'  # tests/test_release_docs.py
   - 'engineering-docs/releases/v0.2.14/notes.md'  # tests/test_release_docs.py

@@ -37,6 +37,7 @@ from devcapsule.commands.framework import (
 from devcapsule.components.catalog import COMPONENTS
 from devcapsule.commands._versions import VersionsGroup
 from devcapsule.commands._upgrade_prompt import offer_upgrades
+from devcapsule.commands._launch_review import flags_after_upgrade
 from devcapsule.commands._run_flow import RunFlags, launch_listing_document, load_launch_state, prepare_launch
 from devcapsule.display_client import has_contained_display
 from devcapsule.commands._software_approvals import (
@@ -1304,37 +1305,17 @@ class ConfigTrustListCommand(Command):
         from devcapsule.configuration.derivation import load_state
         from devcapsule.configuration.storage import load_trust, settings_path
         from devcapsule.configuration.trust import HomeTrust, channels_for
+        from devcapsule.configuration.trust_listing import render_trust_rows, trust_rows
         root, manifest = manifest_for(_project_context(context).start_path())
         lock = load_state(root, manifest).composed_lock()
-        trust = HomeTrust.read(load_trust())
-        channels = channels_for(lock)
-        rows: list[dict[str, Any]] = [
-            {"channel": channel.id, "vendor": channel.vendor, "product": channel.product,
-             "origins": list(channel.origins), "terms-url": channel.terms_url,
-             "integrity": channel.integrity, "accepted": trust.channels.get(channel.id),
-             "trusted": trust.covers(channel), "note": channel.note} for channel in channels.values()]
-        for channel_id, entry in trust.channels.items():
-            if channel_id not in channels:
-                rows.append({"channel": channel_id, "vendor": entry["vendor"], "product": "", "origins": entry["origins"],
-                             "terms-url": entry["terms-url"], "integrity": entry["integrity"], "accepted": entry,
-                             "trusted": bool(entry["integrity"]), "note": "not used by this checkout"})
+        rows = trust_rows(channels_for(lock), HomeTrust.read(load_trust()))
         if arguments.as_json:
             print(json.dumps({"schema-version": 1, "path": str(settings_path()), "channels": rows}, indent=2, sort_keys=True))
             return 0
         print(f"Trust record: {settings_path()}")
         print(f"Scope: this DevCapsule home, {config_root()}. Anyone who uses this home uses this acceptance.")
-        for row in rows:
-            state = "trusted" if row["trusted"] else ("not covered" if row["accepted"] else "not yet")
-            origins = ", ".join(str(item) for item in row["origins"]) or "the lock"
-            terms = f"; terms {row['terms-url']}" if row["terms-url"] else ""
-            print(f"{row['channel']:<18} {state:<11} {row['vendor']} — {row['product'] or '(not used by this checkout)'}; "
-                  f"from {origins}; integrity {row['integrity'] or 'not recorded'}{terms}")
-            if row["accepted"] and not row["trusted"]:
-                entry = row["accepted"]
-                print(f"{'':<18} Accepted origins: {', '.join(entry['origins'])}; "
-                      f"integrity {entry['integrity'] or 'not recorded'}; terms {entry['terms-url'] or 'none'}")
-            if row["note"]:
-                print(f"{'':<18} {row['note']}")
+        for line in render_trust_rows(rows):
+            print(line)
         return 0
 
 
@@ -2244,14 +2225,7 @@ class ProjectRunCommand(Command):
             return 1
         # An upgrade may have changed the selection: derive again from the record.
         if command_report is None:
-            # Saved flags are now record inputs. Reapply only launch overrides,
-            # including terminal "once" answers, when checking the new selection.
-            again = RunFlags(allow_unverified=flags.allow_unverified) if flags.save else flags
-            # Trust accepted the channel shown in the first review. Never
-            # replay that acceptance against a different channel after an upgrade.
-            again = replace(again, save=False, trust=(), authorize=tuple(
-                (name, render_authorization_value(value)) for name, value in prepared.host_overrides.items()
-            ))
+            again = flags_after_upgrade(flags, prepared.host_overrides)
             prepared.selected = prepare_launch(start, again, interactive=False).selected
         selected = prepared.selected
         review = review_configuration(selected.manifest, selected.lock, selected.checkout,

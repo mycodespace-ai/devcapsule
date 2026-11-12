@@ -26,13 +26,15 @@ line at once.
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 import shlex
 from typing import Any, Callable, Mapping
 
 from devcapsule.compat import DecisionPending
-from devcapsule.configuration.authorization import authorization_declarations, normalize_authorization_value
+from devcapsule.configuration.authorization import (
+    authorization_declarations, normalize_authorization_value, render_authorization_value,
+)
 from devcapsule.configuration.capabilities import (
     IDE_REQUIREMENT, CapabilityPolicy, LocalCapabilities, RequirementDeparture, capability_notes,
 )
@@ -48,7 +50,8 @@ from devcapsule.configuration.values import legacy_memory_names, memory_size_byt
 
 __all__ = [
     "BLOCKING_KINDS", "Ask", "LaunchReview", "Prepared", "RunFlags", "capability", "channel_for",
-    "refuse_contradictory_flags", "render_pending", "requested_ide", "review_launch", "stage_trust",
+    "flags_after_upgrade", "refuse_contradictory_flags", "render_pending", "requested_ide", "review_launch",
+    "stage_trust",
 ]
 
 BLOCKING_KINDS = {"ide", "env", "renew", "trust", "consent", "value", "secret"}
@@ -130,6 +133,22 @@ can add to: the run-once host overrides, the variables to save, and the
 channels accepted. It raises :class:`DecisionPending` when the developer
 declines a decision the launch cannot go on without.
 """
+
+
+def flags_after_upgrade(flags: RunFlags, host_overrides: Mapping[str, Any]) -> RunFlags:
+    """The flags of a launch's second review, made after an upgrade may have changed what the checkout selects.
+
+    The first review is complete and written. Saved flags are in the record
+    now, so they are not given again; flags for this launch only are, and with
+    them the host accesses that the developer allowed once at the terminal,
+    ``host_overrides``. ``--trust`` is never given again: it accepted the
+    channel that the first review showed, and an upgrade can change a
+    channel. A channel that changed is then a pending decision.
+    """
+    again = RunFlags(allow_unverified=flags.allow_unverified) if flags.save else flags
+    return replace(again, save=False, trust=(), authorize=tuple(
+        (name, render_authorization_value(value)) for name, value in host_overrides.items()
+    ))
 
 
 def refuse_contradictory_flags(flags: RunFlags) -> None:

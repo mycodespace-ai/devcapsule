@@ -16,7 +16,7 @@ from typing import Any
 
 import pytest
 
-from devcapsule.commands._launch_review import RunFlags, review_launch, stage_trust
+from devcapsule.commands._launch_review import RunFlags, flags_after_upgrade, review_launch, stage_trust
 from devcapsule.compat import DecisionPending
 from devcapsule.configuration.authorization import authorization_declarations, normalize_authorization_value
 from devcapsule.configuration.bindings import HostDirectory
@@ -30,6 +30,7 @@ from devcapsule.configuration.listing import Decision
 from devcapsule.configuration.manifest import current_manifest
 from devcapsule.configuration.manifest_document import Recommendations
 from devcapsule.configuration.operations import CheckoutRecord
+from devcapsule.configuration.trust import BASE_CHANNEL, BASE_REPOSITORY, HomeTrust, base_channel, channels_for
 from devcapsule.configuration.values import memory_size_bytes
 from devcapsule.platforms import Platform
 from devcapsule.resolution_matrix import MATRICES
@@ -65,9 +66,9 @@ def a_host(*, variables: tuple[str, ...] = (), directories: tuple[str, ...] = ()
                 environment={name: "a value no decision reads" for name in variables}, directory=directory)
 
 
-def checkout_of(required: tuple[str, ...], *, ide: str = "python-ide", host: Host | None = None,
+def checkout_of(required: tuple[str, ...], *, ide: str | None = "python-ide", host: Host | None = None,
                 manifest_tables: dict[str, Any] | None = None, offered: tuple[str, ...] = (),
-                recommended: dict[str, str] | None = None) -> CheckoutState:
+                recommended: dict[str, str] | None = None, base_authorized: bool = True) -> CheckoutState:
     """A registered checkout of a project that requires ``required``, in a home that has accepted nothing.
 
     Its host is ``a_host()`` unless ``host`` is given. ``manifest_tables`` are
@@ -79,7 +80,9 @@ def checkout_of(required: tuple[str, ...], *, ide: str = "python-ide", host: Hos
     It is what ``project init --require ... --ide IDE --authorize base-image
     default`` leaves, built with the operations that command uses and no file:
     the lock derived from the policy, the IDE pinned on the record, the base
-    image authorized for this checkout.
+    image authorized for this checkout. With ``ide`` None the checkout has
+    chosen no IDE. With ``base_authorized`` false the checkout has not
+    authorized the base, which is then for the home's trust to answer.
     """
     manifest: dict[str, Any] = {
         "devcapsule-schema-version": 2,
@@ -100,8 +103,9 @@ def checkout_of(required: tuple[str, ...], *, ide: str = "python-ide", host: Hos
     selection = Selection(LocalCapabilities.read(state.checkout), state.surfaces)
     selection.ide = ide
     record = CheckoutRecord.staged(RECORD, state.with_selection(selection))
-    base_image = authorization_declarations(manifest, state.composed_lock(record.document))["base-image"]
-    record.authorize(base_image, normalize_authorization_value(base_image, "default"))
+    if base_authorized:
+        base_image = authorization_declarations(manifest, state.composed_lock(record.document))["base-image"]
+        record.authorize(base_image, normalize_authorization_value(base_image, "default"))
     state.checkout = record.export()
     return state
 
@@ -579,3 +583,146 @@ def test_the_checkouts_own_authorization_of_a_vendors_download_settles_it_withou
     assert review.selected.lock["components"]["claude-code"]["version"]
     assert review.accepted == []
     assert review.state.home == {}
+
+
+def leaving_the_base_to_the_home(*, ide: str | None = "python-ide") -> CheckoutState:
+    """A checkout of a project that requires Node, which has not authorized its base image: DevCapsule's
+    published base, for the home's trust of the channel ``devcapsule-base`` to answer."""
+    return checkout_of(("node",), ide=ide, base_authorized=False)
+
+
+def test_a_base_channel_the_home_has_not_accepted_leaves_the_launch_pending_naming_the_trust_flag() -> None:
+    """With the base neither authorized on the checkout nor trusted by the home, the launch ends pending on
+    DevCapsule's channel and names ``--trust devcapsule-base``. The home's settings are as they were."""
+    state = leaving_the_base_to_the_home()
+
+    with pytest.raises(DecisionPending, match="--trust devcapsule-base"):
+        review_launch(state, RunFlags(), ask=None, announce=never_announced)
+
+    assert state.home == {}
+
+
+def test_the_trust_flag_accepts_the_channel_for_the_home_and_the_published_base_is_planned() -> None:
+    """``--trust devcapsule-base`` settles the base without a terminal: the plan authorizes DevCapsule's
+    published base, the acceptance is staged for the home with the time the host tells, and nothing about the
+    base is staged on the checkout's record."""
+    review = review_launch(leaving_the_base_to_the_home(), RunFlags(trust=(BASE_CHANNEL,)), ask=None, announce=never_announced)
+
+    assert review.selected.resolution["authorization"]["base-image"]["reference"].startswith(BASE_REPOSITORY + "@")
+    assert review.accepted == [BASE_CHANNEL]
+    assert review.state.home["trust"]["channels"][BASE_CHANNEL]["accepted"] == "2026-01-02T03:04:05+00:00"
+    assert "base-image" not in review.record.document.get("authorization", {})
+    assert review.record.document == review.original
+
+
+def test_a_home_that_trusts_the_base_channel_plans_the_launch_without_a_question() -> None:
+    """In a home that has accepted DevCapsule's channel, the same checkout is planned with nothing asked and
+    nothing newly accepted."""
+    state = leaving_the_base_to_the_home()
+    state.home = {"trust": HomeTrust().with_channel(base_channel(), accepted_at=ACCEPTED_AT).document()}
+
+    review = review_launch(state, RunFlags(), ask=never_asked, announce=never_announced)
+
+    assert review.selected.resolution["authorization"]["base-image"]["reference"].startswith(BASE_REPOSITORY + "@")
+    assert review.accepted == []
+
+
+def test_a_trust_flag_beside_another_unanswered_decision_still_ends_pending() -> None:
+    """With no IDE chosen and no terminal, ``--trust devcapsule-base`` answers the channel and the launch
+    still ends pending on the IDE alone: the message says nothing was written."""
+    state = leaving_the_base_to_the_home(ide=None)
+
+    with pytest.raises(DecisionPending) as pending:
+        review_launch(state, RunFlags(trust=(BASE_CHANNEL,)), ask=None, announce=never_announced)
+
+    message = str(pending.value)
+    assert "ide ide: Your IDE for this checkout" in message
+    assert "trust devcapsule-base" not in message
+    assert "Nothing was written" in message
+
+
+def test_trusting_a_channel_the_project_does_not_use_is_refused_naming_its_channels() -> None:
+    """``--trust codex`` on a project whose only channel is DevCapsule's base is refused, and the refusal lists
+    the project's channels."""
+    with pytest.raises(ProjectConfigurationError, match="No channel 'codex' on this project; its channels: devcapsule-base"):
+        review_launch(leaving_the_base_to_the_home(), RunFlags(trust=("codex",)), ask=None, announce=never_announced)
+
+
+SAVED_ORIGIN = "https://selected.example.test"
+"""Where the checkout's saved version set takes Claude Code from, which is not where the project's lock does."""
+
+
+def with_a_saved_set_from_another_origin() -> CheckoutState:
+    """A checkout of a project that requires the Claude Code agent, with a saved version set whose Claude Code
+    comes from ``SAVED_ORIGIN``."""
+    state = checkout_of(("python", "python-ide", "claude-code-agent"))
+    saved = state.composed_lock()
+    for artifact in saved["components"]["claude-code"]["artifacts"].values():
+        artifact["url"] = f"{SAVED_ORIGIN}/claude"
+    state.checkout["version-set"] = {"format": 1, "lock": render_toml(saved),
+                                     "recommendation-digest": canonical_digest(state.shared_lock)}
+    return state
+
+
+def test_the_trust_flag_accepts_the_channel_as_the_checkouts_saved_version_set_names_it() -> None:
+    """``--trust claude-code`` accepts the channel of the checkout's saved version set: the origin staged for
+    the home is the saved set's, not the project lock's, and the download is authorized in the plan."""
+    state = with_a_saved_set_from_another_origin()
+    assert SAVED_ORIGIN not in channels_for(state.shared_lock)["claude-code"].origins
+
+    review = review_launch(state, RunFlags(trust=("claude-code",)), ask=None, announce=never_announced)
+
+    assert review.state.home["trust"]["channels"]["claude-code"]["origins"] == [SAVED_ORIGIN]
+    assert review.selected.resolution["authorization"]["claude-code-download"] is True
+
+
+def test_the_question_put_to_the_developer_names_the_channel_of_the_saved_version_set() -> None:
+    """Without the flag, the one decision put to the developer describes Claude Code's channel with the saved
+    set's origin and not the project lock's; accepted, that origin is what is staged for the home."""
+    state = with_a_saved_set_from_another_origin()
+    (shared_origin,) = channels_for(state.shared_lock)["claude-code"].origins
+    asked: list[Decision] = []
+
+    review = review_launch(state, RunFlags(), ask=accepting(asked), announce=never_announced)
+
+    assert [(decision.kind, decision.name) for decision in asked] == [("trust", "claude-code")]
+    assert SAVED_ORIGIN in asked[0].description and shared_origin not in asked[0].description
+    assert review.state.home["trust"]["channels"]["claude-code"]["origins"] == [SAVED_ORIGIN]
+
+
+def test_the_second_review_is_given_this_launchs_flags_without_trust_and_without_save() -> None:
+    """After an upgrade, flags that were for this launch only are given again, but for ``--trust``; a host
+    access allowed once at the terminal is given as its ``--authorize`` flag."""
+    flags = RunFlags(ide="codium", memory="6g", environment=("A=1",), trust=("claude-code",), allow_unverified=True)
+
+    again = flags_after_upgrade(flags, {"network": "host"})
+
+    assert again == RunFlags(ide="codium", memory="6g", environment=("A=1",), authorize=(("network", "host"),), allow_unverified=True)
+
+
+def test_the_second_review_is_given_none_of_the_flags_that_were_saved() -> None:
+    """With ``--save`` the flags are the checkout's answers by the second review: none is given again, except
+    the permission for unverified combinations, which is never saved."""
+    flags = RunFlags(ide="codium", memory="6g", authorize=(("network", "host"),), trust=("claude-code",), save=True, allow_unverified=True)
+
+    assert flags_after_upgrade(flags, {}) == RunFlags(allow_unverified=True)
+
+
+def test_a_channel_that_an_upgrade_moved_is_pending_in_the_second_review_and_the_acceptance_is_not_widened() -> None:
+    """The first review accepted Claude Code's channel by flag. An upgrade then moves Claude Code to another
+    origin. The second review, given the flags that remain, ends pending on the channel, and the home still
+    holds the origin that was accepted and no other."""
+    flags = RunFlags(trust=("claude-code",))
+    state = checkout_of(("python", "python-ide", "claude-code-agent"))
+    first = review_launch(state, flags, ask=None, announce=never_announced)
+    accepted_origins = list(first.state.home["trust"]["channels"]["claude-code"]["origins"])
+    upgraded = first.state.composed_lock()
+    for artifact in upgraded["components"]["claude-code"]["artifacts"].values():
+        artifact["url"] = "https://unaccepted.example.test/claude"
+    state.checkout["version-set"] = {"format": 1, "lock": render_toml(upgraded),
+                                     "recommendation-digest": canonical_digest(state.shared_lock)}
+
+    with pytest.raises(DecisionPending, match="trust claude-code"):
+        review_launch(state, flags_after_upgrade(flags, first.host_overrides), ask=None, announce=never_announced)
+
+    assert state.home["trust"]["channels"]["claude-code"]["origins"] == accepted_origins

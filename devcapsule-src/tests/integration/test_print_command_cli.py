@@ -81,3 +81,21 @@ def test_print_command_names_a_base_image_that_is_not_here_and_pulls_nothing(lau
     assert calls and all(call.startswith("image inspect ") for call in calls), calls
     downloaded = [path for path in (tmp_path / "home").rglob("*") if path.is_file() and "artifacts" in path.parts]
     assert downloaded == []
+
+
+def test_print_command_with_a_trust_flag_records_no_acceptance(launcher, tmp_path: Path) -> None:
+    """A checkout whose base waits for the home's trust: ``run --print-command`` alone ends pending, exit 3.
+    With ``--trust devcapsule-base`` the review passes and the command goes on to look for the base image, so
+    the flag was taken; and the home still has no settings file, because printing records no acceptance."""
+    created = launcher("init", "--require", "python", "--creator", "mailto:owner@example.test")
+    assert created.returncode == 0, created.stderr
+    chosen = launcher("config", "ide", "python-ide")
+    assert chosen.returncode == 0, chosen.stderr
+    pending = launcher("run", "--print-command", "--no-update-check")
+    assert pending.returncode == 3 and "--trust devcapsule-base" in pending.stderr, pending.stdout + pending.stderr
+
+    printed = launcher("run", "--print-command", "--trust", "devcapsule-base", "--no-update-check")
+
+    assert printed.returncode == 2, printed.stdout + printed.stderr
+    assert "is not on this machine. A launch pulls it; nothing was pulled now." in printed.stderr
+    assert not (tmp_path / "devcapsule-home" / "settings.toml").exists()
