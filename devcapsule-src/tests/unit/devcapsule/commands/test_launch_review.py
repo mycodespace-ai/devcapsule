@@ -63,11 +63,12 @@ def a_host(*, variables: tuple[str, ...] = (), directories: tuple[str, ...] = ()
 
 
 def checkout_of(required: tuple[str, ...], *, ide: str = "python-ide", host: Host | None = None,
-                manifest_tables: dict[str, Any] | None = None) -> CheckoutState:
+                manifest_tables: dict[str, Any] | None = None, offered: tuple[str, ...] = ()) -> CheckoutState:
     """A registered checkout of a project that requires ``required``, in a home that has accepted nothing.
 
     Its host is ``a_host()`` unless ``host`` is given. ``manifest_tables`` are
-    further tables of the manifest, ``environment`` for instance.
+    further tables of the manifest, ``environment`` for instance. ``offered``
+    are capabilities the project offers and does not require.
 
     It is what ``project init --require ... --ide IDE --authorize base-image
     default`` leaves, built with the operations that command uses and no file:
@@ -77,7 +78,7 @@ def checkout_of(required: tuple[str, ...], *, ide: str = "python-ide", host: Hos
     manifest: dict[str, Any] = {
         "devcapsule-schema-version": 2,
         "project": {"name": "order", "slug": "order", "creator": "mailto:owner@example.test", "mount": "/workspace/order"},
-        "capabilities": {"required": sorted(required)},
+        "capabilities": {"required": sorted(required), **({"optional": sorted(offered)} if offered else {})},
         **(manifest_tables or {}),
     }
     state = CheckoutState(
@@ -442,3 +443,34 @@ def test_a_schema_one_manifest_recommends_its_ide_and_another_needs_no_force() -
     assert review.selected.resolution["runtime"]["component"] == "codium"
     assert review.selected.departures == () and "departures" not in review.selected.resolution
     assert review.record.document == review.original
+
+
+def offering_claude_code() -> CheckoutState:
+    """A checkout of a project that requires Python and offers the Claude Code agent, with VSCodium saved."""
+    return checkout_of(("python",), ide="frontend-ide", offered=("claude-code-agent",))
+
+
+def test_an_offered_agent_still_waits_for_its_vendors_channel() -> None:
+    """An agent the project only offers is in the launch unless the checkout omits it, so printing the launch's
+    command ends pending on its vendor's channel, and the state's documents are as they were."""
+    state = offering_claude_code()
+    before = deepcopy((state.checkout, state.home))
+
+    with pytest.raises(DecisionPending, match="trust claude-code"):
+        review_launch(state, RunFlags(), ask=None, announce=never_announced, print_only=True)
+
+    assert (state.checkout, state.home) == before
+
+
+def test_an_offered_agent_the_checkout_omits_is_not_in_the_plan() -> None:
+    """When the checkout omits the offered agent, the launch is planned without a question and the agent's
+    component is not in its lock."""
+    state = offering_claude_code()
+    selection = Selection(LocalCapabilities.read(state.checkout), state.surfaces)
+    selection.without.add("claude-code-agent")
+    state.checkout = state.with_selection(selection)
+
+    review = review_launch(state, RunFlags(), ask=None, announce=never_announced, print_only=True)
+
+    assert review.selected.resolution["runtime"]["component"] == "codium"
+    assert "claude-code" not in review.selected.lock["components"]
