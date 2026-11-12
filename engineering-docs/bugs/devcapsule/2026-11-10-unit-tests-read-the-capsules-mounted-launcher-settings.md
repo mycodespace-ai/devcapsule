@@ -229,15 +229,45 @@ What changed is that the tests which failed now say what their home is.
 - `nox -s tests` passes inside the owner's capsule: 3105 passed, 3 expected
   to fail, 10 unexpectedly passed, in 170 seconds where it took 815.
 
-Against the close criteria: 1 holds for the owner's capsule as it is today.
-2 and 3 do not. Eight marks remain, on 11 cases, in four files. Nine
-cases pass now. Two still fail inside the capsule for this cause, behind
-their mark, because they take fixtures from legacy files that were not
-changed: one in `test_environment_realization.py`, one in
-`test_project_init.py`. They are in mirror files whose legacy twins stand,
-so the gate refuses a change to them until those twins are retired; it
-accepts the deletion of a whole holding-pen file whose tests are rewritten
-elsewhere. 4 does not hold:
+- The shared fixture is fixed. `private_user_directories` sets the two
+  fixed paths by which the product knows a capsule, `CONTEXT_PATH` and
+  `CHANNEL_PATH` of `devcapsule.runtime_configuration`, to places that do
+  not exist, so no test of the unit suite sees the capsule it runs in. The
+  lever queued on 2026-11-03, naming the home, was tried with a diagnostic
+  plugin and breaks 31 tests that assert the home's layout. A test of the
+  conftest holds the fixture; with the fixture's lines removed, that test
+  and the seven command-line tests fail inside the capsule. The five
+  per-file fixtures that named the home are removed again: one mechanism.
+  The ten calls that hand in `home={}` stay; they are values.
+- The last two cases that still failed behind a mark are rewritten in
+  memory and their holding-pen files deleted: four tests of
+  `review_authorizations` in the authorization mirror, two of the launch
+  review.
+- `nox -s tests` inside the owner's capsule: 3112 passed, 1 expected to
+  fail, 10 unexpectedly passed, in 146 seconds. With the marks ignored,
+  3122 pass and one fails, a workflow test with a mark of its own.
+
+Against the close criteria:
+
+1. Holds, for the owner's capsule as it is today.
+2. Does not hold yet. Every outcome is now the same as on the hosted run
+   but for nine cases that pass behind a mark which applies only inside a
+   capsule, so the counts differ by nine.
+3. Does not hold yet. Six marks remain, on those nine cases, in two
+   holding-pen files: five in `test_trust.py`, whose stated reason is the
+   mounted settings, and one in `test_home.py`, a walk of the repository
+   for a retired word, another cause. Their legacy twins stand, so the
+   gate refuses the removal of a mark; each file goes when its tests are
+   rewritten elsewhere or judged not worth keeping.
+4. Holds: `engineering-docs/development/unit-tests.md` describes the
+   fixture as a private home on a machine that is no capsule.
+
+No unit test opens a network connection: the guard records none.
+
+Outside the unit suite, one integration test still reads the mounted
+settings, `tests/integration/test_pex_runtime.py::test_built_pex_authors_shared_policy_and_keeps_personal_selection_local`:
+it starts the built launcher with the environment of the test process,
+which inside a capsule names no home. 4 does not hold:
 `private_user_directories` is unchanged, and a test that uses neither a
 named home nor a handed-in one still reads the mount. The next channel the
 developer accepts can turn other tests red.
