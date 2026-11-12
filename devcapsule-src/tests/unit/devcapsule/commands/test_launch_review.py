@@ -23,8 +23,9 @@ from devcapsule.configuration.bindings import HostDirectory
 from devcapsule.configuration.capabilities import IDE_REQUIREMENT, CapabilityPolicy, LocalCapabilities, RequirementDeparture
 from devcapsule.configuration.capability_selection import generate_lock
 from devcapsule.configuration.derivation import CheckoutState, Host, Selection
-from devcapsule.configuration.file_formats import ProjectConfigurationError, render_checkout
+from devcapsule.configuration.file_formats import ProjectConfigurationError, canonical_digest, render_checkout, render_toml
 from devcapsule.configuration.listing import Decision
+from devcapsule.configuration.manifest import current_manifest
 from devcapsule.configuration.operations import CheckoutRecord
 from devcapsule.configuration.values import memory_size_bytes
 from devcapsule.platforms import Platform
@@ -349,3 +350,95 @@ def test_a_bound_directory_the_host_has_is_planned_by_its_resolved_path() -> Non
 
     assert review.selected.resolution["state"]["bindings"] == {"home": "/resolved/capsule-home"}
     assert review.selected.checkout["configuration"]["bindings"]["host-directory"] == {"home": "~/capsule-home"}
+
+
+@pytest.mark.parametrize("named", ["codium", "frontend-ide"])
+def test_a_forced_ide_replaces_the_required_one_and_keeps_every_other_requirement(named: str) -> None:
+    """``--ide codium --force`` against a required PyCharm plans VSCodium, by component or capability name, with
+    the departure in the plan. PyCharm is not in the launch's lock; the unrelated mandatory tool is. The
+    project's policy and the record staged for writing are as they were; only the launch's own copy of the
+    checkout selects the other IDE."""
+    review = review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(ide=named, force=True), ask=None, announce=never_announced)
+
+    selected = review.selected
+    assert selected.departures == (RequirementDeparture(IDE_REQUIREMENT, "python-ide", "frontend-ide"),)
+    assert selected.resolution["runtime"]["component"] == "codium"
+    assert selected.resolution["departures"] == {IDE_REQUIREMENT: {"required": "python-ide", "launched": "frontend-ide"}}
+    components = selected.lock["components"]
+    assert components["interactive-surface"] == "codium" and "codium" in components
+    assert "pycharm" not in components
+    assert "codex" in components
+    assert CapabilityPolicy.read(selected.manifest).required == ("codex-agent", "python", "python-ide")
+    assert review.record.document == review.original
+    assert LocalCapabilities.read(review.record.document).selected == ("python-ide",)
+    assert "frontend-ide" in LocalCapabilities.read(selected.checkout).selected
+
+
+def test_a_forced_ide_is_planned_from_a_saved_version_set() -> None:
+    """A checkout that saved its version set, PyCharm's, is still planned with VSCodium under ``--force``: the
+    departure is in the plan, PyCharm is not in the launch's lock, and the saved set is not staged for change."""
+    state = checkout_of(REQUIRING_PYCHARM)
+    state.checkout["version-set"] = {"format": 1, "lock": render_toml(state.composed_lock()),
+                                     "recommendation-digest": canonical_digest(state.shared_lock)}
+
+    review = review_launch(state, RunFlags(ide="codium", force=True), ask=None, announce=never_announced)
+
+    assert review.selected.resolution["runtime"]["component"] == "codium"
+    assert review.selected.resolution["departures"][IDE_REQUIREMENT]["required"] == "python-ide"
+    assert "pycharm" not in review.selected.lock["components"]
+    assert "codex" in review.selected.lock["components"]
+    assert review.record.document == review.original
+
+
+def requiring_minimums(*requirements: str) -> CheckoutState:
+    """The order's checkout after its owner rewrote the requirements with minimum versions; lock and record are older."""
+    state = checkout_of(REQUIRING_PYCHARM)
+    state.manifest["capabilities"]["required"] = list(requirements)
+    return state
+
+
+@pytest.mark.parametrize("required_ide", ["python-ide", "pycharm"])
+def test_force_has_nothing_to_set_aside_when_the_required_ide_is_named_by_another_spelling(required_ide: str) -> None:
+    """Whether the project requires the IDE by capability or by component name, ``--ide python-ide --force`` is
+    refused: the two names are the same IDE."""
+    state = requiring_minimums("python>=3", f"{required_ide}>=9999", "codex-agent")
+
+    with pytest.raises(ProjectConfigurationError, match="nothing to set aside"):
+        review_launch(state, RunFlags(ide="python-ide", force=True), ask=None, announce=never_announced)
+
+
+@pytest.mark.parametrize("required_ide", ["python-ide", "pycharm"])
+def test_a_departure_waives_the_minimum_of_the_ide_it_sets_aside(required_ide: str) -> None:
+    """With a minimum on the required IDE that no version meets, a forced VSCodium is planned, and the plan
+    names the requirement as the project declared it."""
+    state = requiring_minimums("python>=3", f"{required_ide}>=9999", "codex-agent")
+
+    review = review_launch(state, RunFlags(ide="codium", force=True), ask=None, announce=never_announced)
+
+    assert review.selected.resolution["runtime"]["component"] == "codium"
+    assert review.selected.resolution["departures"][IDE_REQUIREMENT]["required"] == required_ide
+
+
+def test_a_departure_waives_no_other_minimum() -> None:
+    """A minimum on Python that no version meets still refuses the forced launch: only the IDE's is waived."""
+    state = requiring_minimums("python>=9999", "python-ide>=9999", "codex-agent")
+
+    with pytest.raises(ProjectConfigurationError, match="python.*9999"):
+        review_launch(state, RunFlags(ide="codium", force=True), ask=None, announce=never_announced)
+
+
+def test_a_schema_one_manifest_recommends_its_ide_and_another_needs_no_force() -> None:
+    """A schema-1 manifest's ``need`` list, read as this launcher reads it, requires no IDE: ``--ide codium``
+    without ``--force`` plans VSCodium with no departure and stages no change to the record."""
+    state = checkout_of(REQUIRING_PYCHARM)
+    state.manifest = current_manifest({
+        "devcapsule-schema-version": 1,
+        "project": dict(state.manifest["project"]),
+        "capabilities": {"need": ["python", "python-ide", "codex-agent"]},
+    }, "the project's manifest").document()
+
+    review = review_launch(state, RunFlags(ide="codium"), ask=None, announce=never_announced)
+
+    assert review.selected.resolution["runtime"]["component"] == "codium"
+    assert review.selected.departures == () and "departures" not in review.selected.resolution
+    assert review.record.document == review.original

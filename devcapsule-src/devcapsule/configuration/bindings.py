@@ -11,6 +11,13 @@ from devcapsule.project import project_namespace
 from devcapsule.platforms import XdgHomes
 
 
+__all__ = [
+    "ConfigurationBindingDeclaration", "DirectoryLookup", "HostDirectory", "SecretInputMetadata",
+    "component_secret_inputs", "configuration_binding_declarations", "host_directory", "managed_binding_path",
+    "resolve_configuration_bindings", "resolve_secret_bindings",
+]
+
+
 @dataclass(frozen=True)
 class ConfigurationBindingDeclaration:
     name: str

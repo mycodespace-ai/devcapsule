@@ -8,7 +8,8 @@ from typing import Any
 
 import pytest
 
-from devcapsule.configuration.capability_selection import pins_for_platform
+from devcapsule.configuration.capabilities import CapabilityPolicy
+from devcapsule.configuration.capability_selection import generate_lock, pins_for_platform, selected_lock
 from devcapsule.configuration.file_formats import ProjectConfigurationError
 from devcapsule.platforms import Platform
 from devcapsule.resolution_matrix import MATRICES, ResolutionMatrix
@@ -51,3 +52,21 @@ def test_a_personal_version_the_other_platform_lacks_asks_for_a_new_choice() -> 
     channel = {"platform": "linux-amd64", "components": {"codex": {"version": "9.9.9", "url": "https://example.test/x64.tgz"}}}
     with pytest.raises(ProjectConfigurationError, match="codex 9.9.9 is pinned for linux-amd64.*linux-arm64 has no pin.*config use"):
         pins_for_platform(channel, ARM64)
+
+
+def test_a_saved_ide_that_conflicts_with_the_required_one_is_refused_naming_the_override() -> None:
+    """A checkout whose saved IDE is VSCodium, in a project that now requires PyCharm, has no effective lock:
+    the refusal names both IDEs and the ``--force`` launch that sets the requirement aside once."""
+    manifest: dict[str, Any] = {
+        "devcapsule-schema-version": 2,
+        "project": {"name": "order", "slug": "order", "creator": "mailto:owner@example.test", "mount": "/workspace/order"},
+        "capabilities": {"required": ["codex-agent", "python", "python-ide"]},
+    }
+    shared = generate_lock(CapabilityPolicy.read(manifest), AMD64)
+    checkout = {"capabilities": {"selected": ["frontend-ide"], "lock": AMD64.resolve(["frontend-ide"]).render_lock()}}
+
+    with pytest.raises(
+        ProjectConfigurationError,
+        match="Local IDE 'frontend-ide' conflicts with the project's required IDE 'python-ide'.*--ide frontend-ide --force",
+    ):
+        selected_lock(manifest, shared, checkout)
