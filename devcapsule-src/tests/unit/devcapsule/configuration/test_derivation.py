@@ -1,8 +1,9 @@
-"""Unit tests of ``devcapsule/configuration/derivation.py``: reading a checkout into memory.
+"""Unit tests of ``devcapsule/configuration/derivation.py``: reading a checkout into memory, and a checkout's selection.
 
-Each test writes its project under ``tmp_path``: a manifest and the lock the
-product derives from it. The home is the private one the suite gives every
-test; a test that needs a settings file there writes it.
+Each test of the reading writes its project under ``tmp_path``: a manifest
+and the lock the product derives from it. The home is the private one the
+suite gives every test; a test that needs a settings file there writes it.
+The tests of the selection use values alone.
 """
 from __future__ import annotations
 
@@ -11,10 +12,11 @@ from typing import Any
 
 import pytest
 
-from devcapsule.configuration.capabilities import CapabilityPolicy
+from devcapsule.configuration.capabilities import CapabilityPolicy, LocalCapabilities
 from devcapsule.configuration.capability_selection import generate_lock
-from devcapsule.configuration.derivation import load_state
+from devcapsule.configuration.derivation import Selection, load_state
 from devcapsule.configuration.file_formats import ProjectConfigurationError, render_toml
+from devcapsule.configuration.manifest_document import Recommendations
 from devcapsule.configuration.storage import settings_path
 from devcapsule.platforms import Platform
 from devcapsule.resolution_matrix import MATRICES
@@ -103,3 +105,70 @@ def test_an_unregistered_checkout_is_read_with_the_record_it_would_get(tmp_path:
     assert not state.input_path.exists()
     assert state.platform is Platform.LINUX_AMD64
     assert state.shared_lock["platform"] == "linux-amd64"
+
+
+# A checkout's selection: the IDE, the capabilities added and omitted, and the provider chosen where several
+# can supply a capability. ``project config ide``, ``add``, ``omit``, ``restore`` and ``use`` edit one of these.
+
+AMD64 = MATRICES[Platform.LINUX_AMD64]
+SURFACES = {name: AMD64.resolve_provider(name) or name for name in AMD64.ide_capabilities()}
+POLICY = CapabilityPolicy.read(MANIFEST)
+NO_RECOMMENDATION = Recommendations.read(MANIFEST)
+
+
+def choose_provider(selection: Selection, capability: str, component: str) -> None:
+    """``project config use CAPABILITY COMPONENT`` on a selection of ``MANIFEST``'s project."""
+    selection.use(AMD64, POLICY, NO_RECOMMENDATION, capability, component)
+
+
+def test_a_provider_is_chosen_for_the_selected_ide_and_recorded_with_it() -> None:
+    """With the front-end IDE selected, which VSCodium and Visual Studio Code both supply, choosing Visual Studio
+    Code is recorded as that capability's provider, beside the IDE and an added agent."""
+    selection = Selection(LocalCapabilities(), SURFACES)
+    selection.ide = "frontend-ide"
+    selection.extra.add("claude-code-agent")
+
+    choose_provider(selection, "frontend-ide", "vscode")
+
+    assert selection.local() == LocalCapabilities(("claude-code-agent", "frontend-ide"), (), {"frontend-ide": "vscode"})
+
+
+@pytest.mark.parametrize(("capability", "component"), [("python-ide", "pycharm"), ("vscode-ide", "vscode")])
+def test_a_capability_with_one_provider_offers_no_choice(capability: str, component: str) -> None:
+    """Choosing a provider for a capability that one component supplies is refused, even when the component
+    named is that one, and the selection is unchanged."""
+    selection = Selection(LocalCapabilities((capability,)), SURFACES)
+
+    with pytest.raises(ProjectConfigurationError, match=f"'{capability}' has no provider choice; supplied by {component}"):
+        choose_provider(selection, capability, component)
+
+    assert selection.local() == LocalCapabilities((capability,))
+
+
+def test_a_provider_cannot_be_chosen_for_a_capability_that_is_not_selected() -> None:
+    """Choosing a provider for the front-end IDE while no IDE is selected is refused, naming the commands that
+    select it."""
+    selection = Selection(LocalCapabilities(), SURFACES)
+
+    with pytest.raises(ProjectConfigurationError, match="'frontend-ide' is not selected; use 'config add frontend-ide' or 'config ide frontend-ide' first"):
+        choose_provider(selection, "frontend-ide", "vscode")
+
+
+def test_the_default_provider_is_chosen_by_forgetting_the_choice() -> None:
+    """``default`` as the component removes a recorded provider choice and leaves the capability selected."""
+    selection = Selection(LocalCapabilities(("frontend-ide",), (), {"frontend-ide": "vscode"}), SURFACES)
+
+    choose_provider(selection, "frontend-ide", "default")
+
+    assert selection.local() == LocalCapabilities(("frontend-ide",))
+
+
+def test_selecting_another_ide_forgets_the_provider_chosen_for_the_one_it_replaces() -> None:
+    """Changing the IDE from the front-end IDE to PyCharm drops the provider chosen for the front-end IDE and
+    keeps the capabilities that are not IDEs."""
+    selection = Selection(LocalCapabilities(("claude-code-agent", "frontend-ide"), (), {"frontend-ide": "vscode"}), SURFACES)
+
+    selection.ide = "python-ide"
+
+    assert selection.local() == LocalCapabilities(("claude-code-agent", "python-ide"))
+

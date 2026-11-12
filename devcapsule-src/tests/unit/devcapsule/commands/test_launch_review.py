@@ -26,6 +26,7 @@ from devcapsule.configuration.derivation import CheckoutState, Host, Selection
 from devcapsule.configuration.file_formats import ProjectConfigurationError, canonical_digest, render_checkout, render_toml
 from devcapsule.configuration.listing import Decision
 from devcapsule.configuration.manifest import current_manifest
+from devcapsule.configuration.manifest_document import Recommendations
 from devcapsule.configuration.operations import CheckoutRecord
 from devcapsule.configuration.values import memory_size_bytes
 from devcapsule.platforms import Platform
@@ -474,3 +475,20 @@ def test_an_offered_agent_the_checkout_omits_is_not_in_the_plan() -> None:
 
     assert review.selected.resolution["runtime"]["component"] == "codium"
     assert "claude-code" not in review.selected.lock["components"]
+
+
+def test_choosing_an_agent_and_a_vendors_ide_accepts_neither_vendors_channel() -> None:
+    """A checkout that adds the Claude Code agent and chooses Visual Studio Code for its IDE, in a home that has
+    accepted nothing, ends pending on Anthropic's channel and on Microsoft's: a selection is not a consent."""
+    state = checkout_of(("node",), ide="frontend-ide")
+    selection = Selection(LocalCapabilities.read(state.checkout), state.surfaces)
+    selection.extra.add("claude-code-agent")
+    selection.use(state.matrix, CapabilityPolicy.read(state.manifest), Recommendations.read(state.manifest), "frontend-ide", "vscode")
+    state.checkout = state.with_selection(selection)
+
+    with pytest.raises(DecisionPending) as pending:
+        review_launch(state, RunFlags(), ask=None, announce=never_announced)
+
+    assert "trust claude-code: Trust Anthropic to supply Claude Code" in str(pending.value)
+    assert "trust vscode: Trust Microsoft to supply Visual Studio Code" in str(pending.value)
+
