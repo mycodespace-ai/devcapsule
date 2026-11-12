@@ -205,6 +205,41 @@ capsule: 3095 passed, 9 expected to fail, 10 unexpectedly passed. The
 integration tests that need no Docker: 128 passed, 3 skipped, and the one
 standing failure.
 
+**The capability-commands holding-pen test, rewritten, 2026-11-12.** The
+one test of
+`tests/unit/devcapsule/legacy_refactoring/test_capability_commands_v2.py`
+had three cases, all failing inside a capsule behind their mark. Its claim:
+a provider chosen for a capability, by the project's recommendation, on the
+checkout, or with `--provider` for one run, accepts no vendor's channel, and
+a launch with `--save` that ends pending writes no part of the save. It
+set its checkout up through seven `config` commands and replaced the
+platform's capability table with a patched one, to have an agent
+capability with two providers.
+
+It is now four tests in `test_launch_review.py`, in memory, on the platform's
+real table: `frontend-ide` is supplied by VSCodium, which waits for no
+channel, and by Visual Studio Code, which waits for Microsoft's. Three cases
+build the choice of Visual Studio Code in each of the three places and end
+pending on that channel with the state's record and home as they were; the
+fourth is the same saving launch with no choice, planned with VSCodium and
+the memory staged. `checkout_of` in that file takes what the project
+recommends. No product code changed.
+
+Five planted faults are each caught: the command line's provider ignored,
+the project's recommendation ignored, the checkout's choice dropped, the
+memory left on the state by a pending save, a named provider's channel
+counted as accepted. What the four tests do not hold: that `prepare_launch`
+calls the writer only after the review returns. That is three lines, and
+two legacy tests of `tests/test_run_flow.py` hold it on files, among them
+`test_missing_pass_through_variable_blocks_and_does_not_save`: a saving
+launch ends pending and the test's whole directory is as it was.
+
+The holding-pen file and its empty target module are deleted; the
+command-line debt list has 5 files. `nox -s typecheck tests` in the
+capsule: 3099 passed, 6 expected to fail, 10 unexpectedly passed. The
+holding pen has five files with 11 marks on 14 cases: 9 pass, 2 fail for
+the mounted settings, 3 for the repository's own manifest.
+
 **`project run --print-command` fetches nothing, 2026-11-12.** Owner
 direction: whoever asks for the command to be printed did not ask for the
 environment to be downloaded. Until now `--print-command` did all a launch
