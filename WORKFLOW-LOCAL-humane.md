@@ -206,7 +206,11 @@ running that program is the unit's job, and then with inputs the test
 chose. What the test can work out in its own process, a digest of a file
 it just wrote for instance, it works out there. A test that needs a
 program for what the program does is an integration test and runs on
-demand.
+demand. Only the mirror test of `cli.py` runs the command line inside the
+test process; every other test either tests the module that does a
+command's work or starts the program as an integration test. A unit test
+uses no network: it talks to no machine but its own and asks no name
+server.
 
 **Intended effect.** A reader sees which unit a test tests from its path
 and what it tests from its first line. A test fails only when the unit
@@ -261,6 +265,30 @@ test wrote passes the first and fails the second, so it is computed in
 process. Git on a scratch repository can pass both, and even then its
 commit dates come from the clock unless the test sets them. A Docker
 build passes neither.
+
+The rules on the command line and on the network were added on 2026-11-12,
+from one test. `test_offered_agent_still_needs_consent_and_can_be_omitted`
+calls `cli.main` four times and expects the second call to stop for consent
+to a vendor's channel. In the owner's capsule the consent was already given,
+through the mounted settings, so the command went on as it does in
+production and downloaded 1.5 GB of vendor software, in every run of the
+unit suite. A run with the network refused took 78 seconds where the
+ordinary one took thirteen and a half minutes, and that test was the only
+one in the suite that tried to connect. The owner's ruling: unless a test is
+in `test_cli.py`, it has no business invoking the command line. `cli.main`
+is the top of the product; it loads the developer's settings before it
+dispatches, and everything the product can do is reachable from it, so a
+test that calls it is held offline only by where its author expected the
+flow to stop. 32 of the 102 legacy files and 8 files under the mirror did so on that
+day. The legacy files meet the rule when they are retired; the 8 are listed
+as a debt that the gate lets shrink and never grow. The check follows a
+test's imports through the helpers under `tests`, because a helper that
+calls `cli.main` is how a test would otherwise keep doing it with a clean
+import list. The network rule is held at run time, by the interpreter's
+audit hook, since no reading of a test's source can tell what the code it
+calls will open. Loopback stays open because a test may serve itself. Both
+checks are what a compiler would have refused in a language that tracks
+effects; in Python the gate has to.
 
 ## Host Inputs
 

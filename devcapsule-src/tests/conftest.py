@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
+import ipaddress
 import os
 from pathlib import Path
 import shutil
+import socket
 import sys
 import tempfile
 from typing import Any, Protocol
@@ -17,10 +19,12 @@ PYTHON_ROUTE_INPUTS = REPOSITORY_ROOT / ".github" / "ci-python-inputs.yml"
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    """Start the repository-input guard, and give a macOS run a short temporary root.
+    """Start the two guards, and give a macOS run a short temporary root.
 
-    The guard fails a test that opens or lists a repository path the hosted
-    Python job is not routed by; see ``RepositoryInputGuard``.
+    The repository-input guard fails a test that opens or lists a repository
+    path the hosted Python job is not routed by; see ``RepositoryInputGuard``.
+    The network guard fails a unit test that reaches another host or asks a
+    name server; see ``NetworkGuard``.
 
     macOS limits a Unix socket path to 104 bytes, and its per-user temporary
     directory under /var/folders leaves too little of that for the sockets
@@ -31,6 +35,7 @@ def pytest_configure(config: pytest.Config) -> None:
     if PYTHON_ROUTE_INPUTS.parent.is_dir():
         guard = RepositoryInputGuard(REPOSITORY_ROOT, load_python_route_inputs(PYTHON_ROUTE_INPUTS))
         config.stash[_INPUT_GUARD] = install_repository_input_guard(guard)
+    config.stash[_NETWORK_GUARD] = install_network_guard(NetworkGuard())
     if sys.platform == "darwin" and not config.option.basetemp:
         config.option.basetemp = tempfile.mkdtemp(prefix="dcpt-", dir="/tmp")
         config.stash[_SHORT_BASETEMP] = Path(config.option.basetemp)
@@ -38,26 +43,34 @@ def pytest_configure(config: pytest.Config) -> None:
 
 _SHORT_BASETEMP = pytest.StashKey[Path]()
 _INPUT_GUARD = pytest.StashKey["RepositoryInputGuard"]()
+_NETWORK_GUARD = pytest.StashKey["NetworkGuard"]()
 
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_protocol(item: pytest.Item) -> Iterator[None]:
-    """Tell the repository-input guard which test reads, and whether its outcome counts."""
+    """Tell each guard which test runs: whether its outcome counts, and whether it is a unit test."""
 
     guard = item.config.stash.get(_INPUT_GUARD, None)
+    network = item.config.stash.get(_NETWORK_GUARD, None)
     if guard is not None:
         guard.attend(item.nodeid, counted=outcome_counts(item, HEAVIER_SUITE_MARKERS))
+    # A test of a heavier suite may use the network: an integration test builds an executable, an end-to-end test pulls an image.
+    if network is not None and not any(item.get_closest_marker(marker) for marker in HEAVIER_SUITE_MARKERS):
+        network.attend(item.nodeid)
     yield
     if guard is not None:
         guard.leave()
+    if network is not None:
+        network.leave()
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
-    """Fail a session with repository-input breaches, and remove the short temporary root of a passed one.
+    """Fail a session with breaches of either guard, and remove the short temporary root of a passed one.
 
     A breach fails its test where it happens. This is the second hold: a
     breach recorded although no test failed, because something caught the
-    failure, still ends the session with a failing status.
+    failure or it happened in another thread, still ends the session with a
+    failing status.
 
     pytest prunes its own default roots, but not one it was given, so a root
     per session would otherwise outlive every run and fill the disk; a failed
@@ -70,6 +83,14 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         print("\nRepository paths read outside the hosted Python job's inputs, .github/ci-python-inputs.yml:")
         for reader, path in sorted(set(breaches)):
             print(f"  {path}  read by {reader}")
+        if exitstatus == pytest.ExitCode.OK:
+            session.exitstatus = exitstatus = pytest.ExitCode.TESTS_FAILED
+    network = session.config.stash.get(_NETWORK_GUARD, None)
+    attempts = network.breaches if network is not None else []
+    if attempts:
+        print("\nUnit tests that tried to use the network (Unit Tests, rule 9, in WORKFLOW-LOCAL.md):")
+        for test, attempt in sorted(set(attempts)):
+            print(f"  {attempt}  by {test}")
         if exitstatus == pytest.ExitCode.OK:
             session.exitstatus = exitstatus = pytest.ExitCode.TESTS_FAILED
     created = session.config.stash.get(_SHORT_BASETEMP, None)
@@ -332,3 +353,111 @@ def install_repository_input_guard(guard: RepositoryInputGuard) -> RepositoryInp
         _installed_guard = guard
         sys.addaudithook(guard.audit)
     return _installed_guard
+
+
+# The network guard.
+#
+# A unit test's outcome is a function of the inputs it constructs, and nothing
+# on the network is one of them (Unit Tests, rules 2 and 9, in
+# WORKFLOW-LOCAL.md). The suite had no hold on that: on 2026-11-12 one test,
+# its consent already given in the developer's settings, went on to download
+# 1.5 GB of vendor software in every run inside a capsule.
+#
+# The guard refuses two things while a unit test runs: sending to an address
+# that is not this machine's own, and asking for a name or an address to be
+# resolved. Loopback stays open, since a test may serve itself on 127.0.0.1.
+#
+# What the guard cannot see: the network use of a program a test starts,
+# unless that program is this Python with this guard.
+
+_REACH_EVENTS = frozenset({"socket.connect", "socket.sendto", "socket.sendmsg"})
+"""Audit events of a socket about to reach a peer. Their arguments are ``(socket, address)``."""
+
+_LOOKUP_EVENTS = frozenset({"socket.getaddrinfo", "socket.gethostbyname", "socket.gethostbyaddr"})
+"""Audit events of a question to the resolver. Their first argument is the host asked about."""
+
+_INTERNET_FAMILIES = frozenset({socket.AF_INET, socket.AF_INET6})
+"""The socket families that can leave the machine. A Unix socket is a path on this machine and passes."""
+
+
+def is_this_machine(host: object) -> bool:
+    """Whether ``host``, as a socket call was given it, can only mean the machine the test runs on.
+
+    True for no host at all, which a listener passes to mean every local
+    address; for ``localhost``; and for a loopback or unspecified address such
+    as ``127.0.0.1``, ``::1`` or ``0.0.0.0``. False for every other address
+    and for every other name, the machine's own host name included: resolving
+    a name is a question to a name server.
+    """
+    if host is None:
+        return True
+    name = os.fsdecode(host) if isinstance(host, (str, bytes)) else str(host)
+    if name in ("", "localhost"):
+        return True
+    try:
+        address = ipaddress.ip_address(name)
+    except ValueError:  # Not an address, so a name.
+        return False
+    return address.is_loopback or address.is_unspecified
+
+
+class NetworkGuard:
+    """The rule for the unit suite: a unit test reaches no machine but its own and asks no name server."""
+
+    def __init__(self) -> None:
+        self._test: str | None = None
+        self.breaches: list[tuple[str, str]] = []
+        """Every refused attempt, as ``(test, what it tried)``."""
+
+    def attend(self, test: str) -> None:
+        """Hold the test with this node id to the rule from now on."""
+        self._test = test
+
+    def leave(self) -> None:
+        """Hold nothing from now on: between tests, and during the tests of heavier suites, the guard stands down."""
+        self._test = None
+
+    def attempt(self, event: str, arguments: tuple[Any, ...]) -> str | None:
+        """What an audit event tries on the network, in words, or ``None`` when it stays on this machine."""
+        if event in _LOOKUP_EVENTS and arguments and not is_this_machine(arguments[0]):
+            return f"look up {arguments[0]!r}"
+        if event not in _REACH_EVENTS or len(arguments) < 2:
+            return None
+        peer, address = arguments[0], arguments[1]
+        # An internet address is ``(host, port, ...)``. ``sendmsg`` on a connected socket passes no address at all.
+        if getattr(peer, "family", None) not in _INTERNET_FAMILIES or not isinstance(address, tuple) or not address:
+            return None
+        return None if is_this_machine(address[0]) else f"reach {address[0]!r}"
+
+    def audit(self, event: str, arguments: tuple[Any, ...]) -> None:
+        """The interpreter's audit hook: fail a unit test's attempt to use the network, before it happens.
+
+        The failure is ``pytest.fail``'s, an exception no ``except Exception``
+        in the code under test can swallow, so nothing is sent.
+        """
+        if self._test is None:
+            return
+        attempt = self.attempt(event, arguments)
+        if attempt is None:
+            return
+        self.breaches.append((self._test, attempt))
+        pytest.fail(
+            f"{self._test} tries to {attempt}. A unit test uses no network (Unit Tests, rule 9, in "
+            "WORKFLOW-LOCAL.md): pass the unit what it would have fetched, or make this an integration test."
+        )
+
+
+_installed_network_guard: NetworkGuard | None = None
+
+
+def install_network_guard(guard: NetworkGuard) -> NetworkGuard:
+    """Watch this process's sockets with ``guard`` and return the guard in force.
+
+    As for the repository-input guard, the first one installed stays for the
+    life of the process, because an audit hook cannot be removed.
+    """
+    global _installed_network_guard
+    if _installed_network_guard is None:
+        _installed_network_guard = guard
+        sys.addaudithook(guard.audit)
+    return _installed_network_guard

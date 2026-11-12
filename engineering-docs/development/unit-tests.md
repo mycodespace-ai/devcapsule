@@ -23,6 +23,13 @@ required values, and a unit test builds those values and patches nothing.
 `monkeypatch`, and every host input a constructor argument. The entry
 layers are tested as programs; see [Integration tests](integration-tests.md).
 
+Two more rules of *Unit Tests* are held by machine. Rule 8: only
+`tests/unit/devcapsule/test_cli.py` imports the command line, `devcapsule.cli`,
+directly or through a helper under `tests`; the convention check refuses any
+other file that is not legacy. The eight files that did on 2026-11-12 are
+listed in `tests/command_line_debt.txt`, a list that only loses lines. Rule
+9: a unit test uses no network; see the network guard under Fixtures.
+
 ## Running them
 
 ```text
@@ -158,6 +165,12 @@ so prefer the existing laws and an acceptance step for what the user sees.
   other paths on macOS and Apple Silicon runs linux-arm64 capsules. A test of
   another host patches the host itself and carries `own_host_patches`;
   Docker-marked tests keep the real host.
+- The network guard, started in `pytest_configure`: while a unit test runs,
+  a connection or a send to any machine but this one, and any name lookup
+  but of this machine, fails the test before anything is sent, and the
+  session ends with a failing status and a list of the attempts. Loopback
+  stays open. Tests of the heavier suites are not held to it. It cannot see
+  the network use of a program a test starts.
 - `private_user_directories`, autouse: moves `HOME` and every XDG directory
   under the test's `tmp_path` for non-Docker tests. Inside a capsule this is
   not yet a private home: a home with no settings of its own reads the

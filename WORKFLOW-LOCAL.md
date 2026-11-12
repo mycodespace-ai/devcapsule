@@ -227,13 +227,26 @@ capsule for reasons that were not bugs.
    file. Fix or replace a legacy test that a legitimate change breaks;
    never mark it expected to fail or deselect it. Add no marker other
    than `legacy` to a legacy file.
-6. The gate holds rules 1, 3 and 5: `scripts/validate_unittests_follow_conventions.py` runs in
+6. The gate holds rules 1, 3, 5 and 8: `scripts/validate_unittests_follow_conventions.py` runs in
    the `tests` and `build` sessions and in `tests.yml`, comparing legacy
    files with the pull request's base. Its summary line counts the legacy
-   files and tests; the count goes down and never up.
+   files and tests, and the files in command-line debt; the counts go down
+   and never up. The suite holds rule 9: `tests/conftest.py` fails the test
+   that breaks it, and then the session.
 7. In a Pair Review Loop, the brief instructs the reviewer to verify rules
    1 to 4 on every new or changed test, and to name for each what would
    make it fail for a reason that is not a bug.
+8. Owner direction, 2026-11-12. Only `tests/unit/devcapsule/test_cli.py`
+   invokes the command line in its own process. No other test file imports
+   `devcapsule.cli` or `devcapsule.__main__`, or a module under `tests` that
+   does. Test a command on the module that does its work, or in an
+   integration test that starts the program. A legacy file is exempt until
+   it is retired. A file listed in
+   `devcapsule-src/tests/command_line_debt.txt` is exempt until it is fixed.
+   Delete a file's line when you fix it. Add no line.
+9. Owner direction, 2026-11-12. A unit test uses no network. It reaches no
+   machine but its own and asks no name server. A loopback address is its
+   own machine.
 
 ## Host Inputs
 
