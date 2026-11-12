@@ -80,6 +80,7 @@ def prepare_launch(
         _settle(state, record, checkout, decision, host_overrides, environment, accepted, flags, reader, output)
 
     review = review_launch(state, flags, ask=ask_at_terminal if interactive else None,
+                           announce=lambda line: print(line, file=sys.stderr),
                            print_only=print_only, check_display=check_display)
 
     # Phase 3, write: what the review staged.

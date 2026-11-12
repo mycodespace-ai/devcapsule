@@ -9,6 +9,7 @@ that the decisions print; nothing opens them.
 from __future__ import annotations
 
 from copy import deepcopy
+from datetime import datetime, timezone
 from pathlib import Path
 import tomllib
 from typing import Any
@@ -20,7 +21,7 @@ from devcapsule.compat import DecisionPending
 from devcapsule.configuration.authorization import authorization_declarations, normalize_authorization_value
 from devcapsule.configuration.capabilities import IDE_REQUIREMENT, CapabilityPolicy, LocalCapabilities, RequirementDeparture
 from devcapsule.configuration.capability_selection import generate_lock
-from devcapsule.configuration.derivation import CheckoutState, Selection
+from devcapsule.configuration.derivation import CheckoutState, Host, Selection
 from devcapsule.configuration.file_formats import ProjectConfigurationError, render_checkout
 from devcapsule.configuration.listing import Decision
 from devcapsule.configuration.operations import CheckoutRecord
@@ -32,13 +33,24 @@ ROOT = Path("/projects/order")
 HOME = Path("/homes/developer")
 RECORD = HOME / "projects" / "order" / "devcapsule.checkout.toml"
 
+ACCEPTED_AT = datetime(2026, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
+"""The time the test's host tells."""
+
 REQUIRING_PYCHARM = ("python", "python-ide", "codex-agent")
 """The work order's project: PyCharm required beside an unrelated mandatory tool."""
 REQUIRING_NO_IDE = ("python",)
 
 
-def checkout_of(required: tuple[str, ...], *, ide: str = "python-ide") -> CheckoutState:
+def no_local_image(reference: str) -> Any:
+    """The daemon of a host that must not be asked for an image."""
+    pytest.fail(f"the review asked the Docker daemon for {reference}")
+
+
+def checkout_of(required: tuple[str, ...], *, ide: str = "python-ide", host: Host | None = None) -> CheckoutState:
     """A registered checkout of a project that requires ``required``, in a home that has accepted nothing.
+
+    Its host tells the time ``ACCEPTED_AT`` and fails the test when asked for
+    a local image, unless ``host`` is given.
 
     It is what ``project init --require ... --ide IDE --authorize base-image
     default`` leaves, built with the operations that command uses and no file:
@@ -55,6 +67,7 @@ def checkout_of(required: tuple[str, ...], *, ide: str = "python-ide") -> Checko
         lock_path=ROOT / ".devcapsule" / "devcapsule.linux-amd64.lock",
         shared_lock=generate_lock(CapabilityPolicy.read(manifest), MATRICES[Platform.LINUX_AMD64]),
         home={}, home_path=HOME, input_path=RECORD, registered=True,
+        host=host or Host(local_image=no_local_image, now=lambda: ACCEPTED_AT),
         checkout=tomllib.loads(render_checkout(manifest, ROOT, {}, {})),
     )
     selection = Selection(LocalCapabilities.read(state.checkout), state.surfaces)
@@ -71,6 +84,11 @@ def never_asked(*arguments: Any) -> None:
     pytest.fail("the review asked the developer")
 
 
+def never_announced(line: str) -> None:
+    """An ``announce`` for a review that has nothing to tell the developer."""
+    pytest.fail(f"the review announced {line!r}")
+
+
 def accepting(asked: list[Decision]) -> Any:
     """An ``ask`` that accepts every channel put to it, as a developer answering yes, and lists what was asked."""
     def ask(state: CheckoutState, record: CheckoutRecord, checkout: dict[str, Any], decision: Decision,
@@ -83,7 +101,7 @@ def accepting(asked: list[Decision]) -> Any:
 
 def test_the_saved_required_ide_is_planned_without_a_question() -> None:
     """With PyCharm required and saved and the base authorized, the review derives a PyCharm plan with no departure."""
-    review = review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(), ask=None)
+    review = review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(), ask=None, announce=never_announced)
 
     assert review.selected.resolution["runtime"]["component"] == "pycharm"
     assert review.selected.departures == ()
@@ -94,7 +112,7 @@ def test_the_saved_required_ide_is_planned_without_a_question() -> None:
 @pytest.mark.parametrize("named", ["pycharm", "python-ide", " python-ide "])
 def test_the_required_ide_can_be_named_by_component_or_capability(named: str) -> None:
     """``--ide`` given the required IDE's component or its capability, spaces aside, selects it with no departure."""
-    review = review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(ide=named), ask=None)
+    review = review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(ide=named), ask=None, announce=never_announced)
 
     assert review.selected.resolution["runtime"]["component"] == "pycharm"
     assert review.selected.departures == ()
@@ -107,7 +125,7 @@ def test_another_ide_than_the_required_one_is_refused_naming_the_override() -> N
     before = deepcopy((state.checkout, state.home))
 
     with pytest.raises(ProjectConfigurationError) as refused:
-        review_launch(state, RunFlags(ide="codium"), ask=None)
+        review_launch(state, RunFlags(ide="codium"), ask=None, announce=never_announced)
 
     message = str(refused.value)
     assert "The project requires python-ide (pycharm); frontend-ide (codium) is another IDE" in message
@@ -123,13 +141,13 @@ def test_the_ide_request_is_judged_before_any_other_flag() -> None:
     flags = RunFlags(ide="codium", authorize=(("no-such-access", "allow"),))
 
     with pytest.raises(ProjectConfigurationError, match="frontend-ide \\(codium\\) is another IDE"):
-        review_launch(checkout_of(REQUIRING_PYCHARM), flags, ask=None)
+        review_launch(checkout_of(REQUIRING_PYCHARM), flags, ask=None, announce=never_announced)
 
 
 def test_an_unknown_ide_is_refused_with_the_platforms_ides() -> None:
     """``--ide`` given a name no IDE has is refused, and the refusal lists the IDE capabilities to choose from."""
     with pytest.raises(ProjectConfigurationError, match="Unknown IDE 'emacs'; choose one of .*python-ide"):
-        review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(ide="emacs"), ask=None)
+        review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(ide="emacs"), ask=None, announce=never_announced)
 
 
 def test_a_forced_ide_still_waits_for_its_vendors_channel() -> None:
@@ -139,7 +157,7 @@ def test_a_forced_ide_still_waits_for_its_vendors_channel() -> None:
     before = deepcopy((state.checkout, state.home))
 
     with pytest.raises(DecisionPending) as pending:
-        review_launch(state, RunFlags(ide="vscode", force=True), ask=None)
+        review_launch(state, RunFlags(ide="vscode", force=True), ask=None, announce=never_announced)
 
     message = str(pending.value)
     assert "trust vscode" in message and "--trust vscode" in message
@@ -150,24 +168,24 @@ def test_a_forced_ide_still_waits_for_its_vendors_channel() -> None:
 
 def test_a_forced_ide_is_planned_once_its_channel_is_accepted() -> None:
     """When the developer accepts the one channel asked, the forced launch plans Visual Studio Code with the IDE
-    requirement recorded as this launch's departure. The acceptance is staged for the home, and the record
-    staged for writing still has PyCharm saved."""
+    requirement recorded as this launch's departure. The acceptance is staged for the home with the time the
+    host tells, and the record staged for writing still has PyCharm saved."""
     asked: list[Decision] = []
 
-    review = review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(ide="vscode", force=True), ask=accepting(asked))
+    review = review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(ide="vscode", force=True), ask=accepting(asked), announce=never_announced)
 
     assert [(decision.kind, decision.name) for decision in asked] == [("trust", "vscode")]
     assert review.selected.resolution["runtime"]["component"] == "vscode"
     assert review.selected.departures == (RequirementDeparture(IDE_REQUIREMENT, "python-ide", "vscode-ide"),)
     assert review.accepted == ["vscode"]
-    assert "vscode" in review.state.home["trust"]["channels"]
+    assert review.state.home["trust"]["channels"]["vscode"]["accepted"] == "2026-01-02T03:04:05+00:00"
     assert LocalCapabilities.read(review.record.document).selected == ("python-ide",)
     assert review.record.document == review.original
 
 
 def test_the_channel_can_be_accepted_on_the_command_line() -> None:
     """``--trust vscode`` beside the forced IDE settles the channel without a terminal."""
-    review = review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(ide="vscode", force=True, trust=("vscode",)), ask=None)
+    review = review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(ide="vscode", force=True, trust=("vscode",)), ask=None, announce=never_announced)
 
     assert review.selected.resolution["runtime"]["component"] == "vscode"
     assert review.accepted == ["vscode"]
@@ -176,7 +194,7 @@ def test_the_channel_can_be_accepted_on_the_command_line() -> None:
 def test_print_only_never_asks() -> None:
     """Under ``print_only`` a pending channel ends the review as pending although a terminal is there to ask."""
     with pytest.raises(DecisionPending, match="trust vscode"):
-        review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(ide="vscode", force=True), ask=never_asked, print_only=True)
+        review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(ide="vscode", force=True), ask=never_asked, announce=never_announced, print_only=True)
 
 
 @pytest.mark.parametrize(("flags", "refusal"), [
@@ -186,7 +204,7 @@ def test_print_only_never_asks() -> None:
 def test_a_command_line_that_contradicts_itself_is_refused(flags: RunFlags, refusal: str) -> None:
     """``--force`` without ``--ide``, and ``--force`` with ``--save``, are refused whatever the project requires."""
     with pytest.raises(ProjectConfigurationError, match=refusal):
-        review_launch(checkout_of(REQUIRING_PYCHARM), flags, ask=never_asked)
+        review_launch(checkout_of(REQUIRING_PYCHARM), flags, ask=never_asked, announce=never_announced)
 
 
 @pytest.mark.parametrize(("required", "ide", "refusal"), [
@@ -196,12 +214,12 @@ def test_a_command_line_that_contradicts_itself_is_refused(flags: RunFlags, refu
 def test_force_with_no_requirement_to_set_aside_is_refused(required: tuple[str, ...], ide: str, refusal: str) -> None:
     """``--force`` is refused when the named IDE is the required one, and when the project requires none."""
     with pytest.raises(ProjectConfigurationError, match=refusal):
-        review_launch(checkout_of(required), RunFlags(ide=ide, force=True), ask=never_asked)
+        review_launch(checkout_of(required), RunFlags(ide=ide, force=True), ask=never_asked, announce=never_announced)
 
 
 def test_another_ide_needs_no_force_where_none_is_required() -> None:
     """In a project that requires no IDE, ``--ide codium`` plans VSCodium for this launch and leaves PyCharm saved."""
-    review = review_launch(checkout_of(REQUIRING_NO_IDE), RunFlags(ide="codium"), ask=None)
+    review = review_launch(checkout_of(REQUIRING_NO_IDE), RunFlags(ide="codium"), ask=None, announce=never_announced)
 
     assert review.selected.resolution["runtime"]["component"] == "codium"
     assert review.selected.departures == ()
@@ -210,7 +228,7 @@ def test_another_ide_needs_no_force_where_none_is_required() -> None:
 
 def test_run_once_resources_are_overrides_of_the_launch_and_not_of_the_record() -> None:
     """``--memory`` and ``--cpus`` without ``--save`` come back as this launch's overrides; the record is unchanged."""
-    review = review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(memory="8g", cpus="2"), ask=None)
+    review = review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(memory="8g", cpus="2"), ask=None, announce=never_announced)
 
     assert (review.memory_override, review.cpus_override) == (8 * 1024 ** 3, 2)
     assert review.saved is False
@@ -222,8 +240,42 @@ def test_run_once_resources_are_overrides_of_the_launch_and_not_of_the_record() 
 
 def test_saved_resources_are_staged_on_the_record() -> None:
     """With ``--save``, ``--memory`` is staged on the checkout's record as its value, and the review says it is saved."""
-    review = review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(memory="8g", save=True), ask=None)
+    review = review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(memory="8g", save=True), ask=None, announce=never_announced)
 
     assert review.saved is True
     assert review.record.document != review.original
     assert memory_size_bytes(str(review.record.values["memory"])) == 8 * 1024 ** 3
+
+
+def test_a_run_once_authorization_is_announced_and_overrides_this_launch_only() -> None:
+    """``--authorize network host`` without ``--save`` is announced at once, comes back as this launch's host
+    override, and is not staged on the record."""
+    announced: list[str] = []
+
+    review = review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(authorize=(("network", "host"),)),
+                           ask=None, announce=announced.append)
+
+    assert announced == ["Run-once authorization: network = host"]
+    assert review.host_overrides == {"network": "host"}
+    assert review.record.document == review.original
+
+
+def test_a_local_base_image_is_looked_up_on_the_host_by_its_reference() -> None:
+    """A checkout whose base authorization names a local image has that reference looked up through the host;
+    when the host has no such image, the review ends with the host's refusal."""
+    asked: list[str] = []
+
+    def no_such_image(reference: str) -> Any:
+        asked.append(reference)
+        raise ProjectConfigurationError(f"no local image {reference}")
+
+    state = checkout_of(REQUIRING_PYCHARM, host=Host(local_image=no_such_image, now=lambda: ACCEPTED_AT))
+    record = CheckoutRecord.staged(RECORD, state.checkout)
+    base_image = authorization_declarations(state.manifest, state.composed_lock())["base-image"]
+    record.authorize(base_image, "local/devcapsule-base:work", image_identity="sha256:" + "a" * 64)
+    state.checkout = record.export()
+
+    with pytest.raises(ProjectConfigurationError, match="no local image local/devcapsule-base:work"):
+        review_launch(state, RunFlags(), ask=None, announce=never_announced)
+
+    assert asked == ["local/devcapsule-base:work"]

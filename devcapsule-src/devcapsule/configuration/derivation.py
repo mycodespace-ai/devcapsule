@@ -26,14 +26,15 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from functools import cached_property
 from pathlib import Path
 import tomllib
 import shlex
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 from devcapsule.compat import DecisionPending
-from devcapsule.materialization import validate_base_image
+from devcapsule.materialization import ImageDetails, validate_base_image
 from devcapsule.platforms import Platform
 from devcapsule.project import sanitize_name
 from devcapsule.resolution_matrix import MATRICES, ResolutionMatrix, known_base_image
@@ -64,7 +65,23 @@ from .storage import (
 from .file_formats import selected_version_lock
 from .docker_arguments import arguments_path, read_arguments, read_environment
 
-__all__ = ["CheckoutState", "Selection", "derive_plan", "load_state", "register_checkout"]
+__all__ = ["CheckoutState", "Host", "Selection", "derive_plan", "load_state", "register_checkout"]
+
+
+@dataclass(frozen=True)
+class Host:
+    """What a decision may ask of the machine it runs on, given to it as functions.
+
+    A decision cannot know these in advance: which image it must look up
+    follows from what the developer selects, and the moment of an acceptance
+    is the moment it is given. So the reading phase binds the functions and
+    the decision calls them. A test passes its own.
+    """
+
+    local_image: Callable[[str], ImageDetails]
+    """The Docker daemon's details of the local image with this reference; it refuses when there is none."""
+    now: Callable[[], datetime]
+    """The current time, with its time zone."""
 
 
 class Selection:
@@ -133,6 +150,7 @@ class CheckoutState:
     """The home's settings document."""
     home_path: Path
     """The home's directory, which the listing names in what it tells the developer."""
+    host: Host
     input_path: Path | None
     """The checkout's record: the one found, or the default one it would get.
 
@@ -232,6 +250,17 @@ class CheckoutState:
         return document
 
 
+def _this_host() -> Host:
+    """The machine this process runs on."""
+    def local_image(reference: str) -> ImageDetails:
+        # Looked up through the operations adapter when called, not when bound:
+        # it is the one seam that legacy tests of the launch patch for the local daemon.
+        from . import operations
+        return operations.required_local_image(reference)
+
+    return Host(local_image=local_image, now=lambda: datetime.now(timezone.utc))
+
+
 def load_state(root: Path, manifest: dict[str, Any]) -> CheckoutState:
     """Read one checkout's documents and surroundings into memory. Nothing is written.
 
@@ -264,7 +293,7 @@ def load_state(root: Path, manifest: dict[str, Any]) -> CheckoutState:
             saved_environment = {}
     return CheckoutState(
         root=root, manifest=manifest, platform=platform, lock_path=lock_path, shared_lock=shared_lock,
-        home=home, home_path=config_root(), input_path=input_path, registered=record is not None,
+        home=home, home_path=config_root(), host=_this_host(), input_path=input_path, registered=record is not None,
         checkout=checkout, saved_environment=saved_environment,
         deferred=tuple(deferred_rows(input_path, root)),
     )
@@ -330,10 +359,7 @@ def derive_plan(state: CheckoutState, checkout: Mapping[str, Any] | None = None,
     trust = HomeTrust.read(state.home)
     base_selection = authorized_base_selection(lock, document, trust=trust) if "base" in lock else None
     if base_selection is not None and base_selection.local_image_identity is not None:
-        # Looked up through the operations adapter, the one seam the launch
-        # and its tests patch for the local daemon.
-        from . import operations
-        local_base = operations.required_local_image(base_selection.reference)
+        local_base = state.host.local_image(base_selection.reference)
         validate_base_image(local_base, platform=str(lock["platform"]), expected_identity=base_selection.local_image_identity)
     assert state.input_path is not None
     resolution_path = resolved_record_path(state.input_path)

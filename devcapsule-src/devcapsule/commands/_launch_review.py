@@ -15,17 +15,20 @@ A test of a decision builds a state from documents it writes as values, calls
 :func:`review_launch`, and reads the result. It needs no project directory and
 no home.
 
-What this phase still takes from the host, each to be passed in as a value in
-a later change:
+What a decision needs of the machine reaches it as a value or as a function
+it is given: the state's :class:`~devcapsule.configuration.derivation.Host`
+looks up a local base image and tells the time, ``ask`` puts a decision to
+the developer, and ``announce`` shows a line at once.
+
+Two reads of the machine are still made below this phase, by code it calls:
 
 - the listing asks ``os.environ`` whether a host variable is set, and the
   file system whether a bound directory exists;
-- :func:`~devcapsule.configuration.derivation.derive_plan` asks the Docker
-  daemon for a local base image when the checkout selects one;
-- accepting a channel stamps the acceptance with the clock;
-- a run-once authorization is announced on standard error;
-- the function given as ``ask`` talks to the developer, and its answer to a
-  console request runs a command that writes.
+- the configuration review resolves a bound directory's path and asks the
+  file system whether it exists.
+
+Both are in functions that legacy tests call, ``assess_checkout`` and
+``Configuration``. They become values when those tests are retired.
 """
 
 from __future__ import annotations
@@ -34,7 +37,6 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
 import shlex
-import sys
 from typing import Any, Callable, Mapping
 
 from devcapsule.compat import DecisionPending
@@ -157,13 +159,15 @@ def review_launch(
     flags: RunFlags,
     *,
     ask: Ask | None,
+    announce: Callable[[str], None],
     print_only: bool = False,
     check_display: bool = True,
 ) -> LaunchReview:
     """Phase 2 of a launch's preparation: decide, in memory, from the state and the flags.
 
     ``ask`` is how a decision reaches the developer; None when there is no
-    terminal. Without it, and always under ``print_only``, an unanswered
+    terminal. ``announce`` shows the developer one line at once, before any
+    question. Without ``ask``, and always under ``print_only``, an unanswered
     decision the launch cannot go on without raises :class:`DecisionPending`
     that names each one. An invalid request raises
     :class:`ProjectConfigurationError`. Either way nothing has been written,
@@ -213,7 +217,7 @@ def review_launch(
             record.authorize(declaration, normalized)
         else:
             host_overrides[node] = normalized
-            print(f"Run-once authorization: {node} = {value}", file=sys.stderr)
+            announce(f"Run-once authorization: {node} = {value}")
 
     def launch_checkout() -> dict[str, Any]:
         """The checkout document this launch runs on: the staged record with the run-once choices laid over it."""
@@ -358,7 +362,7 @@ def channel_for(lock: Mapping[str, Any], channel_id: str) -> Channel:
 def stage_trust(state: CheckoutState, checkout: Mapping[str, Any], channel_id: str, accepted: list[str]) -> None:
     """Stage the acceptance of ``channel_id`` on the state's home document; written with the answers."""
     channel = channel_for(state.composed_lock(checkout), channel_id)
-    trust = HomeTrust.read(state.home).with_channel(channel)
+    trust = HomeTrust.read(state.home).with_channel(channel, accepted_at=state.host.now())
     state.home = {**state.home, "trust": trust.document()}
     if channel_id not in accepted:
         accepted.append(channel_id)
