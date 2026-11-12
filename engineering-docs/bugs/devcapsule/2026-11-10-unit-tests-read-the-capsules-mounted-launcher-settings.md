@@ -212,15 +212,25 @@ What changed is that the tests which failed now say what their home is.
   --print-command` no longer pulls the base image, downloads artifacts or
   builds the environment. It prints the command of an environment that is
   on the machine, and otherwise names what a launch would fetch and exits 2.
-- `nox -s tests` passes inside the owner's capsule: 3088 passed, 10 expected
-  to fail, 10 unexpectedly passed, in 175 seconds where it took 815.
+- Two more marked tests are rewritten and their holding-pen files deleted.
+  The one test of `test_console_channel.py` became six tests in memory and
+  four integration tests that run the channel as processes. The one test
+  of `test_capability_commands_v2.py`, three cases, became four tests of
+  the launch review in memory: a provider the project recommends, the
+  checkout chose or the command line names accepts no channel, and a
+  pending save stages nothing.
+- `nox -s tests` passes inside the owner's capsule: 3099 passed, 6 expected
+  to fail, 10 unexpectedly passed, in 173 seconds where it took 815.
 
 Against the close criteria: 1 holds for the owner's capsule as it is today.
-2 and 3 do not. Twelve marks remain, on 17 cases. Nine
-cases pass now. Five still fail inside the capsule for this cause, behind
+2 and 3 do not. Eleven marks remain, on 14 cases, in five files. Nine
+cases pass now. Two still fail inside the capsule for this cause, behind
 their mark, because they take fixtures from legacy files that were not
-changed; three fail for another cause, the repository's own manifest. They are in mirror files whose legacy twins stand, so the gate
-refuses a change to them until those twins are retired. 4 does not hold:
+changed: one in `test_environment_realization.py`, one in
+`test_project_init.py`. Three fail for another cause, the repository's own
+manifest. They are in mirror files whose legacy twins stand, so the gate
+refuses a change to them until those twins are retired; it accepts the
+deletion of a whole holding-pen file whose tests are rewritten elsewhere. 4 does not hold:
 `private_user_directories` is unchanged, and a test that uses neither a
 named home nor a handed-in one still reads the mount. The next channel the
 developer accepts can turn other tests red.
