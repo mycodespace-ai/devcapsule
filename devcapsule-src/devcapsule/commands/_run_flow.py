@@ -180,11 +180,18 @@ def project_channel(root: Path, manifest: dict[str, Any], channel_id: str) -> Ch
     return channel_for(state.composed_lock(), channel_id)
 
 
-def accept_channel(root: Path, manifest: dict[str, Any], channel_id: str) -> Path:
-    """Record the user's acceptance of one channel for this home now; return the record's path."""
-    from devcapsule.configuration.storage import load_trust
+def accept_channel(root: Path, manifest: dict[str, Any], channel_id: str, *,
+                   home: Mapping[str, Any] | None = None) -> Path:
+    """Record the user's acceptance of one channel for this home now; return the record's path.
+
+    ``home`` is the home's settings document when the caller holds it: the
+    acceptance is added to its trust and written onto it. Left out, the
+    home's settings are read.
+    """
+    from devcapsule.configuration.storage import load_settings
     channel = project_channel(root, manifest, channel_id)
-    return write_settings({"trust": HomeTrust.read(load_trust()).with_channel(channel).document()})
+    settings = load_settings() if home is None else home
+    return write_settings({"trust": HomeTrust.read(settings).with_channel(channel).document()}, current=settings)
 
 
 def _settle(
