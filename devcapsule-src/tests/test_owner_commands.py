@@ -47,6 +47,10 @@ def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """A project in the required form, created by init without an IDE."""
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    # Name the home. A home that is only implied by HOME and the XDG variables, with no settings of its
+    # own yet, reads the launcher's mounted settings when the suite runs inside a capsule, and then what the
+    # developer accepted there answers the consents these tests expect to be pending.
+    monkeypatch.setenv("DEVCAPSULE_CONFIG_HOME", str(tmp_path / "devcapsule-home"))
     root = tmp_path / "project"
     root.mkdir()
     assert cli.main(["project", "--path", str(root), "init", "--require", "python", "--creator", "mailto:owner@example.test"]) == 0

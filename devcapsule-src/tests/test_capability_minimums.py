@@ -46,6 +46,10 @@ def snapshot(root: Path) -> dict[Path, bytes]:
 def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     for key in ("HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME"):
         monkeypatch.setenv(key, str(tmp_path / key.lower()))
+    # Name the home. A home that is only implied by HOME and the XDG variables, with no settings of its
+    # own yet, reads the launcher's mounted settings when the suite runs inside a capsule, and then what the
+    # developer accepted there answers the consents these tests expect to be pending.
+    monkeypatch.setenv("DEVCAPSULE_CONFIG_HOME", str(tmp_path / "devcapsule-home"))
     root = tmp_path / "project"
     (root / ".devcapsule").mkdir(parents=True)
     return root
