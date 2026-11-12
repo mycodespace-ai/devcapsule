@@ -57,7 +57,7 @@ slice, on `ws-maintenance/launch-phases`, stacked on PR #26.
   `read_launch_state`, `review_launch`, `save_launch`. The terminal dialogue
   stays here and is passed to the review as `ask`.
 
-**The tests.** `tests/unit/devcapsule/commands/test_launch_review.py`, 20
+**The tests.** `tests/unit/devcapsule/commands/test_launch_review.py`, 33
 tests, none with a project directory, a home, `tmp_path` or a patch. Each
 builds its checkout in memory with the operations `project init` uses:
 `generate_lock` for the lock, `with_selection` and `authorize` for the
@@ -85,42 +85,64 @@ caught by the new tests, 15 by legacy tests, 6 by nothing:
 - the clock that `load_state` binds, one line that names the real one.
 
 **What the decision phase asked of the host, and what it asks now.** The
-first commit of the slice left five. The owner asked why. Three had no
-caller among the legacy tests and are closed in the second commit: the state
-carries a `Host` of two functions, bound by `load_state`; `derive_plan` asks
-it for a local base image and `stage_trust` asks it for the time; a run-once
-authorization goes to a function the review is given, `announce`. A fourth,
-the dialogue with the developer, is `ask`, a function the review is given
-too. One is left, in two places below the review:
+first commit of the slice left five reads. The owner asked why. All are
+closed. The state carries a `Host`, bound by `load_state`: the shell's
+environment, a lookup of a bound directory, a lookup of a local base image,
+and the clock. The review is given two functions besides: `ask`, the
+dialogue with the developer, and `announce`, for a run-once authorization.
+A test passes its own of each.
 
-- the listing asks `os.environ` whether a host variable is set, and the file
-  system whether a bound directory exists, in `assess_checkout`;
-- the configuration review resolves a bound directory's path and asks
-  whether it exists, in `Configuration`.
+**The owner's ruling on the last read, 2026-11-12: option 3.** The listing
+and the configuration review asked `os.environ` and the file system inside
+`assess_checkout` and `Configuration`, which five legacy files call 19
+times. Rule 5 of *Unit Tests* would retire a file for an edited call, and
+rule 2 of *Host Inputs* forbids an argument whose default reads the host.
+The owner chose the optional argument until those files are retired:
+`host_environment` and `directory` on `assess_checkout`, `directory` on
+`Configuration`, `review_configuration` and `resolve_configuration_bindings`.
+Left out, this process and this machine are asked, as before. The launch
+passes them from the `Host`. The rule's text is not amended; each default
+names the ruling in its docstring.
 
-Making these values means a new required argument on `assess_checkout` and
-on `Configuration`. Five legacy files call them: `tests/test_listing.py`
-three times, and `tests/configuration/test_adt.py`,
-`tests/test_ide_requirement_override.py`, `tests/test_capability_policy.py`
-and `tests/test_trust.py` sixteen times between them. Rule 5 of *Unit Tests*
-makes an edited call in a legacy test the retirement of its file, and rule 2
-of *Host Inputs* forbids the other way, an optional argument whose default
-reads the host. So this last read waits for one of three rulings: the five
-files are retired first; rule 5 lets a call site in a legacy test follow a
-signature; or the argument is optional until they are retired.
+**`tests/test_ide_requirement_override.py`, ordered retired whole. It is not
+yet.** Of its 26 test functions, 12 now have a form that needs no file, no
+home and no patch: 10 in `test_launch_review.py`, 1 as three tests in the
+new `tests/unit/devcapsule/configuration/test_capabilities.py`, 1 in
+`test_capability_selection.py`. The other 14 wait for five changes to the
+product, because each reaches something the code takes from a global:
+
+1. Six drive `project run` through `cli.main` with the Docker launch and the
+   materialization replaced by patches on `commands.project`. The command's
+   body, `ProjectCommand._run`, is some 300 lines that read files, settings
+   and those two module names. It must take them as values first.
+2. Four more go through `cli.main` for a refusal and need no stand-in. They
+   become integration tests that start the program.
+3. Three read or write the launch's files: the listing of a departed launch,
+   the plan file of the launch after it, and `config show`. The last one
+   patches `runtime_configuration.CHANNEL_PATH`, the capsule's fixed
+   `/run/devcapsule-configuration`.
+4. One patches a method of a component class to give Codex a dependency on
+   an IDE; `usable_lock` takes the component catalog from a global.
+5. One tests `realize_environment`, whose mirror file has a legacy twin of 9
+   tests; adding a test there retires that twin too.
+
+Until then rule 5 keeps the legacy file whole, the 12 tests stand twice, and
+2 of the capsule's 17 failures stay.
 
 **Differences in behaviour.** Two orders of refusal: a checkout that cannot
 be given a free record name is now refused before a wrong IDE is, and the
 console's requests are read once per review, so one that arrives during a
 review is seen at the next run.
 
-**Not done.** The retirement of the six legacy files. `load_state` still
+**Not done.** The retirement of the six legacy files; see the first of them above. `load_state` still
 finds the home through the environment, so the reading has no test from
 values yet. `_run_flow.py` has no mirror test, since its legacy twin
 `tests/test_run_flow.py` stands.
 
-**Next action.** The owner's: the order in which the six files are retired,
-and whether the 17 wait for that or get the one-line fixture change first.
+**Next action.** The owner's: whether `ProjectCommand._run` is restructured
+before 0.3.1, which the retirement of this file and of `tests/test_run_flow.py`
+both need; and whether the 17 wait for that or get the one-line fixture
+change first.
 
 ## Two rules held by machine: no network in a unit test, the command line only in `test_cli.py` — 2026-11-12
 
