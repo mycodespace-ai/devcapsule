@@ -5292,8 +5292,10 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 - Owner ruling, 2026-11-12: compatibility with 0.2.14, 0.2.15 and earlier
   may be dropped. The compatibility promise to users needs a defined story
-  and a packaging, targeted for after 0.3.1; not started and not yet
-  planned with project-management. Until then the pre-0.3 captures and
+  and a packaging, targeted for after 0.3.1; not started. Sent to
+  project-management the same day as
+  `2026-11-12-maintenance-compatibility-promise-story-and-packaging.md`,
+  coordination `d615b0a1ff41`; routing is theirs. Until then the pre-0.3 captures and
   their tests stand without being a promise. Recorded in
   [the 2026-10-18 record](../../bugs/devcapsule/2026-10-18-no-test-proves-old-projects-launch-with-new-releases.md).
 - Paused for owner travel on 2026-10-31. No work continues during the break.
