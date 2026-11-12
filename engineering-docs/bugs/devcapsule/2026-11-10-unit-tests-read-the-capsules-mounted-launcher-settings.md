@@ -195,11 +195,11 @@ On `ws-maintenance/launch-phases`, pull request #29, not merged. The cause
 stands: the shared fixture still gives a home that falls back to the mount.
 What changed is that the tests which failed now say what their home is.
 
-- The 17 failing tests pass inside the owner's capsule. Seven, which call
+- The 17 failing tests pass inside the owner's capsule. Ten, which call
   `prepare_launch` or the file's `accept` helper, hand in the home's
   settings as a value, `home={}`. `load_state`, `prepare_launch`,
   `accept_channel` and `write_settings` take that value; left out, they
-  read the home as before. Ten, which drive the command line, get a named
+  read the home as before. Seven, which drive the command line, get a named
   home from their own file's fixture, `DEVCAPSULE_CONFIG_HOME` under the
   test's directory, in five legacy files.
 - The test that downloaded vendor artifacts uses a fixture of
