@@ -4,9 +4,9 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, no fix started; one major bug in fixing, the Python route and its guard, merged through #25 with the local gate's routing open; a follow-up to PR #18 on `ws-maintenance/host-inputs-at-source`, by Pair Review, for the owner's review; rewritten 2026-11-12 on the owner's direction so that host inputs are values and no touched test patches, the rewrite not yet reviewed by the partner
+State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, no fix started; one major bug in fixing, the Python route and its guard, merged through #25 with the local gate's routing open; a follow-up to PR #18 on `ws-maintenance/host-inputs-at-source`, by Pair Review, for the owner's review; rewritten 2026-11-12 on the owner's direction so that host inputs are values and no touched test patches; the rule *Host Inputs* written into `WORKFLOW-LOCAL.md` on the owner's word and the rewrite reviewed by the partner through #28, merged at `83d238b8`; the owner's reading of #26 and rulings on the rule's open readings are next
 
-Definition read: WORKFLOW.md@e83f22a20701, WORKFLOW-LOCAL.md@d92bdcbb0a01
+Definition read: WORKFLOW.md@e83f22a20701, WORKFLOW-LOCAL.md@d0a571433a6c
 
 Integration target: `main`
 
@@ -15,6 +15,108 @@ Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-on
 Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/host-inputs-at-source` from release-0.3.1 2f1109db, PR #26 open, the owner merges; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## The rule *Host Inputs*, and the partner's review of the rewrite — 2026-11-12
+
+After reading the report of the section below, the owner asked for "a very
+simple set of rules that reflect what you did", and then for the Codex
+review.
+
+**The rule.** Commit `7ed906c9` adds the section *Host Inputs* to
+`WORKFLOW-LOCAL.md`, seven rules: only an entry layer reads the host; every
+other module takes what it read as required values; a frozen dataclass binds
+shared values and its constructor only stores; a decision returns what to do
+and the entry layer does it; a new or changed unit test builds values and
+patches nothing; an entry layer is a short sequence tested as a program; the
+pull request states what the hosted gate no longer catches, and the reviewer
+verifies rules 1 to 6. The companion paragraph, a pointer in the unit test
+guide and the reviewer's duty in the brief template are in the same commit.
+The section is separate from *Unit Tests* because four of its rules bind
+product code and the numbers of *Unit Tests* are cited in many records.
+
+**The review.** Codex + GPT-6 Astra, high effort, on
+`ws-maintenance/host-inputs-at-source-review-2`, brief under
+`evidence/2026-11-12-host-inputs-as-values/review-brief.md`. It opened
+[PR #28](https://github.com/mycodespace-ai/devcapsule/pull/28) with one
+commit, `04770142`. Accepted without a round and merged at `83d238b8`. What
+it changed:
+
+- `run` set the surface's launch variable before its properties file was
+  written; 0.3.0 wrote the file first, and set the session variables before
+  it planned the launch. `Session.environment` no longer carries the launch
+  variables; `run` sets them after the files. A new integration test proves
+  both failure cases in a real process.
+- The two version integration tests computed their expected output with the
+  code under test. They now copy the package into scratch, give it an
+  authored version and a stamp, and assert text and JSON written out in the
+  test. This closes the fault of the record looked for outside the package.
+- The decisions integration test accepted any failure. It now requires the
+  console's diagnostic to name a file the test wrote, which closes the fault
+  of the dropped arguments. It skips where the image has no console.
+- A new integration test runs the real `os.chown` with a uid and a gid that
+  differ, by passing 0 as the caller's uid and a supplementary group of the
+  runner. It closes the fault of the swapped uid and gid.
+- A fixture of `test_contract.py` no longer inherits PyCharm's `/ide-config`.
+  Two mirror tests cover a directory named `__init__.py` and the precedence
+  of a component's variables. The integration helpers skip where the
+  supervisor's signal calls are absent and never write bytecode.
+
+Of the five faults that no test caught, three are now caught by integration
+tests. The probe's timeout, twice, stays uncaught; the reviewer argues that a
+test of it would depend on the clock, and proposes none. Of its own twelve
+planted faults, four are caught by mirror tests, one by a legacy unit test,
+five by integration tests, two by nothing. I planted the swapped owner
+change and the dropped arguments again in the review worktree; each new test
+failed on its fault and passed after the restore.
+
+**What the review leaves for the owner.**
+
+1. One difference from 0.3.0 remains. The rewrite creates every directory,
+   sets the private modes and then changes the owners. 0.3.0 changed the
+   owners directory by directory, then set the modes. The final state is the
+   same; the state after a start that fails between the two is not.
+2. Deviations from the rule in the code as merged, each named in PR #28's
+   body: `ConsoleInstallation.child` checks a path, prints a notice and
+   returns a callback that opens a socket; `DecisionTools.run` starts a
+   program with the inherited environment; `prepare_filesystem` performs
+   `os.chown` below the entry layer; `current_build_info()` and
+   `is_built_distribution()` find the package without an argument; `run`
+   branches twice on an answer of the session; the helper of the legacy
+   `tests/test_contained_display.py` still patches; the autouse fixtures of
+   `tests/conftest.py` still patch for every test.
+3. Where the reviewer found the rule open to two readings:
+   - Rule 1: whether reading a file or a socket at a path or address that was
+     passed in is a read of the host. Rule 5 calls such a file a value; rule
+     1's "only" can be read to forbid it.
+   - Rule 1: "the one function that such a layer calls first" does not
+     settle `main` to `run`, or `VersionCommand.run` to `current_build_info`.
+   - Rules 2 and 3: whether a factory with no argument that names fixed
+     paths, `ConsoleInstallation.of_image`, is allowed.
+   - Rule 4: whether a helper below the entry layer may perform an effect
+     that a decision returned.
+   - Rule 5: whether a changed helper of an unchanged legacy test, or an
+     inherited autouse fixture, makes a test "changed".
+   - Rule 6: whether applying a returned boolean with `if` is a decision of
+     the entry layer.
+   - Rule 7: which evidence states "what the hosted gate does not catch": a
+     list of tests not run, or planted faults.
+4. The reviewer's proposals: run the three integration files in the hosted
+   pull-request gate and count skips apart from passes; give release
+   acceptance an environment with a console so the forwarding test does not
+   skip there; keep a version check on the built executable itself; retire
+   the display fixture and split four contract tests that make two calls.
+
+**Validation on the merged branch, `83d238b8`, in the capsule.**
+`nox -s tests`: 17 failed, 2961 passed; the 17 are the standing ones, by file
+and count. The convention check: 102 legacy files, 1350 legacy tests, 53
+conforming files, 0 breaches. In the review worktree: 157 mirror tests, 25
+integration tests with no skip, 69 legacy tests of the neighbours, mypy over
+341 files, all pass. Not run: `nox -s webconsole`, the end-to-end sessions,
+`nox -s build` as one session, a built executable.
+
+**Next action.** The owner reads PR #26 and rules on the open readings of
+the rule; the rule's text changes only on that ruling. The review worktree
+`~/worktrees/maintenance-review` is kept until then.
 
 ## PR #26 rewritten: host inputs are values, and no touched test patches — 2026-11-12
 
@@ -160,11 +262,12 @@ end-to-end sessions, `nox -s build` as one session.
   process, so a command reads `context.environ` and a test passes one.
 - Apply the same change to `display.py`, whose legacy tests patch three names.
 
-**Review.** The rewrite has not been reviewed by the partner. PR #27 reviewed
-the code this section replaces.
+**Review.** PR #27 reviewed the code this section replaces. The partner
+reviewed the rewrite as PR #28; see the section above, which also corrects
+this one: the launch variable is no longer part of `Session.environment`, and
+three of the five uncaught faults are now caught.
 
-**Next action.** The owner reads PR #26; lessons and a rule for *Unit Tests*
-follow from that reading, on the owner's word.
+**Next action.** See the section above.
 
 ## PR #18's test-only parameters removed; the tests set the host at its source — 2026-11-11
 
