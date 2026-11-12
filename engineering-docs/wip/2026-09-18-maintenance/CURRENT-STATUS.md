@@ -69,9 +69,9 @@ where their legacy forms are 2 of the 17.
 **Evidence.** The whole unit suite, 3008 tests before, passes as before
 with the 17 standing failures; with the fallback to the mounted settings
 switched off by a diagnostic plugin, it fails only the two tests of the
-fallback itself, before and after. 22 faults planted in the changed code: 2
-caught by the new tests alone after two assertions were added, 15 by legacy
-tests, 5 by nothing:
+fallback itself, before and after. 22 faults planted in the changed code: 3
+caught by the new tests, two of them after an assertion was added for each,
+14 by legacy tests, 5 by nothing:
 
 - the refusal of contradictory flags before the reading, which the review
   repeats; only the order of two refusals could show it;
