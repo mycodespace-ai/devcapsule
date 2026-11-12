@@ -233,3 +233,11 @@ def test_child_is_not_ready_while_nothing_listens_on_its_port(tmp_path: Path) ->
         ready = child.ready()
 
     assert ready is False
+
+
+def test_package_path_ignores_a_directory_named_like_the_package_initializer(tmp_path: Path) -> None:
+    """A directory named __init__.py is not an installed launcher package; the base remains selected."""
+    installation = base_installation(tmp_path)
+    (installation.launcher_source / "devcapsule_webconsole" / "__init__.py").mkdir(parents=True)
+
+    assert installation.package_path("") == ""

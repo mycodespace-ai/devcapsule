@@ -4,10 +4,9 @@ The entrypoint reads the process once, builds a :class:`Session`, and performs
 what it answers: the directories and variables the session needs, the files
 its surface reads, and the children to supervise in their start order.
 
-Nothing here reads the process environment or the caller's uid, and nothing
-here starts a program or writes a file. The one look at the host is
-:meth:`Session.children` asking the console installation it was given whether
-the image has a console.
+Nothing here reads the process environment or the caller's uid, starts a
+program or writes a file. ``children`` delegates console discovery to the
+given installation. That operation checks its paths and can print a notice.
 """
 
 from __future__ import annotations
@@ -83,17 +82,16 @@ class Session:
         raise RuntimePlanError(f"unsupported component adapter: {adapter}")
 
     def environment(self, existing: Mapping[str, str]) -> dict[str, str]:
-        """The variables to set before any child starts, in a process that has ``existing``.
+        """The variables to set before preparing the surface, given ``existing``.
 
-        They are the session's paths, every component's variables and the
-        surface's own, a later one winning a name; then each graphics default
-        that neither ``existing`` nor those already decide.
+        The session's paths precede the components' variables. Graphics
+        defaults fill only unset names. The entrypoint sets ``launch.environment``
+        separately, after writing the surface's files, as in 0.3.0.
         """
 
         planned = {
             **self.filesystem.environment,
             **self.plan.component_environment(),
-            **self.launch.environment,
         }
         return {**planned, **graphics_environment({**existing, **planned})}
 

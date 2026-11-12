@@ -174,10 +174,10 @@ def test_launch_refuses_a_component_whose_adapter_the_runtime_does_not_know(tmp_
         session.launch
 
 
-def test_environment_sets_the_session_paths_every_components_variables_and_the_surfaces_own(
+def test_environment_sets_session_paths_and_component_variables_before_the_launch(
     tmp_path: Path,
 ) -> None:
-    """``environment`` carries the home and runtime directory, an ancillary component's variable, and the surface's properties variable."""
+    """``environment`` sets session paths and component variables; launch variables wait until their files are written."""
     document = jetbrains_document(tmp_path)
     document["ancillary_components"] = [
         {
@@ -194,7 +194,7 @@ def test_environment_sets_the_session_paths_every_components_variables_and_the_s
     assert environment["HOME"] == str(tmp_path / "home")
     assert environment["XDG_RUNTIME_DIR"] == "/tmp/devcapsule-runtime-1000"
     assert environment["CODEX_HOME"] == str(tmp_path / "codex-home")
-    assert environment["PYCHARM_PROPERTIES"] == str(tmp_path / "idea.properties")
+    assert "PYCHARM_PROPERTIES" not in environment
 
 
 def test_environment_supplies_the_graphics_defaults_a_process_does_not_have(tmp_path: Path) -> None:
@@ -432,3 +432,15 @@ def test_log_rotation_is_the_default_when_the_plan_carries_none(
     assert session_of(document, image_without_console(tmp_path)).log_rotation == (
         logs.MAXIMUM_SEGMENT_BYTES, logs.ROTATIONS,
     )
+
+
+def test_environment_gives_component_paths_precedence_over_session_and_process_paths(tmp_path: Path) -> None:
+    """Component variables override both the planned home and the caller's home; empty graphics values stay explicit."""
+    document = jetbrains_document(tmp_path)
+    document["component"]["environment"] = {"HOME": "/component-home"}  # type: ignore[index]
+    session = session_of(document, image_without_console(tmp_path))
+
+    environment = session.environment({"HOME": "/caller-home", "LIBGL_ALWAYS_SOFTWARE": ""})
+
+    assert environment["HOME"] == "/component-home"
+    assert environment["LIBGL_ALWAYS_SOFTWARE"] == ""

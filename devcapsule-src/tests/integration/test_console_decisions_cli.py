@@ -2,9 +2,9 @@
 
 What the command does inside a capsule depends on two fixed paths of the
 image, the console interpreter and the runtime plan, which a test cannot
-build. ``tests/unit/devcapsule/test_console_tools.py`` covers those
-decisions from values, and ``tests/e2e/test_console_answers.py`` runs the
-command in a real capsule.
+build. The forwarding case requires an installed console and skips when
+one is absent. It checks a file under its own scratch and does not send
+a decision or contact the console server.
 """
 
 from __future__ import annotations
@@ -15,6 +15,8 @@ import subprocess
 import sys
 
 import pytest
+
+from devcapsule.container_runtime.console import ConsoleInstallation
 
 pytestmark = pytest.mark.integration
 
@@ -29,7 +31,7 @@ def checkout_decisions(
     ``container_name`` is given; nothing of the caller's environment.
     """
     environment = {
-        "PATH": os.defpath,
+        "PATH": os.defpath, "PYTHONDONTWRITEBYTECODE": "1",
         "HOME": str(tmp_path / "home"),
         "DEVCAPSULE_CONFIG_HOME": str(tmp_path / "config"),
     }
@@ -67,14 +69,16 @@ def test_cli_reports_outside_capsule_refusal_with_usage_exit_code(
     assert "runs inside a capsule" in completed.stderr
 
 
-def test_cli_does_not_give_the_hosts_refusal_inside_a_capsule(tmp_path: Path) -> None:
-    """With a container name in the environment, the command gets past the refusal that belongs to a host.
+def test_cli_forwards_the_check_subcommand_and_its_path(tmp_path: Path) -> None:
+    """With an installed console, the real command checks the named file and reports its invalid JSON."""
+    if not ConsoleInstallation.of_image().python.is_file():
+        pytest.skip("argument forwarding requires the image's console interpreter")
+    decision = tmp_path / "forwarded-argument.json"
+    decision.write_text("not JSON", encoding="utf-8")
 
-    What it does next depends on the image: without a console it names the
-    missing base, with one it runs the console's own ``check``. Either way
-    ``x.json`` is not checked, so it fails, and not with the host's words.
-    """
-    completed = checkout_decisions(tmp_path, "check", "x.json", container_name="capsule-fixture")
+    completed = checkout_decisions(tmp_path, "check", str(decision), container_name="capsule-fixture")
 
-    assert completed.returncode != 0
-    assert "runs inside a capsule" not in completed.stderr
+    assert completed.returncode == 2
+    assert completed.stdout == ""
+    assert "forwarded-argument.json" in completed.stderr
+    assert "JSON" in completed.stderr
