@@ -10,39 +10,36 @@ display's own infrastructure children (X server, window manager, browser
 bridge); see ``display.py``. A headless job declares no display at all. When
 the plan carries a console section, the web console runs beside either; see
 ``console.py``.
+
+``session.py`` plans the session from its inputs, with console discovery
+delegated to the installation. This module configures logs, prepares and owns
+directories, sets session variables, writes launch files, then sets launch
+variables. It prepares the display and sets its variables last. It assembles
+children, takes the selected profile lock, and runs the supervisor.
 """
 
 from __future__ import annotations
 
 from contextlib import nullcontext
-from dataclasses import replace
 import os
 from pathlib import Path
 import sys
-from typing import Callable, MutableMapping, Protocol, Sequence
+from typing import Sequence
 
-from . import contract as rtcontract
 from .. import logs
 
-from .components import eclipse, jetbrains, vscode
-from .console import CommandWrapper, console_child
+from .components import jetbrains
+from .console import ConsoleInstallation
 from .contract import RuntimePlan, RuntimePlanError
-from .display import ContainedDisplay, prepare_contained_display
-from .filesystem import plan_filesystem, prepare_filesystem
-from .graphics import environment as graphics_environment
-from .identity import foreground_command
+from .display import prepare_contained_display
+from .filesystem import prepare_filesystem
+from .identity import CapsuleUser
+from .session import Session
 from .supervisor import SupervisedChild, Supervisor, SupervisorError
 
 __all__ = [
-    "ConsoleBuilder",
-    "DisplayPreparer",
-    "LogConfigurer",
     "SUPERVISOR_LOG_COMPONENT",
-    "SupervisorFactory",
-    "SupervisorRunner",
     "USAGE",
-    "log_rotation",
-    "logged_children",
     "main",
     "run",
 ]
@@ -56,121 +53,39 @@ USAGE = (
 SUPERVISOR_LOG_COMPONENT = "supervisor"
 
 
-class SupervisorRunner(Protocol):
-    def run(self) -> int: ...
+def run(plan: RuntimePlan, job: tuple[str, ...] | None = None) -> int:
+    """Prepare the capsule for ``plan`` and supervise its session to the foreground child's exit.
 
-
-SupervisorFactory = Callable[..., SupervisorRunner]
-LogConfigurer = Callable[..., Path | None]
-DisplayPreparer = Callable[[RuntimePlan, str, CommandWrapper], ContainedDisplay]
-ConsoleBuilder = Callable[[RuntimePlan, CommandWrapper], SupervisedChild | None]
-
-
-def run(
-    plan: rtcontract.RuntimePlan,
-    job: tuple[str, ...] | None = None,
-    *,
-    environ: MutableMapping[str, str] | None = None,
-    runtime_root: Path | None = None,
-    caller_uid: int | None = None,
-    configure_logs: LogConfigurer | None = None,
-    prepare_display: DisplayPreparer | None = None,
-    build_console_child: ConsoleBuilder | None = None,
-    supervisor_factory: SupervisorFactory | None = None,
-) -> int:
-    target_env: MutableMapping[str, str] = os.environ if environ is None else environ
-    setup_logs: LogConfigurer = logs.configure if configure_logs is None else configure_logs
-    make_display = prepare_contained_display if prepare_display is None else prepare_display
-    make_console = console_child if build_console_child is None else build_console_child
-    make_supervisor: SupervisorFactory = Supervisor if supervisor_factory is None else supervisor_factory
-
-    owner = (plan.identity.uid, plan.identity.gid)
-    log_directory = None if plan.logs is None else plan.logs.directory
-    segment_bytes, rotations = log_rotation(plan)
-    setup_logs(
-        SUPERVISOR_LOG_COMPONENT,
-        log_directory,
-        environ=target_env,
-        owner=owner,
-        segment_bytes=segment_bytes,
-        rotations=rotations,
-    )
-    filesystem = plan_filesystem(plan) if runtime_root is None else plan_filesystem(plan, runtime_root=runtime_root)
-    if caller_uid is None:
-        prepare_filesystem(filesystem, plan.identity)
-    else:
-        prepare_filesystem(filesystem, plan.identity, caller_uid=caller_uid)
-    target_env.update(filesystem.environment)
-    target_env.update(plan.component_environment())
-    target_env.update(graphics_environment(target_env))
-    if plan.component.adapter == "jetbrains":
-        launch = jetbrains.plan(plan)
-        Path(launch.properties_path).write_text(launch.properties, encoding="utf-8")
-        target_env[launch.properties_environment_variable] = launch.properties_path
-        command = launch.command
-    elif plan.component.adapter == "vscode":
-        command = vscode.plan(plan).command
-    elif plan.component.adapter == "eclipse":
-        command = eclipse.plan(plan).command
-    else:
-        raise RuntimePlanError(f"unsupported component adapter: {plan.component.adapter}")
-
-    def wrap_for_user(child_command: tuple[str, ...]) -> tuple[str, ...]:
-        if caller_uid is None:
-            return foreground_command(child_command, plan.identity)
-        return foreground_command(child_command, plan.identity, caller_uid=caller_uid)
-
-    infrastructure: tuple[SupervisedChild, ...] = ()
-    if job is None and plan.display is not None and plan.display.is_contained:
-        contained = make_display(plan, filesystem.environment["XDG_RUNTIME_DIR"], wrap_for_user)
-        target_env.update(contained.environment)
-        infrastructure = contained.children
-    console = make_console(plan, wrap_for_user)
-    if console is not None:
-        infrastructure = (*infrastructure, console)
-    if job is None:
-        child = SupervisedChild(
-            name=plan.component.id,
-            command=wrap_for_user(command),
-            foreground=True,
-        )
-    else:
-        # Headless mode: the same distinguished slot with no GUI. The job runs
-        # in the project it was launched against, not the image's workdir.
-        child = SupervisedChild(
-            name="job",
-            command=wrap_for_user(job),
-            foreground=True,
-            working_directory=plan.project_path,
-        )
-    guard = jetbrains.session_lock(plan) if plan.component.adapter == "jetbrains" and job is None else nullcontext()
-    with guard:
-        return make_supervisor(
-            logged_children((*infrastructure, child), log_directory),
-            log_owner=owner, segment_bytes=segment_bytes, rotations=rotations,
-        ).run()
-
-
-def log_rotation(plan: rtcontract.RuntimePlan) -> tuple[int, int]:
-    """The segment and rotation count every writer of this session uses.
-
-    The plan's logs section carries them when the launcher derived them from
-    the budget; a plan from before they existed gets the defaults.
+    This is where the runtime meets its host. It reads the process once, its
+    effective uid and its environment, and names the image's console; from
+    there :class:`Session` decides, and each statement below performs one of
+    its answers.
     """
 
-    if plan.logs is not None and plan.logs.rotates:
-        return plan.logs.segment_bytes, plan.logs.rotations
-    return logs.MAXIMUM_SEGMENT_BYTES, logs.ROTATIONS
-
-
-def logged_children(
-    children: tuple[SupervisedChild, ...], log_directory: str | None
-) -> tuple[SupervisedChild, ...]:
-    """Give every child its own log file, ``devcapsule-<name>.log``, when logging is on."""
-
-    if log_directory is None:
-        return children
-    return tuple(replace(child, log_path=str(logs.log_path(log_directory, child.name))) for child in children)
+    session = Session(plan, job, CapsuleUser(plan.identity, os.geteuid()), ConsoleInstallation.of_image())
+    segment_bytes, rotations = session.log_rotation
+    logs.configure(
+        SUPERVISOR_LOG_COMPONENT, session.log_directory,
+        owner=session.log_owner, segment_bytes=segment_bytes, rotations=rotations,
+    )
+    prepare_filesystem(session.filesystem, session.user)
+    os.environ.update(session.environment(os.environ))
+    for path, text in session.launch.files.items():
+        Path(path).write_text(text, encoding="utf-8")
+    os.environ.update(session.launch.environment)
+    display_children: tuple[SupervisedChild, ...] = ()
+    if session.shows_contained_display:
+        display = prepare_contained_display(
+            plan, session.filesystem.environment["XDG_RUNTIME_DIR"], session.user.command,
+        )
+        os.environ.update(display.environment)
+        display_children = display.children
+    children = session.children(display_children)
+    guard = jetbrains.session_lock(plan) if session.holds_profile_lock else nullcontext()
+    with guard:
+        return Supervisor(
+            children, log_owner=session.log_owner, segment_bytes=segment_bytes, rotations=rotations,
+        ).run()
 
 
 def main(argv: Sequence[str] | None = None) -> int:

@@ -13,7 +13,7 @@ import shlex
 from typing import Any, Mapping
 
 from .authorization import AuthorizationChoice, AuthorizationReview, review_authorizations
-from .bindings import resolve_configuration_bindings, resolve_secret_bindings
+from .bindings import DirectoryLookup, resolve_configuration_bindings, resolve_secret_bindings
 from .file_formats import AuthorizationScalar, ConfigurationScalar, ProjectConfigurationError, table
 from .nodes import build_node_registry
 from .launcher_values import resolve_launcher_values
@@ -135,8 +135,14 @@ class ConfigurationReview:
 def review_configuration(
     manifest: Mapping[str, Any], lock: Mapping[str, Any], checkout: Mapping[str, Any],
     home: Mapping[str, Any] | None = None,
+    *,
+    directory: DirectoryLookup | None = None,
 ) -> ConfigurationReview:
-    """Assess one checkout; ``home`` holds the home's defaults for the launcher-owned values."""
+    """Assess one checkout; ``home`` holds the home's defaults for the launcher-owned values.
+
+    ``directory`` tells what the host says of a bound directory; left out,
+    this machine is asked (see ``resolve_configuration_bindings``).
+    """
     # No consumer can assess a tree with ambiguous names or runtime effects.
     build_node_registry(manifest, lock)
     problems: list[str] = []
@@ -161,7 +167,7 @@ def review_configuration(
     except ProjectConfigurationError as exc:
         problems.append(str(exc))
     try:
-        bindings = resolve_configuration_bindings(lock, checkout)
+        bindings = resolve_configuration_bindings(lock, checkout, directory)
     except ProjectConfigurationError as exc:
         problems.append(str(exc))
     try:
@@ -178,7 +184,7 @@ def review_configuration(
         problems.append("Checkout state.adopted must be a table.")
     else:
         try:
-            resolve_configuration_bindings(lock, {"configuration": {"bindings": {"host-directory": adopted}}})
+            resolve_configuration_bindings(lock, {"configuration": {"bindings": {"host-directory": adopted}}}, directory)
         except ProjectConfigurationError as exc:
             problems.append("Adopted state: " + str(exc))
         overlap = sorted(set(adopted) & set(bindings))

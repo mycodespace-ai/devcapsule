@@ -1,3 +1,15 @@
+"""Integration tests of the built launcher: the one-file executable, run as a developer runs it.
+
+Each test starts the executable that ``built_pex`` names, in an environment
+the test builds: the search path, a home directory and a named DevCapsule
+home under the test's directory, and the two caches the executable unpacks
+itself into, which the suite keeps for the whole run. Nothing else of the
+developer's shell reaches it, so the outcome is the same on a plain host and
+inside a capsule, where an unnamed home would read the launcher's mounted
+settings.
+
+No test here needs Docker or the network.
+"""
 from __future__ import annotations
 
 import json
@@ -15,7 +27,7 @@ import pytest
 import tomllib
 from devcapsule.host_open import HOST_OPEN_SOCKET_ENV, HostOpenBroker
 
-pytestmark = pytest.mark.legacy
+pytestmark = pytest.mark.integration
 
 # The artifact under test is built from this tree, so compare against the
 # authored version, not installed metadata an editable install may have frozen.
@@ -26,26 +38,41 @@ PACKAGE_VERSION = os.environ.get("DEVCAPSULE_EXPECTED_RELEASE_VERSION") or tomll
 )["project"]["version"]
 
 
-@pytest.mark.integration
-def test_built_pex_dispatches_runtime_help(built_pex: Path) -> None:
+@pytest.fixture
+def environment(tmp_path: Path) -> dict[str, str]:
+    """The environment every executable here is started in: a search path, a home and a named DevCapsule home
+    under the test's directory, and the executable's own caches."""
+    return {
+        "PATH": os.environ["PATH"],
+        "HOME": str(tmp_path / "home"),
+        "DEVCAPSULE_CONFIG_HOME": str(tmp_path / "devcapsule-home"),
+        **{name: os.environ[name] for name in ("PEX_ROOT", "SCIE_BASE") if name in os.environ},
+    }
+
+
+def test_built_pex_dispatches_runtime_help(built_pex: Path, environment: dict[str, str]) -> None:
+    """The executable carries the in-capsule runtime: ``runtime --help`` exits 0 with that command's usage."""
     completed = subprocess.run(
         [str(built_pex), "runtime", "--help"],
         check=False,
         text=True,
         capture_output=True,
+        env=environment,
     )
 
     assert completed.returncode == 0, completed.stderr
     assert "usage: devcapsule runtime RUNTIME_PLAN.json" in completed.stdout
 
 
-@pytest.mark.integration
-def test_built_pex_exposes_recursive_preflight_help(built_pex: Path) -> None:
+def test_built_pex_exposes_recursive_preflight_help(built_pex: Path, environment: dict[str, str]) -> None:
+    """The recursive end-to-end commands are in the executable: ``preflight --help`` offers ``--show-host-paths``
+    and ``run --help`` offers ``--keep-on-failure``."""
     completed = subprocess.run(
         [str(built_pex), "project", "recursive-e2e", "preflight", "--help"],
         check=False,
         text=True,
         capture_output=True,
+        env=environment,
     )
 
     assert completed.returncode == 0, completed.stderr
@@ -57,15 +84,17 @@ def test_built_pex_exposes_recursive_preflight_help(built_pex: Path) -> None:
         check=False,
         text=True,
         capture_output=True,
+        env=environment,
     )
     assert run_help.returncode == 0, run_help.stderr
     assert "--keep-on-failure" in run_help.stdout
 
 
-@pytest.mark.integration
 def test_built_pex_bootstraps_packaged_workflow(
-    built_pex: Path, tmp_path: Path
+    built_pex: Path, tmp_path: Path, environment: dict[str, str],
 ) -> None:
+    """``bootstrap`` in an empty directory writes the workflow definition that the package carries, byte for
+    byte, and a status file of a single-stream project."""
     project = tmp_path / "adopter"
     project.mkdir()
 
@@ -75,6 +104,7 @@ def test_built_pex_bootstraps_packaged_workflow(
         text=True,
         capture_output=True,
         cwd=project,
+        env=environment,
     )
 
     assert completed.returncode == 0, completed.stderr
@@ -91,8 +121,8 @@ def test_built_pex_bootstraps_packaged_workflow(
     ).read_text(encoding="utf-8")
 
 
-@pytest.mark.integration
-def test_built_pex_exposes_recursive_host_public_interface(built_pex: Path) -> None:
+def test_built_pex_exposes_recursive_host_public_interface(built_pex: Path, environment: dict[str, str]) -> None:
+    """Run as an interpreter, the executable imports ``devcapsule.recursive_host`` and its launch context class."""
     completed = subprocess.run(
         [
             str(built_pex),
@@ -103,18 +133,20 @@ def test_built_pex_exposes_recursive_host_public_interface(built_pex: Path) -> N
         check=False,
         text=True,
         capture_output=True,
-        env={**os.environ, "PEX_INTERPRETER": "1"},
+        env={**environment, "PEX_INTERPRETER": "1"},
     )
 
     assert completed.returncode == 0, completed.stderr
     assert completed.stdout.strip() == "HostDaemonLaunchContext"
 
 
-@pytest.mark.integration
 def test_xdg_open_dispatches_through_built_pex_to_exact_host_argument(
     built_pex: Path,
     tmp_path: Path,
+    environment: dict[str, str],
 ) -> None:
+    """``xdg-open URL``, with the executable's ``host-open`` as the browser, hands the broker's opener the URL
+    exactly as given, shell characters and all."""
     xdg_open = shutil.which("xdg-open")
     if xdg_open is None:
         pytest.skip("xdg-open is unavailable on this packaging-test host")
@@ -135,7 +167,7 @@ def test_xdg_open_dispatches_through_built_pex_to_exact_host_argument(
             text=True,
             capture_output=True,
             env={
-                **os.environ,
+                **environment,
                 "BROWSER": f"{built_pex} host-open",
                 HOST_OPEN_SOCKET_ENV: str(socket_path),
                 "DISPLAY": "",
@@ -148,13 +180,15 @@ def test_xdg_open_dispatches_through_built_pex_to_exact_host_argument(
     assert captured.read_text(encoding="utf-8") == url
 
 
-@pytest.mark.integration
-def test_built_pex_exposes_self_contained_source_identity(built_pex: Path) -> None:
+def test_built_pex_exposes_self_contained_source_identity(built_pex: Path, environment: dict[str, str]) -> None:
+    """``version --json`` gives the six fields of the executable's identity. The version is the one this tree
+    declares; a local build has no source revision, a release build names its commit."""
     completed = subprocess.run(
         [str(built_pex), "version", "--json"],
         check=False,
         text=True,
         capture_output=True,
+        env=environment,
     )
 
     assert completed.returncode == 0, completed.stderr
@@ -182,13 +216,15 @@ def test_built_pex_exposes_self_contained_source_identity(built_pex: Path) -> No
     }
 
 
-@pytest.mark.integration
 def test_built_pex_authors_shared_policy_and_keeps_personal_selection_local(
-    built_pex: Path, tmp_path: Path,
+    built_pex: Path, tmp_path: Path, environment: dict[str, str],
 ) -> None:
+    """A developer's own choices, an IDE, an omitted offer, an added agent, change no file of the project's
+    shared directory. The base then waits for the home's trust: ``config check`` exits 3 until the channel is
+    accepted for the home, and 0 after. A requirement in the retired ``TOOL=MAJOR`` form is refused and changes
+    nothing shared."""
     project = tmp_path / "capability-project"
     project.mkdir()
-    environment = {**os.environ, "XDG_CONFIG_HOME": str(tmp_path / "config")}
     def invoke(*arguments: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run([str(built_pex), "project", "--path", str(project), *arguments],
                               cwd=project, env=environment, text=True, capture_output=True, check=False)
@@ -204,8 +240,8 @@ def test_built_pex_authors_shared_policy_and_keeps_personal_selection_local(
     assert {path.name: path.read_bytes() for path in directory.iterdir()} == shared
     # The base channel is a home decision since 0.3.0 rc4: until it is
     # trusted, or the base consented to per checkout, 'check' reports it as
-    # pending with status 3. The trust record lives under the isolated
-    # XDG_CONFIG_HOME above, so accepting it here touches nothing shared.
+    # pending with status 3. The trust record lives in the named home of
+    # this test, so accepting it here touches nothing shared.
     pending = invoke("config", "check")
     assert pending.returncode == 3 and "trust accept devcapsule-base" in pending.stderr, pending.stdout
     trusted = subprocess.run([str(built_pex), "home", "trust", "accept", "devcapsule-base", "--yes"],
@@ -220,8 +256,9 @@ def test_built_pex_authors_shared_policy_and_keeps_personal_selection_local(
     assert {path.name: path.read_bytes() for path in directory.iterdir()} == shared
 
 
-@pytest.mark.integration
-def test_built_pex_carries_force_for_a_required_ide_to_the_launch_review(built_pex: Path, tmp_path: Path) -> None:
+def test_built_pex_carries_force_for_a_required_ide_to_the_launch_review(
+    built_pex: Path, tmp_path: Path, environment: dict[str, str],
+) -> None:
     """``run --ide IDE --force`` reaches preparation through the built executable; the refusals name it.
 
     The forced launch itself materializes the requested IDE, which needs the
@@ -229,15 +266,13 @@ def test_built_pex_carries_force_for_a_required_ide_to_the_launch_review(built_p
     """
     project = tmp_path / "required-ide"
     project.mkdir()
-    environment = {**os.environ, "HOME": str(tmp_path / "home"), "XDG_CONFIG_HOME": str(tmp_path / "config"),
-                   "XDG_STATE_HOME": str(tmp_path / "state"), "XDG_DATA_HOME": str(tmp_path / "data")}
     def invoke(*arguments: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run([str(built_pex), "project", "--path", str(project), *arguments],
                               cwd=project, env=environment, text=True, capture_output=True, check=False)
     created = invoke("init", "--require", "python", "--require", "python-ide", "--ide", "python-ide",
                      "--creator", "mailto:fixture@example.test", "--authorize", "base-image", "default")
     assert created.returncode == 0, created.stderr
-    records = sorted((tmp_path / "config").rglob("*.toml"))
+    records = sorted((tmp_path / "devcapsule-home").rglob("*.toml"))
     assert records, "init registers the checkout and derives its resolution"
     before = {path: path.read_bytes() for path in (*records, *sorted((project / ".devcapsule").iterdir()))}
     helped = invoke("run", "--help")

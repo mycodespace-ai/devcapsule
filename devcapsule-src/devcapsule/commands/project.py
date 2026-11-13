@@ -37,6 +37,7 @@ from devcapsule.commands.framework import (
 from devcapsule.components.catalog import COMPONENTS
 from devcapsule.commands._versions import VersionsGroup
 from devcapsule.commands._upgrade_prompt import offer_upgrades
+from devcapsule.commands._launch_review import flags_after_upgrade
 from devcapsule.commands._run_flow import RunFlags, launch_listing_document, load_launch_state, prepare_launch
 from devcapsule.display_client import has_contained_display
 from devcapsule.commands._software_approvals import (
@@ -81,7 +82,7 @@ from devcapsule.configuration.nodes import (
     build_node_registry,
 )
 from devcapsule.environment_realization import realize_environment, required_local_image, omit_unavailable_optional
-from devcapsule.materialization import ArtifactUnavailable
+from devcapsule.materialization import ArtifactUnavailable, NotOnThisMachine
 from devcapsule.display_client import select_display_transport
 from devcapsule.images.contract import WebConsoleAvailability, web_console_availability
 from devcapsule.materialization import ImageDetails, validate_base_image
@@ -597,13 +598,6 @@ class NotificationsGroup(Group):
         }
 
 
-@dataclass(frozen=True)
-class _DecisionsInvocation:
-    environ: Mapping[str, str] | None = None
-    console_python: Path | None = None
-    runtime_plan_path: Path | None = None
-
-
 class CheckoutDecisionsCommand(Command):
     """``project checkout decisions ...``: the web console's decision tools, from one CLI.
 
@@ -627,34 +621,17 @@ class CheckoutDecisionsCommand(Command):
                                  "`python -m devcapsule_webconsole.decisions` takes them.")
 
     @classmethod
-    def invoke(
-        cls,
-        prog: str,
-        argv: Sequence[str],
-        context: object | None = None,
-        *,
-        environ: Mapping[str, str] | None = None,
-        console_python: Path | None = None,
-        runtime_plan_path: Path | None = None,
-    ) -> int:
-        invocation = (
-            _DecisionsInvocation(environ=environ, console_python=console_python, runtime_plan_path=runtime_plan_path)
-            if environ is not None or console_python is not None or runtime_plan_path is not None
-            else context
-        )
-        return super().invoke(prog, argv, invocation)
-
-    @classmethod
     def run(cls, arguments: argparse.Namespace, context: object | None) -> int:
-        from devcapsule.console_tools import run_console_decisions
+        from devcapsule.console_tools import DecisionTools
+        from devcapsule.container_runtime.console import ConsoleInstallation
+        from devcapsule.recursive_dogfood import CONTAINER_NAME_ENV, RUNTIME_PLAN_PATH
 
-        invocation = context if isinstance(context, _DecisionsInvocation) else _DecisionsInvocation()
-        return run_console_decisions(
-            arguments.arguments,
-            environ=invocation.environ,
-            console_python=invocation.console_python,
-            runtime_plan_path=invocation.runtime_plan_path,
+        tools = DecisionTools(
+            in_capsule=bool(os.environ.get(CONTAINER_NAME_ENV)),
+            console=ConsoleInstallation.of_image(),
+            runtime_plan_path=RUNTIME_PLAN_PATH,
         )
+        return tools.run(arguments.arguments)
 
 
 class CheckoutGroup(Group):
@@ -855,38 +832,20 @@ class ConfigShowCommand(Command):
 
 def _show_inside_capsule(loaded: runtime_configuration.RuntimeConfiguration, as_json: bool) -> int:
     """Inside a capsule: the launcher's listing at launch and the console's requests since (answer 16)."""
-    from devcapsule.commands._console_channel import read_channel
+    from devcapsule.commands._console_channel import read_channel, render_running_listing, running_listing_document
     view = read_channel(runtime_configuration.CHANNEL_PATH) if runtime_configuration.CHANNEL_PATH.is_dir() else None
     if view is None:
         print(json.dumps(loaded.configuration_document(), indent=2, sort_keys=True) if as_json
               else loaded.configuration_report())
         return 0
-    checkout = view.listing.get("checkout")
-    identity = loaded.document["project"]
-    if (not isinstance(checkout, dict) or checkout.get("launcher-path") != loaded.document["launcher-root"]
-            or checkout.get("name") != loaded.checkout_name
-            or view.listing.get("project") != {key: identity[key] for key in ("creator", "slug")}):
-        raise ProjectConfigurationError("The channel listing belongs to another checkout; inspect configuration on the host.")
-    command = loaded.launcher_command(["config", "show"])
+    capsule: dict[str, Any] = {
+        "launcher_root": loaded.document["launcher-root"], "checkout_name": loaded.checkout_name,
+        "project": loaded.document["project"], "launcher_command": loaded.launcher_command(["config", "show"]),
+    }
     if as_json:
-        print(json.dumps({**view.listing, "context": "running capsule: the launcher's listing at launch", "at": view.at,
-                          "console-requests": list(view.requests), "launcher-command": command},
-                         indent=2, sort_keys=True))
-        return 0
-    checkout = view.listing.get("checkout", {})
-    print(f"Checkout: {checkout.get('launcher-path', loaded.document['launcher-root'])} ({checkout.get('name', loaded.checkout_name)})")
-    print(f"At launch, {view.at}:")
-    print(Listing.from_document(view.listing).render())
-    print("")
-    if view.requests:
-        print("Pending, next launch (asked on the console since launch):")
-        for item in view.requests:
-            result = item.get("result")
-            outcome = f"{result['status']}: {result['text']}" if isinstance(result, dict) else "waiting for the launcher"
-            print(f"  {item['id']}: {item['statement'] or '(unreadable request)'}\n      {outcome}")
+        print(json.dumps(running_listing_document(view, **capsule), indent=2, sort_keys=True))
     else:
-        print("Nothing asked on the console since launch.")
-    print(f"To change the next launch: the console's configuration page, or on the host: {command}")
+        print(render_running_listing(view, **capsule))
     return 0
 
 
@@ -1328,37 +1287,17 @@ class ConfigTrustListCommand(Command):
         from devcapsule.configuration.derivation import load_state
         from devcapsule.configuration.storage import load_trust, settings_path
         from devcapsule.configuration.trust import HomeTrust, channels_for
+        from devcapsule.configuration.trust_listing import render_trust_rows, trust_rows
         root, manifest = manifest_for(_project_context(context).start_path())
         lock = load_state(root, manifest).composed_lock()
-        trust = HomeTrust.read(load_trust())
-        channels = channels_for(lock)
-        rows: list[dict[str, Any]] = [
-            {"channel": channel.id, "vendor": channel.vendor, "product": channel.product,
-             "origins": list(channel.origins), "terms-url": channel.terms_url,
-             "integrity": channel.integrity, "accepted": trust.channels.get(channel.id),
-             "trusted": trust.covers(channel), "note": channel.note} for channel in channels.values()]
-        for channel_id, entry in trust.channels.items():
-            if channel_id not in channels:
-                rows.append({"channel": channel_id, "vendor": entry["vendor"], "product": "", "origins": entry["origins"],
-                             "terms-url": entry["terms-url"], "integrity": entry["integrity"], "accepted": entry,
-                             "trusted": bool(entry["integrity"]), "note": "not used by this checkout"})
+        rows = trust_rows(channels_for(lock), HomeTrust.read(load_trust()))
         if arguments.as_json:
             print(json.dumps({"schema-version": 1, "path": str(settings_path()), "channels": rows}, indent=2, sort_keys=True))
             return 0
         print(f"Trust record: {settings_path()}")
         print(f"Scope: this DevCapsule home, {config_root()}. Anyone who uses this home uses this acceptance.")
-        for row in rows:
-            state = "trusted" if row["trusted"] else ("not covered" if row["accepted"] else "not yet")
-            origins = ", ".join(str(item) for item in row["origins"]) or "the lock"
-            terms = f"; terms {row['terms-url']}" if row["terms-url"] else ""
-            print(f"{row['channel']:<18} {state:<11} {row['vendor']} — {row['product'] or '(not used by this checkout)'}; "
-                  f"from {origins}; integrity {row['integrity'] or 'not recorded'}{terms}")
-            if row["accepted"] and not row["trusted"]:
-                entry = row["accepted"]
-                print(f"{'':<18} Accepted origins: {', '.join(entry['origins'])}; "
-                      f"integrity {entry['integrity'] or 'not recorded'}; terms {entry['terms-url'] or 'none'}")
-            if row["note"]:
-                print(f"{'':<18} {row['note']}")
+        for line in render_trust_rows(rows):
+            print(line)
         return 0
 
 
@@ -2204,7 +2143,9 @@ class ProjectRunCommand(Command):
         parser.add_argument("--no-update-check", action="store_true",
                             help="Skip the daily interactive distribution refresh; cached critical notices still allow a decision.")
         parser.add_argument("--print-command", action="store_true",
-                            help="Prepare and print the Docker command without launching; inline extra environment values are redacted and comments identify transient dependencies.")
+                            help="Print the launch's Docker command without launching. Nothing is pulled, downloaded, built or "
+                                 "saved: an environment that is not on this machine yet is named, not fetched. Inline extra "
+                                 "environment values are redacted and comments identify transient dependencies.")
         parser.add_argument("--force", action="store_true",
                             help="Launch with the IDE given by --ide although the project requires another IDE: this launch only, "
                                  "warned and recorded as a departure from the project's contract; the requirement and the saved IDE "
@@ -2266,14 +2207,7 @@ class ProjectRunCommand(Command):
             return 1
         # An upgrade may have changed the selection: derive again from the record.
         if command_report is None:
-            # Saved flags are now record inputs. Reapply only launch overrides,
-            # including terminal "once" answers, when checking the new selection.
-            again = RunFlags(allow_unverified=flags.allow_unverified) if flags.save else flags
-            # Trust accepted the channel shown in the first review. Never
-            # replay that acceptance against a different channel after an upgrade.
-            again = replace(again, save=False, trust=(), authorize=tuple(
-                (name, render_authorization_value(value)) for name, value in prepared.host_overrides.items()
-            ))
+            again = flags_after_upgrade(flags, prepared.host_overrides)
             prepared.selected = prepare_launch(start, again, interactive=False).selected
         selected = prepared.selected
         review = review_configuration(selected.manifest, selected.lock, selected.checkout,
@@ -2326,13 +2260,23 @@ class ProjectRunCommand(Command):
         if isinstance(lock.get("base"), dict) and isinstance(lock.get("materialization"), dict):
             while True:
                 try:
-                    if command_report is not None and flags.trust:
+                    if command_report is not None:
+                        # Printing the command brings nothing to this machine: the environment is looked
+                        # for here, and what a launch would pull, download or build is named instead.
                         from devcapsule.configuration.trust import HomeTrust
+                        # A channel accepted with --trust for this printing is in the review's home, not on disk.
+                        staged_trust = HomeTrust.read(prepared.home) if flags.trust else None
                         realized = realize_environment(selected, report=print, prepare_base=prepare_display,
-                                                       trust=HomeTrust.read(prepared.home))
+                                                       trust=staged_trust, fetch=False)
                     else:
                         realized = realize_environment(selected, report=print, prepare_base=prepare_display)
                     break
+                except NotOnThisMachine as missing:
+                    launch = shlex.join(["devcapsule", "project", "--path", str(root), "run"])
+                    raise CliError(
+                        f"{missing} --print-command prints the command of an environment that is already here. "
+                        f"Launch once with {launch}, then print."
+                    ) from missing
                 except ArtifactUnavailable as exc:
                     smaller = omit_unavailable_optional(selected, exc.url)
                     if smaller is None:

@@ -333,3 +333,195 @@ def test_main_fails_when_the_base_cannot_be_resolved(tmp_path: Path, capsys: pyt
     _git(root, "commit", "-q", "--allow-empty", "-m", "base")
     assert conventions.main(["--base", "nowhere", "--project-root", str(root)]) == 1
     assert "cannot resolve base 'nowhere'" in capsys.readouterr().err
+
+
+# Rule 4, the command line. ``_mirror`` gives each case a mirror file that the
+# other rules accept, so that a breach reported here is rule 4's.
+
+DEBT_LIST = "tests/command_line_debt.txt"
+
+
+def _mirror(root: Path, name: str, source: str) -> Any:
+    """A documented test file ``tests/unit/devcapsule/test_<name>.py`` with the given imports, and the module it mirrors."""
+    (root / "devcapsule").mkdir(exist_ok=True)
+    (root / "devcapsule" / f"{name}.py").write_text("")
+    return _module(f"tests/unit/devcapsule/test_{name}.py", source + DOCUMENTED)
+
+
+@pytest.mark.parametrize(("source", "imported"), [
+    ("import a.b\n", {"a.b"}),
+    ("from a import b\n", {"a", "a.b"}),
+    ("from a.b import c as d\n", {"a.b", "a.b.c"}),
+    ("def helper():\n    import a.b\n", {"a.b"}),
+    ("from . import b\n", {"tests.unit", "tests.unit.b"}),
+    ("from ..c import d\n", {"tests.c", "tests.c.d"}),
+    ("import importlib\nmodule = importlib.import_module('devcapsule.cli')\n", {"importlib", "devcapsule.cli"}),
+    ("EXPECTED = {'devcapsule.cli'}\n", set()),
+])
+def test_a_files_imports_are_recorded_in_every_form(source: str, imported: set[str]) -> None:
+    """``parse_module`` records an import statement at any depth, both readings of ``from a import b``, a relative
+    import by its full name, and a call handed the command line's name as a string, as ``importlib`` takes it;
+    the same string outside a call is no import."""
+    assert _module("tests/unit/test_a.py", source).imports == imported
+
+
+@pytest.mark.parametrize("source", [
+    "from devcapsule import cli\n",
+    "import devcapsule.cli\n",
+    "from devcapsule.cli import main\n",
+    "from devcapsule.__main__ import main\n",
+    "def run():\n    from devcapsule import cli\n",
+])
+def test_a_file_that_imports_the_command_line_is_a_breach(tmp_path: Path, source: str) -> None:
+    """A mirror file that imports ``devcapsule.cli`` or ``devcapsule.__main__``, in any form, is one breach
+    naming the file and the one file that may."""
+    breaches = conventions.check([_mirror(tmp_path, "thing", source)], {}, tmp_path)
+    assert len(breaches) == 1
+    assert breaches[0].startswith("tests/unit/devcapsule/test_thing.py: imports devcapsule.")
+    assert "only tests/unit/devcapsule/test_cli.py invokes it" in breaches[0]
+
+
+def test_the_mirror_of_the_command_line_and_a_legacy_file_may_import_it(tmp_path: Path) -> None:
+    """``tests/unit/devcapsule/test_cli.py`` and an unchanged legacy file import ``devcapsule.cli`` without a breach."""
+    mirror = _mirror(tmp_path, "cli", "from devcapsule import cli\n")
+    legacy = _module("tests/test_old.py", "import pytest\nfrom devcapsule import cli\npytestmark = pytest.mark.legacy\n" + UNDOCUMENTED)
+    assert conventions.check([mirror, legacy], {legacy.path: legacy}, tmp_path) == []
+
+
+def test_a_heavier_suites_file_that_imports_the_command_line_is_a_breach(tmp_path: Path) -> None:
+    """An integration file is held to the rule as well: it starts the program, it does not import it."""
+    module = _module("tests/integration/test_flow.py", "import pytest\nfrom devcapsule import cli\npytestmark = pytest.mark.integration\n" + DOCUMENTED)
+    breaches = conventions.check([module], {}, tmp_path)
+    assert len(breaches) == 1 and breaches[0].startswith("tests/integration/test_flow.py: imports devcapsule.cli")
+
+
+def test_the_command_line_reached_through_helpers_is_a_breach(tmp_path: Path) -> None:
+    """A mirror file that imports a helper, which imports a second helper, which imports the command line, is a
+    breach naming the helper it imports; a mirror file that imports a helper outside that chain is none."""
+    near = _module("tests/flows.py", "from tests import launch\n")
+    far = _module("tests/launch.py", "from devcapsule import cli\n")
+    plain = _module("tests/values.py", "import json\n")
+    reaching = _mirror(tmp_path, "thing", "from tests.flows import prepared\n")
+    clean = _mirror(tmp_path, "other", "from tests.values import sample\n")
+    assert conventions.check([reaching, clean], {}, tmp_path, support=[near, far, plain]) == [
+        "tests/unit/devcapsule/test_thing.py: imports tests.flows, which is or reaches the command line; "
+        "only tests/unit/devcapsule/test_cli.py invokes it. Test the module that does the work, or start the "
+        "program in an integration test"
+    ]
+
+
+def test_the_command_line_reached_through_a_legacy_test_file_is_a_breach(tmp_path: Path) -> None:
+    """A mirror file that imports a fixture from a legacy test file which imports the command line is a breach."""
+    legacy = _module("tests/test_old.py", "import pytest\nfrom devcapsule import cli\npytestmark = pytest.mark.legacy\n" + UNDOCUMENTED)
+    mirror = _mirror(tmp_path, "thing", "from tests.test_old import project\n")
+    breaches = conventions.check([legacy, mirror], {legacy.path: legacy}, tmp_path)
+    assert len(breaches) == 1 and breaches[0].startswith("tests/unit/devcapsule/test_thing.py: imports tests.test_old,")
+
+
+def test_a_conftest_that_reaches_the_command_line_is_a_breach(tmp_path: Path) -> None:
+    """A ``conftest.py`` that imports the command line is a breach although no test imports the conftest;
+    a helper that is not a conftest is none by itself."""
+    conftest = _module("tests/unit/conftest.py", "from devcapsule import cli\n")
+    helper = _module("tests/launch.py", "from devcapsule import cli\n")
+    breaches = conventions.check([], {}, tmp_path, support=[conftest, helper])
+    assert len(breaches) == 1 and breaches[0].startswith("tests/unit/conftest.py: imports devcapsule.cli")
+
+
+def test_a_file_in_debt_is_exempt_while_it_reaches_the_command_line_and_refused_once_it_does_not(tmp_path: Path) -> None:
+    """A listed file that imports the command line is no breach. A listed file that does not is one, asking for
+    its line to be deleted, and so is a listed path that is no checked file."""
+    reaching = _mirror(tmp_path, "thing", "from devcapsule import cli\n")
+    fixed = _mirror(tmp_path, "other", "")
+    debt = frozenset({reaching.path, fixed.path, Path("tests/unit/devcapsule/test_gone.py")})
+    assert conventions.check([reaching, fixed], {}, tmp_path, debt=debt) == [
+        f"tests/unit/devcapsule/test_other.py: no longer reaches the command line; delete its line from {DEBT_LIST}",
+        f"tests/unit/devcapsule/test_gone.py: listed in {DEBT_LIST} but not a file rule 4 checks; delete its line",
+    ]
+
+
+def _repository_in_debt(tmp_path: Path) -> Path:
+    """A committed repository on ``main`` with two mirror files that import the command line, the first one listed as debt."""
+    root = tmp_path / "devcapsule-src"
+    mirror = root / "tests" / "unit" / "devcapsule"
+    mirror.mkdir(parents=True)
+    for name in ("thing", "other"):
+        (root / "devcapsule" / f"{name}.py").parent.mkdir(exist_ok=True)
+        (root / "devcapsule" / f"{name}.py").write_text("")
+        (mirror / f"test_{name}.py").write_text("from devcapsule import cli\n" + DOCUMENTED)
+    (root / DEBT_LIST).write_text("# the debt\n\ntests/unit/devcapsule/test_thing.py  # the first\n")
+    _git(root, "init", "-q", "-b", "main")
+    _git(root, "add", ".")
+    _git(root, "commit", "-q", "-m", "base")
+    _git(root, "checkout", "-q", "-b", "slice")
+    return root
+
+
+def test_main_reads_the_debt_list_of_the_repository_it_checks(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """With one of two reaching files listed in the repository's debt list, comments aside, ``main`` exits 1,
+    names only the unlisted file, and counts one file in debt."""
+    root = _repository_in_debt(tmp_path)
+    assert conventions.main(["--base", "main", "--project-root", str(root)]) == 1
+    captured = capsys.readouterr()
+    assert "tests/unit/devcapsule/test_other.py: imports devcapsule.cli" in captured.err
+    assert "test_thing.py" not in captured.err
+    assert "1 breaches; 1 files in command-line debt" in captured.out
+
+
+def test_main_refuses_a_line_added_to_the_debt_list(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """When a branch lists a second reaching file that the base's list does not have, ``main`` exits 1 and
+    names the added line: the list loses lines and never gains one."""
+    root = _repository_in_debt(tmp_path)
+    with (root / DEBT_LIST).open("a") as listing:
+        listing.write("tests/unit/devcapsule/test_other.py\n")
+    assert conventions.main(["--base", "main", "--project-root", str(root)]) == 1
+    captured = capsys.readouterr()
+    assert captured.err == f"{DEBT_LIST}: tests/unit/devcapsule/test_other.py was added; the list loses lines and never gains one\n"
+
+
+
+# Rule 3's one allowance: a call in a legacy test may gain or lose keyword arguments.
+
+LEGACY_HEAD = "import pytest\npytestmark = pytest.mark.legacy\n"
+
+
+def _legacy_breaches(root: Path, before: str, after: str) -> list[str]:
+    """The breaches of a legacy file whose only test function went from ``before`` to ``after``."""
+    base = _module("tests/test_old.py", LEGACY_HEAD + before)
+    head = _module("tests/test_old.py", LEGACY_HEAD + after)
+    return conventions.check([head], {head.path: base}, root)
+
+
+@pytest.mark.parametrize(("before", "after"), [
+    ("def test_one():\n    assert listing(document) == 1\n",
+     "def test_one():\n    assert listing(document, host_environment=ENVIRONMENT) == 1\n"),
+    ("def test_one():\n    assert plan(checkout, runtime_root=ROOT, caller_uid=0) == 1\n",
+     "def test_one():\n    assert plan(checkout) == 1\n"),
+    ("def test_one():\n    result = outer(inner(1), 2)\n    assert result\n",
+     "def test_one():\n    result = outer(\n        inner(1, directory=lookup),\n        2,\n    )\n    assert result\n"),
+    ("class TestThing:\n    def test_one(self):\n        assert listing(document) == 1\n",
+     "class TestThing:\n    def test_one(self):\n        assert listing(document, directory=lookup) == 1\n"),
+])
+def test_a_legacy_test_may_follow_a_signature_by_its_calls_keyword_arguments(tmp_path: Path, before: str, after: str) -> None:
+    """A legacy test whose calls gained a keyword argument, lost some, gained one in a nested call laid out
+    anew, or gained one inside a test class, is no breach."""
+    assert _legacy_breaches(tmp_path, before, after) == []
+
+
+@pytest.mark.parametrize(("before", "after"), [
+    ("def test_one():\n    assert listing(document) == 1\n", "def test_one():\n    assert listing(other, host_environment=E) == 1\n"),
+    ("def test_one():\n    assert listing(document, home=HOME) == 1\n", "def test_one():\n    assert listing(document, home=OTHER, directory=d) == 1\n"),
+    ("def test_one():\n    assert listing(document) == 1\n", "def test_one():\n    assert listing(document, directory=d) == 2\n"),
+    ("def test_one():\n    assert listing(document) == 1\n", "def test_one():\n    setup()\n    assert listing(document, directory=d) == 1\n"),
+    ("def test_one():\n    assert listing(document, **options) == 1\n", "def test_one():\n    assert listing(document, **others) == 1\n"),
+    ("def test_one():\n    assert listing(document) == 1\n", "def test_one():\n    assert listing(\n        document,\n    ) == 1  # reworded\n"),
+    ("@pytest.mark.parametrize('x', [1])\ndef test_one(x):\n    assert listing(x) == 1\n",
+     "@pytest.mark.parametrize('x', [1], ids=['one'])\ndef test_one(x):\n    assert listing(x, directory=d) == 1\n"),
+    ("def test_one(tmp_path):\n    assert listing(tmp_path) == 1\n", "def test_one(tmp_path, capsys):\n    assert listing(tmp_path, directory=d) == 1\n"),
+])
+def test_any_other_change_to_a_legacy_test_is_still_a_breach(tmp_path: Path, before: str, after: str) -> None:
+    """A legacy test is still refused when, beside or without a keyword argument that moved, a positional
+    argument changed, a kept keyword's value changed, an expected value changed, a statement was added, a ``**``
+    argument changed, only the layout and a comment changed, a decorator changed, or the test's own parameters
+    changed."""
+    breaches = _legacy_breaches(tmp_path, before, after)
+    assert len(breaches) == 1 and "changed in a legacy file" in breaches[0]

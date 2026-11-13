@@ -60,7 +60,7 @@ def _picomatch_like(path: str, glob: str) -> bool:
     (".devcapsule/devcapsule.toml", True),
     ("component-status/policy-v1.json", True),
     ("docs/versions.yaml", True),
-    ("docs/guide.md", True),  # walked by a legacy scan; see the filter file
+    ("docs/guide.md", False),
     ("engineering-docs/releases/v0.2.14/notes.md", True),
     ("engineering-docs/releases/v0.3.1/bugs.md", False),
     ("engineering-docs/pile-of-ideas/an-idea.md", False),

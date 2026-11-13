@@ -152,9 +152,12 @@ Unanswered host-access recommendations fall back to secure defaults for a plain
 launch, whereas `config check` exits `3` until they are answered.
 
 `--print-command` stops before starting a container and never saves checkout
-answers, though it can still download components, build images, and populate
-caches. Printed secret and environment values are redacted. Use `config show`
-or `config check` when you want pure offline inspection.
+answers. It pulls no image, downloads no component and builds nothing: it
+prints the command of an environment that is already on your machine. When
+the base image or the environment's image is not there yet, it exits `2` and
+names what a launch would pull, download and build; launch once with
+`project run`, then print. Printed secret and environment values are
+redacted.
 
 ## `devcapsule project config`
 

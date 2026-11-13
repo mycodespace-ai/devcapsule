@@ -218,7 +218,10 @@ capsule for reasons that were not bugs.
    until it declares one: `__all__`, or a module docstring that names the
    public operations and leaves the rest private.
 5. Existing test files carry `pytestmark = pytest.mark.legacy`. Do not
-   add, change or delete individual test functions in a legacy file. The
+   add, change or delete individual test functions in a legacy file.
+   Owner direction, 2026-11-12: one change is allowed. When a pull request
+   changes the signature of a function, a call to it in a legacy test may
+   gain or lose keyword arguments. Change nothing else in the test. The
    mirror of a legacy file `tests/test_<name>.py` is every
    `tests/unit/<path>/test_<name>.py`; the gate pairs them by file name
    alone. When a change edits a test in a legacy file or adds, changes or
@@ -227,13 +230,61 @@ capsule for reasons that were not bugs.
    file. Fix or replace a legacy test that a legitimate change breaks;
    never mark it expected to fail or deselect it. Add no marker other
    than `legacy` to a legacy file.
-6. The gate holds rules 1, 3 and 5: `scripts/validate_unittests_follow_conventions.py` runs in
+6. The gate holds rules 1, 3, 5 and 8: `scripts/validate_unittests_follow_conventions.py` runs in
    the `tests` and `build` sessions and in `tests.yml`, comparing legacy
    files with the pull request's base. Its summary line counts the legacy
-   files and tests; the count goes down and never up.
+   files and tests, and the files in command-line debt; the counts go down
+   and never up. The suite holds rule 9: `tests/conftest.py` fails the test
+   that breaks it, and then the session.
 7. In a Pair Review Loop, the brief instructs the reviewer to verify rules
    1 to 4 on every new or changed test, and to name for each what would
    make it fail for a reason that is not a bug.
+8. Owner direction, 2026-11-12. Only `tests/unit/devcapsule/test_cli.py`
+   invokes the command line in its own process. No other test file imports
+   `devcapsule.cli` or `devcapsule.__main__`, or a module under `tests` that
+   does. Test a command on the module that does its work, or in an
+   integration test that starts the program. A legacy file is exempt until
+   it is retired. A file listed in
+   `devcapsule-src/tests/command_line_debt.txt` is exempt until it is fixed.
+   Delete a file's line when you fix it. Add no line.
+9. Owner direction, 2026-11-12. A unit test uses no network. It reaches no
+   machine but its own and asks no name server. A loopback address is its
+   own machine.
+
+## Host Inputs
+
+Owner direction, 2026-11-11, after one pull request gave tests their host
+inputs through parameters that only tests passed, and the next through
+patches.
+
+1. Only an entry layer reads the host. An entry layer is a `main` function,
+   a command's `run`, or the one function that such a layer calls first.
+   The host is all that code can read without an argument: the environment,
+   the caller's user, the clock, the network, another program, and a path
+   that the code names itself.
+2. Every other module takes these as values, in required arguments. Give no
+   parameter a default that reads the host. Add no parameter that only a
+   test passes. Pass a value that is costly to read as a function without
+   arguments. Owner direction, 2026-11-12: `assess_checkout` and
+   `Configuration` keep such a default until the legacy tests that call
+   them are retired.
+3. Bind the values that several operations share in a frozen dataclass. Its
+   constructor stores them and does nothing else.
+4. Separate each decision from its effect. Write the decision as a function
+   of values that returns what to do. Let the entry layer do what it
+   returns.
+5. A new or changed unit test builds values, passes them and asserts what
+   comes back. Do not use `monkeypatch` or `unittest.mock`. Do not assign
+   to an attribute of a module or a class, or to `os.environ`. A file under
+   `tmp_path` and a socket that the test opens on loopback are values. This
+   narrows *Unit Tests*, rule 2: such a test sets a host input only by
+   passing it.
+6. Keep an entry layer a short sequence of statements that takes no
+   decision of its own. Test it with an integration test that starts the
+   real program in an environment that the test builds.
+7. State in the pull request what the hosted gate does not catch after the
+   change. In a Pair Review Loop, the brief instructs the reviewer to
+   verify rules 1 to 6 on the changed code and its tests.
 
 ## Reasoning And Code Navigation
 

@@ -12,6 +12,13 @@ from typing import Any, Mapping
 from .file_formats import ProjectConfigurationError, table
 
 
+__all__ = [
+    "CapabilityPolicy", "IDE_REQUIREMENT", "LocalCapabilities", "RETIRED_CAPABILITY_FIELD", "RequirementDeparture",
+    "capability_notes", "current_capability_fields", "meets_minimum", "names", "provider_choices", "requirement",
+    "resolution_recommendations", "version_parts",
+]
+
+
 def names(value: object, label: str) -> tuple[str, ...]:
     """Return sorted, unique names from a decoded TOML array.
 

@@ -16,6 +16,8 @@ from typing import Mapping
 
 from ..contract import RuntimePlan, RuntimePlanError
 
+__all__ = ["JetBrainsLaunch", "plan", "recover_dead_socket", "session_lock"]
+
 
 @contextmanager
 def session_lock(runtime: RuntimePlan) -> Iterator[None]:

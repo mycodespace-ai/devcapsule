@@ -206,7 +206,11 @@ running that program is the unit's job, and then with inputs the test
 chose. What the test can work out in its own process, a digest of a file
 it just wrote for instance, it works out there. A test that needs a
 program for what the program does is an integration test and runs on
-demand.
+demand. Only the mirror test of `cli.py` runs the command line inside the
+test process; every other test either tests the module that does a
+command's work or starts the program as an integration test. A unit test
+uses no network: it talks to no machine but its own and asks no name
+server.
 
 **Intended effect.** A reader sees which unit a test tests from its path
 and what it tests from its first line. A test fails only when the unit
@@ -261,6 +265,104 @@ test wrote passes the first and fails the second, so it is computed in
 process. Git on a scratch repository can pass both, and even then its
 commit dates come from the clock unless the test sets them. A Docker
 build passes neither.
+
+The allowance in rule 5 was added on 2026-11-12. Rule 5 made every change
+to a function's signature cost the whole legacy file of each test that
+called it: in PR #26 one removed keyword retired a file of 22 tests, and
+making the listing take the host's environment as an argument would have
+retired five files for nineteen one-line calls. The owner's ruling: a call
+in a legacy test may follow the signature, by keyword arguments added or
+removed, and by nothing else. The test stays legacy and asserts what it
+asserted; when the new argument is the host itself, the call now says so.
+The gate holds the form of the change, by comparing the two versions of
+the test as syntax: positional arguments, the values of the keywords that
+stay, every other statement, the decorators and the test's own parameters
+must be the same, and a change of layout alone is still refused. That the
+signature did change is left to the reviewer. Beside it the owner allowed,
+for two functions that five legacy files call, an argument that is optional
+until those files are retired; see *Host Inputs*.
+
+The rules on the command line and on the network were added on 2026-11-12,
+from one test. `test_offered_agent_still_needs_consent_and_can_be_omitted`
+calls `cli.main` four times and expects the second call to stop for consent
+to a vendor's channel. In the owner's capsule the consent was already given,
+through the mounted settings, so the command went on as it does in
+production and downloaded 1.5 GB of vendor software, in every run of the
+unit suite. A run with the network refused took 78 seconds where the
+ordinary one took thirteen and a half minutes, and that test was the only
+one in the suite that tried to connect. The owner's ruling: unless a test is
+in `test_cli.py`, it has no business invoking the command line. `cli.main`
+is the top of the product; it loads the developer's settings before it
+dispatches, and everything the product can do is reachable from it, so a
+test that calls it is held offline only by where its author expected the
+flow to stop. 32 of the 102 legacy files and 8 files under the mirror did so on that
+day. The legacy files meet the rule when they are retired; the 8 are listed
+as a debt that the gate lets shrink and never grow. The check follows a
+test's imports through the helpers under `tests`, because a helper that
+calls `cli.main` is how a test would otherwise keep doing it with a clean
+import list. The network rule is held at run time, by the interpreter's
+audit hook, since no reading of a test's source can tell what the code it
+calls will open. Loopback stays open because a test may serve itself. Both
+checks are what a compiler would have refused in a language that tracks
+effects; in Python the gate has to.
+
+## Host Inputs
+
+**Rule.** Only the top layer of a program reads the host: the environment,
+the user, the clock, the network, other programs, the paths the code knows
+by name. It hands what it read to the modules below as ordinary values, and
+they require them. A class binds the values that are used again and again,
+and its constructor only stores them. A module decides and returns what
+should happen; the top layer makes it happen. A unit test therefore builds
+values, calls the unit and looks at the answer, and patches nothing. The
+top layer stays a few plain statements, and an integration test runs it as
+the real program. The pull request says what the hosted gate stopped
+catching, and the reviewer checks all of this.
+
+**Intended effect.** An inner module does not know that a value came from
+an environment variable, so no test needs to set that variable or to
+replace `os.getenv` to reach it. A test reads as a table of inputs and
+outputs. It cannot leak into the next test, because it changed nothing
+that the next test shares. It survives a refactoring of how the unit reads
+its inputs, because the unit no longer reads them. The part of the code
+that can only be tested with the real host is small enough to read in one
+screen and is tested as a program.
+
+**Motivation.** PR #18 retired four legacy test files and, to keep its new
+tests from patching the package, gave eight production signatures twenty
+keyword parameters that no production caller passed. Every test passed the
+parameter, so no test ran the default, which is the branch a release ships.
+The first version of PR #26 removed the parameters and patched each host
+input where the code read it, with `monkeypatch`, twenty-six times. The
+owner rejected both on 2026-11-11: a patch changes a global for the length
+of a test and ties the test to how the unit reads its input, and a
+parameter with a host-reading default hides the same global behind a
+signature. The direction was the one Haskell forces and Spring came to
+late: a dependency is a value passed at construction, and only a very top
+layer, written declaratively, maps the host to those values. When the
+agent proposed to forbid classes made only to have a constructor, the
+owner corrected it: Python has no functors, and a class is how values that
+are used again and again get bound. The rewrite of PR #26 is the worked
+example. `CapsuleUser`, `ConsoleInstallation`, `Session` and
+`DecisionTools` bind the values; `entrypoint.run` reads `os.geteuid()` and
+`os.environ` once and performs what the session answers; the list of owner
+changes that a test used to record from a patched `os.chown` is now the
+return value of `CapsuleUser.owner_changes`. The touched test files went
+from twenty-six `monkeypatch` uses to none. The cost is stated because it
+is real: of the twenty-six faults planted in the first version, the hosted
+unit gate caught twenty-five with patches and catches twenty-one without;
+integration tests that the hosted gate does not run catch two more, and
+three are caught by nothing. That is why rule 7 asks for the statement and
+why the entry layer must stay small. A value that is costly to read, the
+installed version for instance, is passed as a function so that the top
+layer does not pay for it on every start.
+
+One exception stands by the owner's ruling of 2026-11-12. `assess_checkout`
+and `Configuration` take what the host says, its environment and its
+directories, as arguments that may be left out, and then ask this machine
+themselves. Five legacy test files call them nineteen times and rely on
+that. The launch passes the arguments. The defaults go when those files are
+retired, or sooner by the allowance of *Unit Tests* rule 5.
 
 ## Reasoning And Code Navigation
 

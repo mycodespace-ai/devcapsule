@@ -11,8 +11,8 @@ import pytest
 from devcapsule.compat import CliError
 from devcapsule.components.pycharm import runtime_template as pycharm_runtime_template
 from devcapsule.configuration.file_formats import ProjectConfigurationError
-from devcapsule.console_tools import DECISIONS_MODULE, console_decisions_command, run_console_decisions
-from devcapsule.container_runtime.console import console_child
+from devcapsule.console_tools import DECISIONS_MODULE, DecisionTools
+from devcapsule.container_runtime.console import ConsoleInstallation
 from devcapsule.container_runtime.contract import ConsolePlan, Identity, RuntimePlan
 
 
@@ -28,45 +28,59 @@ def runtime_plan(source: str | None) -> RuntimePlan:
     return plan.with_console(ConsolePlan("0.0.0.0", 6081, "/run/devcapsule-console-token", source_path=source))
 
 
-def launcher_bundle(path: Path) -> Path:
-    pkg = path / "devcapsule_webconsole"
-    pkg.mkdir(parents=True)
-    (pkg / "__init__.py").write_text("", encoding="utf-8")
-    return path
+def capsule_tools(tmp_path: Path, python: Path, *, launcher_package: bool = False) -> DecisionTools:
+    """The decision tools inside a capsule whose console interpreter is ``python``.
+
+    The runtime plan is ``tmp_path / "plan.json"``, absent until a test
+    writes it. The launcher's package is absent unless ``launcher_package``.
+    """
+    launcher_source = tmp_path / "launcher-webconsole"
+    if launcher_package:
+        package = launcher_source / "devcapsule_webconsole"
+        package.mkdir(parents=True)
+        (package / "__init__.py").write_text("", encoding="utf-8")
+    return DecisionTools(
+        in_capsule=True,
+        console=ConsoleInstallation(python, launcher_source),
+        runtime_plan_path=tmp_path / "plan.json",
+    )
 
 
-@pytest.mark.parametrize("environ", [{}, {"DEVCAPSULE_CONTAINER_NAME": ""}])
-def test_outside_capsule_refuses_and_names_host_module(tmp_path: Path, environ: dict[str, str]) -> None:
-    """Outside a capsule, ``console_decisions_command`` raises ``ProjectConfigurationError`` naming the host module."""
+def interpreter_file(tmp_path: Path) -> Path:
+    """An empty file where the console interpreter is; ``command`` checks only that it exists."""
+    python = tmp_path / "python"
+    python.touch()
+    return python
+
+
+def test_outside_capsule_refuses_and_names_host_module(tmp_path: Path) -> None:
+    """Outside a capsule, ``command`` raises ``ProjectConfigurationError`` naming the host module, although an interpreter exists."""
+    tools = DecisionTools(
+        in_capsule=False,
+        console=ConsoleInstallation(interpreter_file(tmp_path), tmp_path / "launcher-webconsole"),
+        runtime_plan_path=tmp_path / "plan.json",
+    )
+
     with pytest.raises(ProjectConfigurationError, match=f"python -m {DECISIONS_MODULE}"):
-        console_decisions_command(
-            ["check", "x.json"],
-            environ=environ,
-            console_python=tmp_path / "python",
-            launcher_console_source=tmp_path / "absent",
-        )
+        tools.command(["check", "x.json"])
 
 
 def test_missing_console_interpreter_refuses_and_names_base_location(tmp_path: Path) -> None:
-    """When ``console_python`` does not exist, ``console_decisions_command`` names ``/opt/devcapsule-webconsole``."""
+    """Inside a capsule whose console interpreter does not exist, ``command`` names ``/opt/devcapsule-webconsole``."""
+    tools = capsule_tools(tmp_path, tmp_path / "absent")
+
     with pytest.raises(ProjectConfigurationError, match="no web console at /opt/devcapsule-webconsole"):
-        console_decisions_command(
-            ["check", "x.json"],
-            environ={"DEVCAPSULE_CONTAINER_NAME": "c"},
-            console_python=tmp_path / "absent",
-            runtime_plan_path=tmp_path / "plan.json",
-            launcher_console_source=tmp_path / "absent-bundle",
-        )
+        tools.command(["check", "x.json"])
 
 
 @pytest.mark.parametrize("plan_kind", ["missing", "malformed", "non-utf8", "directory", "no-console", "installed"])
 def test_installed_console_runs_when_plan_has_no_usable_source_and_no_launcher_bundle(
     tmp_path: Path, plan_kind: str,
 ) -> None:
-    """Without a readable ``console.source_path`` or launcher package, ``console_decisions_command`` runs the base copy directly."""
-    python = tmp_path / "python"
-    python.touch()
-    plan = tmp_path / "plan.json"
+    """Without a readable ``console.source_path`` or launcher package, ``command`` runs the base copy directly."""
+    python = interpreter_file(tmp_path)
+    tools = capsule_tools(tmp_path, python)
+    plan = tools.runtime_plan_path
     if plan_kind == "malformed":
         plan.write_text("{", encoding="utf-8")
     elif plan_kind == "non-utf8":
@@ -76,36 +90,22 @@ def test_installed_console_runs_when_plan_has_no_usable_source_and_no_launcher_b
     elif plan_kind in ("no-console", "installed"):
         plan.write_text(runtime_plan(None if plan_kind == "no-console" else "").to_json(), encoding="utf-8")
 
-    command = console_decisions_command(
-        ["hand-off", "d/x.json", "--token-file", "t"],
-        environ={"DEVCAPSULE_CONTAINER_NAME": "c"},
-        console_python=python,
-        runtime_plan_path=plan,
-        launcher_console_source=tmp_path / "absent-launcher-webconsole",
-    )
+    command = tools.command(["hand-off", "d/x.json", "--token-file", "t"])
 
     assert command == (str(python), "-m", DECISIONS_MODULE, "hand-off", "d/x.json", "--token-file", "t")
 
 
 def test_decisions_command_uses_launcher_package_when_plan_sets_no_checkout_source(tmp_path: Path) -> None:
-    """Without ``console.source_path``, ``console_decisions_command`` puts the launcher's console package on ``PYTHONPATH``."""
-    python = tmp_path / "python"
-    python.touch()
-    plan_path = tmp_path / "plan.json"
-    plan_path.write_text(runtime_plan("").to_json(), encoding="utf-8")
-    bundled = launcher_bundle(tmp_path / "launcher-webconsole")
+    """Without ``console.source_path``, ``command`` puts the launcher's console package on ``PYTHONPATH``."""
+    python = interpreter_file(tmp_path)
+    tools = capsule_tools(tmp_path, python, launcher_package=True)
+    tools.runtime_plan_path.write_text(runtime_plan("").to_json(), encoding="utf-8")
 
-    command = console_decisions_command(
-        ["check", "decision.json"],
-        environ={"DEVCAPSULE_CONTAINER_NAME": "capsule"},
-        console_python=python,
-        runtime_plan_path=plan_path,
-        launcher_console_source=bundled,
-    )
+    command = tools.command(["check", "decision.json"])
 
     assert command == (
         "env",
-        f"PYTHONPATH={bundled}",
+        f"PYTHONPATH={tmp_path / 'launcher-webconsole'}",
         str(python),
         "-m",
         DECISIONS_MODULE,
@@ -114,26 +114,16 @@ def test_decisions_command_uses_launcher_package_when_plan_sets_no_checkout_sour
     )
 
 
-def test_mounted_source_uses_same_pythonpath_prefix_as_console_child_ahead_of_launcher_package(tmp_path: Path) -> None:
-    """When ``console.source_path`` is set, ``console_decisions_command`` matches ``console_child`` and overrides ``launcher_console_source``."""
-    python = tmp_path / "python"
-    python.touch()
-    bundled = launcher_bundle(tmp_path / "launcher-webconsole")
+def test_mounted_source_takes_precedence_over_launcher_package(tmp_path: Path) -> None:
+    """``command`` selects the plan's checkout source ahead of the launcher package, preserving spaces."""
+    python = interpreter_file(tmp_path)
+    tools = capsule_tools(tmp_path, python, launcher_package=True)
     plan = runtime_plan("/workspace/project with spaces/devcapsule-webconsole")
-    plan_path = tmp_path / "plan.json"
-    plan_path.write_text(plan.to_json(), encoding="utf-8")
+    tools.runtime_plan_path.write_text(plan.to_json(), encoding="utf-8")
 
-    child = console_child(plan, lambda command: command, console_python=python, launcher_source=bundled)
-    command = console_decisions_command(
-        ["check", "x.json"],
-        environ={"DEVCAPSULE_CONTAINER_NAME": "c"},
-        console_python=python,
-        runtime_plan_path=plan_path,
-        launcher_console_source=bundled,
-    )
+    command = tools.command(["check", "x.json"])
 
-    assert child is not None
-    assert command[:2] == child.command[:2] == (
+    assert command[:2] == (
         "env",
         "PYTHONPATH=/workspace/project with spaces/devcapsule-webconsole",
     )
@@ -141,26 +131,21 @@ def test_mounted_source_uses_same_pythonpath_prefix_as_console_child_ahead_of_la
 
 
 @pytest.mark.parametrize("status", [0, 3])
-def test_run_console_decisions_preserves_arguments_streams_and_exit_status(
+def test_run_preserves_arguments_streams_and_exit_status(
     tmp_path: Path, capfd: pytest.CaptureFixture[str], status: int,
 ) -> None:
-    """``run_console_decisions`` passes argv verbatim to ``console_python``, streams output, and returns its exit code."""
+    """Inside a capsule, ``run`` passes argv verbatim to the console interpreter, streams its output, and returns its exit code."""
     fake = tmp_path / "fake-console-python"
+    # ``-I`` keeps the stand-in interpreter away from the Python settings of the host's environment.
     fake.write_text(
-        f"#!{sys.executable}\nimport json, sys\nprint(json.dumps(sys.argv[1:]))\n"
+        f"#!{sys.executable} -I\nimport json, sys\nprint(json.dumps(sys.argv[1:]))\n"
         f"print('console diagnostic', file=sys.stderr)\nsys.exit({status})\n",
         encoding="utf-8",
     )
     fake.chmod(0o755)
     arguments = ["from-table", "table with spaces.md", "--id", "pass", "--title", "A title", "--context", "a\nb", "", "--"]
 
-    result = run_console_decisions(
-        arguments,
-        environ={"DEVCAPSULE_CONTAINER_NAME": "capsule-fixture"},
-        console_python=fake,
-        runtime_plan_path=tmp_path / "no-plan.json",
-        launcher_console_source=tmp_path / "absent-launcher-webconsole",
-    )
+    result = capsule_tools(tmp_path, fake).run(arguments)
 
     assert result == status
     output = capfd.readouterr()
@@ -168,18 +153,12 @@ def test_run_console_decisions_preserves_arguments_streams_and_exit_status(
     assert output.err == "console diagnostic\n"
 
 
-def test_run_console_decisions_raises_cli_error_naming_an_interpreter_that_cannot_start(tmp_path: Path) -> None:
-    """When executing ``console_python`` raises ``OSError``, ``run_console_decisions`` wraps it in a ``CliError`` that names the interpreter."""
+def test_run_raises_cli_error_naming_an_interpreter_that_cannot_start(tmp_path: Path) -> None:
+    """When the console interpreter cannot be executed, ``run`` raises a ``CliError`` that names it."""
     python = tmp_path / "not-executable"
     python.touch(mode=0o600)
 
     with pytest.raises(CliError, match="cannot run the console's decision tools") as caught:
-        run_console_decisions(
-            ["check", "x.json"],
-            environ={"DEVCAPSULE_CONTAINER_NAME": "capsule-fixture"},
-            console_python=python,
-            runtime_plan_path=tmp_path / "no-plan.json",
-            launcher_console_source=tmp_path / "absent-launcher-webconsole",
-        )
+        capsule_tools(tmp_path, python).run(["check", "x.json"])
 
     assert str(python) in str(caught.value)

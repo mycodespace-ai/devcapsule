@@ -4,17 +4,990 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, no fix started; one major bug in fixing, the Python route and its guard, on `ws-maintenance/python-route-guard`
+State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; one blocking bug open since 2026-11-10, unit tests reading the capsule's mounted launcher settings, in fixing: on pull request #29 the 17 pass and `nox -s tests` passes in the owner's capsule, the shared fixture and 14 marks still to do; one major bug in fixing, the Python route and its guard, merged through #25 with the local gate's routing open; a follow-up to PR #18 on `ws-maintenance/host-inputs-at-source`, by Pair Review, for the owner's review; rewritten 2026-11-12 on the owner's direction so that host inputs are values and no touched test patches; the rule *Host Inputs* written into `WORKFLOW-LOCAL.md` on the owner's word and the rewrite reviewed by the partner through #28, merged at `83d238b8`; the owner's reading of #26 and rulings on the rule's open readings are next; *Unit Tests* rules 8 and 9 added on the owner's word and held by machine, the command line only in `test_cli.py` with eight files in a debt list, and no network in a unit test; a first slice of the owner's read-then-decide direction on `ws-maintenance/launch-phases`, with the launch's decisions testable from values and the six legacy files of the 17 still to retire
 
-Definition read: WORKFLOW.md@e83f22a20701, WORKFLOW-LOCAL.md@d92bdcbb0a01
+Definition read: WORKFLOW.md@e83f22a20701, WORKFLOW-LOCAL.md@e84d2678942b
 
 Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/python-route-guard` from release-0.3.1 137c4591, PR #25 open, the owner merges; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/launch-phases` from `ws-maintenance/host-inputs-at-source` c92d5254, stacked on PR #26; `ws-maintenance/host-inputs-at-source` from release-0.3.1 2f1109db, PR #26 open, the owner merges; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## A launch's preparation in three phases: read, decide in memory, write — 2026-11-12
+
+Owner direction, 2026-11-12, on the 17 standing failures: the processing of
+configuration reads its files and the command line into memory first, and
+then decides; a test of a decision sets its precondition as data in memory
+and skips the reading, which is tested apart. This section records the first
+slice, on `ws-maintenance/launch-phases`, stacked on PR #26.
+
+**What the check of the direction found.**
+
+- The code was half-way there: `prepare_launch` loaded a `CheckoutState`,
+  reviewed in memory and wrote at the end. What kept a test from skipping
+  the reading was that the state's constructor did the reading, and that
+  the state's methods read again: the home's directory, the record's
+  existence and the console's requests, on every listing.
+- There are three phases, not two. The writes are the third, and
+  "writes nothing" in a test's name is a statement about it.
+- The product does not use Pydantic. It is in `requirements.txt` only as a
+  dependency of `python-on-whales`. The documents are dictionaries checked
+  by code of our own, so the reading does need its own tests.
+- The 17 do not turn green by this refactoring alone. They are legacy tests
+  that call `prepare_launch` or the command line with a path, so they read
+  the mounted settings whatever the code below does. Each must be rewritten
+  on the decision phase, and rule 5 makes that the retirement of its whole
+  file: six files, 191 tests, 3172 lines.
+
+**The product code.**
+
+- `configuration/derivation.py`: `CheckoutState` is a dataclass of values,
+  with the home's directory, whether the record exists, and the console's
+  deferred requests among them. `load_state` does all the reading and is
+  the only reader. No caller changed.
+- `commands/_launch_review.py`, new: `review_launch(state, flags, ask=...)`
+  is the decision phase. It returns a `LaunchReview`, or refuses, and writes
+  nothing. `ask` is how a decision reaches the developer; None when there is
+  no terminal. `RunFlags` and `Prepared` moved here and are still exported
+  by `_run_flow`.
+- `commands/_run_flow.py`: `prepare_launch` is the three phases in order:
+  `read_launch_state`, `review_launch`, `save_launch`. The terminal dialogue
+  stays here and is passed to the review as `ask`.
+
+**The tests.** `tests/unit/devcapsule/commands/test_launch_review.py`, 33
+tests, none with a project directory, a home, `tmp_path` or a patch. Each
+builds its checkout in memory with the operations `project init` uses:
+`generate_lock` for the lock, `with_selection` and `authorize` for the
+record. A state built that way was compared with the one `load_state` reads
+from a project `init` wrote: manifest, lock and record are equal. The two
+tests the owner named are among them, and they pass in the owner's capsule,
+where their legacy forms are 2 of the 17.
+
+**Evidence.** The whole unit suite, 3008 tests before, passes as before
+with the 17 standing failures; with the fallback to the mounted settings
+switched off by a diagnostic plugin, it fails only the two tests of the
+fallback itself, before and after. 27 faults planted in the changed code: 6
+caught by the new tests, 15 by legacy tests, 6 by nothing:
+
+- the refusal of contradictory flags before the reading, which the review
+  repeats; only the order of two refusals could show it;
+- "no terminal" checked a second time in the loop, redundant before this
+  change too;
+- the state brought up to date after the developer applies, and after they
+  discard, a console request during a review; the two lines are new, and
+  the console's storage reads the home from the environment, so no test can
+  reach them from values yet;
+- the saved environment not loaded: the reading is unchanged, and no unit
+  test covers it;
+- the clock that `load_state` binds, one line that names the real one.
+
+**What the decision phase asked of the host, and what it asks now.** The
+first commit of the slice left five reads. The owner asked why. All are
+closed. The state carries a `Host`, bound by `load_state`: the shell's
+environment, a lookup of a bound directory, a lookup of a local base image,
+and the clock. The review is given two functions besides: `ask`, the
+dialogue with the developer, and `announce`, for a run-once authorization.
+A test passes its own of each.
+
+**The owner's ruling on the last read, 2026-11-12: option 3.** The listing
+and the configuration review asked `os.environ` and the file system inside
+`assess_checkout` and `Configuration`, which five legacy files call 19
+times. Rule 5 of *Unit Tests* would retire a file for an edited call, and
+rule 2 of *Host Inputs* forbids an argument whose default reads the host.
+The owner chose the optional argument until those files are retired:
+`host_environment` and `directory` on `assess_checkout`, `directory` on
+`Configuration`, `review_configuration` and `resolve_configuration_bindings`.
+Left out, this process and this machine are asked, as before. The launch
+passes them from the `Host`. The rule's text is not amended; each default
+names the ruling in its docstring.
+
+**The owner's second ruling, 2026-11-12: option 2 as well.** Rule 5 of
+*Unit Tests* now lets a call in a legacy test gain or lose keyword
+arguments when the function's signature changes in the same pull request,
+and nothing else. The checker holds the form: it compares the two versions
+of the test as syntax and accepts a difference only in which keyword
+arguments calls in the body name; a change of layout alone is still
+refused. That the signature changed is the reviewer's to see. The optional
+arguments of option 3 stay, and rule 2 of *Host Inputs* names the two
+functions that keep them. No legacy call was changed under the allowance
+yet.
+
+**`tests/test_ide_requirement_override.py` passes in the capsule.** Its own
+`home` fixture now names the home, `DEVCAPSULE_CONFIG_HOME` under the
+test's directory. A named home is the product's own way to say that a home
+is the whole truth, so the fallback to the mounted settings does not apply.
+No test function changed and no product code. All 33 cases pass; the
+capsule's standing failures are 15. The earlier trial of the same variable
+in the suite's shared fixture broke 31 tests that assert the XDG layout;
+none of them is in this file. By that trial's log, the same line in the
+other five files would turn 14 of the 15 green; one test of
+`tests/test_run_flow.py` asserts the layout.
+
+**`tests/test_run_flow.py`: its 8 failures fixed with the configuration in
+memory, 2026-11-12.** The owner's correction of the fix above: a test says
+what its home holds by constructing it, not through the environment.
+`prepare_launch` takes the home's settings document as `home`, and passes
+it through `read_launch_state` to `load_state`, which then does not read
+the home's file. An empty document is a home with no settings file; any
+other is admitted as a file is. The four failing tests pass `home={}` on
+their five calls. This is the first use of rule 5's allowance, and the
+checker accepts it. All 48 cases of the file pass in the capsule; the
+standing failures are 7, in four files. Six new tests of `load_state` in
+`tests/unit/devcapsule/configuration/test_derivation.py`.
+
+No command passes `home`: only tests do, which rule 2 of *Host Inputs*
+forbids in general and the owner allowed here. The default, reading the
+home, is still what the other 20 calls of the file run. Five planted
+faults: two caught by the new mirror tests, one more after a test was
+added, and two caught only by the four legacy tests inside a capsule. Those
+two are the lines by which `prepare_launch` and `read_launch_state` pass
+`home` on; on the hosted runner a home is empty either way, so the hosted
+gate does not catch their loss.
+
+Of the 7 that remain, one calls `prepare_launch` and takes the same fix
+(`tests/test_trust.py`); five go through `cli.main` and one calls
+`write_settings`, which reads the mounted settings itself before it merges.
+
+**`tests/test_trust.py`: two of its three failures fixed in memory,
+2026-11-12.** One test calls `prepare_launch` and now passes `home={}`. The
+other tests the atomic write of the settings file and first accepts a
+channel through the file's helper `accept`; inside a capsule the launcher's
+mounted settings already hold that channel, so nothing was written and the
+test found no file. `accept_channel` now takes the home's settings as
+`home`, and `write_settings` takes the document it merges onto as
+`current`; the test passes `home={}` to the helper. Three new tests of
+`write_settings` in the storage mirror. Three planted faults: the mirror
+tests catch the writer ignoring `current`; the legacy test catches
+`accept_channel` ignoring `home`, inside a capsule only; nothing catches
+`accept_channel` not passing `current` on, because the file it then writes
+differs only in tables the test does not read. `accept_channel` has no
+caller in the product; it is the tests' helper.
+
+One finding for the owner in the product: `write_settings` reads the
+settings it merges onto, and inside a capsule with no settings file of its
+own that read is of the launcher's mounted settings. So the first write in
+a capsule copies the launcher's home into the capsule's own file, with the
+one table changed. Its docstring now says so.
+
+The standing failures are 5, in four files, and all five drive `cli.main`.
+No call in them can be handed a value.
+
+**The console-channel holding-pen test, rewritten, 2026-11-12.** The one
+test of `tests/unit/devcapsule/legacy_refactoring/test_console_channel.py`
+was three tests in one, and an integration test by nature: the launcher
+answers each request by running `project config` as a process. Inside a
+capsule it failed, behind its mark, on its last claim, that the vendors'
+consents stay pending. It is now:
+
+- in memory, in `test_derivation.py`: five tests of a checkout's selection,
+  the provider chosen for an IDE, the refusal where one component supplies
+  a capability, the refusal for a capability not selected, `default`, and
+  the IDE change that forgets the old provider;
+- in memory, in `test_launch_review.py`: a checkout that adds the Claude
+  Code agent and chooses Visual Studio Code ends pending on both vendors'
+  channels;
+- as processes, in the new `tests/integration/test_console_channel_cli.py`:
+  four tests that send requests through a real channel directory, let the
+  launcher sweep it in a process whose environment the test builds, with a
+  named home, and read the record, the results and `config show`.
+
+The mirror of `commands/_console_channel.py` and of
+`configuration/console_channel.py` would both be named
+`test_console_channel.py`, which the gate pairs with the legacy file of
+that name; so no test of those two modules could be added, and none was
+needed. The holding-pen file and its empty target module are deleted; the
+command-line debt list has 6 files. Five planted faults, three in the
+channel and two in the selection, are each caught. `nox -s tests` in the
+capsule: 3095 passed, 9 expected to fail, 10 unexpectedly passed. The
+integration tests that need no Docker: 128 passed, 3 skipped, and the one
+standing failure.
+
+**`tests/test_console_channel.py` retired; the pex integration file
+retired in place, 2026-11-13.** Owner direction: say what `nox` sets up
+that makes the console channel file pass, document it in the file, move it
+to the integration tests, and fix the approach of what belongs in the
+gate; mark the failing pex test expected to fail for now.
+
+Why it passed under `nox -s tests` and failed under
+`.venv/bin/python -m pytest`: the launcher answers a console request by
+running `project config` as a process. The legacy file named no home, so
+inside a capsule each such process read the launcher's mounted settings,
+which carry `minimum-devcapsule`, and compared it with the version of the
+`devcapsule` distribution installed in its interpreter. `nox` installs the
+current version in its session environment. The checkout's `.venv` holds an
+editable install whose metadata still says 0.2.15, so every command was
+refused with "requires DevCapsule 0.3.0; this launcher is 0.2.15". Outside a
+capsule there is no mount and both interpreters pass. `nox` sets up nothing
+else for it.
+
+- The file's 26 tests are 61 test functions in three new mirror files,
+  `configuration/test_console_channel.py`,
+  `configuration/test_console_requests.py` and
+  `commands/test_console_channel.py`, 4 more in `test_launch_review.py`,
+  and 9 more in `tests/integration/test_console_channel_cli.py`, whose
+  docstring carries the explanation above. The mirror names were free once
+  the legacy file was gone.
+- The unit tests start no `config` command: the runner is a value of the
+  test. Seams for that, behaviour unchanged: `handle_request`, `sweep`,
+  `ChannelWatcher` and `apply_deferred` take `run`; `run_config` is
+  `child_environment` and `run_command` composed; `request_rows` in the
+  store; `launch_listing` in the launch review module, given the
+  checkout's name; `running_listing_document` and `render_running_listing`
+  for the listing inside a capsule.
+- The process tests give every process a named home, so they pass in a
+  capsule and under the stale interpreter. Four of them run `project run`
+  on a pseudo-terminal with a stand-in for `docker`, and apply or leave a
+  kept request at the launch's question.
+- The pex test was not marked: the conventions gate refuses a mark on a
+  legacy test, and the fix cost the same.
+  `tests/integration/test_pex_runtime.py` is retired in place, its eight
+  tests given docstrings and an environment the test builds, and the
+  failing one passes.
+- 22 planted faults are each caught.
+- `nox -s typecheck tests` in the capsule: 3212 passed, 1 expected to fail,
+  1 unexpectedly passed. The same suite with `.venv/bin/python`: 3212
+  passed. The integration tests that need no Docker: 146 passed, 3 skipped,
+  none failed, for the first time in this capsule.
+- The gate: 99 legacy files holding 1,315 tests; 58 files follow the
+  conventions.
+
+What moved out of the pull-request gate with the process tests: the
+terminal's question about a kept request in `commands/_run_flow.py`, whose
+coverage in the unit suite fell from 87% to 71%, and the three
+`config console` commands in `commands/project.py`, 93% to 91%. The
+integration suite covers them. Not covered by any test now: the eight
+lines of `_show_inside_capsule` in `project.py` that choose between the
+channel and the older report, the two lines of `run_config` that pass
+`host_confirmed` on, and the wrapper `launch_listing_document`.
+
+One finding for the owner, not acted on: *Release Policy* rule 9 says the
+candidate workflow refuses a candidate whose test-run record has no run on
+its revision or a failing one. No script or workflow reads
+`test-runs.json`, on this branch or on `main`.
+
+**The holding pen emptied; the mounted-settings bug is `fixed`,
+2026-11-13.** Owner direction: delete the `test_home.py` test, fix
+`test_trust.py`.
+
+- The five marked tests of the holding-pen `test_trust.py` drove the
+  command line and patched the upgrade offer. They are now 10 tests of the
+  launch review, 2 of the review of authorizations and 5 of the trust
+  listing, all in memory; 3 process tests in the new
+  `tests/integration/test_home_trust_cli.py`; and 1 more in
+  `test_print_command_cli.py`.
+- One of the process tests runs `project run` on a pseudo-terminal and
+  answers no to the trust question. The terminal's dialogue is in
+  `_run_flow.py`, whose mirror is blocked by the legacy file of the same
+  name, and the launch asks only when its input is a terminal; a process on
+  a pty tests both. Run five times, about 1.2 s each, no failure.
+- Two extractions in the product, behaviour unchanged. The rows and lines
+  of `config trust list` moved from the command class to
+  `configuration/trust_listing.py`. The flags of the second review after an
+  upgrade became `flags_after_upgrade` in `_launch_review.py`, called from
+  `ProjectCommand._run`.
+- The one test of the holding-pen `test_home.py` is deleted. Its reader
+  gone, the Python route's input `docs/**` in
+  `.github/ci-python-inputs.yml` narrowed to `docs/versions.yaml`: a pull
+  request that changes only other files under `docs/` no longer runs the
+  hosted Python job. The suite passes under the guard with the narrower
+  list, so no unit test reads another path there.
+- `devcapsule/legacy_refactoring/` and its test package are removed. The
+  command-line debt list has 3 files.
+- Twelve planted faults are each caught. One wiring line is held by
+  nothing: that `_run` hands the second review what `flags_after_upgrade`
+  returns with respect to `--trust`. With that line made to give `--trust`
+  again, the whole unit suite passes. A legacy test of
+  `tests/test_run_flow.py` holds the same line for saved flags. The deleted
+  test held it, by patching the upgrade offer; nothing can without that
+  patch until `_run` takes the offer as a value.
+- `nox -s typecheck tests` in the capsule: 3129 passed, 1 expected to fail,
+  1 unexpectedly passed, 155 seconds. The hosted run at `8af31910`: the
+  same counts. Integration tests that need no Docker: 132 passed, 3
+  skipped, and the one standing failure.
+
+The bug record is `fixed`: all four close criteria hold. It closes on the
+owner's validation and the merge of pull request #29.
+
+**The shared fixture fixed and the last two failing marked cases
+rewritten, 2026-11-12.** Owner direction: go at the first item of the
+debt list.
+
+- `private_user_directories` in `tests/conftest.py` now makes the test's
+  machine no capsule: it sets `CONTEXT_PATH` and `CHANNEL_PATH` of
+  `devcapsule.runtime_configuration` to places that do not exist. The
+  product reads both as attributes of the module at each call. `HOME_PATH`
+  is left: it is read only behind `CONTEXT_PATH`, and it is also where the
+  launcher mounts the settings in a capsule it starts, which a launcher
+  test expects unchanged; setting it failed that test. Naming the home in
+  the fixture instead breaks 31 tests that assert the layout.
+- The five per-file fixtures that named the home, added earlier the same
+  day, are removed: one mechanism. The ten `home={}` calls stay.
+- `test_realize_environment_requires_explicit_claude_download_authorization`
+  became four tests of `review_authorizations`, where the decision is
+  taken, in `tests/unit/devcapsule/configuration/test_authorization.py`:
+  unanswered, answered by the home's trust, denied by the checkout over
+  the home's trust, granted by the checkout alone. It could not go to the
+  mirror of `environment_realization.py`: the legacy twin stands, and
+  retiring it breaks `tests/test_trust.py`, one of whose tests imports a
+  helper from it. That `realize_environment` refuses before it obtains
+  anything is still held by the legacy test of the base authorization.
+- `test_a_selected_agent_brings_its_own_acquisition_gate` became two tests
+  of the launch review: an added agent waits for its vendor's channel and
+  the message names both ways to accept; the checkout's own authorization
+  of the download settles it without the home.
+- Both holding-pen files and their empty target modules are deleted; the
+  command-line debt list has 4 files.
+- Five planted faults are each caught. With the fixture's lines removed,
+  its own test and the seven command-line tests fail in the capsule.
+- `nox -s typecheck tests` in the capsule: 3112 passed, 1 expected to
+  fail, 10 unexpectedly passed, 146 seconds.
+
+The blocking bug stays `fixing`. What is left is six stale marks on nine
+passing cases in two holding-pen files, `test_trust.py` (five tests that
+drive the command line) and `test_home.py` (a walk of the repository for a
+retired word). The owner decides whether the second is worth keeping.
+
+**The two `test_repository_manifest_compatibility.py` files, replaced by
+one, 2026-11-12.** Owner direction: delete what tests nothing real,
+consolidate the rest in one properly written file.
+
+The three marked tests did not fail because of the capsule. They read this
+repository's own `.devcapsule` files, and the owner's working tree holds the
+schema-2 files a 0.3 launcher wrote; each test ended in a `KeyError` of its
+own. The hosted run passed because the commit still holds the schema-1
+files. Of the four tests in the two files:
+
+- three compared the repository's manifest and lock with vocabulary copied
+  by hand from v0.2.15. That is the 2026-10-04 rule, one frozen release must
+  read every shared declaration, which the owner superseded on 2026-10-05
+  in *Keep The Development Checkout Launchable*. They tested no code.
+- one, `test_repository_lock_is_launchable_by_this_launcher`, had a real
+  claim, that the launch still reads a lock an earlier matrix wrote, on a
+  live input.
+
+Both files and the empty target module are deleted. The new
+`tests/unit/devcapsule/configuration/test_capability_commands.py` tests
+`check_documents`, the work of `project config check`, on frozen projects
+under `tests/resources/compat`: `v026.2`, `v0.2.11`, and
+`repository-2026-10-25`, a byte copy of this repository's manifest and lock
+as committed. Seven cases: the three captures pass with no warning and are
+left as given; a locked component this launcher does not know and nothing
+needs is passed over; an unknown needed capability, an unknown
+`runtime-effect` and a locked component without its version are each
+refused by name. `capability_commands.py` gained `__all__`, which *Unit
+Tests* rule 4 requires before a module is tested. Seven planted faults are
+each caught.
+
+`nox -s typecheck tests` in the capsule: 3105 passed, 3 expected to fail,
+10 unexpectedly passed. The holding pen has four files with 8 marks on 11
+cases: 9 pass, 2 fail for the mounted settings. The open record of
+2026-10-18 says what is still missing. The owner then ruled that
+compatibility with 0.2.14, 0.2.15 and earlier may be dropped, and that the
+compatibility promise gets a defined story and packaging after 0.3.1; see
+Open Threads. One observation there for the owner: the `v026-formation`
+capture does not pass the check.
+
+**The capability-commands holding-pen test, rewritten, 2026-11-12.** The
+one test of
+`tests/unit/devcapsule/legacy_refactoring/test_capability_commands_v2.py`
+had three cases, all failing inside a capsule behind their mark. Its claim:
+a provider chosen for a capability, by the project's recommendation, on the
+checkout, or with `--provider` for one run, accepts no vendor's channel, and
+a launch with `--save` that ends pending writes no part of the save. It
+set its checkout up through seven `config` commands and replaced the
+platform's capability table with a patched one, to have an agent
+capability with two providers.
+
+It is now four tests in `test_launch_review.py`, in memory, on the platform's
+real table: `frontend-ide` is supplied by VSCodium, which waits for no
+channel, and by Visual Studio Code, which waits for Microsoft's. Three cases
+build the choice of Visual Studio Code in each of the three places and end
+pending on that channel with the state's record and home as they were; the
+fourth is the same saving launch with no choice, planned with VSCodium and
+the memory staged. `checkout_of` in that file takes what the project
+recommends. No product code changed.
+
+Five planted faults are each caught: the command line's provider ignored,
+the project's recommendation ignored, the checkout's choice dropped, the
+memory left on the state by a pending save, a named provider's channel
+counted as accepted. What the four tests do not hold: that `prepare_launch`
+calls the writer only after the review returns. That is three lines, and
+two legacy tests of `tests/test_run_flow.py` hold it on files, among them
+`test_missing_pass_through_variable_blocks_and_does_not_save`: a saving
+launch ends pending and the test's whole directory is as it was.
+
+The holding-pen file and its empty target module are deleted; the
+command-line debt list has 5 files. `nox -s typecheck tests` in the
+capsule: 3099 passed, 6 expected to fail, 10 unexpectedly passed. The
+holding pen has five files with 11 marks on 14 cases: 9 pass, 2 fail for
+the mounted settings, 3 for the repository's own manifest.
+
+**`project run --print-command` fetches nothing, 2026-11-12.** Owner
+direction: whoever asks for the command to be printed did not ask for the
+environment to be downloaded. Until now `--print-command` did all a launch
+does before `docker run`: it pulled the base image, downloaded the
+artifacts and built the environment's image, and `docs/reference/cli.md`
+said so. Now `realize_environment` and `ensure_materialized_surface` take
+`fetch`; `--print-command` passes false. An environment that is on the
+machine has its command printed. A missing base image, a missing
+environment image, or one whose boot configuration needs its rebuild ends
+the command with exit 2 and a message that names what a launch would pull,
+download and build, and the launch command to run once. The option's help,
+the reference page and the package README say the same.
+
+- Tests: three mirror tests of the look without fetching in
+  `test_materialization.py`; one integration test,
+  `tests/integration/test_print_command_cli.py`, that runs the built launcher
+  with a stand-in script where `docker` is and proxies that point at a closed
+  port. The launcher asks the stand-in one thing, whether the base image is
+  local.
+- Evidence: the real command in the owner's capsule, on a project never
+  launched, ends in 0.4 s with exit 2, names the image and three artifacts,
+  and writes no file to the cache. Two faults planted in the wiring, each
+  with the executable rebuilt, fail the integration test.
+- Not covered by an automated test: the one line by which
+  `realize_environment` hands `fetch` to the materializer. Its mirror file
+  has a legacy twin, and the function finds the runtime executable through
+  the environment. The capsule run above is its evidence.
+- Not done: printing the command of an environment that is not built. Its
+  image name follows from the lock alone, but the display and the console
+  are read from image labels, so that preview could differ from the launch.
+
+**The downloading test, rewritten.** The owner's second point: the test
+that reached that download was the only test of its holding-pen file, and
+belongs in a proper unit test that downloads nothing. It is now two tests
+of `review_launch` in `test_launch_review.py`, in memory. The file
+`tests/unit/devcapsule/legacy_refactoring/test_capability_minimums.py` and
+its empty target module are deleted, and the command-line debt list has 7
+files. The fixture line added to `tests/test_capability_minimums.py` for
+that test is taken out again. `nox -s tests` in the capsule: 3088 passed,
+10 expected to fail, 10 unexpectedly passed. The integration tests that
+need no Docker: 124 passed, 3 skipped, 1 failed; the failure is the
+standing one of `test_pex_runtime.py`, which builds its environment in the
+test's body from `os.environ` and so reads the mounted settings.
+
+**The last five, and the unit session green in the capsule, 2026-11-12.**
+The five that remained drive `cli.main`, where no call can be handed a
+value. On the owner's word their files' fixtures name the home, as the
+IDE-override file's does: `project` in `tests/test_trust.py`,
+`tests/test_capability_policy.py` and `tests/test_owner_commands.py`, and a
+new autouse fixture in `tests/configuration/test_contract.py`, whose
+`checkout` fixture is imported from another legacy file. For a test of the
+command line the environment is input as `argv` is. One fixture beyond the
+five: `project` in `tests/test_capability_minimums.py`, used by the test
+that downloaded vendor artifacts; with it that test stops at its consent,
+and the network guard no longer fails the session. `nox -s tests` passes
+inside the owner's capsule for the first time since 2026-11-03: 3083 passed,
+10 expected to fail, 11 unexpectedly passed, 175 seconds. The blocking bug's
+record has a progress section and is `fixing`, not closed: the shared
+fixture is unchanged and the expected-to-fail marks remain; the record
+counts them.
+
+**`tests/test_ide_requirement_override.py`, ordered retired whole. It is not
+yet.** Of its 26 test functions, 12 now have a form that needs no file, no
+home and no patch: 10 in `test_launch_review.py`, 1 as three tests in the
+new `tests/unit/devcapsule/configuration/test_capabilities.py`, 1 in
+`test_capability_selection.py`. The other 14 wait for five changes to the
+product, because each reaches something the code takes from a global:
+
+1. Six drive `project run` through `cli.main` with the Docker launch and the
+   materialization replaced by patches on `commands.project`. The command's
+   body, `ProjectCommand._run`, is some 300 lines that read files, settings
+   and those two module names. It must take them as values first.
+2. Three more go through `cli.main` for a refusal and need no stand-in. They
+   become integration tests that start the program.
+3. Three read or write the launch's files: the listing of a departed launch,
+   the plan file of the launch after it, and `config show`. The last one
+   patches `runtime_configuration.CHANNEL_PATH`, the capsule's fixed
+   `/run/devcapsule-configuration`.
+4. One patches a method of a component class to give Codex a dependency on
+   an IDE; `usable_lock` takes the component catalog from a global.
+5. One tests `realize_environment`, whose mirror file has a legacy twin of 9
+   tests; adding a test there retires that twin too.
+
+Until then rule 5 keeps the legacy file whole and the 12 tests stand twice.
+
+**Differences in behaviour.** Two orders of refusal: a checkout that cannot
+be given a free record name is now refused before a wrong IDE is, and the
+console's requests are read once per review, so one that arrives during a
+review is seen at the next run.
+
+**Not done.** The retirement of the six legacy files; see the first of them above. `load_state` still
+finds the home through the environment, so the reading has no test from
+values yet. `_run_flow.py` has no mirror test, since its legacy twin
+`tests/test_run_flow.py` stands.
+
+**Next action.** The owner's: whether `ProjectCommand._run` is restructured
+before 0.3.1, which the retirement of this file and of `tests/test_run_flow.py`
+both need; and whether the 17 wait for that or get the one-line fixture
+change first.
+
+## Two rules held by machine: no network in a unit test, the command line only in `test_cli.py` — 2026-11-12
+
+The owner asked why the capsule's 17 unit tests fail and when that began,
+then ruled twice. This section records the answers and the two checks.
+
+**The 17, dated.** The cause is in the blocking bug record of 2026-11-10.
+The dates: the isolation fixture is from 2026-10-10 (`93c83d4b`), when
+settings lived under the XDG directories. On 2026-10-28, in the home slice
+of 0.3.0 (PR #299), `21472b9d` made the fixture delete
+`DEVCAPSULE_CONFIG_HOME` and `36bec846` added the fallback to the mounted
+settings; together they opened the hole, and 0.3.0 shipped with it. The
+owner accepted `claude-code` on 2026-11-01 and the first thirteen failures
+of this cause appeared on 2026-11-03; `1c00b940` of 2026-11-05 marked them
+expected to fail and left the fixture. The owner accepted `devcapsule-base`
+and `vscode` on 2026-11-08, which turned today's 17 red with no change to
+the code.
+
+**Measured.** With every connection and name lookup but loopback refused in
+the test process, the unit suite gave the same 17 failed and 2961 passed, in
+78 seconds where the ordinary run takes thirteen and a half minutes. One
+test in the whole suite tried to use the network:
+`test_offered_agent_still_needs_consent_and_can_be_omitted`, which calls
+`cli.main` four times and, its consent already given, downloads 1.5 GB.
+
+**The rulings.** A unit test opens nothing on the network. Unless a test is
+in `test_cli.py`, the mirror of `cli.py`, it has no business invoking the
+command line. They are rules 9 and 8 of *Unit Tests* in `WORKFLOW-LOCAL.md`,
+with the companion paragraph and the guide.
+
+**The checks.**
+
+- Rule 8, by reading imports, in
+  `scripts/validate_unittests_follow_conventions.py`, which already runs
+  before pytest in `nox -s tests`, `nox -s build` and the hosted workflow.
+  A file that is not legacy is refused when it imports `devcapsule.cli` or
+  `devcapsule.__main__`, directly or through a module under `tests`; a
+  `conftest.py` is refused too. It is not in the legacy
+  `tests/configuration/test_architecture.py`, because rule 5 and the gate
+  refuse a test added to a legacy file.
+- Eight mirror files breach rule 8 today: three ordinary ones and five under
+  `legacy_refactoring/`. They are listed in
+  `devcapsule-src/tests/command_line_debt.txt`. The check refuses a line
+  whose file no longer needs it, and a line the base's list does not have.
+  32 of the 102 legacy files reach the command line too; they meet the rule
+  when they are retired.
+- Rule 9, at run time, in `tests/conftest.py`: `NetworkGuard`, on the
+  interpreter's audit hook, beside the repository-input guard. While a unit
+  test runs, a connect or a send to another machine, or a lookup of anything
+  but this machine, fails the test before anything is sent, with an
+  exception that `except Exception` does not catch; the session then ends
+  with a failing status and a list of the attempts. Loopback stays open.
+  Tests of the heavier suites are not held to it.
+
+**Evidence.** 27 faults planted in the new code, one at a time, in a scratch
+copy: 23 caught by the unit tests of the checker and of the guard, 4 by the
+new integration file `tests/integration/test_network_guard.py`, none
+uncaught. The four are the wiring: the hook's installation, attending and
+leaving a test, and failing a session whose breach failed no test. The
+hosted pull-request gate does not run integration tests, so it does not
+catch a break in that wiring.
+
+**Validation, in the capsule.** `nox -s typecheck`: mypy over 342 files
+passes. `nox -s tests`: 17 failed, the standing ones by file and count, 3008
+passed, in 170 seconds with coverage; the guard names the one downloading
+test, which now ends at once as the expected failure it is marked to be.
+The convention check: 102 legacy files, 1350 legacy tests, 54 conforming
+files, 0 breaches, 8 files in command-line debt. Five integration files, 94
+tests, pass.
+
+**Limits.** The import check does not see a test that starts the program as
+a process; that is what an integration test does, and a unit test that did
+it would breach rule 2 unseen. The network guard does not see the network
+use of a program a test starts. `prepare_launch` reaches the same settings
+and the same download without the command line; no rule names it yet. The
+17 failures and their cause are untouched.
+
+**Next action.** The owner's: whether the eight files in debt are fixed
+before 0.3.1, and the fix of the blocking bug.
+
+## The rule *Host Inputs*, and the partner's review of the rewrite — 2026-11-12
+
+After reading the report of the section below, the owner asked for "a very
+simple set of rules that reflect what you did", and then for the Codex
+review.
+
+**The rule.** Commit `7ed906c9` adds the section *Host Inputs* to
+`WORKFLOW-LOCAL.md`, seven rules: only an entry layer reads the host; every
+other module takes what it read as required values; a frozen dataclass binds
+shared values and its constructor only stores; a decision returns what to do
+and the entry layer does it; a new or changed unit test builds values and
+patches nothing; an entry layer is a short sequence tested as a program; the
+pull request states what the hosted gate no longer catches, and the reviewer
+verifies rules 1 to 6. The companion paragraph, a pointer in the unit test
+guide and the reviewer's duty in the brief template are in the same commit.
+The section is separate from *Unit Tests* because four of its rules bind
+product code and the numbers of *Unit Tests* are cited in many records.
+
+**The review.** Codex + GPT-6 Astra, high effort, on
+`ws-maintenance/host-inputs-at-source-review-2`, brief under
+`evidence/2026-11-12-host-inputs-as-values/review-brief.md`. It opened
+[PR #28](https://github.com/mycodespace-ai/devcapsule/pull/28) with one
+commit, `04770142`. Accepted without a round and merged at `83d238b8`. What
+it changed:
+
+- `run` set the surface's launch variable before its properties file was
+  written; 0.3.0 wrote the file first, and set the session variables before
+  it planned the launch. `Session.environment` no longer carries the launch
+  variables; `run` sets them after the files. A new integration test proves
+  both failure cases in a real process.
+- The two version integration tests computed their expected output with the
+  code under test. They now copy the package into scratch, give it an
+  authored version and a stamp, and assert text and JSON written out in the
+  test. This closes the fault of the record looked for outside the package.
+- The decisions integration test accepted any failure. It now requires the
+  console's diagnostic to name a file the test wrote, which closes the fault
+  of the dropped arguments. It skips where the image has no console.
+- A new integration test runs the real `os.chown` with a uid and a gid that
+  differ, by passing 0 as the caller's uid and a supplementary group of the
+  runner. It closes the fault of the swapped uid and gid.
+- A fixture of `test_contract.py` no longer inherits PyCharm's `/ide-config`.
+  Two mirror tests cover a directory named `__init__.py` and the precedence
+  of a component's variables. The integration helpers skip where the
+  supervisor's signal calls are absent and never write bytecode.
+
+Of the five faults that no test caught, three are now caught by integration
+tests. The probe's timeout, twice, stays uncaught; the reviewer argues that a
+test of it would depend on the clock, and proposes none. Of its own twelve
+planted faults, four are caught by mirror tests, one by a legacy unit test,
+five by integration tests, two by nothing. I planted the swapped owner
+change and the dropped arguments again in the review worktree; each new test
+failed on its fault and passed after the restore.
+
+**What the review leaves for the owner.**
+
+1. One difference from 0.3.0 remains. The rewrite creates every directory,
+   sets the private modes and then changes the owners. 0.3.0 changed the
+   owners directory by directory, then set the modes. The final state is the
+   same; the state after a start that fails between the two is not.
+2. Deviations from the rule in the code as merged, each named in PR #28's
+   body: `ConsoleInstallation.child` checks a path, prints a notice and
+   returns a callback that opens a socket; `DecisionTools.run` starts a
+   program with the inherited environment; `prepare_filesystem` performs
+   `os.chown` below the entry layer; `current_build_info()` and
+   `is_built_distribution()` find the package without an argument; `run`
+   branches twice on an answer of the session; the helper of the legacy
+   `tests/test_contained_display.py` still patches; the autouse fixtures of
+   `tests/conftest.py` still patch for every test.
+3. Where the reviewer found the rule open to two readings:
+   - Rule 1: whether reading a file or a socket at a path or address that was
+     passed in is a read of the host. Rule 5 calls such a file a value; rule
+     1's "only" can be read to forbid it.
+   - Rule 1: "the one function that such a layer calls first" does not
+     settle `main` to `run`, or `VersionCommand.run` to `current_build_info`.
+   - Rules 2 and 3: whether a factory with no argument that names fixed
+     paths, `ConsoleInstallation.of_image`, is allowed.
+   - Rule 4: whether a helper below the entry layer may perform an effect
+     that a decision returned.
+   - Rule 5: whether a changed helper of an unchanged legacy test, or an
+     inherited autouse fixture, makes a test "changed".
+   - Rule 6: whether applying a returned boolean with `if` is a decision of
+     the entry layer.
+   - Rule 7: which evidence states "what the hosted gate does not catch": a
+     list of tests not run, or planted faults.
+4. The reviewer's proposals: run the three integration files in the hosted
+   pull-request gate and count skips apart from passes; give release
+   acceptance an environment with a console so the forwarding test does not
+   skip there; keep a version check on the built executable itself; retire
+   the display fixture and split four contract tests that make two calls.
+
+**Validation on the merged branch, `83d238b8`, in the capsule.**
+`nox -s tests`: 17 failed, 2961 passed; the 17 are the standing ones, by file
+and count. The convention check: 102 legacy files, 1350 legacy tests, 53
+conforming files, 0 breaches. In the review worktree: 157 mirror tests, 25
+integration tests with no skip, 69 legacy tests of the neighbours, mypy over
+341 files, all pass. Not run: `nox -s webconsole`, the end-to-end sessions,
+`nox -s build` as one session, a built executable.
+
+**Next action.** The owner reads PR #26 and rules on the open readings of
+the rule; the rule's text changes only on that ruling. The review worktree
+`~/worktrees/maintenance-review` is kept until then.
+
+## PR #26 rewritten: host inputs are values, and no touched test patches — 2026-11-12
+
+On 2026-11-11 the owner read the first judgment of the section below and
+rejected its premise. The direction, in the owner's words: a value that an
+inner module would be patched to supply, an environment variable for example,
+"should have been a parameter at construction"; "only a very top layer does
+the mapping", in a declarative style, with at most a small convenience method
+that is obviously right; the inner module is "unaware that the value comes
+from an OS env var"; a unit test "simply needs to construct regular values";
+and classes exist "to bind values that are used again and again". The owner
+then asked for PR #26 to be rewritten on those lines, with lessons and rules
+to follow from the result. This section records the rewrite. It supersedes
+judgments 1 to 3 of the section below; the product code of that section is
+replaced, not kept beside the new one.
+
+**Delivery.** The same branch and pull request,
+`ws-maintenance/host-inputs-at-source` and
+[PR #26](https://github.com/mycodespace-ai/devcapsule/pull/26).
+
+**The product code.**
+
+- `container_runtime/identity.py`: `CapsuleUser(identity, caller_uid)`
+  replaces `foreground_command`. `command` wraps a child's command behind
+  `gosu` for a root caller. `owner_changes` returns the `(path, uid, gid)`
+  changes that give new directories to the capsule user. Nothing in the
+  module reads the operating system.
+- `container_runtime/filesystem.py`: `create_directories(plan)` creates the
+  directories and returns the ones it created. `prepare_filesystem(plan, user)`
+  performs the owner changes `CapsuleUser.owner_changes` decides, in a loop
+  with no branch. `RUNTIME_ROOT`, added on 2026-11-11 so a test could patch
+  it, is removed.
+- `container_runtime/console.py`: `ConsoleInstallation(python, launcher_source)`
+  holds the two image paths; `package_path` and `child` are its methods and
+  replace `console_package_path` and `console_child`. `of_image()` builds the
+  one at the image's fixed paths. `probe_address` is a public function.
+- `container_runtime/session.py`, new: `Session(plan, job, user, console)`
+  decides everything `run` used to decide inline: the filesystem plan, the
+  surface's launch with the files and variables it needs, the variables to
+  set given the existing ones, whether the contained display is shown,
+  whether the JetBrains profile lock is held, the log settings, and the
+  children in start order with their log files.
+- `container_runtime/entrypoint.py`: `run` reads `os.geteuid()` and
+  `os.environ` once, builds the session, and performs its answers in
+  sequence. `log_rotation` and `logged_children` moved into `Session`.
+- `console_tools.py`: `DecisionTools(in_capsule, console, runtime_plan_path)`
+  with `command` and `run` replaces the two functions and their four optional
+  parameters. `CheckoutDecisionsCommand.run` reads the environment variable
+  and names the image's paths.
+- `build_info.py`: `distribution_build_info(package_locations, pyproject_path,
+  installed_version)` and `embedded_build_info(package_locations)` take every
+  location as a value; `installed_version` is a function, asked only when
+  needed, as before. `current_build_info()` and `is_built_distribution()`
+  take no argument and name the running distribution's locations. The record's
+  file name is inside the tested function. `build_info_text` is the text
+  form `version` prints.
+
+**The tests.** The mirror files of these units, and the three integration
+files, hold no `monkeypatch` use; the files held 26 before. A test builds a
+`CapsuleUser`, a `ConsoleInstallation` over files in its own directory, or a
+`Session`, and asserts on what the call returns.
+
+- The readiness probe is tested against a real socket on loopback. The 0.2
+  second timeout, which only a stand-in connection could observe, is no longer
+  asserted.
+- `run`, `VersionCommand.run` and `CheckoutDecisionsCommand.run` have no
+  mirror test. Three integration files start the real programs in a process
+  whose environment the test builds: a headless session and an interactive
+  one with a stand-in program where the IDE is installed, `devcapsule version`,
+  and `project checkout decisions`.
+- `tests/unit/devcapsule/commands/test_version.py` is deleted: its two tests
+  patched `current_build_info`, and the text and JSON forms are now tested on
+  `build_info.py`.
+
+**Rule 5.** `tests/test_runtime_entrypoint.py` called `foreground_command`
+and `prepare_filesystem` with their old signatures and patched
+`identity.os.geteuid`. The whole file is refurbished: its 22 tests are in
+the mirrors of `contract`, `filesystem`, `identity`, `session`, `entrypoint`,
+`graphics` and `components/jetbrains`, and the file is deleted. `graphics.py`
+and `components/jetbrains.py` declare `__all__` for that. The convention
+check counts 102 legacy files and 1350 legacy tests, from 103 and 1372, with
+0 breaches. Two consequences outside the mirror:
+
+- `tests/test_contained_display.py`, legacy, imported three helpers from the
+  deleted file. They are now defined in it, and its fixture patches
+  `entrypoint.os.geteuid`. No test function of the file changed.
+- `tests/conftest.py` patched `console.LAUNCHER_CONSOLE_SOURCE` for every
+  test. No unit test reads that constant through an entry layer any more, so
+  the patch is removed.
+
+`tests/test_vscode_component.py` and `tests/test_eclipse_component.py`,
+legacy, still call `run` under their own patches and pass unchanged.
+
+**Evidence.** 43 faults were planted one at a time in a scratch copy: the 26
+of 2026-11-11, placed where the same decision lives now, and 17 more in the
+performing layer and the session.
+
+| Caught by | Of the first 26 | Of all 43 |
+| --- | --- | --- |
+| the mirror files, which patch nothing | 19 | 26 |
+| legacy unit files that reach `run` under patches | 2 | 4 |
+| the integration files | 2 | 8 |
+| nothing | 3 | 5 |
+
+The hosted pull-request gate runs the first two rows: 21 of the first 26,
+where the patched tests of 2026-11-11 caught 25. The five that no test
+catches:
+
+- the readiness probe's timeout made a hundred times longer, and removed;
+- `checkout decisions` dropping its arguments, which shows only where the
+  image has a console;
+- the uid and gid swapped in the one `os.chown` call, which runs only for root;
+- the stamped record looked for outside the package, which shows only in a
+  built executable.
+
+**Validation, in the capsule.** `nox -s tests`: 17 failed, 2959 passed; the
+17 are the standing ones of the blocking bug, the same test for test as
+before the rewrite. `nox -s typecheck smoke pex docs-contract`: all pass,
+mypy over 341 files. The integration tests that need no Docker: 116 passed,
+3 skipped, 1 failed; the failure is in `test_pex_runtime.py`, which runs the
+existing `dist/devcapsule-local.pex` and finds the capsule's trust already
+accepted, the family of the blocking bug. Not run: `nox -s webconsole`, the
+end-to-end sessions, `nox -s build` as one session.
+
+**Judgments taken for the owner.**
+
+1. A lazy input stays lazy: `installed_version` is passed as a function, so
+   a built executable does not read its installed metadata on every start.
+2. `run` keeps its signature and stays the layer that reads the host. Two
+   legacy files therefore keep passing without an edit; the alternative was
+   to refurbish 644 more lines of unrelated component tests in this change.
+3. The command classes are not given a constructor. The framework calls them
+   as classes; changing that is a change to every command.
+4. `display.py` and `diagnose.py` still read `os.geteuid`, a fixed socket
+   directory and `CONSOLE_PYTHON` themselves. They were not in PR #18.
+
+**Proposals, not implemented.**
+
+- Run the integration tests that need no Docker in the hosted pull-request
+  gate. Three of the files are the only tests of the layer that reads the
+  host, and they take five seconds.
+- Give the command framework a context that `cli.main` builds from the
+  process, so a command reads `context.environ` and a test passes one.
+- Apply the same change to `display.py`, whose legacy tests patch three names.
+
+**Review.** PR #27 reviewed the code this section replaces. The partner
+reviewed the rewrite as PR #28; see the section above, which also corrects
+this one: the launch variable is no longer part of `Session.environment`, and
+three of the five uncaught faults are now caught.
+
+**Next action.** See the section above.
+
+## PR #18's test-only parameters removed; the tests set the host at its source — 2026-11-11
+
+Superseded in part on 2026-11-12: the product code and judgments 1 to 3 of this section are replaced by the section above.
+
+On 2026-11-10 the owner asked for an independent assessment of
+[PR #18](https://github.com/mycodespace-ai/devcapsule/pull/18), then asked
+for its shortcomings to be fixed, by Pair Review with Codex and GPT-6 Astra
+as the review partner. The assessment's findings, each measured on the tree
+at the merge `b84b06e9`:
+
+- PR #18 gave eight production signatures twenty keyword parameters that no
+  production caller passes, so that no new test would patch a `devcapsule.*`
+  attribute. Each test passed the parameter, so the branch that ships, the
+  default, was run by no new test. Of six production faults planted in those
+  defaults, the four retired legacy files had caught five; the whole unit
+  suite after PR #18 caught none of the six.
+- `entrypoint.run` forwarded `caller_uid` and `runtime_root` only when given,
+  so that two legacy tests' `lambda *args: None` stand-in for
+  `prepare_filesystem` kept working.
+- `VersionCommand` and `CheckoutDecisionsCommand` carried test inputs through
+  the command framework's group-context argument and told them apart by type.
+- The hosted run was red on five consecutive pushes while the slice was
+  reviewed, accepted and recorded as validated; both pairs had validated
+  inside a capsule, where `/ide-config` exists.
+
+Delivered on `ws-maintenance/host-inputs-at-source`, from `release-0.3.1` at
+`2f1109db`, as [PR #26](https://github.com/mycodespace-ai/devcapsule/pull/26):
+
+- `entrypoint.run`, `console_child`, `plan_filesystem`, `prepare_filesystem`,
+  `foreground_command`, `VersionCommand`, `CheckoutDecisionsCommand` and
+  `run_console_decisions` have their signatures of before PR #18 again:
+  seventeen of the twenty parameters, the type aliases that served them and
+  the private `_DecisionsInvocation` are gone, and `console_child` loses the
+  `launcher_source` parameter PR #16 added in the same style. `run`'s body is
+  the one 0.3.0 shipped. The one addition is a name for a fact,
+  `filesystem.RUNTIME_ROOT`, `/tmp`.
+- The mirror tests set each host input where the code reads it:
+  the caller's uid, ownership changes and the readiness connection through
+  `os.geteuid`, `os.chown` and `socket.create_connection`; the image's fixed
+  locations through the public constants `CONSOLE_PYTHON`,
+  `LAUNCHER_CONSOLE_SOURCE`, `RUNTIME_ROOT` and `RUNTIME_PLAN_PATH`; the
+  environment with `monkeypatch`; and, for `run` alone, the supervisor, the
+  display and the log setup by stand-ins. The code a test runs is the code
+  that ships.
+- `identity.py` has its mirror file. `images/contract.py` no longer calls the
+  runtime's check at start a backstop for the recipe. The integration test of
+  the wrapper's help builds a base without a console interpreter again.
+
+Judgments taken, for the owner's review:
+
+1. A production signature has a parameter only when production passes it.
+   This reverses the choice recorded on 2026-11-08, that no refurbished test
+   patches a `devcapsule.*` attribute. The tests patch public names only,
+   and never a private one; the conforming tests merged on 2026-11-04 and
+   2026-11-05 do the same (`status.read_metadata`,
+   `runtime_artifact.current_build_info`).
+2. `current_build_info` keeps its three parameters. The reason first
+   recorded here, that a test cannot build the stamped record where the
+   function looks for it, was wrong, and the review showed it: its test
+   builds a package directory and replaces `files` at its lookup site. The
+   parameters stay because the authored `pyproject.toml` is found through a
+   private constant, which a test does not patch.
+   `console_decisions_command` keeps the four it had before PR #18; its
+   defaults are now run by the tests of `run_console_decisions`.
+3. `commands/project.py` gets no mirror test: a mirror would oblige its
+   public surface to be declared and `tests/test_project.py` to be retired
+   in the same change. The one line by which `project checkout decisions`
+   delegates is run by the integration file only.
+4. The target is `release-0.3.1`, as it was for PR #18.
+
+Pair Review (`Codex + GPT-6 Astra`,
+[brief](evidence/2026-11-11-host-inputs-at-source/review-brief.md)) opened
+[PR #27](https://github.com/mycodespace-ai/devcapsule/pull/27) (`PR26.1`),
+accepted at `1b5d3fc7` without a round and merged at `60ad2c5a`. The review
+started only after the hosted run of PR #26 was green, and read it again
+before reporting. It found that the new sentence in `images/contract.py`
+claimed more than the launcher enforces, since `_launcher.py` plans a
+console when no label result is supplied, and reworded it; ended each
+process-wide patch (`os.environ`, `os.geteuid`, `os.chown`,
+`socket.create_connection`) with the action it serves; made the environment
+test read the environment when the supervisor is made and assert the
+graphics defaults; asserted the runtime directory under `/tmp` and not under
+the constant the code reads; kept the console tools mirror to its own unit;
+isolated the fake interpreter from Python startup settings; and added the
+test of the default build-record lookup. Its own 13 planted faults were all
+caught. GitHub runs no check on a pull request into a slice branch, so the
+hosted run of PR #26 after the merge is the one that counts.
+
+Evidence: 26 faults planted one at a time in a scratch copy of the tree and
+run against the touched unit files. On the merged branch 25 are caught
+there, among them the five that PR #18 had lost and the one no unit test
+had ever caught, a built executable that never finds its stamped record.
+The last, the command dropping its arguments, is caught by the integration
+file only.
+
+Validation in the owner's capsule, on the merged branch at `60ad2c5a`:
+`nox -s tests` gives 17 failed and 2914 passed, the 17 of the
+[blocking record](../../bugs/devcapsule/2026-11-10-unit-tests-read-the-capsules-mounted-launcher-settings.md)
+and no other, as before the review at `8274a546` with 2913 passed; the
+convention check counts 103 legacy files with 1372 legacy tests and 49
+conforming files, 0 breaches; mypy is clean over 336 files; the CLI smoke
+passes; the executable builds and its smoke passes; the documentation
+contract holds over 249 pages; the console session gives 458 passed; the
+integration file gives 10 passed. `nox -s build` as one session cannot pass
+in this capsule while those 17 stand, so its parts were run one by one. Hosted run of PR #26: 2949 passed at
+`9dc4acfe` before the review, 2950 passed at the merge `60ad2c5a`, none
+failed in either. The commit of these records after it changes no input of
+the suite.
+
+Next action: the owner's review of PR #26 and of the four judgments. The
+review partner's worktree, `~/worktrees/maintenance-review`, is kept until
+the owner has decided.
+
+Proposals not implemented, for the owner:
+
+- *Unit Tests*, rule 2 or its companion: a parameter is added to production
+  code for a test only when production passes it, and the default a release
+  ships stays under a test of the gate.
+- *Pair Review Loop*: a review is accepted, and a slice recorded as
+  validated, only on a green hosted run of the head; the brief asks for it.
+- The gate's smoke compares `version --json` of the built executable with
+  the stamp the build wrote; today it reads the exit status only. The
+  review's unit test proves the lookup, not the contents of a built
+  executable.
+- From the review: test the delegation of `project checkout decisions` in
+  the gate when the owner orders the refurbishment of
+  `tests/test_project.py`; decide whether the launcher's low-level default,
+  a console planned without labels read, should stand.
+- `WORKFLOW-LOCAL.md`, *Pair Review Loop In This Checkout*, rule 3 still
+  names `/opt/devcapsule-gate` as the review partner's scratch, which the
+  owner retired on 2026-11-04.
 
 ## The Python route becomes a list of inputs the suite is held to — 2026-11-10
 
@@ -44,8 +1017,9 @@ breach; the flip at `3bd6cc27`, 2947 passed, the new filter matching the 11
 changed files under `devcapsule-src/` and `.github/` and none of the 5 under
 `engineering-docs/`.
 
-Next action: the owner's review of PR #25. Then, on the owner's word, the
-local gate's routing and the retirement of the `docs/` scan.
+PR #25 is merged into `release-0.3.1` at `2f1109db`. Next action, on the
+owner's word: the local gate's routing and the retirement of the `docs/`
+scan.
 
 ## The pile of ideas, a workflow rule for 0.3.1 — 2026-11-10
 
@@ -4461,6 +5435,19 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
+- Blocking for 0.3.1, owner's rating of 2026-11-13: this repository's own
+  `.devcapsule` is committed in its pre-0.3 form, a schema-1 manifest and a
+  lock from `embedded-28`. A refreshed pair is committed before the release
+  ships; the refresh runs on the host with the release's launcher. Record:
+  [the 2026-11-13 bug](../../bugs/devcapsule/2026-11-13-repository-project-configuration-predates-0.3.md).
+- Owner ruling, 2026-11-12: compatibility with 0.2.14, 0.2.15 and earlier
+  may be dropped. The compatibility promise to users needs a defined story
+  and a packaging, targeted for after 0.3.1; not started. Sent to
+  project-management the same day as
+  `2026-11-12-maintenance-compatibility-promise-story-and-packaging.md`,
+  coordination `d615b0a1ff41`; routing is theirs. Until then the pre-0.3 captures and
+  their tests stand without being a promise. Recorded in
+  [the 2026-10-18 record](../../bugs/devcapsule/2026-10-18-no-test-proves-old-projects-launch-with-new-releases.md).
 - Paused for owner travel on 2026-10-31. No work continues during the break.
 - On return, confirm the first 0.3.1 slice; release-independent test fixtures
   are proposed. The nine documentation proposals still need item-level
@@ -4959,6 +5946,7 @@ Earlier open-thread history (read against the current scope above):
 
 - [PR #16 Pair Review brief (PR16.1)](evidence/2026-11-08-webconsole-delivery/review-brief.md), [D-0017](../../decisions/product/d-0017-launcher-delivers-web-console-package.md), and [0.3.1rc1 web console delivery bug](../../bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md): launcher-delivered web console slice (`ws-maintenance/webconsole-delivery`, stacked on PR #18).
 
+- [PR #26 Pair Review brief (PR26.1)](evidence/2026-11-11-host-inputs-at-source/review-brief.md): brief for `Codex + GPT-6 Astra` on the removal of PR #18's test-only parameters and the tests that set the host at its source.
 - [PR #18 Pair Review brief (PR18.1)](evidence/2026-11-08-webconsole-legacy-tests/review-brief.md): brief for `Claude Code + Claude Fable 5.1` on whole-file legacy test retirement and 4-file refurbishment (`ws-maintenance/webconsole-legacy-tests`).
 
 - [RC9 preparation and component verification](evidence/2026-10-31-rc9/README.md).

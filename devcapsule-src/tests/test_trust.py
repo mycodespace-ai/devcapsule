@@ -41,11 +41,15 @@ def config(root: Path, *arguments: str) -> int:
 
 
 
-def accept(root: Path, channel: str) -> int:
-    """Seed the project channel for tests of lock-specific acceptance."""
+def accept(root: Path, channel: str, home: dict | None = None) -> int:
+    """Seed the project channel for tests of lock-specific acceptance.
+
+    ``home`` is the settings the test's home holds before the acceptance, for
+    a test that says so; left out, the home is read.
+    """
     from devcapsule.commands._run_flow import accept_channel
     try:
-        accept_channel(root, manifest_for(root)[1], channel)
+        accept_channel(root, manifest_for(root)[1], channel, home=home)
     except ProjectConfigurationError as exc:
         print(str(exc), file=sys.stderr)
         return 2
@@ -259,7 +263,7 @@ def test_inspection_and_pending_trust_leave_all_files_unchanged(project: Path, t
 
 def test_trust_write_is_private_atomic_and_keeps_previous_record_on_failure(project: Path, monkeypatch) -> None:
     from devcapsule.configuration.storage import write_settings
-    assert accept(project, BASE_CHANNEL) == 0
+    assert accept(project, BASE_CHANNEL, home={}) == 0
     before = settings_path().read_bytes()
     original = Path.replace
     replacements = []
@@ -339,7 +343,7 @@ def test_terminal_acceptance_stays_staged_if_a_later_answer_is_missing(project: 
     before = snapshot(tmp_path)
     output = io.StringIO()
     with pytest.raises(DecisionPending, match="nothing was written"):
-        prepare_launch(project, RunFlags(), interactive=True, input_stream=io.StringIO("y\n"), output_stream=output)
+        prepare_launch(project, RunFlags(), interactive=True, input_stream=io.StringIO("y\n"), output_stream=output, home={})
     assert "Trust will be saved when all required answers are complete" in output.getvalue()
     assert "this DevCapsule home" in output.getvalue()
     assert snapshot(tmp_path) == before

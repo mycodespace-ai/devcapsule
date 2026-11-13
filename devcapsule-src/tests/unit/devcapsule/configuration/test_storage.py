@@ -1,5 +1,5 @@
-"""Unit tests of ``devcapsule/configuration/storage.py``: which capsule platform a project runs as on a host, and the
-admission of a settings file by its minimum launcher version.
+"""Unit tests of ``devcapsule/configuration/storage.py``: which capsule platform a project runs as on a host, the
+admission of a settings file by its minimum launcher version, and the document a settings write merges onto.
 
 Each test writes its project's lock files under ``tmp_path`` and names its host with ``on_host``.
 """
@@ -12,7 +12,7 @@ import pytest
 from devcapsule import cli
 from devcapsule.configuration import storage
 from devcapsule.configuration.file_formats import ProjectConfigurationError
-from devcapsule.configuration.storage import locked_platforms, project_platform
+from devcapsule.configuration.storage import load_toml, locked_platforms, project_platform, settings_path, write_settings
 from devcapsule.platforms import Platform
 from tests.unit.devcapsule.test_platforms import on_host
 
@@ -71,3 +71,46 @@ def test_minimum_refusal_precedes_content_and_command_diagnoses(tmp_path: Path, 
         storage.write_settings({"defaults": {"cpus": 2}})
     assert (path.read_bytes(), path.stat().st_mtime_ns) == before
     assert list(tmp_path.iterdir()) == [path]
+
+
+def named_home(directory: Path) -> dict[str, str]:
+    """The environment of a process whose DevCapsule home is named: ``directory / "home"``, which does not exist yet."""
+    return {"DEVCAPSULE_CONFIG_HOME": str(directory / "home"), "HOME": str(directory)}
+
+
+def test_a_settings_write_merges_onto_the_document_it_is_given(tmp_path: Path) -> None:
+    """``write_settings`` given the home's current settings writes those with the changed table laid over them,
+    and does not read the home's file: a table that only the file holds is not in the result."""
+    env = named_home(tmp_path)
+    write_settings({"defaults": {"cpus": 4}}, env)
+    held = {key: value for key, value in load_toml(settings_path(env)).items() if key != "defaults"}
+
+    write_settings({"trust": {"channels": {}}}, env, current=held)
+
+    assert load_toml(settings_path(env)) == {**held, "trust": {"channels": {}}}
+
+
+def test_a_settings_write_onto_an_empty_document_starts_a_new_file(tmp_path: Path) -> None:
+    """Given an empty current document, the write creates the home's file with the changed table and the two
+    header fields a settings file carries."""
+    env = named_home(tmp_path)
+
+    path = write_settings({"defaults": {"cpus": 2}}, env, current={})
+
+    written = load_toml(path)
+    assert path == settings_path(env)
+    assert written["defaults"] == {"cpus": 2}
+    assert set(written) == {"defaults", "devcapsule-settings-schema-version", "minimum-devcapsule"}
+
+
+def test_a_settings_write_that_changes_nothing_of_the_given_document_writes_no_file(tmp_path: Path) -> None:
+    """When the changed table equals the one in the current document given, nothing is written, although the
+    home has no file."""
+    env = named_home(tmp_path)
+    write_settings({"defaults": {"cpus": 2}}, env)
+    held = load_toml(settings_path(env))
+    settings_path(env).unlink()
+
+    write_settings({"defaults": {"cpus": 2}}, env, current=held)
+
+    assert not settings_path(env).exists()

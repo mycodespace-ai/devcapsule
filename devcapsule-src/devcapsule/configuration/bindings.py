@@ -3,12 +3,19 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 from devcapsule.components.catalog import ComponentCatalogError, selected_component_definitions, selected_runtime_templates
 
 from .file_formats import ProjectConfigurationError
 from devcapsule.project import project_namespace
 from devcapsule.platforms import XdgHomes
+
+
+__all__ = [
+    "ConfigurationBindingDeclaration", "DirectoryLookup", "HostDirectory", "SecretInputMetadata",
+    "component_secret_inputs", "configuration_binding_declarations", "host_directory", "managed_binding_path",
+    "resolve_configuration_bindings", "resolve_secret_bindings",
+]
 
 
 @dataclass(frozen=True)
@@ -144,9 +151,37 @@ def resolve_secret_bindings(
     return resolved
 
 
+@dataclass(frozen=True)
+class HostDirectory:
+    """What the host says of a directory a developer named."""
+
+    expanded: Path
+    """The name with ``~`` expanded, as the developer would read it back."""
+    resolved: Path
+    """The absolute path, links followed, as a mount takes it."""
+    exists: bool
+    """Whether it is a directory."""
+
+
+DirectoryLookup = Callable[[str], HostDirectory]
+"""Ask the host about a directory, by the name the developer gave."""
+
+
+def host_directory(name: str) -> HostDirectory:
+    """Ask this machine about a directory. The one place the configuration package touches the file system for it."""
+    expanded = Path(name).expanduser()
+    return HostDirectory(expanded, expanded.resolve(), expanded.is_dir())
+
+
 def resolve_configuration_bindings(
-    lock: Mapping[str, Any], checkout: Mapping[str, Any]
+    lock: Mapping[str, Any], checkout: Mapping[str, Any], directory: DirectoryLookup | None = None,
 ) -> dict[str, str]:
+    """Each declared binding the checkout sets, with the resolved path of its existing host directory.
+
+    ``directory`` tells what the host says of a named directory. Owner ruling
+    of 2026-11-12, until the legacy tests that reach this are retired: when
+    it is left out, this machine is asked.
+    """
     declarations = configuration_binding_declarations(lock)
     configuration = checkout.get("configuration", {})
     if not isinstance(configuration, dict):
@@ -169,11 +204,11 @@ def resolve_configuration_bindings(
         elif not isinstance(raw_source, str) or not raw_source or "\x00" in raw_source:
             problems.append(f"Host-directory binding {name!r} must contain a filesystem path string.")
         else:
-            source = Path(raw_source).expanduser().resolve()
-            if not source.is_dir():
-                problems.append(f"Host-directory binding {name!r} is not an existing directory: {source}")
+            found = (directory or host_directory)(raw_source)
+            if not found.exists:
+                problems.append(f"Host-directory binding {name!r} is not an existing directory: {found.resolved}")
             else:
-                resolved[name] = str(source)
+                resolved[name] = str(found.resolved)
     if problems:
         raise ProjectConfigurationError("\n".join(problems))
     return resolved

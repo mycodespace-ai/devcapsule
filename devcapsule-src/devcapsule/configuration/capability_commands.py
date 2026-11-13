@@ -27,6 +27,12 @@ from .storage import (
     project_platform, require_settled,
 )
 
+__all__ = [
+    "canonical_tool_name", "check", "check_documents", "check_formation", "configure", "configure_local",
+    "configure_project", "parse_tool_names", "paths", "project_locks", "promote", "recover", "regenerate_locks",
+    "release_deselected",
+]
+
 
 def paths(root: Path) -> tuple[Path, Path, Path]:
     """Return manifest, current-platform lock and recovery-journal paths.

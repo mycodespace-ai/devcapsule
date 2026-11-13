@@ -14,7 +14,23 @@ gate's check; its summary line counts the files still marked `legacy`. The
 flat files under `tests/` are those legacy files: they are never edited in
 place or shrunk one function at a time, and touching one, or adding,
 changing or deleting a test in a `tests/unit/` file of the same name,
-retires the entire legacy file into the mirror.
+retires the entire legacy file into the mirror. One change to a legacy test
+is let through: a call that gains or loses keyword arguments, to follow a
+function whose signature changed in the same pull request.
+
+*Host Inputs* in the same file binds new and changed tests further: only an
+entry layer reads the host, the modules below it take what it read as
+required values, and a unit test builds those values and patches nothing.
+`tests/unit/devcapsule/container_runtime/test_session.py` is the model: no
+`monkeypatch`, and every host input a constructor argument. The entry
+layers are tested as programs; see [Integration tests](integration-tests.md).
+
+Two more rules of *Unit Tests* are held by machine. Rule 8: only
+`tests/unit/devcapsule/test_cli.py` imports the command line, `devcapsule.cli`,
+directly or through a helper under `tests`; the convention check refuses any
+other file that is not legacy. The eight files that did on 2026-11-12 are
+listed in `tests/command_line_debt.txt`, a list that only loses lines. Rule
+9: a unit test uses no network; see the network guard under Fixtures.
 
 ## Running them
 
@@ -151,11 +167,23 @@ so prefer the existing laws and an acceptance step for what the user sees.
   other paths on macOS and Apple Silicon runs linux-arm64 capsules. A test of
   another host patches the host itself and carries `own_host_patches`;
   Docker-marked tests keep the real host.
+- The network guard, started in `pytest_configure`: while a unit test runs,
+  a connection or a send to any machine but this one, and any name lookup
+  but of this machine, fails the test before anything is sent, and the
+  session ends with a failing status and a list of the attempts. Loopback
+  stays open. Tests of the heavier suites are not held to it. It cannot see
+  the network use of a program a test starts.
 - `private_user_directories`, autouse: moves `HOME` and every XDG directory
-  under the test's `tmp_path` for non-Docker tests. Inside a capsule this is
-  not yet a private home: a home with no settings of its own reads the
-  launcher's mounted settings, so tests that assume no accepted vendor
-  channel fail there. Recorded on 2026-11-03 for the 0.3.1 fixture slice.
+  under the test's `tmp_path` for non-Docker tests, and makes the test's
+  machine no capsule. The product knows a capsule by two fixed paths, the
+  launch context and the configuration channel, `CONTEXT_PATH` and
+  `CHANNEL_PATH` of `devcapsule.runtime_configuration`; the fixture sets
+  both to places that do not exist. So a test's home is private inside a
+  capsule too: it does not read the launcher's mounted settings, and a
+  command does not read the live channel. A test of the capsule's side
+  builds its own capsule by setting the paths after the fixture. The
+  fixture does not reach a program that a test starts; such a test builds
+  that program's environment, with a named home.
 - `built_pex`: the executable under test, `DEVCAPSULE_PEX_UNDER_TEST` when
   set, otherwise `dist/devcapsule-local.pex`; it fails with the Nox session
   to run when the file is missing. The integration and end-to-end suites use
