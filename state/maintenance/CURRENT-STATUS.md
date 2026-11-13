@@ -205,6 +205,69 @@ capsule: 3095 passed, 9 expected to fail, 10 unexpectedly passed. The
 integration tests that need no Docker: 128 passed, 3 skipped, and the one
 standing failure.
 
+**`tests/test_console_channel.py` retired; the pex integration file
+retired in place, 2026-11-13.** Owner direction: say what `nox` sets up
+that makes the console channel file pass, document it in the file, move it
+to the integration tests, and fix the approach of what belongs in the
+gate; mark the failing pex test expected to fail for now.
+
+Why it passed under `nox -s tests` and failed under
+`.venv/bin/python -m pytest`: the launcher answers a console request by
+running `project config` as a process. The legacy file named no home, so
+inside a capsule each such process read the launcher's mounted settings,
+which carry `minimum-devcapsule`, and compared it with the version of the
+`devcapsule` distribution installed in its interpreter. `nox` installs the
+current version in its session environment. The checkout's `.venv` holds an
+editable install whose metadata still says 0.2.15, so every command was
+refused with "requires DevCapsule 0.3.0; this launcher is 0.2.15". Outside a
+capsule there is no mount and both interpreters pass. `nox` sets up nothing
+else for it.
+
+- The file's 26 tests are 61 test functions in three new mirror files,
+  `configuration/test_console_channel.py`,
+  `configuration/test_console_requests.py` and
+  `commands/test_console_channel.py`, 4 more in `test_launch_review.py`,
+  and 9 more in `tests/integration/test_console_channel_cli.py`, whose
+  docstring carries the explanation above. The mirror names were free once
+  the legacy file was gone.
+- The unit tests start no `config` command: the runner is a value of the
+  test. Seams for that, behaviour unchanged: `handle_request`, `sweep`,
+  `ChannelWatcher` and `apply_deferred` take `run`; `run_config` is
+  `child_environment` and `run_command` composed; `request_rows` in the
+  store; `launch_listing` in the launch review module, given the
+  checkout's name; `running_listing_document` and `render_running_listing`
+  for the listing inside a capsule.
+- The process tests give every process a named home, so they pass in a
+  capsule and under the stale interpreter. Four of them run `project run`
+  on a pseudo-terminal with a stand-in for `docker`, and apply or leave a
+  kept request at the launch's question.
+- The pex test was not marked: the conventions gate refuses a mark on a
+  legacy test, and the fix cost the same.
+  `tests/integration/test_pex_runtime.py` is retired in place, its eight
+  tests given docstrings and an environment the test builds, and the
+  failing one passes.
+- 22 planted faults are each caught.
+- `nox -s typecheck tests` in the capsule: 3212 passed, 1 expected to fail,
+  1 unexpectedly passed. The same suite with `.venv/bin/python`: 3212
+  passed. The integration tests that need no Docker: 146 passed, 3 skipped,
+  none failed, for the first time in this capsule.
+- The gate: 99 legacy files holding 1,315 tests; 58 files follow the
+  conventions.
+
+What moved out of the pull-request gate with the process tests: the
+terminal's question about a kept request in `commands/_run_flow.py`, whose
+coverage in the unit suite fell from 87% to 71%, and the three
+`config console` commands in `commands/project.py`, 93% to 91%. The
+integration suite covers them. Not covered by any test now: the eight
+lines of `_show_inside_capsule` in `project.py` that choose between the
+channel and the older report, the two lines of `run_config` that pass
+`host_confirmed` on, and the wrapper `launch_listing_document`.
+
+One finding for the owner, not acted on: *Release Policy* rule 9 says the
+candidate workflow refuses a candidate whose test-run record has no run on
+its revision or a failing one. No script or workflow reads
+`test-runs.json`, on this branch or on `main`.
+
 **The holding pen emptied; the mounted-settings bug is `fixed`,
 2026-11-13.** Owner direction: delete the `test_home.py` test, fix
 `test_trust.py`.
