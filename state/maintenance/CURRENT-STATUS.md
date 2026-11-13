@@ -205,6 +205,49 @@ capsule: 3095 passed, 9 expected to fail, 10 unexpectedly passed. The
 integration tests that need no Docker: 128 passed, 3 skipped, and the one
 standing failure.
 
+**The holding pen emptied; the mounted-settings bug is `fixed`,
+2026-11-13.** Owner direction: delete the `test_home.py` test, fix
+`test_trust.py`.
+
+- The five marked tests of the holding-pen `test_trust.py` drove the
+  command line and patched the upgrade offer. They are now 10 tests of the
+  launch review, 2 of the review of authorizations and 5 of the trust
+  listing, all in memory; 3 process tests in the new
+  `tests/integration/test_home_trust_cli.py`; and 1 more in
+  `test_print_command_cli.py`.
+- One of the process tests runs `project run` on a pseudo-terminal and
+  answers no to the trust question. The terminal's dialogue is in
+  `_run_flow.py`, whose mirror is blocked by the legacy file of the same
+  name, and the launch asks only when its input is a terminal; a process on
+  a pty tests both. Run five times, about 1.2 s each, no failure.
+- Two extractions in the product, behaviour unchanged. The rows and lines
+  of `config trust list` moved from the command class to
+  `configuration/trust_listing.py`. The flags of the second review after an
+  upgrade became `flags_after_upgrade` in `_launch_review.py`, called from
+  `ProjectCommand._run`.
+- The one test of the holding-pen `test_home.py` is deleted. Its reader
+  gone, the Python route's input `docs/**` in
+  `.github/ci-python-inputs.yml` narrowed to `docs/versions.yaml`: a pull
+  request that changes only other files under `docs/` no longer runs the
+  hosted Python job. The suite passes under the guard with the narrower
+  list, so no unit test reads another path there.
+- `devcapsule/legacy_refactoring/` and its test package are removed. The
+  command-line debt list has 3 files.
+- Twelve planted faults are each caught. One wiring line is held by
+  nothing: that `_run` hands the second review what `flags_after_upgrade`
+  returns with respect to `--trust`. With that line made to give `--trust`
+  again, the whole unit suite passes. A legacy test of
+  `tests/test_run_flow.py` holds the same line for saved flags. The deleted
+  test held it, by patching the upgrade offer; nothing can without that
+  patch until `_run` takes the offer as a value.
+- `nox -s typecheck tests` in the capsule: 3129 passed, 1 expected to fail,
+  1 unexpectedly passed, 155 seconds. The hosted run at `8af31910`: the
+  same counts. Integration tests that need no Docker: 132 passed, 3
+  skipped, and the one standing failure.
+
+The bug record is `fixed`: all four close criteria hold. It closes on the
+owner's validation and the merge of pull request #29.
+
 **The shared fixture fixed and the last two failing marked cases
 rewritten, 2026-11-12.** Owner direction: go at the first item of the
 debt list.
