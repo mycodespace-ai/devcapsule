@@ -304,11 +304,26 @@ Against the close criteria, all four now hold:
 4. `engineering-docs/development/unit-tests.md` describes the fixture as a
    private home on a machine that is no capsule.
 
-What this record does not cover and is still true: one integration test,
-`tests/integration/test_pex_runtime.py::test_built_pex_authors_shared_policy_and_keeps_personal_selection_local`,
-fails inside a capsule. It is a legacy file and builds the launcher's
-environment in the test's body from the test process's own, which names no
-home; the fixture cannot reach a program a test starts.
+Outside the unit suite the same cause had two more faces, both gone at
+`33331a1d`:
+
+- `tests/integration/test_pex_runtime.py` built the launcher's environment
+  from the test process's own, which names no home, and one of its tests
+  failed inside a capsule. The file is retired in place: every executable
+  it starts gets an environment the test builds, with a named home.
+- `tests/test_console_channel.py` started `project config` as processes
+  with no named home. Inside a capsule each read the launcher's mounted
+  settings and compared their `minimum-devcapsule` with the version of the
+  distribution installed in its interpreter. So the file passed under
+  `nox -s tests`, whose environment is installed fresh, and failed under a
+  checkout's `.venv` whose installed version was an old one, 0.2.15: every
+  command was refused with "requires DevCapsule 0.3.0; this launcher is
+  0.2.15". The file is retired: unit tests in memory, and integration
+  tests that name the home of every process.
+
+The integration tests that need no Docker now pass inside the owner's
+capsule: 146 passed, 3 skipped. `.venv/bin/python -m pytest tests/`, with
+the stale interpreter, passes too: 3212 passed.
 
 ## Verification target and close criteria
 
