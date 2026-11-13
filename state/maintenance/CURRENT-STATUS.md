@@ -5435,6 +5435,11 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
+- Blocking for 0.3.1, owner's rating of 2026-11-13: this repository's own
+  `.devcapsule` is committed in its pre-0.3 form, a schema-1 manifest and a
+  lock from `embedded-28`. A refreshed pair is committed before the release
+  ships; the refresh runs on the host with the release's launcher. Record:
+  [the 2026-11-13 bug](../../bugs/devcapsule/2026-11-13-repository-project-configuration-predates-0.3.md).
 - Owner ruling, 2026-11-12: compatibility with 0.2.14, 0.2.15 and earlier
   may be dropped. The compatibility promise to users needs a defined story
   and a packaging, targeted for after 0.3.1; not started. Sent to
