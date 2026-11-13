@@ -21,7 +21,7 @@ from .file_formats import ProjectConfigurationError
 from .listing import Decision, ListingRow
 from .storage import atomic_write, config_root, load_toml
 
-__all__ = ["console_requests_path", "deferred_requests", "deferred_rows", "write_deferred"]
+__all__ = ["console_requests_path", "deferred_requests", "deferred_rows", "request_rows", "write_deferred"]
 
 
 def console_requests_path(checkout_record: Path) -> Path:
@@ -64,6 +64,15 @@ def deferred_rows(checkout_record: Path | None, project: Path | None) -> list[Li
         requests = deferred_requests(checkout_record)
     except (ProjectConfigurationError, ValueError) as exc:
         return [ListingRow("console", "*", "invalid", str(exc), "repair or remove the console-requests file", "")]
+    return request_rows(requests, project)
+
+
+def request_rows(requests: Sequence[DeferredRequest], project: Path | None) -> list[ListingRow]:
+    """``requests`` as listing rows, each a soft decision whose command applies it on the host.
+
+    ``project`` is the project's directory, for the command; None leaves the
+    command to the working directory.
+    """
     rows: list[ListingRow] = []
     context = ["--path", str(project)] if project is not None else []
     for item in requests:

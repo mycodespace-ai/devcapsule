@@ -16,7 +16,7 @@ from typing import Any
 
 import pytest
 
-from devcapsule.commands._launch_review import RunFlags, flags_after_upgrade, review_launch, stage_trust
+from devcapsule.commands._launch_review import RunFlags, flags_after_upgrade, launch_listing, review_launch, stage_trust
 from devcapsule.compat import DecisionPending
 from devcapsule.configuration.authorization import authorization_declarations, normalize_authorization_value
 from devcapsule.configuration.bindings import HostDirectory
@@ -24,6 +24,8 @@ from devcapsule.configuration.capabilities import (
     IDE_REQUIREMENT, CapabilityPolicy, LocalCapabilities, RequirementDeparture, resolution_recommendations,
 )
 from devcapsule.configuration.capability_selection import generate_lock
+from devcapsule.configuration.console_channel import DeferredRequest
+from devcapsule.configuration.console_requests import request_rows
 from devcapsule.configuration.derivation import CheckoutState, Host, Selection
 from devcapsule.configuration.file_formats import ProjectConfigurationError, canonical_digest, render_checkout, render_toml
 from devcapsule.configuration.listing import Decision
@@ -726,3 +728,79 @@ def test_a_channel_that_an_upgrade_moved_is_pending_in_the_second_review_and_the
         review_launch(state, flags_after_upgrade(flags, first.host_overrides), ask=None, announce=never_announced)
 
     assert state.home["trust"]["channels"]["claude-code"]["origins"] == accepted_origins
+
+
+ASKED_ON_THE_CONSOLE = DeferredRequest("000001-authorize", "2026-10-24T10:00:00+00:00", ("authorize", "network", "host"))
+"""A widening the console asked for in an earlier run, kept for the host's confirmation."""
+
+
+def with_a_console_request(state: CheckoutState) -> CheckoutState:
+    """``state`` with ``ASKED_ON_THE_CONSOLE`` awaiting confirmation, as the reading phase finds it in the store."""
+    state.deferred = tuple(request_rows([ASKED_ON_THE_CONSOLE], state.root))
+    return state
+
+
+def test_a_console_request_that_awaits_confirmation_does_not_stop_a_launch_without_a_terminal() -> None:
+    """A request kept from the console is a soft decision: with no terminal the launch is planned without it,
+    the network stays as it was, and a note says what awaits, since when, and the command that applies it."""
+    review = review_launch(with_a_console_request(checkout_of(REQUIRING_PYCHARM)), RunFlags(), ask=None, announce=never_announced)
+
+    assert "network" not in review.selected.checkout.get("authorization", {})
+    assert review.notes == [
+        "The console's request 000001-authorize of 2026-10-24T10:00:00+00:00 awaits your confirmation: "
+        "config authorize network host. Apply or discard: "
+        f"devcapsule project --path {ROOT} config console apply 000001-authorize"
+    ]
+
+
+def test_a_console_request_is_put_to_the_developer_once_and_kept_when_they_leave_it() -> None:
+    """With a terminal the request is asked, once. A developer who neither applies nor discards it gets the
+    launch planned, with the same note that it still awaits."""
+    asked: list[Decision] = []
+
+    def leaving_it(state: CheckoutState, record: CheckoutRecord, checkout: dict[str, Any], decision: Decision,
+                   host_overrides: dict[str, Any], environment: dict[str, str | None], accepted: list[str], flags: RunFlags) -> None:
+        asked.append(decision)
+
+    review = review_launch(with_a_console_request(checkout_of(REQUIRING_PYCHARM)), RunFlags(), ask=leaving_it, announce=never_announced)
+
+    assert [(decision.kind, decision.name, decision.description) for decision in asked] == [
+        ("console", "000001-authorize", "config authorize network host")]
+    assert len(review.notes) == 1 and "000001-authorize" in review.notes[0] and "awaits your confirmation" in review.notes[0]
+
+
+RECOMMENDING_THE_DOCKER_DAEMON: dict[str, Any] = {
+    "host": {"docker": {"mode": {"recommended": {"value": "host-socket", "justification": "Project build containers"}}}}}
+"""Manifest tables by which a project recommends the host's Docker daemon, with its reason."""
+
+
+def test_the_launchs_listing_shows_the_run_once_choices_and_the_requests_that_await() -> None:
+    """The listing a launch gives its capsule is of the launch as it runs: the IDE and the agent chosen for
+    this run only are rows of it, beside the console's request that still awaits. It says whose checkout it is.
+    The record staged for writing keeps the saved IDE."""
+    state = with_a_console_request(checkout_of(("node",), manifest_tables=RECOMMENDING_THE_DOCKER_DAEMON))
+    review = review_launch(state, RunFlags(ide="frontend-ide", capabilities=("codex",)), ask=None, announce=never_announced)
+
+    listing = launch_listing(review.state, review.selected, "default")
+
+    rows = listing["rows"]
+    assert any(row["kind"] == "ide" and row["name"] == "frontend-ide" for row in rows)
+    assert any(row["kind"] == "capability" and "codex" in row["name"] for row in rows)
+    assert any(row["kind"] == "console" and row["name"] == "000001-authorize" for row in rows)
+    assert listing["context"] == "at launch"
+    assert listing["project"] == {"creator": "mailto:owner@example.test", "slug": "order"}
+    assert listing["checkout"] == {"name": "default", "launcher-path": str(ROOT), "input": str(review.selected.checkout_path)}
+    assert LocalCapabilities.read(review.record.document).selected == ("python-ide",)
+
+
+def test_the_launchs_listing_says_what_a_host_access_exposes_and_why_the_project_recommends_it() -> None:
+    """The row of a host access the project recommends carries what granting it exposes and the project's
+    reason; the row of one the project does not recommend carries the exposure and no reason."""
+    state = checkout_of(("node",), manifest_tables=RECOMMENDING_THE_DOCKER_DAEMON)
+    review = review_launch(state, RunFlags(), ask=None, announce=never_announced)
+
+    rows = {row["name"]: row for row in launch_listing(review.state, review.selected, "default")["rows"] if row["kind"] == "access"}
+
+    assert "broad control of the host" in rows["docker-daemon"]["exposure"]
+    assert rows["docker-daemon"]["reason"] == "Project build containers"
+    assert rows["network"]["exposure"] and rows["network"]["reason"] == ""

@@ -832,38 +832,20 @@ class ConfigShowCommand(Command):
 
 def _show_inside_capsule(loaded: runtime_configuration.RuntimeConfiguration, as_json: bool) -> int:
     """Inside a capsule: the launcher's listing at launch and the console's requests since (answer 16)."""
-    from devcapsule.commands._console_channel import read_channel
+    from devcapsule.commands._console_channel import read_channel, render_running_listing, running_listing_document
     view = read_channel(runtime_configuration.CHANNEL_PATH) if runtime_configuration.CHANNEL_PATH.is_dir() else None
     if view is None:
         print(json.dumps(loaded.configuration_document(), indent=2, sort_keys=True) if as_json
               else loaded.configuration_report())
         return 0
-    checkout = view.listing.get("checkout")
-    identity = loaded.document["project"]
-    if (not isinstance(checkout, dict) or checkout.get("launcher-path") != loaded.document["launcher-root"]
-            or checkout.get("name") != loaded.checkout_name
-            or view.listing.get("project") != {key: identity[key] for key in ("creator", "slug")}):
-        raise ProjectConfigurationError("The channel listing belongs to another checkout; inspect configuration on the host.")
-    command = loaded.launcher_command(["config", "show"])
+    capsule: dict[str, Any] = {
+        "launcher_root": loaded.document["launcher-root"], "checkout_name": loaded.checkout_name,
+        "project": loaded.document["project"], "launcher_command": loaded.launcher_command(["config", "show"]),
+    }
     if as_json:
-        print(json.dumps({**view.listing, "context": "running capsule: the launcher's listing at launch", "at": view.at,
-                          "console-requests": list(view.requests), "launcher-command": command},
-                         indent=2, sort_keys=True))
-        return 0
-    checkout = view.listing.get("checkout", {})
-    print(f"Checkout: {checkout.get('launcher-path', loaded.document['launcher-root'])} ({checkout.get('name', loaded.checkout_name)})")
-    print(f"At launch, {view.at}:")
-    print(Listing.from_document(view.listing).render())
-    print("")
-    if view.requests:
-        print("Pending, next launch (asked on the console since launch):")
-        for item in view.requests:
-            result = item.get("result")
-            outcome = f"{result['status']}: {result['text']}" if isinstance(result, dict) else "waiting for the launcher"
-            print(f"  {item['id']}: {item['statement'] or '(unreadable request)'}\n      {outcome}")
+        print(json.dumps(running_listing_document(view, **capsule), indent=2, sort_keys=True))
     else:
-        print("Nothing asked on the console since launch.")
-    print(f"To change the next launch: the console's configuration page, or on the host: {command}")
+        print(render_running_listing(view, **capsule))
     return 0
 
 

@@ -33,7 +33,7 @@ from typing import Any, Callable, Mapping
 
 from devcapsule.compat import DecisionPending
 from devcapsule.configuration.authorization import (
-    authorization_declarations, normalize_authorization_value, render_authorization_value,
+    HOME_CAPABILITY_DEFAULTS, authorization_declarations, normalize_authorization_value, render_authorization_value,
 )
 from devcapsule.configuration.capabilities import (
     IDE_REQUIREMENT, CapabilityPolicy, LocalCapabilities, RequirementDeparture, capability_notes,
@@ -50,8 +50,8 @@ from devcapsule.configuration.values import legacy_memory_names, memory_size_byt
 
 __all__ = [
     "BLOCKING_KINDS", "Ask", "LaunchReview", "Prepared", "RunFlags", "capability", "channel_for",
-    "flags_after_upgrade", "refuse_contradictory_flags", "render_pending", "requested_ide", "review_launch",
-    "stage_trust",
+    "flags_after_upgrade", "launch_listing", "refuse_contradictory_flags", "render_pending", "requested_ide",
+    "review_launch", "stage_trust",
 ]
 
 BLOCKING_KINDS = {"ide", "env", "renew", "trust", "consent", "value", "secret"}
@@ -149,6 +149,31 @@ def flags_after_upgrade(flags: RunFlags, host_overrides: Mapping[str, Any]) -> R
     return replace(again, save=False, trust=(), authorize=tuple(
         (name, render_authorization_value(value)) for name, value in host_overrides.items()
     ))
+
+
+def launch_listing(state: CheckoutState, selected: ResolvedProject, checkout_name: str) -> dict[str, Any]:
+    """The ``config show --json`` document of a launch, which the launcher gives the capsule for its own inspection.
+
+    It lists the checkout as this launch runs it, ``selected``, run-once
+    choices included, and the console's requests that await confirmation,
+    from ``state``. Each host access row also says what the access exposes
+    and, when the project recommends it, why. ``checkout_name`` is the name
+    the checkout is registered under.
+    """
+    document = state.listing(selected.checkout).document()
+    declarations = authorization_declarations(selected.manifest, selected.lock)
+    for row in document["rows"]:
+        if row["kind"] == "access" and row["name"] in HOME_CAPABILITY_DEFAULTS:
+            row["exposure"] = HOME_CAPABILITY_DEFAULTS[row["name"]][1]
+            declaration = declarations[row["name"]]
+            row["reason"] = declaration.description if declaration.project_recommended else ""
+    identity = selected.manifest["project"]
+    return {
+        **document,
+        "context": "at launch",
+        "project": {"creator": identity["creator"], "slug": identity["slug"]},
+        "checkout": {"name": checkout_name, "launcher-path": str(selected.root), "input": str(selected.checkout_path)},
+    }
 
 
 def refuse_contradictory_flags(flags: RunFlags) -> None:

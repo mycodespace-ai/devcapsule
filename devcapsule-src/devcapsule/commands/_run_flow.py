@@ -30,8 +30,8 @@ import sys
 from typing import Any, Callable, Mapping, TextIO
 
 from devcapsule.commands._launch_review import (
-    LaunchReview, Prepared, RunFlags, capability, channel_for, refuse_contradictory_flags, render_pending,
-    requested_ide, review_launch, stage_trust,
+    LaunchReview, Prepared, RunFlags, capability, channel_for, launch_listing, refuse_contradictory_flags,
+    render_pending, requested_ide, review_launch, stage_trust,
 )
 from devcapsule.compat import DecisionPending
 from devcapsule.configuration.authorization import HOME_CAPABILITY_DEFAULTS, authorization_declarations, normalize_authorization_value
@@ -152,26 +152,10 @@ def load_launch_state(start: Path, flags: RunFlags) -> CheckoutState:
 
 def launch_listing_document(selected: ResolvedProject) -> dict[str, Any]:
     """The ``config show --json`` document of the launch's checkout, for the capsule's own inspection."""
-    from devcapsule.configuration.storage import checkout_name_for
     state = load_state(selected.root, selected.manifest)
     for departure in selected.departures:
         state.depart(departure)
-    listing = state.listing(selected.checkout)
-    document = listing.document()
-    declarations = authorization_declarations(selected.manifest, selected.lock)
-    for row in document["rows"]:
-        if row["kind"] == "access" and row["name"] in HOME_CAPABILITY_DEFAULTS:
-            row["exposure"] = HOME_CAPABILITY_DEFAULTS[row["name"]][1]
-            declaration = declarations[row["name"]]
-            row["reason"] = declaration.description if declaration.project_recommended else ""
-    identity = selected.manifest["project"]
-    return {
-        **document,
-        "context": "at launch",
-        "project": {"creator": identity["creator"], "slug": identity["slug"]},
-        "checkout": {"name": checkout_name_for(selected.manifest, selected.checkout_path),
-                     "launcher-path": str(selected.root), "input": str(selected.checkout_path)},
-    }
+    return launch_listing(state, selected, checkout_name_for(selected.manifest, selected.checkout_path))
 
 
 def project_channel(root: Path, manifest: dict[str, Any], channel_id: str) -> Channel:
