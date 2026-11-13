@@ -1,5 +1,5 @@
 ---
-status: fixing
+status: fixed
 severity: blocking
 target: 0.3.1
 owner: maintenance
@@ -271,6 +271,44 @@ which inside a capsule names no home. 4 does not hold:
 `private_user_directories` is unchanged, and a test that uses neither a
 named home nor a handed-in one still reads the mount. The next channel the
 developer accepts can turn other tests red.
+
+## Fixed on the branch, 2026-11-13
+
+On `ws-maintenance/launch-phases`, pull request #29, at `8af31910`. The
+fix is committed; the record closes when the owner has validated it and
+the pull request is merged.
+
+The two holding-pen files that remained are gone, and with them the last
+marks. The five tests of `test_trust.py` are rewritten: in memory on the
+launch review, the review of authorizations and the trust listing, and as
+processes in `tests/integration/test_home_trust_cli.py`, one of them on a
+pseudo-terminal. The one test of `test_home.py`, a walk of the repository
+for a retired word, is deleted on the owner's word. The holding pen and its
+package of empty target modules no longer exist.
+
+Against the close criteria, all four now hold:
+
+1. `nox -s tests` passes inside the owner's capsule, whose mounted settings
+   carry three accepted channels: 3129 passed, 1 expected to fail, 1
+   unexpectedly passed, in 155 seconds.
+2. The hosted run at `8af31910` gives the same counts: 3129 passed, 1
+   expected to fail, 1 unexpectedly passed. The two marked tests are
+   workflow tests with causes of their own, one of them dependent on the
+   clock, so that pair can read 2 and 0 on another run. A run with empty
+   mounted settings was not made: the mount is the owner's and read-only.
+   It cannot differ, because the fixture hides the capsule from every test
+   and a test of the conftest holds the fixture.
+3. No expected-to-fail mark names the mounted settings, and none depends on
+   whether the suite runs in a capsule. The network guard records no
+   attempt.
+4. `engineering-docs/development/unit-tests.md` describes the fixture as a
+   private home on a machine that is no capsule.
+
+What this record does not cover and is still true: one integration test,
+`tests/integration/test_pex_runtime.py::test_built_pex_authors_shared_policy_and_keeps_personal_selection_local`,
+fails inside a capsule. It is a legacy file and builds the launcher's
+environment in the test's body from the test process's own, which names no
+home; the fixture cannot reach a program a test starts.
 
 ## Verification target and close criteria
 
