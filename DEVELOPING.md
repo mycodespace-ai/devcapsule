@@ -80,6 +80,7 @@ of the `devcapsule` package. See its [README](devcapsule-webconsole/README.md).
 | Integration: a subsystem with the real executable, subprocess, git or Docker daemon it uses, the rest faked | `nox -s integration`, on demand, and before a candidate; the CLI smoke, types and docs contract are gate checks inside `build` | [Integration tests](engineering-docs/development/integration-tests.md) |
 | End-to-end, with Docker: images, capsules, the IDE smoke | `nox -s e2e`, `nox -s ide-smoke`, … | [End-to-end tests](engineering-docs/development/e2e-tests.md) |
 | The capsule web console, `devcapsule-webconsole/`: types and tests in its own environment | `nox -s webconsole`, queued by `build` | [Web console README](devcapsule-webconsole/README.md) |
+| A change to the web console, seen in a browser before anything is built | `nox -s webconsole-preview`, which serves this checkout's console on loopback and prints its links | [Trying a change](devcapsule-webconsole/PRESENTATIONS.md#trying-a-change) |
 
 The hosted runner runs no Docker; the end-to-end suites run locally and
 against downloaded candidates during release acceptance.
