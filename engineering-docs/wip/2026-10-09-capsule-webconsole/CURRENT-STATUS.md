@@ -4,11 +4,11 @@ Mnemonic: `capsule-webconsole`
 
 Start date: 2026-10-09
 
-State: active; the presentations slice of 2026-11-14 awaits the owner as a pull request from `ws-capsule-webconsole/presentations` to `release-0.3.1`; before it, slice 8 and the test-isolation fix await the owner with the second iteration: PR5 (#192), PR6 (#194), PR7 (#196), PR8 (#199), PR9 (#201), PR10 (#203) and PR11 (#205), stacked, each with its Codex review merged
+State: active; the fix for a video opened from Files awaits the owner as a pull request from `ws-capsule-webconsole/video-in-files` to `release-0.3.1`; the presentations slice of 2026-11-14 was merged into `release-0.3.1` as #34; before it, slice 8 and the test-isolation fix await the owner with the second iteration: PR5 (#192), PR6 (#194), PR7 (#196), PR8 (#199), PR9 (#201), PR10 (#203) and PR11 (#205), stacked, each with its Codex review merged
 
 Definition read: WORKFLOW.md@2b576adb1a40, WORKFLOW-LOCAL.md@7362bae8ec82
 
-Branch association: `ws-capsule-webconsole/presentations` (2026-11-14, from the 0.3.1 release line at `bd2f4d1c`, see Current State); `ws-capsule-webconsole/live-resources` (PR5, #192, from `main`); `ws-capsule-webconsole/records` (PR6, #194, stacked on PR5); `ws-capsule-webconsole/decisions` (PR7, stacked on PR6); the first iteration's branches `first-slice`, `console-app`, `runtime-base` and `project-info-checkout-name` are merged and closed
+Branch association: `ws-capsule-webconsole/video-in-files` (2026-11-14, from `release-0.3.1` at `27985163`, see Current State); `ws-capsule-webconsole/presentations` (2026-11-14, merged into `release-0.3.1` as #34); `ws-capsule-webconsole/live-resources` (PR5, #192, from `main`); `ws-capsule-webconsole/records` (PR6, #194, stacked on PR5); `ws-capsule-webconsole/decisions` (PR7, stacked on PR6); the first iteration's branches `first-slice`, `console-app`, `runtime-base` and `project-info-checkout-name` are merged and closed
 
 Integration target: `main`
 
@@ -42,6 +42,26 @@ Owner decisions of 2026-10-09 that shape the work:
    no product renders them.
 
 ## Current State
+
+**2026-11-14, a video opened from Files plays.** Asked for by the owner in
+session, after the presentations slice was merged as #34.
+
+- The defect and its cause:
+  [the bug record](../../bugs/devcapsule/2026-11-10-console-video-opened-from-files-does-not-play.md),
+  filed on `ws-project-management/coordination` and brought to this branch
+  with its fix recorded, `status: fixed`.
+- The fix is the record's proposal: the Files page plays a video or audio
+  file itself at `/files/<path>`, the tree route says which files those are,
+  and the raw route is unchanged. A link in a record to a file that is not
+  Markdown now leads to `/files/<path>`.
+- Branch: `ws-capsule-webconsole/video-in-files`, from `release-0.3.1` at
+  `27985163`; its pull request targets `release-0.3.1`.
+- Checked: `nox -s webconsole`, `nox -s tests`, and the page in headless
+  Chromium against the preview. Not checked: Chrome with a built
+  executable, which the record's close criteria ask for; audio in a
+  browser; a symbolic link to a recording, which the fix does not cover.
+- The record's copy on `ws-project-management/coordination` still says
+  `confirmed`; that branch's integration will meet this version.
 
 **2026-11-14, presentations: a recorded scenario as slides beside its recording.**
 Ordered by the owner in session, in four parts, after a recorded end-to-end
