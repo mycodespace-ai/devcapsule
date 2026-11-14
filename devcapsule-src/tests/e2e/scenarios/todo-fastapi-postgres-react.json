@@ -1,0 +1,300 @@
+{
+  "id": "todo-fastapi-postgres-react",
+  "surface": "codium",
+  "title": "DevCapsule Full-Stack Todo App: FastAPI + PostgreSQL 17 + React (IDE Coding + Live Browser)",
+  "description": "Open a full-stack FastAPI + PostgreSQL 17 + React Todo project in VSCodium, type the parameterized PostgreSQL INSERT endpoint and React fetch handler, start the stack from the integrated terminal, exercise the web UI in Chromium, and confirm durable rows in PostgreSQL.",
+  "script": "scripts/todo-fastapi-postgres-react.md",
+  "actions": [
+    {
+      "action": "click",
+      "x": 1575,
+      "y": 86,
+      "reason": "1. Close empty secondary sidebar in VSCodium"
+    },
+    {
+      "action": "click",
+      "x": 670,
+      "y": 50,
+      "reason": "1. Click Manage on Workspace Trust banner"
+    },
+    {
+      "action": "click",
+      "x": 531,
+      "y": 645,
+      "reason": "1. Click Trust to enable full DevCapsule workspace features"
+    },
+    {
+      "action": "wait",
+      "ms": 1000,
+      "reason": "1. Apply workspace zoom and editor settings"
+    },
+    {
+      "action": "press",
+      "text": "Control+p",
+      "reason": "2. Open Quick Open dialog"
+    },
+    {
+      "action": "wait",
+      "ms": 400,
+      "reason": "2. Focus Quick Open input"
+    },
+    {
+      "action": "type",
+      "text": "backend/main.py",
+      "reason": "2. Filter to FastAPI backend/main.py"
+    },
+    {
+      "action": "wait",
+      "ms": 300,
+      "reason": "2. Highlight backend/main.py"
+    },
+    {
+      "action": "press",
+      "text": "Enter",
+      "reason": "2. Open backend/main.py"
+    },
+    {
+      "action": "wait",
+      "ms": 600,
+      "reason": "2. Render Python syntax highlighting"
+    },
+    {
+      "action": "press",
+      "text": "Control+g",
+      "reason": "2. Open Go to Line prompt"
+    },
+    {
+      "action": "wait",
+      "ms": 300,
+      "reason": "2. Focus Go to Line input"
+    },
+    {
+      "action": "type",
+      "text": "75",
+      "reason": "2. Target Line 75 inside create_todo"
+    },
+    {
+      "action": "press",
+      "text": "Enter",
+      "reason": "2. Jump cursor to Line 75"
+    },
+    {
+      "action": "type",
+      "text": "    with psycopg.connect(DB_URL) as conn:\n        row = conn.execute(\n            'INSERT INTO todos (title, category) VALUES (%s, %s) RETURNING id, title, category, completed',\n            (payload.title.strip(), payload.category),\n        ).fetchone()\n    return {'id': row[0], 'title': row[1], 'category': row[2], 'completed': row[3]}\n\n",
+      "reason": "2. Type parameterized PostgreSQL INSERT in FastAPI create_todo"
+    },
+    {
+      "action": "press",
+      "text": "Control+s",
+      "reason": "2. Save backend/main.py"
+    },
+    {
+      "action": "wait",
+      "ms": 900,
+      "reason": "2. Hold on saved FastAPI + PostgreSQL endpoint"
+    },
+    {
+      "action": "press",
+      "text": "Control+p",
+      "reason": "3. Open Quick Open for React frontend"
+    },
+    {
+      "action": "wait",
+      "ms": 400,
+      "reason": "3. Focus Quick Open input"
+    },
+    {
+      "action": "type",
+      "text": "frontend/src/App.jsx",
+      "reason": "3. Filter to frontend/src/App.jsx"
+    },
+    {
+      "action": "wait",
+      "ms": 300,
+      "reason": "3. Highlight App.jsx"
+    },
+    {
+      "action": "press",
+      "text": "Enter",
+      "reason": "3. Open frontend/src/App.jsx"
+    },
+    {
+      "action": "wait",
+      "ms": 600,
+      "reason": "3. Render JSX syntax highlighting"
+    },
+    {
+      "action": "press",
+      "text": "Control+g",
+      "reason": "3. Open Go to Line prompt"
+    },
+    {
+      "action": "wait",
+      "ms": 300,
+      "reason": "3. Focus Go to Line input"
+    },
+    {
+      "action": "type",
+      "text": "30",
+      "reason": "3. Target Line 30 inside handleCreate"
+    },
+    {
+      "action": "press",
+      "text": "Enter",
+      "reason": "3. Jump cursor to Line 30"
+    },
+    {
+      "action": "type",
+      "text": "    const res = await fetch('/api/todos', {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json' },\n      body: JSON.stringify({ title, category }),\n    });\n    const created = await res.json();\n    setTodos((prev) => [...prev, created]);\n    setTitle('');\n",
+      "reason": "3. Type fetch('/api/todos') POST request and React state update"
+    },
+    {
+      "action": "press",
+      "text": "Control+s",
+      "reason": "3. Save frontend/src/App.jsx"
+    },
+    {
+      "action": "wait",
+      "ms": 900,
+      "reason": "3. Hold on completed React handleCreate implementation"
+    },
+    {
+      "action": "press",
+      "text": "Control+Backquote",
+      "reason": "4. Open VSCodium integrated terminal"
+    },
+    {
+      "action": "wait",
+      "ms": 1400,
+      "reason": "4. Wait for shell prompt"
+    },
+    {
+      "action": "type",
+      "text": "./run-stack.sh\n",
+      "reason": "4. Check PostgreSQL 17 via psql and start FastAPI + Vite"
+    },
+    {
+      "action": "wait",
+      "ms": 3800,
+      "reason": "4. Display PostgreSQL 17 version, initial psql rows, and STACK_READY"
+    },
+    {
+      "action": "launch_browser",
+      "text": "http://127.0.0.1:15173",
+      "reason": "5. Launch Chromium on capsule desktop showing CapsuleTask React UI"
+    },
+    {
+      "action": "wait",
+      "ms": 2200,
+      "reason": "5. Show CapsuleTask initial load with 2 seeded PostgreSQL rows"
+    },
+    {
+      "action": "click",
+      "x": 600,
+      "y": 256,
+      "reason": "6. Focus New task title input"
+    },
+    {
+      "action": "type",
+      "text": "Record FastAPI + React customer pitch demo",
+      "reason": "6. Type first task title"
+    },
+    {
+      "action": "click",
+      "x": 1163,
+      "y": 256,
+      "reason": "6. Click Add Task"
+    },
+    {
+      "action": "wait",
+      "ms": 800,
+      "reason": "6. Show pg#3 added to task list"
+    },
+    {
+      "action": "click",
+      "x": 600,
+      "y": 256,
+      "reason": "6. Focus New task title input for second task"
+    },
+    {
+      "action": "type",
+      "text": "Verify PostgreSQL 17 persistence across reloads",
+      "reason": "6. Type second task title"
+    },
+    {
+      "action": "press",
+      "text": "Tab",
+      "reason": "6. Focus Category selector"
+    },
+    {
+      "action": "press",
+      "text": "ArrowDown",
+      "reason": "6. Select Database category"
+    },
+    {
+      "action": "click",
+      "x": 1163,
+      "y": 256,
+      "reason": "6. Click Add Task"
+    },
+    {
+      "action": "wait",
+      "ms": 800,
+      "reason": "6. Show pg#4 added with Database badge"
+    },
+    {
+      "action": "click",
+      "x": 403,
+      "y": 381,
+      "reason": "6. Toggle completion checkbox on pg#1"
+    },
+    {
+      "action": "wait",
+      "ms": 800,
+      "reason": "6. Show Completed counter increment to 2"
+    },
+    {
+      "action": "click",
+      "x": 1165,
+      "y": 325,
+      "reason": "7. Click Refresh from DB button"
+    },
+    {
+      "action": "wait",
+      "ms": 1000,
+      "reason": "7. Show Reloaded from PostgreSQL (4 rows)"
+    },
+    {
+      "action": "click",
+      "x": 85,
+      "y": 986,
+      "reason": "7. Switch to VSCodium via tint2 taskbar to inspect database in terminal"
+    },
+    {
+      "action": "wait",
+      "ms": 700,
+      "reason": "7. Focus VSCodium integrated terminal"
+    },
+    {
+      "action": "type",
+      "text": "./query-db.sh\n",
+      "reason": "7. Query PostgreSQL todos table directly via psql"
+    },
+    {
+      "action": "wait",
+      "ms": 1800,
+      "reason": "7. Hold on psql table showing all 4 persisted rows and completion flags"
+    },
+    {
+      "action": "click",
+      "x": 245,
+      "y": 986,
+      "reason": "7. Return to CapsuleTask browser window for closing poster frame"
+    },
+    {
+      "action": "wait",
+      "ms": 1400,
+      "reason": "7. Hold final frame on working FastAPI + PostgreSQL 17 + React app"
+    }
+  ]
+}

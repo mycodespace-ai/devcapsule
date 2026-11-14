@@ -45,6 +45,8 @@ status file; internal WIP/archive documents use the local index in that status.
 - [Integration tests](engineering-docs/development/integration-tests.md)
 - [End-to-end tests](engineering-docs/development/e2e-tests.md)
 - [Running E2E scenario recordings from a shell with nox](engineering-docs/development/running-e2e-scenario-recordings.md)
+- [E2E scenario script: FastAPI + PostgreSQL 17 + React Todo application](devcapsule-src/tests/e2e/scripts/todo-fastapi-postgres-react.md)
+- [E2E scenario script: Java 25 + Spring Boot + PostgreSQL 17 in IntelliJ IDEA](devcapsule-src/tests/e2e/scripts/springboot-postgres-java.md)
 - [Pair Review Loop](engineering-docs/development/review-partner-loop.md)
 
 ## Releases
