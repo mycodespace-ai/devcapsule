@@ -84,7 +84,7 @@ any repository it is pointed at. One path per line, relative to
 ``devcapsule-src``; a ``#`` starts a comment.
 """
 
-_EXCLUDED_PARTS = frozenset({"resources"})
+_EXCLUDED_PARTS = frozenset({"resources", "evidence"})
 
 
 @dataclass(frozen=True)

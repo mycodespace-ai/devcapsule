@@ -152,7 +152,10 @@ what it is not testing; it runs on demand, and a test that needs the
 daemon says so with a marker; the type check and the documentation
 contract are checks of the gate, not tests. An end-to-end test drives the
 product as a user does, fakes nothing, and reads the result from outside;
-it runs on demand, and at least one runs for every release.
+it runs on demand, at least one runs for every release, smoke-run logs land
+under `devcapsule-src/dist/e2e-evidence/`, and recorded scenarios land under
+`devcapsule-src/tests/e2e/evidence/<scenario-id>/scenario-video.webm` outside
+`dist/`.
 
 **Intended effect.** Any agent on any machine can build and test the project
 without guessing, and "the tool is missing" is a finding only after following

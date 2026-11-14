@@ -47,7 +47,8 @@ from tests.e2e.ide_session import (
 )
 
 SCENARIOS_DIR = Path(__file__).resolve().parent / "scenarios"
-VALID_STEP_ACTIONS = ("click", "double_click", "right_click", "type", "press", "wait")
+EVIDENCE_DIR = Path(__file__).resolve().parent / "evidence"
+VALID_STEP_ACTIONS = ("click", "double_click", "right_click", "type", "press", "wait", "launch_browser")
 MAX_WAIT_MS = 30_000
 """Longest ``wait`` step; ``seconds`` is accepted up to the same bound."""
 CONTROLLER_COMMAND_TIMEOUT = 120.0
@@ -179,7 +180,7 @@ class ActionStep:
             raise DriverError(f"Invalid wait ms: {ms!r}")
         if not isinstance(text, str) or not isinstance(reason, str):
             raise DriverError("ActionStep text and reason must be strings")
-        if action in ("type", "press") and not text:
+        if action in ("type", "press", "launch_browser") and not text:
             raise DriverError(f"Scenario action {action!r} requires non-empty text")
         return cls(action=action, x=x, y=y, text=text, ms=ms, reason=reason)
 
@@ -281,6 +282,38 @@ def seed_scenario_workspace(workspace: Path, spec: ScenarioSpec) -> list[Path]:
     return written
 
 
+def _launch_capsule_browser(container: str, url: str) -> None:
+    """Launch headed Chromium on the child capsule's X11 display pointing at ``url``."""
+    script = f"""
+set -euo pipefail
+DISP_NUM=$(ls /tmp/.X11-unix | sort | head -n 1 | cut -c2-)
+XAUTH=$(ls /tmp/devcapsule-runtime-*/display/Xauthority | sort | head -n 1)
+CHROME=$(ls /opt/playwright/browsers/chromium-*/chrome-linux*/chrome | sort | tail -n 1)
+export DISPLAY=":$DISP_NUM"
+export XAUTHORITY="$XAUTH"
+nohup "$CHROME" \\
+  --no-sandbox \\
+  --disable-dev-shm-usage \\
+  --disable-gpu \\
+  --no-first-run \\
+  --no-default-browser-check \\
+  --disable-infobars \\
+  --user-data-dir=/tmp/scenario-chrome-profile \\
+  --window-position=470,46 \\
+  --window-size=1105,910 \\
+  --app="{url}" </dev/null >/tmp/scenario-chrome.log 2>&1 &
+"""
+    res = subprocess.run(
+        ["docker", "exec", "-d", "--user", f"{os.getuid()}:{os.getgid()}", container, "bash", "-lc", script],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30.0,
+    )
+    if res.returncode != 0:
+        raise DriverError(f"Failed to launch browser in capsule: {res.stdout}\n{res.stderr}")
+
+
 class BurstFrameRecorder:
     """Captures active UI transition frames to eliminate LLM-thinking dead air."""
 
@@ -296,7 +329,7 @@ class BurstFrameRecorder:
             if interval_ms > 0:
                 page.wait_for_timeout(interval_ms)
 
-    def apply_step(self, page: Any, step: ActionStep) -> None:
+    def apply_step(self, page: Any, step: ActionStep, container: str | None = None) -> None:
         kind = step.action
         if kind == "click":
             page.mouse.move(step.x, step.y, steps=6)
@@ -330,6 +363,11 @@ class BurstFrameRecorder:
             rem = step.ms - recorded * 150
             if rem > 0:
                 page.wait_for_timeout(rem)
+        elif kind == "launch_browser":
+            if not container:
+                raise DriverError("Scenario action 'launch_browser' requires an active capsule container")
+            _launch_capsule_browser(container, step.text)
+            self.record_frames(page, count=16, interval_ms=160)
         else:
             raise DriverError(f"Unsupported action step: {kind}")
 
@@ -486,7 +524,7 @@ def run_scenario_replay(
 
             for index, raw_step in enumerate(spec.actions, start=1):
                 step = raw_step.substitute(variables)
-                recorder.apply_step(page, step)
+                recorder.apply_step(page, step, container=session.container)
                 executed.append(asdict(step))
                 shot = evidence / f"step-{index:03d}.png"
                 page.screenshot(path=str(shot))
@@ -680,7 +718,7 @@ def serve_interactive_controller(
                                 raw_actions = payload.get("actions", [])
                                 for raw in raw_actions:
                                     step = ActionStep.parse(raw).substitute(variables)
-                                    recorder.apply_step(page, step)
+                                    recorder.apply_step(page, step, container=session.container)
                                     action_log.append(asdict(step))
                                 step_counter += 1
                                 shot = evidence / f"step-{step_counter:03d}.png"
@@ -762,7 +800,12 @@ def main(argv: list[str] | None = None) -> int:
 
     serve_p = sub.add_parser("serve", help="Start an interactive E2E IDE session controller")
     serve_p.add_argument("--scenario", required=True, help="Scenario ID or path to JSON")
-    serve_p.add_argument("--evidence", type=Path, required=True, help="Evidence output directory")
+    serve_p.add_argument(
+        "--evidence",
+        type=Path,
+        default=None,
+        help="Evidence output directory (default: tests/e2e/evidence/<scenario-id>)",
+    )
     serve_p.add_argument("--pex", type=Path, required=True, help="Path to devcapsule PEX executable")
 
     ctl_p = sub.add_parser("ctl", help="Send a JSON command to a running controller")
@@ -771,7 +814,12 @@ def main(argv: list[str] | None = None) -> int:
 
     replay_p = sub.add_parser("replay", help="Run a scenario deterministically and record video")
     replay_p.add_argument("--scenario", required=True, help="Scenario ID or path to JSON")
-    replay_p.add_argument("--evidence", type=Path, required=True, help="Evidence output directory")
+    replay_p.add_argument(
+        "--evidence",
+        type=Path,
+        default=None,
+        help="Evidence output directory (default: tests/e2e/evidence/<scenario-id>)",
+    )
     replay_p.add_argument("--pex", type=Path, required=True, help="Path to devcapsule PEX executable")
 
     args = parser.parse_args(argv)
@@ -781,7 +829,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.subcommand == "serve":
         spec = load_scenario(args.scenario)
-        serve_interactive_controller(args.pex, spec, args.evidence)
+        evidence = args.evidence if args.evidence is not None else EVIDENCE_DIR / spec.id
+        serve_interactive_controller(args.pex, spec, evidence)
         return 0
     if args.subcommand == "ctl":
         try:
@@ -796,12 +845,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.subcommand == "replay":
         os.environ["DEVCAPSULE_SMOKE_COMPONENT_BROWSER"] = "1"
         spec = load_scenario(args.scenario)
+        evidence = args.evidence if args.evidence is not None else EVIDENCE_DIR / spec.id
         surface = next(s for s in SURFACES if s.name == spec.surface)
         with tempfile.TemporaryDirectory() as tmp_str:
-            with ide_session(args.pex, surface, Path(tmp_str), args.evidence) as session:
+            with ide_session(args.pex, surface, Path(tmp_str), evidence) as session:
                 assert desktop_page_answers(session.desktop_url) == 200
                 wait_for_ide_window(session)
-                result = run_scenario_replay(session, args.evidence, spec)
+                result = run_scenario_replay(session, evidence, spec)
                 print(json.dumps(result, indent=2))
         return 0
     return 1

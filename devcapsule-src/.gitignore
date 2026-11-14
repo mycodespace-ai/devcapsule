@@ -19,3 +19,7 @@ dist/
 .coverage.*
 diff-cover.json
 diff-cover.md
+
+# Recorded end-to-end scenario evidence, kept inside the project mount for the
+# web console and outside dist/ so clean builds never remove recordings.
+tests/e2e/evidence/

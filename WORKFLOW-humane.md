@@ -695,38 +695,46 @@ be, the console's process topology, and a release's branch and tag history.
 ### 9.6 rule 7 Recorded visual tests, and the no on explainer videos
 
 **Rule.** Prefer a recording harness for end-to-end tests of visual software,
-keep the recording as acceptance evidence, and do not generate explainer
-videos for the human.
+keep the recording as acceptance evidence under
+`<e2e-root>/evidence/<scenario-id>/scenario-video.webm` inside the project
+mount, ignored by Git and outside build directories that a clean build removes,
+and do not generate explainer videos for the human.
 
 **Intended effect.** When a test says an IDE came alive and a file was saved,
-a human can watch it happen rather than trust a log line, and nobody spends
-tokens producing a narrated video about work when the recording of the work
-itself exists.
+a human can watch it happen through the capsule web console without a clean
+build deleting the movie, every agent writes scenario evidence to the same
+project-relative path, and nobody spends tokens producing a narrated video
+about work when the recording of the work itself exists.
 
 **Motivation.** Owner decisions of 2026-10-09, closing the last item of the
-Karpathy list. His fourth step, bespoke generated explainer videos, was judged
-not worth adopting: one owner, a text-native project, no evidence of need, and
-a recorded no so that nobody reopens it without new evidence. The recording
-preference is the exception that the discussion surfaced: the IDE smokes of
-2026-10-04 kept Playwright movies and screenshots of IntelliJ, Rider and
-Eclipse coming alive and saving a file, and those recordings were what the
-owner could accept at a glance when a textual report could not have carried
-the same conviction. The rule is a bias, not a mandate, because some visual
-software cannot be driven by a recording harness; where it can, the recording
-is the cheapest acceptance evidence there is.
+Karpathy list, and 2026-11-14, standardizing the scenario evidence path after
+two agents placed `.webm` recordings in different trees (`dist/` vs `e2e/`).
+His fourth step, bespoke generated explainer videos, was judged not worth
+adopting: one owner, a text-native project, no evidence of need, and a recorded
+no so that nobody reopens it without new evidence. The recording preference is
+the exception that the discussion surfaced: the IDE smokes of 2026-10-04 kept
+Playwright movies and screenshots of IntelliJ, Rider and Eclipse coming alive
+and saving a file, and those recordings were what the owner could accept at a
+glance when a textual report could not have carried the same conviction. Placing
+scenario recordings under `<e2e-root>/evidence/<scenario-id>/scenario-video.webm`
+keeps them inside the project mount (where the web console can serve them),
+colocated with `scenarios/` under the project's single end-to-end test root,
+and safe from `dist/` wipes. The rule is a bias, not a mandate, because some
+visual software cannot be driven by a recording harness; where it can, the
+recording is the cheapest acceptance evidence there is.
 
-**The example, as this project does it.** The IDE smoke in
-`devcapsule-src/tests/e2e/ide_session.py` opens a Playwright browser context
-with `record_video_dir=<evidence directory>` and `record_video_size=<viewport>`,
-drives noVNC to the IDE, takes `canvas.screenshot(path=".../desktop.png")` at
-the moment it asserts the desktop is alive, and after the session saves the
-context's video with `video.save_as(".../desktop.webm")`. The evidence
-directory, one per run under `devcapsule-src/dist/e2e-evidence/ide-smoke/`,
-then holds the report, the screenshot and the movie together, and the report
-names the movie file so a reader can find it. The same pattern appears in
-`visual_smoke.py`. Any other harness qualifies if it can produce the same
-three things: a movie of the whole session, screenshots at cited moments, and
-a report that names both.
+**The example, as this project does it.** Recorded scenarios in
+`devcapsule-src/tests/e2e/scenario_recorder.py` load `<scenario-id>` from
+`devcapsule-src/tests/e2e/scenarios/<scenario-id>.json` and write
+`scenario-video.webm`, `poster.png`, `step-NNN.png`, and `scenario-result.json`
+under `devcapsule-src/tests/e2e/evidence/<scenario-id>/`. Surface-level IDE
+smokes in `devcapsule-src/tests/e2e/ide_session.py` and `visual_smoke.py` open a
+Playwright browser context with `record_video_dir=<evidence directory>` and
+`record_video_size=<viewport>`, drive noVNC to the IDE, capture screenshots at
+asserted moments, and save the context's `.webm` movie alongside the report
+under `devcapsule-src/dist/e2e-evidence/ide-smoke/`. Any other harness
+qualifies if it can produce the same three things: a movie of the whole
+session, screenshots at cited moments, and a report that names both.
 
 ### 9.8 and 9.9 Checkpoints and session close
 

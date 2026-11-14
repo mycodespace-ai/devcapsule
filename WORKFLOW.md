@@ -243,6 +243,11 @@ file's frontmatter names the release this text ships in; see topic 4.1.
 
 Rules changed since 0.3.0:
 
+- **Build-safe scenario evidence path.** Topic 9.6 rule 7: write recorded
+  end-to-end scenario evidence under `<e2e-root>/evidence/<scenario-id>/scenario-video.webm`
+  inside the project mount, ignored by Git and outside directories that a clean
+  build removes. Migration: move retained scenario recordings out of build
+  output directories and ignore `<e2e-root>/evidence/` in Git.
 - **Pile of ideas.** Topic 12.13: an idea nobody has triaged is one file
   under `engineering-docs/pile-of-ideas/`; anyone adds one on the working
   branch; `project-management` reads the pile at its session starts and
@@ -1331,8 +1336,10 @@ session-resumption feature.
    `record_video_dir` and `record_video_size`, save the context's video as
    a `.webm` beside the test's report, and take `page.screenshot` at the
    moments the report cites. Keep the recording as acceptance evidence.
-   Do not generate explainer videos as a way to explain work to the human;
-   the recording of what ran is the video the project keeps.
+   Write recorded scenario evidence under `<e2e-root>/evidence/<scenario-id>/scenario-video.webm`
+   inside the project mount, ignored by Git and outside directories that a
+   clean build removes. Do not generate explainer videos as a way to explain
+   work to the human; the recording of what ran is the video the project keeps.
 
 ### 9.7 Responsibilities
 
