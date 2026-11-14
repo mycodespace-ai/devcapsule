@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "DevCapsule console WebM player",
+  "version": "0.1.0",
+  "description": "Plays a .webm opened from the DevCapsule web console's raw route, which the route's own Content-Security-Policy keeps the browser's built-in player from loading.",
+  "action": {
+    "default_title": "Play this console .webm"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["http://127.0.0.1/*", "http://localhost/*"]
+}
