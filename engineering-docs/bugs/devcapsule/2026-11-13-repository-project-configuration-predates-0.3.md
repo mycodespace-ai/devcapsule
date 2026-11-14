@@ -82,6 +82,46 @@ Consequences seen while the files differed:
 - After the refresh, check `tests/test_base_contract.py` on the new files.
   The frozen copy under `tests/resources/compat/` is not regenerated.
 
+## Progress, 2026-11-13: the refresh checked on a copy; the write waits for the host
+
+The owner asked for `.devcapsule` to be committed. The files in the
+checkout were still the pair of 2026-11-04, so nothing is committed yet:
+the first fix note stands.
+
+The proposed result, checked before it is applied, as the local rule asks.
+Executable: `/usr/local/bin/devcapsule0`, SHA-256 `2c3ace0f…`,
+`version --json` gives `0.3.1rc2`, `v0.3.1-rc2`, source revision
+`be0140ca`. Its matrix is `embedded-33`, the one `release-0.3.1` carries at
+`82b9c07e`; `resolution_matrix.py` is unchanged since the candidate.
+
+- On a copy of the checkout's uncommitted pair, in a scratch directory with
+  a home of its own, `project init --regenerate` exits 0. The manifest
+  comes out byte for byte as it went in. The lock changes in three places:
+  the matrix, `embedded-31` to `embedded-33`; Claude Code, 2.1.314 to
+  2.1.321; Codex, 0.166.0 to 0.167.0. The base and the Antigravity CLI stay.
+- `project config check` on the regenerated copy: "Configuration contract
+  valid", exit 3 for the decisions an empty home has not taken.
+- On a copy of the committed pair the same command stops, exit 2, and asks
+  for the base and the two download authorizations: that manifest requires
+  an IDE. This path was not followed further.
+- `devcapsule0 project config check` on the checkout as it is: "Configuration
+  contract valid", exit 0; host decisions cannot be assessed inside the
+  capsule.
+
+The write itself is refused inside the capsule, as designed:
+
+    devcapsule: This command needs launcher-owned configuration or state.
+    Inside this capsule that configuration is read-only. Run outside the
+    capsule: devcapsule project --path
+    /home/costin/work.provisional/costin3/myProjects/devcapsule init --regenerate
+
+The regenerated copy was not copied over the checkout's files: only a
+DevCapsule command writes them. Next: that command on the host with the
+candidate's launcher, `config check` there, then the commit of the two
+files. The manifest that results keeps the IDE as a recommendation and is
+without the comment on `runtime.devcapsule-command`, unless the owner
+decides otherwise first.
+
 ## Verification target and close criteria
 
 1. The committed manifest is schema 2 and the committed lock names the

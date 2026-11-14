@@ -1,5 +1,5 @@
 ---
-status: fixed
+status: closed
 severity: blocking
 target: 0.3.1
 owner: maintenance
@@ -324,6 +324,17 @@ Outside the unit suite the same cause had two more faces, both gone at
 The integration tests that need no Docker now pass inside the owner's
 capsule: 146 passed, 3 skipped. `.venv/bin/python -m pytest tests/`, with
 the stale interpreter, passes too: 3212 passed.
+
+## Closed, 2026-11-13
+
+Closed on the owner's word, after their merge of pull request #29 into
+`release-0.3.1` at `82b9c07e`. The merge commit's tree is the tree of the
+pull request's head, `a8c8408f`, whose hosted run passed.
+
+On the merged tree, in the owner's capsule, `nox -s tests`: 3212 passed, 1
+expected to fail, 1 unexpectedly passed, in 143 seconds; the hosted run at
+the pull request's head gave the same counts. The conventions check counts
+no breach. The four close criteria hold as the section above records them.
 
 ## Verification target and close criteria
 
