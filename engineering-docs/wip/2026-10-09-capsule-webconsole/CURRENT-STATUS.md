@@ -4,11 +4,11 @@ Mnemonic: `capsule-webconsole`
 
 Start date: 2026-10-09
 
-State: active; slice 8 and the test-isolation fix await the owner with the second iteration: PR5 (#192), PR6 (#194), PR7 (#196), PR8 (#199), PR9 (#201), PR10 (#203) and PR11 (#205), stacked, each with its Codex review merged
+State: active; the presentations slice of 2026-11-14 awaits the owner on `ws-capsule-webconsole/presentations`, unpushed, with its target to be chosen; before it, slice 8 and the test-isolation fix await the owner with the second iteration: PR5 (#192), PR6 (#194), PR7 (#196), PR8 (#199), PR9 (#201), PR10 (#203) and PR11 (#205), stacked, each with its Codex review merged
 
 Definition read: WORKFLOW.md@2b576adb1a40, WORKFLOW-LOCAL.md@7362bae8ec82
 
-Branch association: `ws-capsule-webconsole/live-resources` (PR5, #192, from `main`); `ws-capsule-webconsole/records` (PR6, #194, stacked on PR5); `ws-capsule-webconsole/decisions` (PR7, stacked on PR6); the first iteration's branches `first-slice`, `console-app`, `runtime-base` and `project-info-checkout-name` are merged and closed
+Branch association: `ws-capsule-webconsole/presentations` (2026-11-14, stacked on `ws-maintenance/e2e-scenario-evidence` at `bd2f4d1c`, see Current State); `ws-capsule-webconsole/live-resources` (PR5, #192, from `main`); `ws-capsule-webconsole/records` (PR6, #194, stacked on PR5); `ws-capsule-webconsole/decisions` (PR7, stacked on PR6); the first iteration's branches `first-slice`, `console-app`, `runtime-base` and `project-info-checkout-name` are merged and closed
 
 Integration target: `main`
 
@@ -42,6 +42,43 @@ Owner decisions of 2026-10-09 that shape the work:
    no product renders them.
 
 ## Current State
+
+**2026-11-14, presentations: a recorded scenario as slides beside its recording.**
+Ordered by the owner in session, in four parts, after a recorded end-to-end
+scenario proved too fast to follow and had no captions.
+
+- The page: `/presentations/<folder>` shows a folder that holds a
+  `presentation.json` as an overview slide and one slide per step, each with
+  the script's text, the screenshot and a button that plays only that step's
+  part of the one recording, with captions, at half speed by default; Play
+  all runs the recording through. `/presentations` lists the project's
+  presentations and is linked from the top band and from Home; Files offers
+  the link on such a folder. Contract and behaviour:
+  [PRESENTATIONS.md](../../../devcapsule-webconsole/PRESENTATIONS.md).
+- The preview: `nox -s webconsole-preview` serves the checkout's console on
+  loopback and logs its links, the sample presentation among them.
+- The generator: a replay writes `presentation.json` itself from the
+  scenario's script, its numbered actions and the recorder's frame counts
+  (`devcapsule-src/tests/e2e/scenario_presentation.py`); the author's side
+  is section 5 of
+  [running scenario recordings](../../development/running-e2e-scenario-recordings.md).
+- Branch: `ws-capsule-webconsole/presentations`, three commits on top of
+  `ws-maintenance/e2e-scenario-evidence` at `bd2f4d1c`, because the generator
+  changes the recorder files that exist only there. That branch is on the
+  0.3.1 release line, not on `main`, this workstream's target. The two
+  console commits touch only files that are identical on `main` and can be
+  taken there alone. Not pushed and no pull request: the owner chooses the
+  target.
+- Checked: `nox -s webconsole` (473 passed), `nox -s tests` (3262 passed),
+  `nox -s typecheck`, the docs contract, and the page in Chromium. Not
+  checked: `nox -s build`, and a new recording, which needs Docker; the
+  generator was run on the 2026-11-13 run's frame counts instead and
+  reproduced the hand-written sample.
+- Left open: the top band is crowded and the owner wants its navigation
+  reorganized later; `scenario-video.webm` does not state its length,
+  because `ffmpeg` writes it to a pipe; the bug record
+  `2026-11-10-console-video-opened-from-files-does-not-play` is untouched,
+  since a video opened from Files still goes to the raw route.
 
 **2026-10-10, PR11: every test gets an empty artifact cache of its own.**
 The owner's plain `pytest` run filled a 2 GB `/tmp`. Diagnosed with one
