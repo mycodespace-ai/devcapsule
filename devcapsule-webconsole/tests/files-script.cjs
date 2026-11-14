@@ -168,7 +168,27 @@ function runFilesPage(pathname, responder) {
   assert.equal(failure.attributes.class, 'failure');
   assert.ok(failure.textContent.includes("no directory at 'missing' in the project"));
 
-  console.log('Files script: breadcrumbs, table links, sizes, empty notice, file redirect and failure passed.');
+  // 5. A folder that holds a presentation.json offers its presentation above the listing; another folder does not.
+  const recorded = await runFilesPage('/files/e2e/evidence/todo%20run', async () => ({
+    ok: true,
+    status: 200,
+    text: async () => JSON.stringify({
+      path: 'e2e/evidence/todo run',
+      entries: [
+        { name: 'presentation.json', kind: 'file', size: 4096, modified: '2026-11-14T10:00:00Z' },
+        { name: 'scenario-video.webm', kind: 'file', size: 3145728, modified: '2026-11-14T10:00:00Z' },
+      ],
+    }),
+  }));
+  const offer = recorded.container.children[1];
+  assert.equal(offer.attributes.class, 'notice');
+  assert.deepEqual(offer.children.filter(node => node.tag === 'a').map(node => [node.textContent, node.attributes.href]), [
+    ['Open its presentation', '/presentations/e2e/evidence/todo%20run'],
+  ]);
+  assert.equal(recorded.container.children[2].attributes.class, 'data');
+  assert.equal(descendants(nested.container).some(node => node.textContent === 'Open its presentation'), false);
+
+  console.log('Files script: breadcrumbs, table links, sizes, empty notice, file redirect, failure and presentation offer passed.');
 })().catch(error => {
   console.error(error);
   process.exitCode = 1;

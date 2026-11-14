@@ -6,9 +6,10 @@ answers through its mounted channel. Every other route is ``GET``. The pages are
 files that fetch their facts from the ``/api`` routes, which run the
 runtime CLI, read the capsule's processes and cgroup, list or read inside
 the project mount, or read the decisions directory. The records page
-renders any markdown file of the project in the browser, and the files page
-lists and serves the mounted project's files. The token gate wraps the whole
-application, static files included.
+renders any markdown file of the project in the browser, the files page
+lists and serves the mounted project's files, and the presentation page lists
+the folders that hold a ``presentation.json`` and shows one as slides beside
+its recording, read through the raw route. The token gate wraps the whole application, static files included.
 """
 
 from __future__ import annotations
@@ -34,7 +35,9 @@ from .configuration import MAXIMUM_COMMAND_BYTES, ChannelError, ConfigurationCha
 from .decisions import (
     KEY_PATTERN, MAXIMUM_ANSWER_BYTES, Decision, DecisionError, DecisionStore, answer_from_mapping,
 )
-from .security import PathRefused, TokenGate, list_project_directory, open_project_file, read_project_text
+from .security import (
+    PathRefused, TokenGate, find_project_folders, list_project_directory, open_project_file, read_project_text,
+)
 from .settings import Settings
 
 PAGES = {
@@ -75,6 +78,8 @@ RAW_CONTENT_TYPES = {
     ".wav": "audio/wav",
 }
 RAW_CHUNK_BYTES = 64 * 1024
+# The file whose presence makes a project folder a presentation (PRESENTATIONS.md).
+PRESENTATION_FILE = "presentation.json"
 RAW_SECURITY_HEADERS = {
     "Accept-Ranges": "bytes",
     "Content-Security-Policy": "sandbox; default-src 'none'; style-src 'unsafe-inline'",
@@ -99,6 +104,11 @@ def create_app(settings: Settings) -> FastAPI:
     # One page for every record or directory: the script reads the path from the URL.
     app.add_api_route("/records/{record:path}", _page(settings, "records.html"), methods=["GET"], include_in_schema=False)
     app.add_api_route("/files/{path:path}", _page(settings, "files.html"), methods=["GET"], include_in_schema=False)
+    # One page for the list of presentations and for each of them: the script
+    # reads the folder from the URL, and its presentation.json, recording and
+    # screenshots through the raw route.
+    app.add_api_route("/presentations", _page(settings, "presentation.html"), methods=["GET"], include_in_schema=False)
+    app.add_api_route("/presentations/{path:path}", _page(settings, "presentation.html"), methods=["GET"], include_in_schema=False)
     app.add_api_route("/decisions/{decision_id}", _page(settings, "decisions.html"), methods=["GET"], include_in_schema=False)
 
     @app.get("/filetree", include_in_schema=False)
@@ -301,6 +311,11 @@ def create_app(settings: Settings) -> FastAPI:
         except OSError:
             return PlainTextResponse(f"cannot read {path!r} in the project\n", status_code=403)
         return JSONResponse(listing)
+
+    @app.get("/api/project/presentations")
+    def project_presentations() -> JSONResponse:
+        """The project's folders that hold a presentation, and whether the search visited every directory."""
+        return JSONResponse(find_project_folders(settings.project, PRESENTATION_FILE))
 
     @app.get("/api/project/file")
     def project_file(path: str = Query(...)) -> PlainTextResponse:
