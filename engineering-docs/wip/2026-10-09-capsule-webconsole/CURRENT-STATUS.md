@@ -4,11 +4,11 @@ Mnemonic: `capsule-webconsole`
 
 Start date: 2026-10-09
 
-State: active; the presentations slice of 2026-11-14 awaits the owner on `ws-capsule-webconsole/presentations`, unpushed, with its target to be chosen; before it, slice 8 and the test-isolation fix await the owner with the second iteration: PR5 (#192), PR6 (#194), PR7 (#196), PR8 (#199), PR9 (#201), PR10 (#203) and PR11 (#205), stacked, each with its Codex review merged
+State: active; the presentations slice of 2026-11-14 awaits the owner as a pull request from `ws-capsule-webconsole/presentations` to `release-0.3.1`; before it, slice 8 and the test-isolation fix await the owner with the second iteration: PR5 (#192), PR6 (#194), PR7 (#196), PR8 (#199), PR9 (#201), PR10 (#203) and PR11 (#205), stacked, each with its Codex review merged
 
 Definition read: WORKFLOW.md@2b576adb1a40, WORKFLOW-LOCAL.md@7362bae8ec82
 
-Branch association: `ws-capsule-webconsole/presentations` (2026-11-14, stacked on `ws-maintenance/e2e-scenario-evidence` at `bd2f4d1c`, see Current State); `ws-capsule-webconsole/live-resources` (PR5, #192, from `main`); `ws-capsule-webconsole/records` (PR6, #194, stacked on PR5); `ws-capsule-webconsole/decisions` (PR7, stacked on PR6); the first iteration's branches `first-slice`, `console-app`, `runtime-base` and `project-info-checkout-name` are merged and closed
+Branch association: `ws-capsule-webconsole/presentations` (2026-11-14, from the 0.3.1 release line at `bd2f4d1c`, see Current State); `ws-capsule-webconsole/live-resources` (PR5, #192, from `main`); `ws-capsule-webconsole/records` (PR6, #194, stacked on PR5); `ws-capsule-webconsole/decisions` (PR7, stacked on PR6); the first iteration's branches `first-slice`, `console-app`, `runtime-base` and `project-info-checkout-name` are merged and closed
 
 Integration target: `main`
 
@@ -62,13 +62,15 @@ scenario proved too fast to follow and had no captions.
   (`devcapsule-src/tests/e2e/scenario_presentation.py`); the author's side
   is section 5 of
   [running scenario recordings](../../development/running-e2e-scenario-recordings.md).
-- Branch: `ws-capsule-webconsole/presentations`, three commits on top of
-  `ws-maintenance/e2e-scenario-evidence` at `bd2f4d1c`, because the generator
-  changes the recorder files that exist only there. That branch is on the
-  0.3.1 release line, not on `main`, this workstream's target. The two
-  console commits touch only files that are identical on `main` and can be
-  taken there alone. Not pushed and no pull request: the owner chooses the
-  target.
+- Branch: `ws-capsule-webconsole/presentations`, on top of `bd2f4d1c`, the
+  head of `ws-maintenance/e2e-scenario-evidence`, because the generator
+  changes the recorder files that branch added. Pull request #33 merged
+  that branch into `release-0.3.1` on 2026-11-14 with no other change, so
+  this branch's pull request targets `release-0.3.1` and shows this slice
+  alone. The release line is not `main`, this workstream's usual target:
+  the slice reaches `main` when the release line does. The two console
+  commits touch only files that are identical on `main`, should the owner
+  want them there sooner.
 - Checked: `nox -s webconsole` (473 passed), `nox -s tests` (3262 passed),
   `nox -s typecheck`, the docs contract, and the page in Chromium. Not
   checked: `nox -s build`, and a new recording, which needs Docker; the
