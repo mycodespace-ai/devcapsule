@@ -1,0 +1,39 @@
+{
+  "scenario_id": "todo-fastapi-postgres-react",
+  "status": "passed",
+  "steps_executed": 56,
+  "frames_recorded": 477,
+  "pause_free_webm": "scenario-video.webm",
+  "todos_verified": [
+    {
+      "id": 1,
+      "title": "Provision isolated DevCapsule workspace",
+      "category": "Platform",
+      "completed": true
+    },
+    {
+      "id": 2,
+      "title": "Connect FastAPI service to PostgreSQL 17",
+      "category": "Database",
+      "completed": true
+    },
+    {
+      "id": 3,
+      "title": "Record FastAPI + React customer pitch demo",
+      "category": "Engineering",
+      "completed": false
+    },
+    {
+      "id": 4,
+      "title": "Verify PostgreSQL 17 persistence across reloads",
+      "category": "Database",
+      "completed": false
+    }
+  ],
+  "psql_rows": [
+    "1|Platform|t|Provision isolated DevCapsule workspace",
+    "2|Database|t|Connect FastAPI service to PostgreSQL 17",
+    "3|Engineering|f|Record FastAPI + React customer pitch demo",
+    "4|Database|f|Verify PostgreSQL 17 persistence across reloads"
+  ]
+}

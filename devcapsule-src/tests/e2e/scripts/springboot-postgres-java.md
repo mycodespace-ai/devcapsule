@@ -1,5 +1,9 @@
 # E2E Scenario Script: Java 25 + Spring Boot + PostgreSQL 17 In IntelliJ IDEA
 
+Scenario `springboot-postgres-java`, on the DevCapsule surface `intellij`.
+Its recording and its presentation are written to
+`devcapsule-src/tests/e2e/evidence/springboot-postgres-java/`.
+
 ## Goal
 
 Demonstrate a Java backend and web UI workflow inside an isolated **DevCapsule**
@@ -10,11 +14,9 @@ live browser verification against PostgreSQL 17.
 
 ## Stack And Capabilities
 
-- **Scenario ID:** `springboot-postgres-java`
-- **DevCapsule surface:** `intellij` (`java-ide`, `java`, `postgresql-client`, `browser-automation`)
+- **Capabilities:** `java-ide`, `java`, `postgresql-client`, `browser-automation`
 - **Database:** PostgreSQL 17 (`sprintdb`, table `sprint_items`, `127.0.0.1:15432`)
 - **Application server:** Spring Boot `3.4.5` (`<maven.compiler.release>21</maven.compiler.release>`) with fluent `JdbcClient` on `http://127.0.0.1:18085`
-- **Recorded evidence path:** `devcapsule-src/tests/e2e/evidence/springboot-postgres-java/scenario-video.webm`
 
 ## Steps
 

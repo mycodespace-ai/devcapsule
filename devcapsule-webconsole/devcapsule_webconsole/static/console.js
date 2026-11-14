@@ -1,7 +1,9 @@
-// The console's one script. Each page names itself with data-page on <body>;
+// The console's script. Each page names itself with data-page on <body>;
 // the matching renderer fetches the page's document from /api and builds the
 // DOM with textContent. Records use markdown-it with raw HTML disabled;
 // Graphviz output is displayed as an image, never inserted into the DOM.
+// The presentation page has its own script, presentation.js, beside this one,
+// which gives it the console bar and the bell.
 (function () {
   "use strict";
 
@@ -574,6 +576,13 @@
       container.replaceChildren(crumbs, el("p", { class: "notice", text: "This directory is empty." }));
       return;
     }
+    // A folder that holds a presentation.json is a recorded scenario: offer its slides.
+    const presented = listing.entries.some((entry) => entry.kind === "file" && entry.name === "presentation.json");
+    const presentation = presented ? [el("p", { class: "notice" }, [
+      "This folder is a recorded scenario. ",
+      el("a", { href: "/presentations/" + encodeSegments(directory), text: "Open its presentation" }),
+      ".",
+    ])] : [];
     const head = el("tr", {}, [
       el("th", { text: "Name" }),
       el("th", { class: "num", text: "Size" }),
@@ -602,7 +611,8 @@
         el("td", { class: "keep", text: scalar(entry.modified) }),
       ]);
     });
-    container.replaceChildren(crumbs, el("table", { class: "data" }, [el("thead", {}, [head]), el("tbody", {}, rows)]));
+    container.replaceChildren(crumbs, ...presentation,
+      el("table", { class: "data" }, [el("thead", {}, [head]), el("tbody", {}, rows)]));
   };
 
   // Decision pages (deliverable 5): the list, and one decision as a form.

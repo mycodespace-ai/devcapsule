@@ -1,4 +1,5 @@
-/* The console's one stylesheet: clean, aerated, readable first. */
+/* The console's stylesheet: clean, aerated, readable first. The presentation
+   page adds presentation.css to it. */
 :root {
   --ink: #1b2622;
   --lead: #4a5a52;

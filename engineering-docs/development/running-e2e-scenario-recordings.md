@@ -101,6 +101,7 @@ For example, replaying `eclipse-hello-time-debug` writes into
 | `step-001.png` … `step-NNN.png` | Full-resolution screenshot captured after each action step |
 | `agent-desktop-raw.webm` | Uncut Playwright browser-context video of the entire session |
 | `action-log.json` | Concrete action trace with `${PROJECT_PATH}` and `${WORKSPACE}` expanded |
+| `presentation.json` | For a scenario that names its script: the text, the step times and the captions the web console shows as slides beside the recording; see section 5 |
 | `scenario-result.json` | Summary JSON (`status`, `steps_executed`, `frames_recorded`, output filenames) |
 
 ## 4. Interactive agent takeover (`serve` / `ctl`)
@@ -142,4 +143,120 @@ PYTHONPATH=src:. .nox/ide-smoke/bin/python -m tests.e2e.scenario_recorder ctl \
 
 To package an interactive run as a permanent repeatable scenario, copy the
 generated `tests/e2e/evidence/<scenario-id>/action-log.json` array into a new
-file under `devcapsule-src/tests/e2e/scenarios/<scenario-id>.json`.
+file under `devcapsule-src/tests/e2e/scenarios/<scenario-id>.json`. Then give
+the scenario its script and number its actions as section 5 says, so its
+replays are presented.
+
+## 5. The presentation of a recording
+
+A recording runs faster than a person reads, and nothing in the video says
+what each moment is for. The web console therefore shows a recorded scenario
+as slides beside its recording: an overview, then one slide per step of the
+script with the step's text, its screenshot, and a button that plays only
+that step's part of the video, with captions. The page reads
+`presentation.json` from the evidence folder; its contract is
+[`devcapsule-webconsole/PRESENTATIONS.md`](../../devcapsule-webconsole/PRESENTATIONS.md).
+
+A replay writes `presentation.json` by itself when the scenario gives it the
+three things below. `tests/e2e/scenario_presentation.py` does the work, and
+both `scenario_recorder` and `todo_demo_controller` call it. The inputs are
+checked before the capsule records anything, so a fault in them stops the
+run in seconds and names what to correct. A scenario that names no script is
+recorded as before, without a presentation; the interactive `serve` mode
+writes none.
+
+### 5.1 The scenario names its script
+
+The scenario's JSON carries `"script": "scripts/<scenario-id>.md"`, a path
+below `devcapsule-src/tests/e2e/`. Its `title` becomes the presentation's
+title and its `description` the summary on the first slide, so write the
+`description` as what the viewer is about to see.
+
+### 5.2 The script follows the form
+
+```markdown
+# E2E Scenario Script: <name>
+
+Anything before the first `##` heading is for the reader of this file only.
+
+## Goal
+
+One paragraph: why the scenario exists. It becomes "Why this scenario".
+
+## Stack And Capabilities
+
+- **Editor:** VSCodium, the project's `frontend-ide`
+- **Database:** PostgreSQL 17 on `127.0.0.1:15432`
+
+## What It Illustrates
+
+- One thing about DevCapsule the recording shows.
+- Another.
+
+## Steps
+
+1. **Open the workspace in the editor.**
+   - *User action:* What the user does in this step.
+   - *Expected observation:* What the viewer should see when it is done.
+
+2. **The next step.**
+   - *User action:* …
+   - *Expected observation:* …
+```
+
+`Goal` and `Steps` are required; `Stack And Capabilities` and `What It
+Illustrates` are optional. The four headings are spelled as above, and no
+other `##` heading is allowed. Steps are numbered from 1 without a gap, and
+each has both sub-bullets. A bullet may continue on indented lines. The
+texts may mark `` `code` ``, `**strong**` and `*emphasis*`; the page
+interprets nothing else. Write a backtick inside code with double backticks,
+as in ``` `` Ctrl+` `` ```.
+
+### 5.3 The actions name their steps, and may carry captions
+
+Every action's `reason` starts with the number of the step it belongs to and
+a period: `"reason": "3. Save frontend/src/App.jsx"`. The numbers never go
+down, and every step of the script has at least one action. The step's part
+of the video runs from the end of the step before it to the end of its last
+action, and its screenshot is the one taken after its last action.
+
+Captions come from the actions too:
+
+- A step whose actions have no `caption` shows each action's reason, without
+  the number, while that action plays. Nothing more is needed, and the
+  captions change as fast as the actions do.
+- For captions a person can read, give `"caption": "…"` to the first action
+  of each group of actions that makes one moment. The caption is shown from
+  that action until the next action that has one. A step that has any
+  caption needs one on its first action.
+
+```json
+{"action": "press", "text": "Control+p", "reason": "2. Open Quick Open dialog",
+ "caption": "Quick Open (`Ctrl+P`) finds `backend/main.py`."},
+{"action": "type", "text": "backend/main.py", "reason": "2. Filter to backend/main.py"},
+{"action": "press", "text": "Enter", "reason": "2. Open backend/main.py"}
+```
+
+Aim for a caption that stays up for a second or more of video: at the
+page's default half speed that is two seconds of reading.
+
+### 5.4 Looking at it
+
+Inside a capsule whose console includes the page, open **Presentations** in
+the console's top band; the recording is listed as soon as the replay has
+written `presentation.json`. From this checkout, without a capsule:
+
+```sh
+.venv/bin/python -m nox -s webconsole-preview
+```
+
+serves the checkout's console on `http://127.0.0.1:8787` and logs its links.
+`tests/e2e/scenarios/todo-fastapi-postgres-react.json` with
+`tests/e2e/scripts/todo-fastapi-postgres-react.md` is the worked example,
+and its presentation is the sample under
+`devcapsule-webconsole/resources/presentations/`.
+
+Two limits to know. The page slows the video down; it cannot add frames, so
+a recording of sparse frames looks stepped at half speed. And
+`scenario-video.webm` does not state its own length, because `ffmpeg` writes
+it to a pipe; the page takes the length from `presentation.json`.

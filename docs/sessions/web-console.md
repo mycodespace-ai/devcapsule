@@ -1,7 +1,7 @@
 ---
 description: "The web console: inspect your running capsule, answer agent decisions, read records, browse project files, and queue configuration changes for the next launch."
 weight: 5
-updated: 2026-11-08
+updated: 2026-11-14
 ---
 # The web console
 
@@ -54,6 +54,15 @@ eight pages:
   open in **Records**, and each file row offers a download link alongside its
   view link. `/files/<path>` links can be shared with anyone who has this run's
   console link.
+- **Presentations**: the project's recorded scenarios, listed as cards. A
+  folder that holds a `presentation.json`, such as the evidence of a recorded
+  end-to-end scenario, opens as slides at `/presentations/<folder>`; **Files**
+  offers the link on such a folder too. The search for these folders skips
+  directories whose name starts with a dot and `node_modules`. The
+  first slide says what the scenario is and what it shows. Each following
+  slide gives one step's text and screenshot, and plays only that step's part
+  of the recording, at half speed by default, with captions. **Play all** runs
+  the recording through and changes the slide as it goes.
 - **Decisions**: structured multiple-choice questions an agent inside the
   capsule handed to you, with options and cited project records. Pick your
   answers, add an optional note, and submit. Your answer is written only to
