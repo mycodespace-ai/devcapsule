@@ -87,6 +87,17 @@ hold anything else; the page reads only what the document names.
 The page checks all of this before it shows anything. A document that breaks
 the contract is refused whole, and the page names every breach.
 
+## Where the document comes from
+
+Nobody writes it by hand. A replay of a recorded scenario writes it beside
+the recording: `devcapsule-src/tests/e2e/scenario_presentation.py` takes the
+overview and the steps from the scenario's script, the captions from the
+scenario's actions, and the times from the count of frames the recorder had
+taken after each action. What a scenario's author provides is described in
+[running scenario recordings](../engineering-docs/development/running-e2e-scenario-recordings.md),
+section 5. Any other producer may write the document; the contract above is
+all the page knows.
+
 ## What the page does
 
 - **Slides.** The overview, then one per step. The chips at the bottom, the
@@ -124,6 +135,7 @@ needs the command run again. `-- --port <n>` chooses another port and
 
 The sample is `resources/presentations/todo-fastapi-postgres-react/`: the
 recording, the poster and seven screenshots of the 2026-11-13 run of the
-`todo-fastapi-postgres-react` scenario, with a `presentation.json` written
-from the scenario's script. It is the folder to open when changing the page.
-The resources are not part of the distribution.
+`todo-fastapi-postgres-react` scenario, with the `presentation.json` that
+`scenario_presentation.py` makes from the scenario, its script and that
+run's frame counts. It is the folder to open when changing the page. The
+resources are not part of the distribution.

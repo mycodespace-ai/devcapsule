@@ -14,13 +14,15 @@ infrastructure:
    seeds the scenario's project files into ``session.workspace``, executes its
    recorded ``ActionStep`` sequence, and produces ``scenario-video.webm``,
    ``agent-desktop-raw.webm``, ``step-NNN.png`` screenshots, and
-   ``scenario-result.json``.
+   ``scenario-result.json``. A scenario that names its ``script`` also gets
+   ``presentation.json``, which the web console shows as slides beside the
+   recording; ``scenario_presentation`` writes it.
 """
 from __future__ import annotations
 
 import argparse
 import base64
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
@@ -36,6 +38,7 @@ import urllib.request
 
 from tests.e2e.ai_driver import DriverError
 from tests.e2e.browser_session import smoke_browser
+from tests.e2e.scenario_presentation import plan_for_scenario, write_presentation
 from tests.e2e.ide_session import (
     SURFACES,
     IdeSurface,
@@ -49,6 +52,8 @@ from tests.e2e.ide_session import (
 SCENARIOS_DIR = Path(__file__).resolve().parent / "scenarios"
 EVIDENCE_DIR = Path(__file__).resolve().parent / "evidence"
 VALID_STEP_ACTIONS = ("click", "double_click", "right_click", "type", "press", "wait", "launch_browser")
+VIDEO_FRAMES_PER_SECOND = 12
+"""The rate ``scenario-video.webm`` plays the recorded frames at."""
 MAX_WAIT_MS = 30_000
 """Longest ``wait`` step; ``seconds`` is accepted up to the same bound."""
 CONTROLLER_COMMAND_TIMEOUT = 120.0
@@ -208,6 +213,8 @@ class ScenarioSpec:
     description: str
     seed_files: dict[str, str]
     actions: tuple[ActionStep, ...]
+    document: dict[str, Any] = field(default_factory=dict, compare=False)
+    """The scenario's JSON as loaded: ``scenario_presentation`` reads its ``script`` and the actions' captions."""
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ScenarioSpec:
@@ -237,6 +244,7 @@ class ScenarioSpec:
             description=description,
             seed_files=dict(raw_seeds),
             actions=actions,
+            document=dict(data),
         )
 
 
@@ -376,7 +384,7 @@ class BurstFrameRecorder:
         page: Any,
         output_webm: Path,
         container: str | None = None,
-        fps: int = 12,
+        fps: int = VIDEO_FRAMES_PER_SECOND,
         timeout: float = 60.0,
     ) -> bool:
         """Encode the recorded PNG frames into a pause-free VP8 WebM through ``ffmpeg``.
@@ -495,6 +503,8 @@ def run_scenario_replay(
     """Seed ``spec`` into ``session.workspace``, replay its actions, and record video."""
     from playwright.sync_api import sync_playwright  # type: ignore[import-not-found,unused-ignore]
 
+    # Before anything is recorded: a script that does not join the scenario fails here.
+    presentation = plan_for_scenario(spec.document)
     evidence.mkdir(parents=True, exist_ok=True)
     seed_scenario_workspace(session.workspace, spec)
     recorder = BurstFrameRecorder(evidence / "video-frames")
@@ -505,6 +515,7 @@ def run_scenario_replay(
 
     executed: list[dict[str, Any]] = []
     step_screenshots: list[str] = []
+    frames_after_actions: list[int] = []
 
     with sync_playwright() as playwright, smoke_browser(playwright, session, evidence) as browser:
         viewport = {"width": 1600, "height": 1000}
@@ -525,6 +536,7 @@ def run_scenario_replay(
             for index, raw_step in enumerate(spec.actions, start=1):
                 step = raw_step.substitute(variables)
                 recorder.apply_step(page, step, container=session.container)
+                frames_after_actions.append(recorder.frame_count)
                 executed.append(asdict(step))
                 shot = evidence / f"step-{index:03d}.png"
                 page.screenshot(path=str(shot))
@@ -544,6 +556,12 @@ def run_scenario_replay(
                 video.save_as(str(evidence / "agent-desktop-raw.webm"))
                 video.delete()
 
+    presented = encoded and presentation is not None
+    if encoded and presentation is not None:
+        write_presentation(evidence, presentation.timed(
+            frames_after_actions, recorder.frame_count, VIDEO_FRAMES_PER_SECOND,
+            video="scenario-video.webm", poster="poster.png", screenshots=step_screenshots,
+        ))
     result = {
         "scenario_id": spec.id,
         "surface": spec.surface,
@@ -552,6 +570,7 @@ def run_scenario_replay(
         "steps_executed": len(executed),
         "frames_recorded": recorder.frame_count,
         "pause_free_webm": "scenario-video.webm" if encoded else None,
+        "presentation": "presentation.json" if presented else None,
         "raw_webm": "agent-desktop-raw.webm",
         "screenshots": step_screenshots,
     }

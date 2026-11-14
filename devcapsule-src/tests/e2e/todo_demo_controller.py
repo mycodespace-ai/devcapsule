@@ -36,12 +36,14 @@ from tests.e2e.ide_session import (
 from tests.e2e.scenario_recorder import (
     EVIDENCE_DIR,
     SCENARIOS_DIR,
+    VIDEO_FRAMES_PER_SECOND,
     BurstFrameRecorder,
     ControllerQueue,
     send_controller_command,
     start_controller_server,
     write_json_atomically,
 )
+from tests.e2e.scenario_presentation import plan_for_scenario, write_presentation
 from tests.e2e.todo_seed import (
     API_PORT,
     DB_URL,
@@ -454,8 +456,11 @@ def replay_mode(executable: Path, scenario_file: Path, evidence: Path) -> int:
 
     spec = json.loads(scenario_file.read_text(encoding="utf-8"))
     steps = [DemoStep.parse(item) for item in spec["actions"]]
+    # Before anything is recorded: a script that does not join the scenario fails here.
+    presentation = plan_for_scenario(spec)
     recorder = BurstFrameRecorder(evidence / "video-frames")
     shots: list[str] = []
+    frames_after_actions: list[int] = []
 
     with _demo_environment(executable, evidence) as (session, _, pg_name):
         with sync_playwright() as pw, smoke_browser(pw, session, evidence) as browser:
@@ -476,6 +481,7 @@ def replay_mode(executable: Path, scenario_file: Path, evidence: Path) -> int:
 
                 for idx, step in enumerate(steps, start=1):
                     apply_demo_step(page, recorder, session.container, step)
+                    frames_after_actions.append(recorder.frame_count)
                     shot = evidence / f"step-{idx:03d}.png"
                     page.screenshot(path=str(shot))
                     shots.append(shot.name)
@@ -495,6 +501,12 @@ def replay_mode(executable: Path, scenario_file: Path, evidence: Path) -> int:
                     video.save_as(str(evidence / "agent-desktop-raw.webm"))
                     video.delete()
 
+    presented = encoded and presentation is not None
+    if encoded and presentation is not None:
+        write_presentation(evidence, presentation.timed(
+            frames_after_actions, recorder.frame_count, VIDEO_FRAMES_PER_SECOND,
+            video="scenario-video.webm", poster="poster.png", screenshots=shots,
+        ))
     todos = verification.get("api_todos", [])
     passed = encoded and len(todos) >= 4 and any(t.get("completed") for t in todos)
     result = {
@@ -503,6 +515,7 @@ def replay_mode(executable: Path, scenario_file: Path, evidence: Path) -> int:
         "steps_executed": len(steps),
         "frames_recorded": recorder.frame_count,
         "pause_free_webm": "scenario-video.webm" if encoded else None,
+        "presentation": "presentation.json" if presented else None,
         "todos_verified": todos,
         "psql_rows": verification.get("psql_rows", []),
     }

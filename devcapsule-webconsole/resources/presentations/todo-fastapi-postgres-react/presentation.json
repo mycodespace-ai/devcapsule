@@ -22,11 +22,11 @@
       },
       {
         "name": "Frontend",
-        "detail": "Node.js 22, React and Vite, `frontend/src/App.jsx` on `127.0.0.1:15173`"
+        "detail": "Node.js 22, React and Vite, `frontend/src/App.jsx` on `127.0.0.1:15173`, proxying `/api` to `:18080`"
       },
       {
         "name": "Database",
-        "detail": "PostgreSQL 17 in a container the test starts beside the capsule, database `tododb` on `127.0.0.1:15432`"
+        "detail": "PostgreSQL 17 in a container the test starts beside the capsule, database `tododb`, table `todos`, on `127.0.0.1:15432`"
       },
       {
         "name": "Browser",
@@ -184,7 +184,7 @@
       "title": "Reload from PostgreSQL and ask the database directly",
       "action": "Click **Refresh from DB**, switch to VSCodium's terminal and run `./query-db.sh`, then return to **CapsuleTask**.",
       "expected": "`psql` and the browser agree: four rows, `1` to `4`, with completion flags `t, t, f, f`.",
-      "screenshot": "step-054.png",
+      "screenshot": "step-056.png",
       "start": 33.5,
       "end": 39.75,
       "captions": [

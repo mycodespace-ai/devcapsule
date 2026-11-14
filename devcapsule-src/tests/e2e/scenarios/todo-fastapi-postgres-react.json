@@ -1,21 +1,23 @@
 {
   "id": "todo-fastapi-postgres-react",
   "surface": "codium",
-  "title": "DevCapsule Full-Stack Todo App: FastAPI + PostgreSQL 17 + React (IDE Coding + Live Browser)",
-  "description": "Open a full-stack FastAPI + PostgreSQL 17 + React Todo project in VSCodium, type the parameterized PostgreSQL INSERT endpoint and React fetch handler, start the stack from the integrated terminal, exercise the web UI in Chromium, and confirm durable rows in PostgreSQL.",
+  "title": "Full-stack work in one capsule: FastAPI, PostgreSQL 17 and React",
+  "description": "A developer opens a todo application in VSCodium inside a DevCapsule, finishes its backend endpoint and its React handler, starts the stack from the editor's terminal, uses the application in Chromium on the same desktop, and checks with `psql` that the rows are in PostgreSQL.",
   "script": "scripts/todo-fastapi-postgres-react.md",
   "actions": [
     {
       "action": "click",
       "x": 1575,
       "y": 86,
-      "reason": "1. Close empty secondary sidebar in VSCodium"
+      "reason": "1. Close empty secondary sidebar in VSCodium",
+      "caption": "VSCodium is open on the capsule's desktop, with the project in the explorer."
     },
     {
       "action": "click",
       "x": 670,
       "y": 50,
-      "reason": "1. Click Manage on Workspace Trust banner"
+      "reason": "1. Click Manage on Workspace Trust banner",
+      "caption": "Trust the workspace, so the editor's features are all enabled."
     },
     {
       "action": "click",
@@ -31,7 +33,8 @@
     {
       "action": "press",
       "text": "Control+p",
-      "reason": "2. Open Quick Open dialog"
+      "reason": "2. Open Quick Open dialog",
+      "caption": "Quick Open (`Ctrl+P`) finds `backend/main.py`."
     },
     {
       "action": "wait",
@@ -61,7 +64,8 @@
     {
       "action": "press",
       "text": "Control+g",
-      "reason": "2. Open Go to Line prompt"
+      "reason": "2. Open Go to Line prompt",
+      "caption": "Go to Line (`Ctrl+G`) jumps to line 75, inside `create_todo`."
     },
     {
       "action": "wait",
@@ -81,12 +85,14 @@
     {
       "action": "type",
       "text": "    with psycopg.connect(DB_URL) as conn:\n        row = conn.execute(\n            'INSERT INTO todos (title, category) VALUES (%s, %s) RETURNING id, title, category, completed',\n            (payload.title.strip(), payload.category),\n        ).fetchone()\n    return {'id': row[0], 'title': row[1], 'category': row[2], 'completed': row[3]}\n\n",
-      "reason": "2. Type parameterized PostgreSQL INSERT in FastAPI create_todo"
+      "reason": "2. Type parameterized PostgreSQL INSERT in FastAPI create_todo",
+      "caption": "Type the handler: a parameterized `INSERT … RETURNING`, then the row as JSON."
     },
     {
       "action": "press",
       "text": "Control+s",
-      "reason": "2. Save backend/main.py"
+      "reason": "2. Save backend/main.py",
+      "caption": "Save (`Ctrl+S`). The endpoint that creates a task is complete."
     },
     {
       "action": "wait",
@@ -96,7 +102,8 @@
     {
       "action": "press",
       "text": "Control+p",
-      "reason": "3. Open Quick Open for React frontend"
+      "reason": "3. Open Quick Open for React frontend",
+      "caption": "Quick Open (`Ctrl+P`) finds `frontend/src/App.jsx`."
     },
     {
       "action": "wait",
@@ -126,7 +133,8 @@
     {
       "action": "press",
       "text": "Control+g",
-      "reason": "3. Open Go to Line prompt"
+      "reason": "3. Open Go to Line prompt",
+      "caption": "Go to Line (`Ctrl+G`) jumps to line 30, inside `handleCreate`."
     },
     {
       "action": "wait",
@@ -146,12 +154,14 @@
     {
       "action": "type",
       "text": "    const res = await fetch('/api/todos', {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json' },\n      body: JSON.stringify({ title, category }),\n    });\n    const created = await res.json();\n    setTodos((prev) => [...prev, created]);\n    setTitle('');\n",
-      "reason": "3. Type fetch('/api/todos') POST request and React state update"
+      "reason": "3. Type fetch('/api/todos') POST request and React state update",
+      "caption": "Type the handler: `POST` the new task to `/api/todos`, then add the returned row to the list."
     },
     {
       "action": "press",
       "text": "Control+s",
-      "reason": "3. Save frontend/src/App.jsx"
+      "reason": "3. Save frontend/src/App.jsx",
+      "caption": "Save (`Ctrl+S`). The form now talks to the backend."
     },
     {
       "action": "wait",
@@ -161,7 +171,8 @@
     {
       "action": "press",
       "text": "Control+Backquote",
-      "reason": "4. Open VSCodium integrated terminal"
+      "reason": "4. Open VSCodium integrated terminal",
+      "caption": "Open the integrated terminal (`` Ctrl+` ``)."
     },
     {
       "action": "wait",
@@ -171,7 +182,8 @@
     {
       "action": "type",
       "text": "./run-stack.sh\n",
-      "reason": "4. Check PostgreSQL 17 via psql and start FastAPI + Vite"
+      "reason": "4. Check PostgreSQL 17 via psql and start FastAPI + Vite",
+      "caption": "`./run-stack.sh` checks PostgreSQL 17 with `psql`, starts FastAPI and Vite, and ends on `STACK_READY`."
     },
     {
       "action": "wait",
@@ -181,7 +193,8 @@
     {
       "action": "launch_browser",
       "text": "http://127.0.0.1:15173",
-      "reason": "5. Launch Chromium on capsule desktop showing CapsuleTask React UI"
+      "reason": "5. Launch Chromium on capsule desktop showing CapsuleTask React UI",
+      "caption": "Chromium opens CapsuleTask inside the capsule: PostgreSQL is connected and two seeded tasks are listed."
     },
     {
       "action": "wait",
@@ -192,7 +205,8 @@
       "action": "click",
       "x": 600,
       "y": 256,
-      "reason": "6. Focus New task title input"
+      "reason": "6. Focus New task title input",
+      "caption": "Add a first task. It appears at once as `pg#3`, the identifier PostgreSQL returned."
     },
     {
       "action": "type",
@@ -214,7 +228,8 @@
       "action": "click",
       "x": 600,
       "y": 256,
-      "reason": "6. Focus New task title input for second task"
+      "reason": "6. Focus New task title input for second task",
+      "caption": "Add a second task in the *Database* category: `pg#4`."
     },
     {
       "action": "type",
@@ -246,7 +261,8 @@
       "action": "click",
       "x": 403,
       "y": 381,
-      "reason": "6. Toggle completion checkbox on pg#1"
+      "reason": "6. Toggle completion checkbox on pg#1",
+      "caption": "Tick `pg#1`. The Completed counter goes to 2."
     },
     {
       "action": "wait",
@@ -257,7 +273,8 @@
       "action": "click",
       "x": 1165,
       "y": 325,
-      "reason": "7. Click Refresh from DB button"
+      "reason": "7. Click Refresh from DB button",
+      "caption": "**Refresh from DB** reloads the list from PostgreSQL: 4 rows."
     },
     {
       "action": "wait",
@@ -268,7 +285,8 @@
       "action": "click",
       "x": 85,
       "y": 986,
-      "reason": "7. Switch to VSCodium via tint2 taskbar to inspect database in terminal"
+      "reason": "7. Switch to VSCodium via tint2 taskbar to inspect database in terminal",
+      "caption": "In VSCodium's terminal, `./query-db.sh` asks PostgreSQL directly: the same four rows, two of them completed."
     },
     {
       "action": "wait",
@@ -289,7 +307,8 @@
       "action": "click",
       "x": 245,
       "y": 986,
-      "reason": "7. Return to CapsuleTask browser window for closing poster frame"
+      "reason": "7. Return to CapsuleTask browser window for closing poster frame",
+      "caption": "Back in CapsuleTask: what the browser shows is what the database holds."
     },
     {
       "action": "wait",

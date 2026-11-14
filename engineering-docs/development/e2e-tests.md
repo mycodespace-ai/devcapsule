@@ -102,6 +102,11 @@ Four modules under `tests/e2e/` are not tests; they are what the tests run:
   from active transition frames. It supports both deterministic replay of JSON
   scenarios under `tests/e2e/scenarios/` and interactive HTTP takeover
   (`serve` / `ctl`) by any coding agent (`codex`, `claude`, `antigravity`).
+- `scenario_presentation.py` writes `presentation.json` beside a replayed
+  recording whose scenario names its script, from the script's text, the
+  numbered actions and the recorder's frame counts; the web console shows it
+  as slides beside the video. See
+  [running scenario recordings](running-e2e-scenario-recordings.md), section 5.
 - `tests/resources/supervisor_driver.py` runs the supervisor over a JSON
   child-set specification, shared with the unit tests.
 
