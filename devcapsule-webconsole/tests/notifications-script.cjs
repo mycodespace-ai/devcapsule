@@ -33,7 +33,7 @@ const entry = (id, extra = {}) => ({id, kind: 'note', title: '<img src=x onerror
   'posted-by': '<b>agent</b>', 'posted-at': 'now', 'read-at': null, link: '', summary: '', ...extra});
 const link = '/records/README.md?x="onmouseover=bad()';
 let listing = {unread: 7, notifications: [
-  entry('one', {link, summary: '**Bold** [Guide](docs/guide.md)\n\n<script>bad()</script>\n\n[Bad](javascript:bad())'}),
+  entry('one', {link, summary: '**Bold** [Guide](docs/guide.md) [Clip](assets/first%20run.webm#t=3)\n\n<script>bad()</script>\n\n[Bad](javascript:bad())'}),
   entry('decision', {kind: 'decision', link: '/decisions/decision'}),
   entry('read', {'read-at': 'before'}),
   {id: '<broken>', kind: '', error: '<script>broken</script>'},
@@ -89,6 +89,8 @@ vm.runInNewContext(fs.readFileSync(path.join(staticRoot, 'console.js'), 'utf8'),
   const html = nodes.find(n => n.innerHTML).innerHTML;
   assert.ok(html.includes('<strong>Bold</strong>'));
   assert.ok(html.includes('href="/records/docs/guide.md"'));
+  // A link to a file that is not Markdown leads to its /files address, where a recording plays.
+  assert.ok(html.includes('href="/files/assets/first%20run.webm#t=3"'));
   assert.ok(html.includes('&lt;script&gt;bad()&lt;/script&gt;'));
   assert.ok(!html.includes('<script>') && !html.includes('href="javascript:'));
   assert.equal(buttons(items[1]).length, 0); // Decisions can only be answered.

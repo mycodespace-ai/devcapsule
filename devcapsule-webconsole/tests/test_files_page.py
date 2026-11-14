@@ -203,6 +203,36 @@ def test_tree_route_serves_root_and_nested_listings(
     assert [entry["name"] for entry in body["entries"]] == expected_names
 
 
+def test_tree_route_gives_each_regular_file_the_media_type_the_raw_route_serves(
+    client: TestClient, project: Path,
+) -> None:
+    """A file entry's type equals the raw route's Content-Type for that file; a directory and a link have none."""
+    media = project / "media"
+    media.mkdir()
+    (media / "clip.webm").write_bytes(b"\x1a\x45\xdf\xa3")
+    (media / "voice.ogg").write_bytes(b"OggS")
+    (media / "notes.txt").write_text("plain\n", encoding="utf-8")
+    (media / "page.html").write_text("<p>markup</p>\n", encoding="utf-8")
+    (media / "frames").mkdir()
+    (media / "linked.webm").symlink_to("clip.webm")
+    console = with_token(client)
+
+    entries = console.get("/api/project/tree", params={"path": "media"}).json()["entries"]
+
+    types = {entry["name"]: entry["type"] for entry in entries}
+    assert types == {
+        "frames": None,
+        "clip.webm": "video/webm",
+        "linked.webm": None,
+        "notes.txt": "text/plain; charset=utf-8",
+        "page.html": "text/plain; charset=utf-8",
+        "voice.ogg": "audio/ogg",
+    }
+    for name in ("clip.webm", "voice.ogg", "notes.txt", "page.html"):
+        served = console.get("/api/project/raw", params={"path": f"media/{name}"})
+        assert served.headers["content-type"] == types[name]
+
+
 @pytest.mark.parametrize(
     ("requested", "expected_status"),
     [

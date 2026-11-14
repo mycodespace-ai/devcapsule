@@ -168,6 +168,9 @@ footer.console-foot { color: var(--muted); font-size: 0.85rem; max-width: var(--
 table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 table.data td.keep, table.data th.keep { white-space: nowrap; overflow-wrap: normal; }
 /* Rendered records. */
+/* A recording played by the Files page: never wider than the page nor taller than the window. */
+video.recording { display: block; max-width: 100%; max-height: max(12rem, calc(100vh - 24rem)); background: #000; }
+audio.recording { display: block; width: 100%; max-width: 40rem; }
 .record { max-width: 56rem; }
 .record h1, .record h2, .record h3 { margin-top: 1.8rem; }
 .record h1 { font-size: 1.6rem; } .record h2 { font-size: 1.25rem; } .record h3 { font-size: 1.05rem; }
