@@ -1,4 +1,4 @@
-// Run the actual files page with a small DOM adapter across listing, empty, file-redirect and failure states.
+// Run the actual files page with a small DOM adapter across listing, empty, recording, file-redirect and failure states.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -25,7 +25,19 @@ function descendants(node) {
   return node.children.flatMap(child => [child, ...descendants(child)]);
 }
 
-function runFilesPage(pathname, responder) {
+// A tree route answer: a listing, or the refusal text with its status.
+function listingOf(directory, entries) {
+  const body = JSON.stringify({ path: directory, entries });
+  return { ok: true, status: 200, text: async () => body, json: async () => JSON.parse(body) };
+}
+
+function refusal(status, message) {
+  return { ok: false, status, text: async () => message, json: async () => { throw new Error('not JSON'); } };
+}
+
+const NOT_A_DIRECTORY = name => refusal(404, `'${name}' is not a directory in the project\n`);
+
+function runFilesPage(pathname, responder, hash) {
   const container = new Node('div');
   const titleNode = new Node('h1');
   const fetches = [];
@@ -46,6 +58,7 @@ function runFilesPage(pathname, responder) {
     window: {
       location: {
         pathname,
+        ...(hash === undefined ? {} : { hash }),
         replace: url => replacedLocations.push(url),
       },
     },
@@ -74,12 +87,13 @@ function runFilesPage(pathname, responder) {
       path: 'docs/sub dir',
       entries: [
         { name: 'assets', kind: 'directory', size: null, modified: '2026-11-08T10:00:00Z' },
-        { name: 'guide.md', kind: 'file', size: 1536, modified: '2026-11-08T10:01:00Z' },
-        { name: '<clip>.webm', kind: 'file', size: 2097152, modified: '2026-11-08T10:02:00Z' },
-        { name: 'archive.tar', kind: 'file', size: 1610612736, modified: '2026-11-08T10:03:00Z' },
+        { name: 'guide.md', kind: 'file', size: 1536, modified: '2026-11-08T10:01:00Z', type: 'text/markdown; charset=utf-8' },
+        { name: '<clip>.webm', kind: 'file', size: 2097152, modified: '2026-11-08T10:02:00Z', type: 'video/webm' },
+        { name: 'archive.tar', kind: 'file', size: 1610612736, modified: '2026-11-08T10:03:00Z', type: 'application/octet-stream' },
         { name: 'tiny.bin', kind: 'file', size: 42, modified: '2026-11-08T10:04:00Z' },
-        { name: 'escape.md', kind: 'link', size: null, modified: '2026-11-08T10:05:00Z' },
-        { name: 'pipe', kind: 'other', size: null, modified: '2026-11-08T10:06:00Z' },
+        { name: 'escape.md', kind: 'link', size: null, modified: '2026-11-08T10:05:00Z', type: null },
+        { name: 'pipe', kind: 'other', size: null, modified: '2026-11-08T10:06:00Z', type: null },
+        { name: 'voice.ogg', kind: 'file', size: 2048, modified: '2026-11-08T10:07:00Z', type: 'audio/ogg' },
       ],
     }),
   }));
@@ -102,7 +116,7 @@ function runFilesPage(pathname, responder) {
   assert.deepEqual(headers, ['Name', 'Size', 'Modified']);
 
   const rows = dataTable.children[1].children;
-  assert.equal(rows.length, 7);
+  assert.equal(rows.length, 8);
 
   // Directory row
   assert.equal(rows[0].children[0].children[0].attributes.href, '/files/docs/sub%20dir/assets');
@@ -117,13 +131,21 @@ function runFilesPage(pathname, responder) {
   ]);
   assert.equal(rows[1].children[1].textContent, '1.5 KiB');
 
-  // Non-markdown file row with angle brackets kept as literal textContent
+  // Video row with angle brackets kept as literal textContent: view -> its /files address, where the page plays it
   const videoLinks = rows[2].children[0].children.filter(node => node.tag === 'a');
   assert.deepEqual(videoLinks.map(node => [node.textContent, node.attributes.href]), [
-    ['<clip>.webm', '/api/project/raw?path=docs%2Fsub%20dir%2F%3Cclip%3E.webm'],
+    ['<clip>.webm', '/files/docs/sub%20dir/%3Cclip%3E.webm'],
     ['download', '/api/project/raw?path=docs%2Fsub%20dir%2F%3Cclip%3E.webm&download=1'],
   ]);
   assert.equal(rows[2].children[1].textContent, '2.0 MiB');
+
+  // A file that is neither Markdown nor a recording, and a file the listing gives no type for: view -> raw
+  const viewLink = row => row.children[0].children.filter(node => node.tag === 'a')[0].attributes.href;
+  assert.equal(viewLink(rows[3]), '/api/project/raw?path=docs%2Fsub%20dir%2Farchive.tar');
+  assert.equal(viewLink(rows[4]), '/api/project/raw?path=docs%2Fsub%20dir%2Ftiny.bin');
+
+  // Audio row: view -> its /files address
+  assert.equal(viewLink(rows[7]), '/files/docs/sub%20dir/voice.ogg');
   assert.equal(rows[3].children[1].textContent, '1.5 GiB');
   assert.equal(rows[4].children[1].textContent, '42 B');
 
@@ -150,20 +172,76 @@ function runFilesPage(pathname, responder) {
   assert.equal(empty.document.title, 'Files · DevCapsule console');
   assert.ok(descendants(empty.container).some(node => node.attributes?.class === 'notice' && node.textContent === 'This directory is empty.'));
 
-  // 3. Direct /files/<file> URLs redirect to the file's view URL
-  const videoRedirect = await runFilesPage('/files/docs/demo.webm', async () => ({
-    ok: false,
-    status: 404,
-    text: async () => "'docs/demo.webm' is not a directory in the project\n",
-  }));
-  assert.deepEqual(videoRedirect.replacedLocations, ['/api/project/raw?path=docs%2Fdemo.webm']);
+  // 3. /files/<video> plays the file in the page: the type comes from the parent's listing, and no location is replaced.
+  const video = await runFilesPage('/files/docs/sub%20dir/first%20run.webm', async url => (
+    url === '/api/project/tree?path=docs%2Fsub%20dir%2Ffirst%20run.webm' ? NOT_A_DIRECTORY('docs/sub dir/first run.webm')
+      : url === '/api/project/tree?path=docs%2Fsub%20dir' ? listingOf('docs/sub dir', [
+        { name: 'first run.webm', kind: 'directory', size: null, modified: '2026-11-08T10:00:00Z', type: null },
+        { name: 'first run.webm', kind: 'file', size: 2097152, modified: '2026-11-08T10:02:00Z', type: 'video/webm' },
+      ])
+        : refusal(500, 'unexpected ' + url)
+  ));
+  assert.deepEqual(video.fetches.map(call => [call.url, call.options.credentials]), [
+    ['/api/project/tree?path=docs%2Fsub%20dir%2Ffirst%20run.webm', 'same-origin'],
+    ['/api/project/tree?path=docs%2Fsub%20dir', 'same-origin'],
+  ]);
+  assert.deepEqual(video.replacedLocations, []);
+  assert.equal(video.titleNode.textContent, 'docs/sub dir/first run.webm');
+  assert.equal(video.container.children.length, 3);
+  const [videoCrumbs, player, videoDownload] = video.container.children;
+  assert.deepEqual(videoCrumbs.children.filter(node => node.tag !== '#text').map(node => [node.tag, node.textContent, node.attributes.href]), [
+    ['a', 'project', '/files'],
+    ['a', 'docs', '/files/docs'],
+    ['a', 'sub dir', '/files/docs/sub%20dir'],
+    ['span', 'first run.webm', undefined],
+  ]);
+  assert.equal(player.tag, 'video');
+  assert.deepEqual(player.attributes, {
+    class: 'recording', controls: '', preload: 'metadata', src: '/api/project/raw?path=docs%2Fsub%20dir%2Ffirst%20run.webm',
+  });
+  assert.deepEqual(videoDownload.children.map(node => [node.textContent, node.attributes.href]), [
+    ['download', '/api/project/raw?path=docs%2Fsub%20dir%2Ffirst%20run.webm&download=1'],
+  ]);
+
+  // 3a. An audio file at the project root plays in an audio element; its parent's listing is the root's.
+  const audio = await runFilesPage('/files/voice.ogg', async url => (
+    url === '/api/project/tree?path=voice.ogg' ? NOT_A_DIRECTORY('voice.ogg')
+      : url === '/api/project/tree' ? listingOf('', [{ name: 'voice.ogg', kind: 'file', size: 2048, modified: '2026-11-08T10:07:00Z', type: 'audio/ogg' }])
+        : refusal(500, 'unexpected ' + url)
+  ));
+  assert.deepEqual(audio.replacedLocations, []);
+  assert.equal(audio.container.children[1].tag, 'audio');
+  assert.equal(audio.container.children[1].attributes.src, '/api/project/raw?path=voice.ogg');
+  assert.deepEqual(audio.container.children[0].children.filter(node => node.tag !== '#text').map(node => [node.tag, node.textContent]), [
+    ['a', 'project'], ['span', 'voice.ogg'],
+  ]);
+
+  // 3b. Any other file leaves for where it is viewed, with the address's fragment: raw, or Records for Markdown.
+  const inDocs = entries => async url => (url === '/api/project/tree?path=docs' ? listingOf('docs', entries) : NOT_A_DIRECTORY('the file'));
+  const text = await runFilesPage('/files/docs/notes.txt', inDocs([
+    { name: 'notes.txt', kind: 'file', size: 12, modified: '2026-11-08T10:00:00Z', type: 'text/plain; charset=utf-8' },
+  ]), '#L3');
+  assert.deepEqual(text.replacedLocations, ['/api/project/raw?path=docs%2Fnotes.txt#L3']);
+  assert.equal(text.container.children.length, 0);
+  const markdown = await runFilesPage('/files/docs/guide.md', inDocs([
+    { name: 'guide.md', kind: 'file', size: 12, modified: '2026-11-08T10:00:00Z', type: 'text/markdown; charset=utf-8' },
+  ]));
+  assert.deepEqual(markdown.replacedLocations, ['/records/docs/guide.md']);
+
+  // 3c. A name the parent's listing does not hold as a regular file, and a parent that cannot be listed, go to the
+  // raw route, which answers for them; a video name alone plays nothing.
+  const linked = await runFilesPage('/files/docs/demo.webm', inDocs([
+    { name: 'demo.webm', kind: 'link', size: null, modified: '2026-11-08T10:00:00Z', type: null },
+  ]));
+  assert.deepEqual(linked.replacedLocations, ['/api/project/raw?path=docs%2Fdemo.webm']);
+  const unlisted = await runFilesPage('/files/docs/demo.webm', async url => (
+    url === '/api/project/tree?path=docs' ? refusal(403, 'cannot read') : NOT_A_DIRECTORY('docs/demo.webm')
+  ));
+  assert.deepEqual(unlisted.replacedLocations, ['/api/project/raw?path=docs%2Fdemo.webm']);
 
   // 4. Missing or refused paths render through fail()
-  const failed = await runFilesPage('/files/missing', async () => ({
-    ok: false,
-    status: 404,
-    text: async () => "no directory at 'missing' in the project\n",
-  }));
+  const failed = await runFilesPage('/files/missing', async () => refusal(404, "no directory at 'missing' in the project\n"));
+  assert.equal(failed.fetches.length, 1);
   const failure = failed.container.children[0];
   assert.equal(failure.attributes.class, 'failure');
   assert.ok(failure.textContent.includes("no directory at 'missing' in the project"));
@@ -188,7 +266,7 @@ function runFilesPage(pathname, responder) {
   assert.equal(recorded.container.children[2].attributes.class, 'data');
   assert.equal(descendants(nested.container).some(node => node.textContent === 'Open its presentation'), false);
 
-  console.log('Files script: breadcrumbs, table links, sizes, empty notice, file redirect, failure and presentation offer passed.');
+  console.log('Files script: breadcrumbs, table links, sizes, empty notice, recordings played in the page, file redirect, failure and presentation offer passed.');
 })().catch(error => {
   console.error(error);
   process.exitCode = 1;

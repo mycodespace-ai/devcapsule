@@ -413,11 +413,13 @@
     return "/api/project/raw?path=" + encodeURIComponent(resolved.path) + resolved.fragment;
   }
 
+  // Where a link in a record leads: a Markdown file to Records, anything else
+  // to its /files address, where the Files page plays a recording and sends
+  // every other file on to the raw route.
   function recordUrl(resolved) {
     if (resolved.path === null) return "#";
-    return resolved.path.toLowerCase().endsWith(".md")
-      ? "/records/" + resolved.path.split("/").map(encodeURIComponent).join("/") + resolved.fragment
-      : rawRecordUrl(resolved);
+    const segments = resolved.path.split("/").map(encodeURIComponent).join("/");
+    return (resolved.path.toLowerCase().endsWith(".md") ? "/records/" : "/files/") + segments + resolved.fragment;
   }
 
   function recordRenderer(from) {
@@ -533,10 +535,68 @@
     return path.split("/").map(encodeURIComponent).join("/");
   }
 
-  function fileViewUrl(path) {
-    return path.toLowerCase().endsWith(".md")
-      ? "/records/" + encodeSegments(path)
-      : "/api/project/raw?path=" + encodeURIComponent(path);
+  function rawFileUrl(path) {
+    return "/api/project/raw?path=" + encodeURIComponent(path);
+  }
+
+  // Whether a file is played by this page. `type` is the media type the tree
+  // route gives for a file entry; the server is the one place that decides
+  // what a file is served as. Chrome refuses to play a recording opened as a
+  // raw document, because the raw route's policy forbids that document every
+  // fetch, its own player's included; an element in a console page is not
+  // under that policy.
+  function played(type) {
+    return typeof type === "string" && (type.startsWith("video/") || type.startsWith("audio/"));
+  }
+
+  // Where a file opens: a Markdown file in Records, a recording on its own
+  // /files address, anything else as the raw file. Without `type` the answer
+  // for a recording is the raw address.
+  function fileViewUrl(path, type) {
+    if (path.toLowerCase().endsWith(".md")) return "/records/" + encodeSegments(path);
+    return played(type) ? "/files/" + encodeSegments(path) : rawFileUrl(path);
+  }
+
+  // The breadcrumbs of a project path: every directory links to its listing.
+  // `file`, when given, is the name that ends the path and is not a link.
+  function fileCrumbs(directory, file) {
+    const crumbs = el("p", { class: "crumbs" }, [el("a", { href: "/files", text: "project" })]);
+    const parts = directory ? directory.split("/") : [];
+    parts.forEach((part, index) => {
+      crumbs.appendChild(document.createTextNode(" › "));
+      crumbs.appendChild(el("a", { href: "/files/" + encodeSegments(parts.slice(0, index + 1).join("/")), text: part }));
+    });
+    if (file !== undefined) {
+      crumbs.appendChild(document.createTextNode(" › "));
+      crumbs.appendChild(el("span", { text: file }));
+    }
+    return crumbs;
+  }
+
+  // The media type of the regular file at `path`, read from the listing of
+  // the directory that holds it; null when that listing cannot be read or
+  // has no such file.
+  async function fileType(path) {
+    const cut = path.lastIndexOf("/");
+    const directory = cut < 0 ? "" : path.slice(0, cut);
+    const name = path.slice(cut + 1);
+    const response = await fetch(
+      directory ? "/api/project/tree?path=" + encodeURIComponent(directory) : "/api/project/tree",
+      { credentials: "same-origin" });
+    if (!response.ok) return null;
+    const entry = (await response.json()).entries.find((candidate) => candidate.kind === "file" && candidate.name === name);
+    return entry ? entry.type : null;
+  }
+
+  // One recording in the page: its breadcrumbs, the player and the download link.
+  function showRecording(container, path, type) {
+    const cut = path.lastIndexOf("/");
+    const player = el(type.startsWith("video/") ? "video" : "audio",
+      { class: "recording", controls: "", preload: "metadata", src: rawFileUrl(path) });
+    container.replaceChildren(
+      fileCrumbs(cut < 0 ? "" : path.slice(0, cut), path.slice(cut + 1)),
+      player,
+      el("p", {}, [el("a", { class: "muted", href: rawFileUrl(path) + "&download=1", text: "download" })]));
   }
 
   pages.files = async function (container) {
@@ -549,9 +609,12 @@
     const response = await fetch(treeUrl, { credentials: "same-origin" });
     const bodyText = await response.text();
     if (!response.ok) {
+      // The address names a file: play a recording here, open anything else where it is viewed.
       if (response.status === 404 && requested && bodyText.includes("is not a directory in the project")
           && typeof window.location.replace === "function") {
-        window.location.replace(fileViewUrl(requested));
+        const type = await fileType(requested);
+        if (played(type)) showRecording(container, requested, type);
+        else window.location.replace(fileViewUrl(requested) + (window.location.hash || ""));
         return;
       }
       throw new Error(treeUrl + ": " + (bodyText.trim() || "HTTP " + response.status));
@@ -561,17 +624,7 @@
     const label = directory || "Files";
     if (heading) heading.textContent = label;
     document.title = label + " · DevCapsule console";
-    const crumbs = el("p", { class: "crumbs" }, [el("a", { href: "/files", text: "project" })]);
-    if (directory) {
-      const parts = directory.split("/");
-      parts.forEach((part, index) => {
-        crumbs.appendChild(document.createTextNode(" › "));
-        crumbs.appendChild(el("a", {
-          href: "/files/" + parts.slice(0, index + 1).map(encodeURIComponent).join("/"),
-          text: part,
-        }));
-      });
-    }
+    const crumbs = fileCrumbs(directory);
     if (!listing.entries.length) {
       container.replaceChildren(crumbs, el("p", { class: "notice", text: "This directory is empty." }));
       return;
@@ -590,13 +643,13 @@
     ]);
     const rows = listing.entries.map((entry) => {
       const entryPath = directory ? directory + "/" + entry.name : entry.name;
-      const rawUrl = "/api/project/raw?path=" + encodeURIComponent(entryPath);
+      const rawUrl = rawFileUrl(entryPath);
       let nameNodes;
       if (entry.kind === "directory") {
         nameNodes = [el("a", { href: "/files/" + encodeSegments(entryPath), text: entry.name + "/" })];
       } else if (entry.kind === "file") {
         nameNodes = [
-          el("a", { href: fileViewUrl(entryPath), text: entry.name }),
+          el("a", { href: fileViewUrl(entryPath, entry.type), text: entry.name }),
           " · ",
           el("a", { class: "muted", href: rawUrl + "&download=1", text: "download" }),
         ];

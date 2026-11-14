@@ -49,11 +49,12 @@ eight pages:
   served alongside them. Each file is read from the mounted working tree on
   every open, so edits appear on reload.
 - **Files**: every file of the mounted project listed directory by directory
-  and served read-only with its media type. Videos, audio, PDFs, images, and
-  plain-text source or configuration files open in the browser, Markdown files
-  open in **Records**, and each file row offers a download link alongside its
-  view link. `/files/<path>` links can be shared with anyone who has this run's
-  console link.
+  and served read-only with its media type. A video or an audio file plays on
+  its own `/files/<path>` page, PDFs, images, and plain-text source or
+  configuration files open in the browser, Markdown files open in **Records**,
+  and each file row offers a download link alongside its view link.
+  `/files/<path>` links can be shared with anyone who has this run's console
+  link.
 - **Presentations**: the project's recorded scenarios, listed as cards. A
   folder that holds a `presentation.json`, such as the evidence of a recorded
   end-to-end scenario, opens as slides at `/presentations/<folder>`; **Files**

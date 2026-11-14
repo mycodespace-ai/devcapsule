@@ -299,7 +299,12 @@ def create_app(settings: Settings) -> FastAPI:
 
     @app.get("/api/project/tree")
     def project_tree(path: str = "") -> Response:
-        """One directory of the mounted project: entries as lstat sees them, links unfollowed."""
+        """One directory of the mounted project: entries as lstat sees them, links unfollowed.
+
+        Each regular file's entry carries ``type``, the media type the raw route
+        serves it as, so the Files page asks here which files are video or
+        audio and keeps no table of its own; ``type`` is null for other entries.
+        """
         try:
             listing = list_project_directory(settings.project, path)
         except PathRefused as error:
@@ -310,6 +315,8 @@ def create_app(settings: Settings) -> FastAPI:
             return PlainTextResponse(f"no directory at {path!r} in the project\n", status_code=404)
         except OSError:
             return PlainTextResponse(f"cannot read {path!r} in the project\n", status_code=403)
+        for entry in listing["entries"]:
+            entry["type"] = raw_content_type(entry["name"]) if entry["kind"] == "file" else None
         return JSONResponse(listing)
 
     @app.get("/api/project/presentations")
