@@ -35,9 +35,12 @@ or names the date it was added.
    a pass; a test that passes on its second run has found a bug or a bad
    test, and either gets a record. Added 2026-11-06, from the claim test
    of 2026-09-22.
-6. Every run leaves evidence under `dist/e2e-evidence/`, named by the
+6. Every smoke run leaves evidence under `dist/e2e-evidence/`, named by the
    executable's identity and the environment: the host, the daemon, the
-   base image by digest. The acceptance record cites it; nobody
+   base image by digest; recorded scenarios (`scenario_recorder.py` and
+   `--scenario`) write build-safe recordings under
+   `tests/e2e/evidence/<scenario-id>/scenario-video.webm` (ignored by Git and
+   outside `dist/`). The acceptance record cites it; nobody
    reconstructs it from memory.
 7. Each test proves one thing a user would notice, and the table below
    names it, so a failure names the broken journey. A test that proves a
@@ -125,6 +128,11 @@ to installing `xprop` in every image.
 
 - `dist/e2e-base-build.json`: the base a `--build-base` run built, its image
   id, and the builder's identity and checksum.
+- `tests/e2e/evidence/<scenario-id>/`: recorded scenario videos
+  (`scenario-video.webm`, `agent-desktop-raw.webm`), step screenshots
+  (`step-NNN.png`, `poster.png`), and `scenario-result.json`, kept inside the
+  project mount for Web Console playback and outside `dist/` so clean builds
+  keep them intact.
 - `dist/e2e-evidence/ide-smoke/<UTC time>-<id>/`: one directory per IDE
   smoke run, never overwritten, with `run.json` naming the executable and,
   per surface, the launcher and init logs, the window found, the records
@@ -148,18 +156,20 @@ Run a catalog scenario through `ide-smoke`; `--scenario` needs exactly one
 .venv/bin/python -m nox -s ide-smoke -- --surface eclipse --scenario eclipse-hello-time-debug --component-browser
 ```
 
-Or invoke the recorder module directly against an existing PEX executable:
+Or invoke the recorder module directly against an existing PEX executable
+(`--evidence` defaults to `tests/e2e/evidence/<scenario-id>`):
 
 ```sh
 PYTHONPATH=src:. .nox/ide-smoke/bin/python -m tests.e2e.scenario_recorder replay \
   --scenario eclipse-hello-time-debug \
-  --evidence dist/e2e-evidence/eclipse-debug \
+  --evidence tests/e2e/evidence/eclipse-hello-time-debug \
   --pex dist/devcapsule-local.pex
 ```
 
 The replay seeds `seed_files` into the disposable project workspace, executes
 each `ActionStep` (`click`, `double_click`, `right_click`, `type`, `press`,
-`wait`) with `${PROJECT_PATH}` and `${WORKSPACE}` substitution, and writes:
+`wait`) with `${PROJECT_PATH}` and `${WORKSPACE}` substitution, and writes into
+`tests/e2e/evidence/<scenario-id>/`:
 
 - `scenario-video.webm`: pause-free 12 fps VP8 WebM encoded by `BurstFrameRecorder`
   using `ffmpeg` (`image2pipe` `mjpeg` $\rightarrow$ `libvpx`) from either the host or
@@ -180,21 +190,21 @@ inner capsule's desktop turn by turn without recording LLM thinking pauses:
 # Start the child IDE capsule and local HTTP controller:
 PYTHONPATH=src:. .nox/ide-smoke/bin/python -m tests.e2e.scenario_recorder serve \
   --scenario eclipse-hello-time-debug \
-  --evidence /tmp/scenario-run \
+  --evidence tests/e2e/evidence/eclipse-hello-time-debug \
   --pex dist/devcapsule-local.pex
 
 # Inspect the current screen and X11 window list:
 PYTHONPATH=src:. .nox/ide-smoke/bin/python -m tests.e2e.scenario_recorder ctl \
-  --evidence /tmp/scenario-run '{"cmd":"screenshot"}'
+  --evidence tests/e2e/evidence/eclipse-hello-time-debug '{"cmd":"screenshot"}'
 
 # Execute a batch of keyboard/mouse steps (frames are recorded only during active steps):
 PYTHONPATH=src:. .nox/ide-smoke/bin/python -m tests.e2e.scenario_recorder ctl \
-  --evidence /tmp/scenario-run \
+  --evidence tests/e2e/evidence/eclipse-hello-time-debug \
   '{"cmd":"act","actions":[{"action":"press","text":"F11"},{"action":"wait","ms":3000}]}'
 
 # Finalize and encode scenario-video.webm:
 PYTHONPATH=src:. .nox/ide-smoke/bin/python -m tests.e2e.scenario_recorder ctl \
-  --evidence /tmp/scenario-run '{"cmd":"stop"}'
+  --evidence tests/e2e/evidence/eclipse-hello-time-debug '{"cmd":"stop"}'
 ```
 
  When the interactive session finishes, `action-log.json` holds the exact

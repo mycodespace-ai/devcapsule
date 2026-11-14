@@ -78,14 +78,20 @@ nox -s ide-smoke -- \
 
 ## 3. Where to find the recorded video and screenshots
 
-Every `nox -s ide-smoke` run creates a fresh, timestamped directory under:
+Recorded scenario runs (`--scenario` or `scenario_recorder`) write their
+artifacts into the build-safe, git-ignored `evidence/<scenario-id>/` directory
+beside `scenarios/` (so clean `dist/` builds never remove recordings, and the
+DevCapsule web console can stream them directly from the project mount):
 
 ```text
-devcapsule-src/dist/e2e-evidence/ide-smoke/<UTC-timestamp>-<id>/<surface>/
+devcapsule-src/tests/e2e/evidence/<scenario-id>/
 ```
 
-For example, an Eclipse run writes into
-`dist/e2e-evidence/ide-smoke/20261021T165500Z-a1b2c3/eclipse/`:
+(Surface-level `nox -s ide-smoke` logs remain under
+`devcapsule-src/dist/e2e-evidence/ide-smoke/<UTC-timestamp>-<id>/<surface>/`.)
+
+For example, replaying `eclipse-hello-time-debug` writes into
+`devcapsule-src/tests/e2e/evidence/eclipse-hello-time-debug/`:
 
 | File | Contents |
 |---|---|
@@ -104,10 +110,11 @@ scenario to act out live against an IDE capsule, run the interactive HTTP
 controller so LLM thinking time between turns is never recorded into the video:
 
 ```sh
-# 1. Start the child IDE capsule and local HTTP controller in the background:
+# 1. Start the child IDE capsule and local HTTP controller in the background
+#    (--evidence defaults to tests/e2e/evidence/<scenario-id>):
 PYTHONPATH=src:. .nox/ide-smoke/bin/python -m tests.e2e.scenario_recorder serve \
   --scenario eclipse-hello-time-debug \
-  --evidence /tmp/scenario-live \
+  --evidence tests/e2e/evidence/eclipse-hello-time-debug \
   --pex dist/devcapsule-local.pex
 ```
 
@@ -118,11 +125,11 @@ Once `controller.json` appears in `--evidence`, the agent drives the IDE with
 ```sh
 # 2. Capture the current screen and X11 window list:
 PYTHONPATH=src:. .nox/ide-smoke/bin/python -m tests.e2e.scenario_recorder ctl \
-  --evidence /tmp/scenario-live '{"cmd":"screenshot"}'
+  --evidence tests/e2e/evidence/eclipse-hello-time-debug '{"cmd":"screenshot"}'
 
 # 3. Send mouse/keyboard actions (frames are recorded only while actions execute):
 PYTHONPATH=src:. .nox/ide-smoke/bin/python -m tests.e2e.scenario_recorder ctl \
-  --evidence /tmp/scenario-live \
+  --evidence tests/e2e/evidence/eclipse-hello-time-debug \
   '{"cmd":"act","actions":[
     {"action":"press","text":"F11","reason":"Launch Eclipse debugger"},
     {"action":"wait","ms":5000,"reason":"Wait for breakpoint hit"}
@@ -130,9 +137,9 @@ PYTHONPATH=src:. .nox/ide-smoke/bin/python -m tests.e2e.scenario_recorder ctl \
 
 # 4. Stop the session and encode scenario-video.webm:
 PYTHONPATH=src:. .nox/ide-smoke/bin/python -m tests.e2e.scenario_recorder ctl \
-  --evidence /tmp/scenario-live '{"cmd":"stop"}'
+  --evidence tests/e2e/evidence/eclipse-hello-time-debug '{"cmd":"stop"}'
 ```
 
 To package an interactive run as a permanent repeatable scenario, copy the
-generated `/tmp/scenario-live/action-log.json` array into a new file under
-`devcapsule-src/tests/e2e/scenarios/<name>.json`.
+generated `tests/e2e/evidence/<scenario-id>/action-log.json` array into a new
+file under `devcapsule-src/tests/e2e/scenarios/<scenario-id>.json`.

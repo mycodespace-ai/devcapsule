@@ -335,6 +335,24 @@ def test_main_fails_when_the_base_cannot_be_resolved(tmp_path: Path, capsys: pyt
     assert "cannot resolve base 'nowhere'" in capsys.readouterr().err
 
 
+def test_main_ignores_python_files_under_excluded_resources_and_evidence_trees(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Precondition: a repository whose ``tests/resources`` and ``tests/e2e/evidence``
+    trees hold undocumented ``test_*.py`` and ``conftest.py`` files that import the
+    command line. Action: run ``main``. Postcondition: exit 0 with 0 checked files
+    and 0 breaches."""
+    root = tmp_path / "devcapsule-src"
+    for excluded in (root / "tests" / "resources", root / "tests" / "e2e" / "evidence" / "demo-run"):
+        excluded.mkdir(parents=True)
+        (excluded / "test_captured.py").write_text("from devcapsule import cli\n" + UNDOCUMENTED)
+        (excluded / "conftest.py").write_text("from devcapsule import cli\n")
+    _git(root, "init", "-q", "-b", "main")
+    _git(root, "commit", "-q", "--allow-empty", "-m", "base")
+    assert conventions.main(["--base", "main", "--project-root", str(root)]) == 0
+    assert "0 files follow the convention; 0 breaches" in capsys.readouterr().out
+
+
 # Rule 4, the command line. ``_mirror`` gives each case a mirror file that the
 # other rules accept, so that a breach reported here is rule 4's.
 

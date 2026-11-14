@@ -159,8 +159,10 @@ in [`INFORMATION-MODEL.md`](devcapsule-src/devcapsule/assets/project_workflow/de
   `pex_clean_machine`, `recursive_dogfood_e2e`, and `ide-smoke`. An
   end-to-end test drives the product through its user entry point, fakes
   nothing, and reads the result from outside. Each needs Docker and is
-  opt-in. At least one runs for every release. Evidence lands under
-  `devcapsule-src/dist/e2e-evidence/`. See
+  opt-in. At least one runs for every release. Smoke-run logs land under
+  `devcapsule-src/dist/e2e-evidence/`. Recorded scenarios land under
+  `devcapsule-src/tests/e2e/evidence/<scenario-id>/scenario-video.webm`,
+  ignored by Git and outside `dist/`. See
   [end-to-end tests](engineering-docs/development/e2e-tests.md).
 - **Smoke test**: `.venv/bin/python -m nox -s smoke` starts the built
   executable and proves its commands answer. `nox -s ide-smoke` launches each
