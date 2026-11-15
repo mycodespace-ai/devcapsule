@@ -6,7 +6,7 @@ Start date: 2026-09-18
 
 State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; the blocking bug of 2026-11-10, unit tests reading the capsule's mounted launcher settings, closed 2026-11-13 on the owner's word after the merge of pull request #29 (`82b9c07e`); one blocking bug open since 2026-11-13, this repository's own project configuration predates 0.3: the refresh is checked on a copy and waits for the owner's `project init --regenerate` on the host; one major bug in fixing, the Python route and its guard, merged through #25 with the local gate's routing open; a follow-up to PR #18 on `ws-maintenance/host-inputs-at-source`, by Pair Review, for the owner's review; rewritten 2026-11-12 on the owner's direction so that host inputs are values and no touched test patches; the rule *Host Inputs* written into `WORKFLOW-LOCAL.md` on the owner's word and the rewrite reviewed by the partner through #28, merged at `83d238b8`; the owner's reading of #26 and rulings on the rule's open readings are next; *Unit Tests* rules 8 and 9 added on the owner's word and held by machine, the command line only in `test_cli.py` with eight files in a debt list, and no network in a unit test; the owner's read-then-decide direction merged through #29, on top of #26: the launch's decisions are testable from values, the holding pen is empty and three files remain in the command-line debt list
 
-Definition read: WORKFLOW.md@e83f22a20701, WORKFLOW-LOCAL.md@e84d2678942b
+Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
 Integration target: `main`
 
@@ -5439,13 +5439,15 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-- Blocking for 0.3.1, fixed on `ws-maintenance/0.3.1-rootless-docker` 2026-11-15
-  (host rootless validation pending): when `docker info` reports
+- Blocking for 0.3.1, filed and closed 2026-11-15 (PR #38 merged into
+  `release-0.3.1` at `2a3d6f61`): when `docker info` reports
   `Security Options: rootless`, entry layers pass `uid=0, gid=0, user="root"`
   to `project_runtime_plan()` and `rootless_docker=True` to `PycharmRunOptions`
   (`--user 0:0`, `IDE_UID=0`, `IDE_GID=0`, `IDE_USER=root`, skipping redundant
   `gosu 0:0` and same-owner `chown` under `--cap-drop ALL`). All changes gate on
-  `rootless_docker` so non-rootless behavior stays unchanged. Record:
+  `rootless_docker` so non-rootless behavior stays unchanged. Owner verified
+  `devcapsule-local.pex` (`a1a54eba`, SHA-256 `7921e3bb…`) on the rootless
+  Docker installation. Record:
   [the 2026-11-15 bug](../../bugs/devcapsule/2026-11-15-in-capsule-devcapsule-fails-on-mounted-settings-and-pex-cache.md).
 - Blocking for 0.3.1, owner's rating of 2026-11-13: this repository's own
   `.devcapsule` is committed in its pre-0.3 form, a schema-1 manifest and a

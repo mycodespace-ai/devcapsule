@@ -1,9 +1,10 @@
 ---
-status: fixed
+status: closed
 severity: blocking
 target: 0.3.1
 owner: maintenance
 opened: 2026-11-15
+closed: 2026-11-15
 requirements: [R-CONFIG-001]
 ---
 
@@ -171,10 +172,10 @@ emitted the `PEXWarning` twice with two different fallback directories
     - `CapsuleUser.command()` and `CapsuleUser.owner_changes()` (and `logs.own`,
       `display._own`, and both `entrypoint.sh` scripts) skip redundant `gosu 0:0` /
       same-UID `chown 0:0` calls that `--cap-drop ALL` would otherwise refuse.
-- **Verification target:** full `nox -s tests`, `nox -s typecheck`, `nox -s docs-contract`,
-  plus end-to-end validation on a real rootless Docker daemon (`Docker` with `Security Options: rootless`).
+- **Validation and closure (2026-11-15):**
+  - `validate_unittests_follow_conventions.py --base release-0.3.1` (`0` breaches), `nox -s typecheck` (`344` files), `nox -s tests` (`3267 passed`), `nox -s smoke`, and `nox -s docs-contract` (`249 pages`) passed on `ws-maintenance/0.3.1-rootless-docker` (`a1a54eba`).
+  - Owner transported `devcapsule-local.pex` (`v0.3.1-local-linux-x86_64`, SHA-256 `7921e3bbd6abbe5ade7790d5c9020383d6117aa109608fa2714206246fde5d40`, built from `a1a54eba`) to the affected Ubuntu 24.04.5 LTS rootless Docker host and confirmed it worked on the rootless Docker installation (PR #38 merged into `release-0.3.1` at `2a3d6f61`).
 - **Remaining note:** `scie` `boot.commands[""]` still unpacks without exporting `PEX_ROOT`; once
   `/home/devcapsule/.cache` is writable under rootless `0:0`, the default `$XDG_CACHE_HOME/pex` path
   stops falling back to `/tmp/pex-root.*` on writable capsule homes.
-- **Close criteria:** PR on `ws-maintenance/0.3.1-rootless-docker` is merged into `release-0.3.1`
-  and `devcapsule project run` is verified end-to-end inside a capsule on the owner's rootless Docker host.
+- **Reopen criteria:** Reopen if a capsule launched with the merged `0.3.1` executable on rootless Docker again fails with `/etc/devcapsule/home/settings.toml` permission denied or `/home/devcapsule/.cache/pex` unwritable, or if non-rootless behavior regresses.
