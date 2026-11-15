@@ -231,3 +231,45 @@ def daemon_architecture() -> str:
         return host_architecture()
     reported = completed.stdout.strip()
     return architecture_key(reported) if completed.returncode == 0 and reported else host_architecture()
+
+
+def security_options_indicate_rootless(security_options: Sequence[str] | str) -> bool:
+    """Return whether Docker daemon ``SecurityOptions`` report rootless mode."""
+
+    raw_items: Sequence[str] = (
+        security_options.splitlines() if isinstance(security_options, str) else security_options
+    )
+    for item in raw_items:
+        for token in item.split(","):
+            if token.strip() in {"rootless", "name=rootless"}:
+                return True
+    return False
+
+
+def daemon_is_rootless() -> bool:
+    """Whether the Docker daemon runs in rootless mode.
+
+    Under rootless Docker, host UID/GID are mapped to ``0:0`` inside the
+    container user namespace, whereas container UID/GID equal to the host IDs
+    map to subordinate IDs that cannot access ``0600``/``0700`` bind mounts.
+    Returns ``False`` when the daemon does not answer or runs rootful.
+    """
+    try:
+        completed = subprocess.run(
+            ["docker", "info", "--format", "{{json .SecurityOptions}}"],
+            capture_output=True, text=True, timeout=30, check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    reported = completed.stdout.strip()
+    if completed.returncode != 0 or not reported or reported == "null":
+        return False
+    try:
+        parsed = json.loads(reported)
+    except ValueError:
+        return security_options_indicate_rootless(reported)
+    if not isinstance(parsed, list):
+        return False
+    return security_options_indicate_rootless(
+        [item for item in parsed if isinstance(item, str)]
+    )

@@ -138,6 +138,8 @@ def amd64_linux_host_by_default(request: pytest.FixtureRequest, monkeypatch: pyt
     monkeypatch.setattr("devcapsule.platforms.host_architecture", lambda: "amd64")
     for module in ("environment_realization", "images.build", "launch.pycharm._launcher"):
         monkeypatch.setattr(f"devcapsule.{module}.daemon_architecture", lambda: "amd64")
+    for module in ("commands.project", "recursive_successor"):
+        monkeypatch.setattr(f"devcapsule.{module}.daemon_is_rootless", lambda: False)
 
 
 DOCKER_MARKERS = ("e2e", "base_build_e2e", "recursive_e2e", "contributor_e2e", "ide_smoke", "docker")

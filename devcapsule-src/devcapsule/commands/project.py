@@ -51,6 +51,7 @@ from devcapsule.commands._software_approvals import (
 from devcapsule.configuration.approvals import render_software_approvals, select_software_approvals
 from devcapsule import notifications
 from devcapsule import version_sets
+from devcapsule.host_daemon import daemon_is_rootless
 from devcapsule import runtime_configuration
 from devcapsule.runtime_configuration import CapsuleAccess
 from devcapsule.compat import CliError, DecisionPending
@@ -2257,6 +2258,7 @@ class ProjectRunCommand(Command):
         image_labels: Mapping[str, str] = {}
         realized = None
         degraded_download = False
+        rootless_docker = daemon_is_rootless()
         if isinstance(lock.get("base"), dict) and isinstance(lock.get("materialization"), dict):
             while True:
                 try:
@@ -2290,7 +2292,11 @@ class ProjectRunCommand(Command):
                     degraded_download = True
             image = realized.image.reference
             image_labels = realized.image.labels
-            checkout_runtime_plan = project_runtime_plan(selected, realized.locked)
+            checkout_runtime_plan = (
+                project_runtime_plan(selected, realized.locked, uid=0, gid=0, user="root")
+                if rootless_docker
+                else project_runtime_plan(selected, realized.locked)
+            )
             use_image_process = True
             action = "Materialized" if realized.created else "Reused"
             print(f"{action} canonical environment: {image}")
@@ -2415,6 +2421,7 @@ class ProjectRunCommand(Command):
                 display_transport=display_transport,
                 web_console=web_console,
                 capsule_platform=lock_platform(lock),
+                rootless_docker=rootless_docker,
             )
         )
         if command_report is not None:
