@@ -46,6 +46,7 @@ MAXIMUM_TOKENS = 64
 VERBS = ("ide", "add", "omit", "restore", "use", "set", "deny", "forget", "unbind", "env", "trust", "docker-args", "authorize", "bind")
 SECURE_AUTHORIZATIONS = {
     "network": {"bridge", "none"}, "docker-daemon": {"none"},
+    "github-ssh": {"false", "none"},
     "development-sudo": {"false", "none"}, "host-browser": {"false", "none"}, "host-x11": {"false", "none"},
 }
 WIDENING = ("authorize", "bind", "forget", "trust accept", "docker-args set")
