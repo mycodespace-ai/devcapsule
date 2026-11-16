@@ -2,13 +2,13 @@
 
 Mnemonic: `presentations`
 Start date: 2026-11-16
-State: active; registered at owner direction; design and implementation not started
-Branch association: `ws-presentations/authoring`
+State: paused; implementation prepared; owner-operated PR and Pair Review pending
+Branch association: `ws-presentations/0.3.1-authoring`
 Branch prefix: `ws-presentations/`
-Integration target: `main`
+Integration target: `release-0.3.1`
 Delivery method: pull request; records published on coordination
 
-Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
+Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
 ## Goal and agreed use case
 
@@ -32,8 +32,9 @@ The owner confirms that the current viewer is already human-validated, including
 An agent already recorded an English-specified scenario in another project after the owner pointed it at this source.
 Both engineering and prospective-user/tutorial audiences remain in scope; the existing viewer is the accepted baseline.
 
-Registration starts no design or implementation. The owner explicitly deferred design during use-case definition.
-No package layout, interface, installation route, release target or outside-capsule support promise is selected.
+The owner authorized implementation on 2026-11-16 and selected release 0.3.1.
+Pair reviewer: Antigravity `gemini-4-hydrogen-high`, with `--effort high`, verified in `antigravity models`.
+The existing viewer and its schema remain the contract.
 The broader reusable-processes idea is not assigned wholesale to this workstream.
 Project-management delivered the use case and references to both original authoring messages by coordination mail.
 Acknowledged that handoff as the goal above; its full text is preserved in the handoff record.
@@ -43,29 +44,51 @@ The self-contained handoff names the exact paths and evidence.
 
 ## Planned next step
 
-Registration and handoff acknowledgement are complete.
-Wait for the owner's next direction before beginning design or implementation.
+The authoring kit is implemented and the installed-artifact checks passed.
+The owner must open the implementation PR against `release-0.3.1`, or install the prescribed GitHub CLI.
+Then start the requested Antigravity Pair Review from its committed brief, in its own worktree.
+The implementation has not been pair-reviewed and must not be described as ready to merge.
+Disclose the known local gate limitation and verify the hosted checks on the implementation PR.
 Do not restart a viewer redesign, audience study or general process invention.
 
 ## Validation and checkout state
 
-Forked from fetched canonical `upstream/main` at `dac6b9d4`; no synchronization is needed at registration.
+The implementation branch starts at `upstream/release-0.3.1` (`10e7fda3`), carrying only this workstream's registration commits from the former `ws-presentations/authoring`.
+Do not synchronize with main: its development-version changes do not belong in this release-targeted slice.
+The workflow text differs only in its source-version stamp; its rules were read.
+The required GitHub CLI location is absent; prepare and push changes, then hand PR creation to the owner under WORKFLOW-LOCAL.
 No open bug is owned by presentations at registration.
-This is an administrative registration with no product changes. Check the new records and links, not the product gate.
-The owner's direction permits this project-management coordination despite local test failures.
-The existing full-gate result on this source passed type/convention checks, then stopped on a recursive Docker-group test.
-Do not claim that result as a successful product gate for later implementation.
-No service, container or environment was created. Existing raw evidence remains ignored.
+Product changes: `presentations guide`, `export` and `hand-off`; the existing producer is now shipped
+and the repository replay harness imports it through an adapter. The portable recording helper accepts
+ordinary Playwright callbacks and derives chapters/captions from captured frames. Failed and incomplete
+runs keep their outcome and have labelled decks. The viewer is unchanged.
+
+Validation on this slice: 121 focused and repository-recorder compatibility tests passed; syntax, mypy (352 files) and conventions (0 breaches)
+passed. The full gate stopped at the inherited Docker-group failure after 1438 passes and 1 skip.
+Separate PEX build/smoke, docs contract (249 pages) and webconsole checks (474 tests) passed.
+An unrelated scratch project used only the exported kit and produced passing, failed and incomplete
+recordings; all six chapters played in the viewer extracted from the built PEX. See the validation record.
+The exported example driver also passed its two-step browser run.
+Maintenance was notified by coordination mail of the owner-directed 0.3.1 dependency.
+No Docker image or capsule was launched. Temporary loopback application and console services were stopped.
+The local artifact is a development validation build, not a published release candidate.
 
 ## Open Threads
 
-- Awaiting owner direction after registration; design and implementation remain unstarted.
-- Workstream goal and input/output use case are settled; implementation choices and release placement are open.
+- Implementation authorized; release target and reviewer settled.
+- GitHub PR delivery requires the owner or installation of the prescribed CLI. No reviewer run has started.
 - Preserve the recorded viewer acceptance and demonstrated external-project recording reuse.
-- Deliberately not preserved: no transcript, tokened link, new experiment or speculative architecture.
+- Local full gate still fails on the known recursive Docker-group test; no unrelated fixture fix is included.
+- Automated checks establish the kit and existing viewer contract, not a second human acceptance of presentation quality.
+- Raw acceptance files and logs are in `/var/tmp/presentations-acceptance` and `/var/tmp/presentations-*.log`;
+  they are disposable and not committed. Durable outcomes are in the validation record.
+- No transcript or tokened link is preserved in Git.
 
 ## Workstream Document Index
 
+- [Validation record](2026-11-16-record-authoring-validation.md): installed-artifact and browser checks, counts and limits.
+- [Implementation PR draft](2026-11-16-record-pr-draft.md): owner-operated delivery to release 0.3.1.
+- [Pair Review brief](evidence/2026-11-16-review-brief.md): pending PR creation; exact Antigravity model and high effort.
 - [Full use-case handoff](2026-11-16-record-use-case-handoff.md): owner-defined flow, constraints and original correspondence references.
 
 - [Intake](intake/README.md): handoff and correspondence awaiting acknowledgement.
