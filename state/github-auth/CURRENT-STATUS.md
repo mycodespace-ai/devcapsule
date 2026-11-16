@@ -375,6 +375,35 @@ The tracked script, timing input and producer make this retained deck reproducib
 media and generated metadata remain ignored evidence. Tokens and cookies are not
 in Git, the presentation document, or browser screenshots.
 
+## Cross-project presentation portability audit, 2026-11-16
+
+The owner asked whether agents in unrelated projects receive the same Markdown
+instructions and Python support with little setup. Inspected the actual merged
+PEX and its nested console bundle, package inclusion, CLI help, bootstrap assets
+and browser-automation component. The viewer's HTML/JS/CSS are shipped and accept
+presentation folders under any project's mount. The authoring guide, contract,
+scenario scripts, recorder and metadata producer are not in that PEX. None of the
+16 packaged bootstrap documents/templates refers to presentation.json or the
+recorder. Browser automation supplies the browser tools, not the authoring kit.
+The CLI has no presentation authoring command. This is a packaging/discoverability
+gap; successful playback in this source checkout did not establish adopter setup.
+
+PRESENTATIONS.md now carries a support matrix. The scenario guide includes a
+realistic agent brief and explicitly requires provisioned source tooling today.
+The generator itself uses Python's standard library; the recorder also depends
+on the repository's IDE smoke infrastructure and creates disposable test projects.
+The retained SSH producer is run-specific, not a portable recording framework.
+No new commands, workflow refresh, packaged assets or runtime code were introduced.
+
+Sent the cross-workstream delivery gap to project-management as
+`2026-11-16-presentation-authoring-portability.md`, with suggested acceptance:
+using only an installed candidate and an unrelated project, an agent discovers
+the guide/templates, records the project's journey, generates validated metadata,
+and exposes a presentation with working step playback without cloning DevCapsule.
+Ownership and packaging/interface choices remain for that workstream and the owner.
+This audit does not claim future capsules already have that authoring support.
+Structured artifact observations are in evidence/portability-audit.json.
+
 ## Open Threads
 
 - Host relaunch, recursive inheritance and recorded fresh-project E2E passed.
@@ -397,6 +426,7 @@ in Git, the presentation document, or browser screenshots.
 - [Recorded E2E procedure and console presentation](evidence/showcase.md)
 - [Presentation producer for the retained run](evidence/present-showcase.py)
 - [Recorded chapter boundaries](evidence/presentation-timing.json)
+- [Installed-artifact portability audit](evidence/portability-audit.json)
 - [SSH proxy scenario script](../../../devcapsule-src/tests/e2e/scripts/github-ssh-proxy.md)
 - [Review brief](evidence/review-brief.md)
 - [Review follow-up 1](evidence/round-1.md)
