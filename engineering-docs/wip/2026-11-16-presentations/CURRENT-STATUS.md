@@ -8,6 +8,8 @@ Branch prefix: `ws-presentations/`
 Integration target: `main`
 Delivery method: pull request; records published on coordination
 
+Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
+
 ## Goal and agreed use case
 
 Make the proven E2E recording and presentation capability available to LLM agents in other DevCapsule projects.
@@ -33,14 +35,16 @@ Both engineering and prospective-user/tutorial audiences remain in scope; the ex
 Registration starts no design or implementation. The owner explicitly deferred design during use-case definition.
 No package layout, interface, installation route, release target or outside-capsule support promise is selected.
 The broader reusable-processes idea is not assigned wholesale to this workstream.
-Project-management delivered the use case and the two original authoring messages by coordination mail.
+Project-management delivered the use case and references to both original authoring messages by coordination mail.
+Acknowledged that handoff as the goal above; its full text is preserved in the handoff record.
+The mailbox and intake are empty after receipt and acknowledgement.
 Original correspondence is preserved on `ws-project-management/coordination` at `cac3861e` under its intake directory.
 The self-contained handoff names the exact paths and evidence.
 
 ## Planned next step
 
-Read and acknowledge the project-management handoff against the goal above.
-Then wait for the owner's next direction before beginning design or implementation.
+Registration and handoff acknowledgement are complete.
+Wait for the owner's next direction before beginning design or implementation.
 Do not restart a viewer redesign, audience study or general process invention.
 
 ## Validation and checkout state
@@ -61,6 +65,8 @@ No service, container or environment was created. Existing raw evidence remains 
 - Deliberately not preserved: no transcript, tokened link, new experiment or speculative architecture.
 
 ## Workstream Document Index
+
+- [Full use-case handoff](2026-11-16-record-use-case-handoff.md): owner-defined flow, constraints and original correspondence references.
 
 - [Intake](intake/README.md): handoff and correspondence awaiting acknowledgement.
 - [Intake decisions](intake-dispositions.md): append-only record of acknowledged work.
