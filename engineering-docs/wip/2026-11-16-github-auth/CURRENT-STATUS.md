@@ -4,7 +4,7 @@ Mnemonic: `github-auth`
 
 Start date: 2026-11-16
 
-State: paused for owner retry; rootless Docker fix propagated and local PEX rebuilt.
+State: paused after successful host relaunch preflight; recorded E2E preparation is next.
 
 Definition read: WORKFLOW.md@89de30622697, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
@@ -73,9 +73,9 @@ checkout remains untouched. Review evidence and prepared PR text are indexed bel
 
 Owner chose on 2026-11-16 to exit this capsule, relaunch the same checkout from
 the physical host with the new local PEX and github-ssh enabled, then resume Codex.
-This supersedes the proposed SSH-to-host harness adaptation. After resumption,
-verify the inherited broker and executable bytes, then write and execute the
-recorded E2E scenario using a fresh project and explicit github-ssh authorization.
+This supersedes the proposed SSH-to-host harness adaptation. The resumed-session
+preflight below verified the broker and executable bytes. Next, write and execute
+the recorded E2E scenario using a fresh project and explicit github-ssh authorization.
 Observe the Git checkout independently and retain WebM/screenshots/action evidence.
 Recursive proxy inheritance is still unproved; do not report success until observed.
 The 19 reproduced full-gate failures and formal PR delivery remain open separately.
@@ -107,8 +107,8 @@ Full gate: 19 failed, 2942 passed, 1 skipped, 78 deselected, 14 xfailed,
 baseline exactly; no new failure IDs. Packaging/smoke is run separately because
 the full gate stops at pytest. The separate PEX build and executable smoke passed (14 seconds). The imported
 rootless detector reports True against the available daemon. Fix commit: `d6fd93e0`.
-The rebuilt artifact identity follows below. Host relaunch itself still needs
-the owner to retry; no container or persistent configuration was changed here.
+The rebuilt artifact identity follows below. The owner subsequently relaunched
+successfully; the resumed-session observations are recorded below.
 Mainline integration and the separate Gemini review branch remain pending.
 
 ## Host relaunch handoff
@@ -171,15 +171,44 @@ must have no copied key; the recording harness must authorize github-ssh for its
 fresh project. Do not use this current capsule's manually installed key as proof
 of the proxy. No E2E container was launched during handoff preparation.
 
+## Resumed-session readiness, 2026-11-16
+
+The owner resumed inside the rebuilt capsule. Running `/opt/devcapsule/bin/devcapsule.pex`
+and the saved local PEX both match the SHA-256 above. Runtime identity is 0:0 and
+Docker reports `name=rootless`. The canonical proxy socket exists, and Git's SSH
+command points to the shipped `github-ssh` adapter.
+
+A read-only `git ls-remote git@github.com:mycodespace-ai/devcapsule.git HEAD`
+returned `1942f396dd11ffabb64784eb7279f283181e32dd`. Repeating it from a fresh empty
+HOME with system/global Git configuration disabled and the adapter explicitly
+selected also passed. Pointing that invocation at a missing socket failed with
+exit 128. This demonstrates proxy authentication independently of the manually
+installed capsule key; it does not yet prove a new child capsule's inheritance.
+
+Docker mount inspection resolves the inherited socket to the outside launcher's
+host socket, and resolves both the persistent E2E workspace root and PEX directory
+to host-backed paths. Docker access, Git, pytest and nox are available. No new
+container was started for this preflight. Canonical main was fetched: this branch
+is ten commits ahead and zero behind, so no synchronization is needed. Mail and
+intake remain empty.
+
+Recording preparation remains: author the GitHub showcase scenario and its Markdown
+procedure, explicitly grant github-ssh in its fresh project, and prepare Playwright.
+This capsule has neither local Playwright nor FFmpeg nor `/opt/playwright`; the
+existing recorder supports Chromium/FFmpeg in a child with `browser-automation`.
+The scenario must request that component, verify a real SSH Git checkout from
+outside the recorded UI, retain video/screenshots/action evidence, and clean up.
+No nested E2E or recording has run yet. No additional host credentials or restart
+are indicated by the preflight. The outside launcher must stay running.
+
 ## Open Threads
 
-- Awaiting the human: retry exit/relaunch/resume using the rebuilt PEX above.
-  The first relaunch failed on the rootless identity defect, now propagated.
-  Workstream selection, Git-over-SSH scope and the relaunch approach are accepted.
-  Full-gate environment and owner-operated GitHub PR delivery also remain open.
+- Host relaunch and authenticated proxy preflight passed. The next task is the
+  fresh-project recorded E2E; recursive inheritance and recording remain unproved.
+  Full-gate environment and owner-operated GitHub PR delivery remain open.
 - Engineering choices: initial transport must account for Linux/rootless Docker
   permissions; Docker Desktop cannot bind ordinary host Unix sockets.
-- Physical-host launch acceptance and Docker Desktop transport remain open.
+- Physical-host relaunch is observed working; Docker Desktop transport remains deferred.
 - GitHub CLI is absent at the policy-prescribed path. PR creation/merging remains
   owner-operated under WORKFLOW-LOCAL.md; prepare reviewed commits and compare links.
 - Reviewer worktree removed at pause; pushed `ws-github-auth/ssh-proxy-review`
