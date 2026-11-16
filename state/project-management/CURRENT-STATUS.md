@@ -6,7 +6,7 @@ Start date: 2026-08-09
 
 State: active 2026-11-16; permanent coordination; inbound mail received, next slice awaits owner choice
 
-Definition read: WORKFLOW.md@89de30622697, WORKFLOW-LOCAL.md@d92bdcbb0a01
+Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
 Branch association: `ws-project-management/coordination`
 
@@ -23,7 +23,24 @@ This reserved workstream remains open for the lifetime of multiple-stream mode.
 
 ## Current State
 
-### Resumed 2026-11-16
+### Mainline synchronized again, 2026-11-16
+
+The owner requested the new mainline commit before selecting the next slice.
+Fetched `dac6b9d4`, PR #42's merge of the 0.3.1 release work, and merged it at `b081f16c`.
+Local `main` now also matches `upstream/main` at `dac6b9d4`.
+Resolved two documentation conflicts: retained upstream's newer video bug fix record and both index links.
+The two local IDE edits were identical to upstream's result; the merged tree preserves them with no local diff.
+A recovery patch remains at `.git/pm-sync-20261116-ide.patch`.
+Retained evidence is now ignored by the incoming mainline rules.
+Read the incoming workflow changes: build-safe evidence placement, legacy-test signature allowance,
+command-line and network test restrictions, and the Host Inputs rules.
+
+The pile now has three ideas. The new November 13 idea proposes packaging proven processes as reusable assets.
+It covers pair review, modular unit testing and recorded E2E scenarios, inside and outside DevCapsule.
+Read it as input to the pending presentation-authoring scope; no priority, implementation owner or delivery shape is selected.
+The 20 intake items and the next-slice decision remain pending.
+
+### Earlier resumption, 2026-11-16
 
 The owner selected project management and authorized `upstream/main` as the baseline.
 Local `main` now matches canonical `upstream/main` at `1942f396` and tracks it.
@@ -119,7 +136,7 @@ Recommend scoping portable presentation authoring: intended adopter journey, sup
 installation-only acceptance, then ownership and sequencing. No interface or release is selected yet.
 Alternatives are the compatibility promise after 0.3.1, test-improvements reconciliation, or broader queue review.
 The test-improvements work order must be reconciled with maintenance's delivered host-input rewrite before allocation.
-All 20 intake items, the nine documentation decisions, C17 and both ideas remain pending.
+All 20 intake items, the nine documentation decisions, C17 and all three ideas remain pending.
 This resumption does not authorize a switch to an implementing workstream.
 
 Done for the next slice means a recorded owner choice, bounded outcome and acceptance criteria,
@@ -127,7 +144,21 @@ followed by the appropriate routing or intake disposition. No product test rerun
 
 ## Validation And Checkout State
 
-### Current checkout, 2026-11-16
+### Current synchronized checkout, 2026-11-16
+
+Ran the required build with `DEVCAPSULE_DIFF_BASE=upstream/main` and the existing `/var/tmp/pm-resume-20261116/pytest` scratch.
+The first attempt used the default stale fork `origin/main`; the explicit canonical base removes those comparison-only convention failures.
+Version, syntax, mypy (344 files), and test conventions passed.
+The unit phase stopped at `tests/test_recursive_orchestrator.py::test_public_dry_run_is_unique_redacted_and_cleans_owned_staging`:
+1,438 passed, one skipped, one failed, 175 deselected.
+The failure reports `host Docker group ID must be a positive integer` during dry-run preparation.
+Later gate phases did not run. The log is `.git/pm-sync-20261116-build.log`.
+The prior evidence-script type failures no longer occur on this synchronized source.
+The merge also carries an upstream blank line at EOF in `test_derivation.py`; conflict-resolution whitespace checks pass.
+No product source was changed to address validation failures. The final tracked working tree is clean.
+
+
+### Earlier checkout validation, 2026-11-16
 
 Attempted the required build gate with the existing `.venv`.
 `/opt/devcapsule-gate` is read-only here, so used the permitted alternative `/var/tmp/pm-resume-20261116/pytest`.
@@ -179,9 +210,9 @@ The owner's saved edits remain outside project-management commits:
 - Awaiting the owner: select presentation-authoring scope, compatibility policy, test-improvements reconciliation, or broader queue review.
 - Weighed and unresolved: presentation toolkit packaging/interface, implementation ownership and release target remain open.
 - Keep compatibility's post-0.3.1 direction and the newer release-cut exclusions when assessing older scheduling mail.
-- The 20 intake items, nine documentation choices, C17, test-session timing and two ideas remain pending.
-- The build gate stops on retained github-auth evidence scripts; no product validation is claimed by this resumption.
-- IDE changes and raw evidence remain local and excluded from project-management commits.
+- The 20 intake items, nine documentation choices, C17, test-session timing and three ideas remain pending.
+- The synchronized gate stops on the recursive dry-run Docker-group failure; later gate phases remain unrun.
+- Mainline now includes the IDE changes; retained raw evidence remains ignored and outside commits.
 - Deliberately not preserved: no transcript, tokened link in Git, new experiment, service, container or deployment.
 
 ## Workstream Document Index
