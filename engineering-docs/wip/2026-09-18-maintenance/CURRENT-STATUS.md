@@ -5439,6 +5439,8 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
+- Blocking for 0.3.1, filed and closed 2026-11-15 (PR #38 merged into
+  `release-0.3.1` at `2a3d6f61`): when `docker info` reports
 - Website raw gitlink in GitHub Actions, 2026-11-16 (`ws-maintenance/website-gitlink-actions`
   -> `release-0.3.1`): `.github/workflows/tests.yml` (`docs-build`) and
   `.github/workflows/website.yml` (`build` and `candidate`) now materialize
@@ -5464,7 +5466,9 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
   to `project_runtime_plan()` and `rootless_docker=True` to `PycharmRunOptions`
   (`--user 0:0`, `IDE_UID=0`, `IDE_GID=0`, `IDE_USER=root`, skipping redundant
   `gosu 0:0` and same-owner `chown` under `--cap-drop ALL`). All changes gate on
-  `rootless_docker` so non-rootless behavior stays unchanged. Record:
+  `rootless_docker` so non-rootless behavior stays unchanged. Owner verified
+  `devcapsule-local.pex` (`a1a54eba`, SHA-256 `7921e3bb…`) on the rootless
+  Docker installation. Record:
   [the 2026-11-15 bug](../../bugs/devcapsule/2026-11-15-in-capsule-devcapsule-fails-on-mounted-settings-and-pex-cache.md).
 - Blocking for 0.3.1, owner's rating of 2026-11-13: this repository's own
   `.devcapsule` is committed in its pre-0.3 form, a schema-1 manifest and a
