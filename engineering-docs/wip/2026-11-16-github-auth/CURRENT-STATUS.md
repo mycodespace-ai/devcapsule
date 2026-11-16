@@ -4,7 +4,7 @@ Mnemonic: `github-auth`
 
 Start date: 2026-11-16
 
-State: paused after successful host relaunch preflight; recorded E2E preparation is next.
+State: paused after successful recorded GitHub SSH proxy E2E; review integration and baseline gate disposition remain open.
 
 Definition read: WORKFLOW.md@89de30622697, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
@@ -71,14 +71,12 @@ checkout remains untouched. Review evidence and prepared PR text are indexed bel
 
 ## Planned next step
 
-Owner chose on 2026-11-16 to exit this capsule, relaunch the same checkout from
-the physical host with the new local PEX and github-ssh enabled, then resume Codex.
-This supersedes the proposed SSH-to-host harness adaptation. The resumed-session
-preflight below verified the broker and executable bytes. Next, write and execute
-the recorded E2E scenario using a fresh project and explicit github-ssh authorization.
-Observe the Git checkout independently and retain WebM/screenshots/action evidence.
-Recursive proxy inheritance is still unproved; do not report success until observed.
-The 19 reproduced full-gate failures and formal PR delivery remain open separately.
+The owner-authorized host relaunch and recorded fresh-capsule E2E are complete.
+The next delivery step is to resolve the known gate baseline and have the owner
+merge the separate Gemini review corrections through the prepared PR process.
+Validate the combined branch before integration; the recorded PEX does not contain
+those corrections. The engineering showcase and procedure are indexed below.
+No further restart or host credential setup is needed for this completed test.
 
 ## Rootless Docker fix propagation
 
@@ -201,10 +199,40 @@ outside the recorded UI, retain video/screenshots/action evidence, and clean up.
 No nested E2E or recording has run yet. No additional host credentials or restart
 are indicated by the preflight. The outside launcher must stay running.
 
+## Recorded E2E acceptance, 2026-11-16
+
+One fresh VSCodium capsule, with browser-automation and explicit github-ssh
+consent, was launched by the saved PEX from this capsule. The outer physical-host
+launcher remained alive. Child and parent Docker inspection showed the same host
+broker source, mounted read-only at the canonical socket. The child had no SSH
+files or agent; its delivered runtime checksum matched the tested PEX.
+
+Through the actual recorded terminal, Git cloned the canonical repository over
+SSH. Independent Git inspection of the host-backed checkout confirmed expected
+HEAD `1942f396dd11ffabb64784eb7279f283181e32dd`, the SSH origin, a clean tree and
+the README. A missing-socket read failed with exit 128. Ordinary proxy access
+succeeded again afterward. This proves recursive proxy inheritance on this
+rootless Linux host. No GitHub write was made.
+
+Evidence: `devcapsule-src/dist/e2e-evidence/github-auth/20261116T092248Z-33c3c7bc/`.
+The 38.17-second WebM, full desktop capture, poster, action trace, `run.json`,
+`verification.json` and `result.json` are retained outside Git. The test-owned
+container, fresh workspace and checkout records are independently confirmed gone.
+The controller gained optional per-scenario surface needs/consents and a bounded
+interactive phase; the product PEX was not changed. All 62 existing recorder tests
+passed. See the procedure for the on-screen empty-directory check correction and
+a minor final command/output overlap, both retained in the original recording.
+
+Full gate for the recorder change: 19 failed, 2942 passed, 1 skipped, 78 deselected,
+14 xfailed and 7 xpassed. All 19 failure IDs exactly match the recorded baseline.
+Types passed over 340 files; the corrected convention check found zero breaches. The initial attempt
+used the stale default origin/main comparison and stopped on three unrelated
+convention differences. The corrected run used DEVCAPSULE_DIFF_BASE=upstream/main. Its log is retained at
+`~/.cache/devcapsule-gate/github-auth-showcase-build-upstream.log`.
+
 ## Open Threads
 
-- Host relaunch and authenticated proxy preflight passed. The next task is the
-  fresh-project recorded E2E; recursive inheritance and recording remain unproved.
+- Host relaunch, recursive inheritance and recorded fresh-project E2E passed.
   Full-gate environment and owner-operated GitHub PR delivery remain open.
 - Engineering choices: initial transport must account for Linux/rootless Docker
   permissions; Docker Desktop cannot bind ordinary host Unix sockets.
@@ -218,6 +246,7 @@ are indicated by the preflight. The outside launcher must stay running.
 
 ## Workstream document index
 
+- [Recorded E2E procedure](evidence/showcase.md)
 - [Review brief](evidence/review-brief.md)
 - [Review follow-up 1](evidence/round-1.md)
 - [Intake](intake/README.md)
