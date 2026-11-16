@@ -1,8 +1,8 @@
 # Prepared delivery
 
 No PR has been opened or edited by this agent; remote PR existence has not been
-verified. The implementation branch is pushed through merge `7fc77f24` and its validation records, including the
-recorded E2E procedure. A pre-existing PR from that branch receives the pushed
+verified. The implementation branch includes merge `7fc77f24`, the merged-build recording,
+the six-step presentation, and the cross-project authoring audit. A pre-existing PR from that branch receives the pushed
 commits automatically, but its description and attachments have not been updated. WORKFLOW-LOCAL.md, GitHub Integration rules 4–6,
 requires a passing unit gate before PR opening/updating, and assigns GitHub
 operations to the human when its prescribed gh installation is absent. The
@@ -33,31 +33,28 @@ read-only socket mount from the same host source, and exact runtime PEX checksum
 A missing-socket control failed with exit 128. The container, workspace and
 checkout records were removed. No real GitHub push was performed.
 
-The [recorded E2E procedure](engineering-docs/wip/2026-11-16-github-auth/evidence/showcase.md)
-records the tested build and evidence. The 38-second WebM and full desktop capture
-are retained locally under `devcapsule-src/tests/e2e/evidence/github-ssh-proxy-pre-merge/`;
-they are not uploaded or attached to a PR. Tested PEX SHA-256:
-`33c3c7bc7fe6ff6772eedee06424c95afcf4aebddca20ab99f9a31a7c103d35b`.
-
 The full release-0.3.1 tip `10e7fda3` is merged by `7fc77f24`, preserving
-both histories and including the release's other changes. A fresh capsule launched
-with the rebuilt merged PEX repeated SSH clone acceptance successfully, including
-IDE/console readiness, no child credentials, exact PEX bytes, missing-socket
-negative control and cleanup. Evidence:
-`devcapsule-src/tests/e2e/evidence/github-ssh-proxy-release-merge/20261116T100132Z/`.
-Merged PEX SHA-256:
+both histories. The recorded acceptance uses the merged PEX for both parent and
+child after a physical-host relaunch. Tested PEX SHA-256:
 `af7fa02ca2c2737f3a1678226341312682b71cfdd37eb892f29a42ad5c31b78c`.
-That unrecorded repeat used the earlier host broker. A subsequent host relaunch
-now supplies the merged PEX to both parent and child. New recorded acceptance
-`20261116T103152Z-af7fa02c` passed clone, missing-socket refusal, restored read,
-independent Git/Docker checks and cleanup. The new 45.42-second video is at
-`devcapsule-src/tests/e2e/evidence/github-ssh-proxy/20261116T103152Z-af7fa02c/scenario-video.webm`
-in the primary checkout. The earlier video remains preserved separately. Neither
-video has been uploaded or attached to a PR. The latest recording also has a
-six-step presentation served directly by the running console from that evidence
-folder. Its authored script and reproducible metadata producer are versioned; the
-media and generated presentation remain local. Discovery, captions and each step's
-playback boundary passed real-browser validation.
+
+The [recorded E2E procedure](engineering-docs/wip/2026-11-16-github-auth/evidence/showcase.md)
+identifies the retained 45.42-second movie at
+`devcapsule-src/tests/e2e/evidence/github-ssh-proxy/20261116T103152Z-af7fa02c/scenario-video.webm`.
+The live console serves a six-step presentation from that folder. Its Markdown
+script, recorded chapter boundaries and metadata producer are versioned. Chromium
+verified discovery, screenshots, captions, all six playback boundaries and media
+byte ranges. Media and generated metadata remain local, outside build output;
+they have not been uploaded or attached to GitHub.
+
+Documentation now explains presentation discovery and generation. A shipped-PEX
+audit confirms that the viewer is included, but authoring instructions and Python
+helpers remain repository tooling. Interactive recording does not generate the
+metadata automatically. The owner reports successfully borrowing the recorder
+for another project on 0.3.0 by cloning source ad hoc; that is evidence of reuse,
+not shipped authoring support. A consolidated handoff to project-management
+contains the gaps, reusable pieces and proposed installation-only acceptance.
+No portable authoring toolkit is claimed or implemented by this change.
 
 Latest validation: 41 focused cases passed; types passed over 350 files and
 conventions reported zero breaches. Unit gate: 3309 passed, 3 failed, 1 skipped,
@@ -66,7 +63,9 @@ console types and 474 console tests passed. Integration: 149 passed, 12 skipped,
 3 failed initially; the socket-length case passed when rerun with shorter scratch,
 leaving two failures. All five remaining unit/integration failures reproduce on
 untouched release-0.3.1; maintenance received the reproduction details. This is
-not a passing full gate. See the workstream status for exact IDs and scope.
+not a passing full gate. The subsequent presentation-only change passed all 39
+existing producer tests and the documentation contract. See the workstream status
+for exact failure IDs and scope.
 
 Pair: GPT-6 Codex with Antigravity Gemini 4 Hydrogen High
 (`gemini-4-hydrogen-high`). Local round 1 accepted at `388f62a3`; formal review PR
