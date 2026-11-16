@@ -51,11 +51,26 @@ jobs:
         shell: bash
         run: git fetch origin '+refs/heads/docs-*:refs/heads/docs-*'
       # Public checkout via HTTPS: no SSH/deployment secret needed in Actions.
-      - name: Fetch the exact website submodule commit
+      # `website` is a raw gitlink (no .gitmodules entry), so fetch its pinned
+      # commit directly and initialize any nested or sibling submodules recursively.
+      - name: Fetch the exact website gitlink commit
+        id: fetch-website
         shell: bash
         run: |
-          git config submodule.website.url https://github.com/mycodespace-ai/devcapsule-website.git
-          git submodule update --init website
+          website_sha="$(git rev-parse --verify HEAD:website)"
+          rm -rf website
+          git -c init.defaultBranch=main init -q website
+          git -C website remote add origin https://github.com/mycodespace-ai/devcapsule-website.git
+          git -C website fetch --depth=1 origin "$website_sha"
+          git -C website checkout --detach FETCH_HEAD
+          git -c url."https://github.com/".insteadOf="git@github.com:" -C website submodule update --init --recursive
+          if [[ -f .gitmodules ]]; then
+            while IFS= read -r -d '' sub_key; do
+              sub_path="$(git config --file .gitmodules --get "$sub_key")"
+              [[ -z "$sub_path" || "$sub_path" == "website" ]] && continue
+              git -c url."https://github.com/".insteadOf="git@github.com:" submodule update --init --recursive -- "$sub_path"
+            done < <(git config --file .gitmodules --null --name-only --get-regexp '^submodule\..*\.path$' || true)
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -101,9 +116,23 @@ jobs:
         with:
           persist-credentials: false
       - name: Fetch the pinned website implementation
+        id: fetch-website
+        shell: bash
         run: |
-          git config submodule.website.url https://github.com/mycodespace-ai/devcapsule-website.git
-          git submodule update --init website
+          website_sha="$(git rev-parse --verify HEAD:website)"
+          rm -rf website
+          git -c init.defaultBranch=main init -q website
+          git -C website remote add origin https://github.com/mycodespace-ai/devcapsule-website.git
+          git -C website fetch --depth=1 origin "$website_sha"
+          git -C website checkout --detach FETCH_HEAD
+          git -c url."https://github.com/".insteadOf="git@github.com:" -C website submodule update --init --recursive
+          if [[ -f .gitmodules ]]; then
+            while IFS= read -r -d '' sub_key; do
+              sub_path="$(git config --file .gitmodules --get "$sub_key")"
+              [[ -z "$sub_path" || "$sub_path" == "website" ]] && continue
+              git -c url."https://github.com/".insteadOf="git@github.com:" submodule update --init --recursive -- "$sub_path"
+            done < <(git config --file .gitmodules --null --name-only --get-regexp '^submodule\..*\.path$' || true)
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

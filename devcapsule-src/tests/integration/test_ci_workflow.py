@@ -23,14 +23,20 @@ from tests.conftest import PYTHON_ROUTE_INPUTS, REPOSITORY_ROOT, RepositoryInput
 pytestmark = pytest.mark.integration
 
 _WORKFLOW = REPOSITORY_ROOT / ".github" / "workflows" / "tests.yml"
+_WEBSITE_WORKFLOW = REPOSITORY_ROOT / ".github" / "workflows" / "website.yml"
 _DOCS_FILTER = REPOSITORY_ROOT / ".github" / "ci-paths.yml"
 _ANNOTATIONS = REPOSITORY_ROOT / "devcapsule-src" / "scripts" / "diff_coverage_annotations.py"
 
 
+def _job_step(workflow_path: Path, job: str, identifier: str) -> dict[str, Any]:
+    """The step of ``job`` in ``workflow_path`` with the given ``id``."""
+    workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
+    return next(step for step in workflow["jobs"][job]["steps"] if step.get("id") == identifier)
+
+
 def _step(identifier: str) -> dict[str, Any]:
     """The step of the workflow's ``changes`` job with the given id."""
-    workflow = yaml.safe_load(_WORKFLOW.read_text(encoding="utf-8"))
-    return next(step for step in workflow["jobs"]["changes"]["steps"] if step.get("id") == identifier)
+    return _job_step(_WORKFLOW, "changes", identifier)
 
 
 def _picomatch_like(path: str, glob: str) -> bool:
@@ -227,3 +233,91 @@ def test_real_diff_cover_output_yields_an_annotation_for_the_unexecuted_changed_
     warnings, _ = bridge.build_annotations(report)
     assert any("file=devcapsule-src/devcapsule/nested/sample.py,line=3,endLine=3" in warning for warning in warnings)
     assert report["total_percent_covered"] < 85
+
+
+@pytest.mark.parametrize(("workflow_path", "job"), [
+    (_WORKFLOW, "docs-build"),
+    (_WEBSITE_WORKFLOW, "build"),
+    (_WEBSITE_WORKFLOW, "candidate"),
+])
+def test_website_workflows_instantiate_a_raw_website_gitlink_recursively(
+    tmp_path: Path, workflow_path: Path, job: str,
+) -> None:
+    """Precondition: a parent checkout whose ``website`` entry is a raw gitlink with no
+    ``.gitmodules`` mapping, pointing at a non-tip commit of ``devcapsule-website`` that itself
+    declares a nested submodule over SSH. Action: run the job's ``fetch-website`` step under
+    bash. Postcondition: ``website`` is checked out at the exact gitlink commit, its nested
+    submodule is materialized recursively, and both checkouts report clean ``git status``."""
+    gitconfig = tmp_path / "gitconfig"
+    env = {
+        "PATH": os.environ["PATH"],
+        "HOME": str(tmp_path),
+        "GIT_CONFIG_GLOBAL": str(gitconfig),
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_TERMINAL_PROMPT": "0",
+        "GIT_AUTHOR_NAME": "Test",
+        "GIT_COMMITTER_NAME": "Test",
+        "GIT_AUTHOR_EMAIL": "test@example.invalid",
+        "GIT_COMMITTER_EMAIL": "test@example.invalid",
+    }
+
+    def git(*arguments: str, cwd: Path = tmp_path) -> str:
+        return subprocess.run(arguments, cwd=cwd, env=env, text=True, capture_output=True, check=True).stdout.strip()
+
+    nested_origin = tmp_path / "nested.git"
+    nested_origin.mkdir()
+    git("git", "init", "-q", "-b", "main", cwd=nested_origin)
+    (nested_origin / "nested.txt").write_text("nested\n", encoding="utf-8")
+    git("git", "add", "nested.txt", cwd=nested_origin)
+    git("git", "commit", "-q", "-m", "nested", cwd=nested_origin)
+    nested_sha = git("git", "rev-parse", "HEAD", cwd=nested_origin)
+
+    website_origin = tmp_path / "website.git"
+    website_origin.mkdir()
+    git("git", "init", "-q", "-b", "main", cwd=website_origin)
+    git("git", "config", "uploadpack.allowReachableSHA1InWant", "true", cwd=website_origin)
+    (website_origin / "package.json").write_text('{"name":"devcapsule-website"}\n', encoding="utf-8")
+    (website_origin / ".gitmodules").write_text(
+        '[submodule "sub"]\n\tpath = sub\n\turl = git@github.com:mycodespace-ai/nested.git\n',
+        encoding="utf-8",
+    )
+    git("git", "update-index", "--add", "--cacheinfo", f"160000,{nested_sha},sub", cwd=website_origin)
+    git("git", "add", "package.json", ".gitmodules", cwd=website_origin)
+    git("git", "commit", "-q", "-m", "pinned website", cwd=website_origin)
+    pinned_website_sha = git("git", "rev-parse", "HEAD", cwd=website_origin)
+    (website_origin / "package.json").write_text('{"name":"newer-unpinned"}\n', encoding="utf-8")
+    git("git", "add", "package.json", cwd=website_origin)
+    git("git", "commit", "-q", "-m", "advance main past pin", cwd=website_origin)
+
+    parent_origin = tmp_path / "parent.git"
+    parent_origin.mkdir()
+    git("git", "init", "-q", "-b", "main", cwd=parent_origin)
+    (parent_origin / ".gitmodules").write_text("", encoding="utf-8")
+    (parent_origin / "README.md").write_text("# DevCapsule\n", encoding="utf-8")
+    git("git", "update-index", "--add", "--cacheinfo", f"160000,{pinned_website_sha},website", cwd=parent_origin)
+    git("git", "add", ".gitmodules", "README.md", cwd=parent_origin)
+    git("git", "commit", "-q", "-m", "raw website gitlink", cwd=parent_origin)
+    git("git", "branch", "docs-0.3.0", cwd=parent_origin)
+
+    checkout = tmp_path / "checkout"
+    git("git", "clone", "-q", str(parent_origin), str(checkout))
+
+    git("git", "config", "--file", str(gitconfig), "protocol.file.allow", "always")
+    for prefix in ("https://github.com/mycodespace-ai/", "git@github.com:mycodespace-ai/"):
+        git("git", "config", "--file", str(gitconfig), "--add", f"url.{website_origin}.insteadOf", f"{prefix}devcapsule-website.git")
+        git("git", "config", "--file", str(gitconfig), "--add", f"url.{nested_origin}.insteadOf", f"{prefix}nested.git")
+
+    step = _job_step(workflow_path, job, "fetch-website")
+    subprocess.run(
+        ["bash", "--noprofile", "--norc", "-eo", "pipefail", "-c", step["run"]],
+        cwd=checkout,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    assert git("git", "rev-parse", "HEAD", cwd=checkout / "website") == pinned_website_sha
+    assert (checkout / "website" / "sub" / "nested.txt").read_text(encoding="utf-8") == "nested\n"
+    assert git("git", "status", "--porcelain", "--untracked-files=normal", cwd=checkout) == ""
+    assert git("git", "status", "--porcelain", "--untracked-files=normal", cwd=checkout / "website") == ""
