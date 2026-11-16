@@ -4,7 +4,7 @@ Mnemonic: `project-management`
 
 Start date: 2026-08-09
 
-State: active 2026-11-16; permanent coordination; presentation excellence scope under discussion
+State: active 2026-11-16; permanent coordination; packaged E2E presentation authoring scoped, packaging design next
 
 Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -32,19 +32,23 @@ The owner reports that those tests pass on GitHub's agents; this session did not
 Use record review and relevant document checks for this planning work. Do not rerun the full gate for each planning checkpoint.
 The known local Docker-group failure remains recorded, but does not block this workstream's planning.
 
-Read the presentation contract, recording guide, consolidated handoff and reusable-assets idea.
-Drafted [presentation excellence](2026-11-16-design-presentation-excellence.md): proposed outcomes, acceptance criteria and the first adopter journey.
-The proposal separates documented behavior and recorded evidence from unvalidated quality improvements.
-It covers discoverable authoring, story and legibility, interactive/replay generation, reliable run evidence, and reuse.
-No new browser session, product change, recording or environment was needed for this bounded planning slice.
+The owner clarified the delivery gap after choosing both audiences.
+The current viewer already meets the prospective-user quality goal: Florin, the other developer, tested it and was wowed.
+Treat that as human acceptance, not an open audience or viewer-design question.
+The required work packages Markdown instructions and supporting Python that cooperate with Playwright in another project's capsule.
+The engineer gives numbered E2E steps; the local agent discovers the apparatus, records the test and produces a console presentation.
+No DevCapsule source clone, repository reverse-engineering or manually reconstructed chapter timings should be needed.
 
-The owner answered `both`: engineering reviewers and prospective users/tutorial readers have equal priority from the first delivery.
-This resolves decision `2026-11-16-presentation-audience`; remove its capsule-state document after this outcome is committed.
-The design proposal now requires separate acceptance tasks for explanation, tutorial use and evidence inspection on the same scenario.
-A shared recording and script with accessible supporting detail is the proposed design direction; no separate mode or UI is prescribed.
-Next select the real adopter project and feature journey before choosing the recording surface and delivery boundary.
-The two presentation intake items remain pending until an agreed deliverable is assigned.
-No implementing workstream, toolkit interface, release target or standalone support commitment is selected.
+Rewrote the [delivery scope](2026-11-16-design-presentation-excellence.md) around discoverable instructions, reusable Python,
+automatic interactive/replay presentation generation, installed delivery and unrelated-project acceptance.
+Read the existing producer, recorder and Todo controller boundaries to establish the concrete extraction issue.
+The standard-library producer is reusable, but repo-relative paths and the recorder's IDE smoke imports need a supported boundary.
+No product code, browser session, environment or test run was needed to establish this planning scope.
+
+The audience decision remains both equally. The earlier broad viewer-quality proposal is superseded.
+Choosing a particular adopter scenario is not a prerequisite for preparing the package or its work order.
+Next resolve the installed discovery route, distribution and Playwright attachment boundary, then assign implementation.
+The two presentation intake items remain pending until routing. Release placement and outside-capsule support remain unassigned.
 
 
 ### Mainline synchronized again, 2026-11-16
@@ -155,12 +159,13 @@ product and scope choices; neither is silently adopted or assigned a release.
 
 ## Planned Next Step
 
-Select the unrelated project and feature journey with the owner; the first delivery must serve both agreed audiences equally.
-Use the proposed quality bar to define a bounded work order, delivery boundary, implementation owner and acceptance evidence.
-Review the actual viewer with the owner before deciding whether its layout needs redesign.
-Resolve the two presentation intake items when the agreed work is routed; keep the wider reusable-assets idea pending.
-Compatibility retains the owner's post-0.3.1 direction. Test-improvements and the rest of the queue remain pending.
-This planning work stays on project management; any implementation-workstream switch needs the owner's specific instruction.
+Prepare the presentation-authoring implementation work order from the owner's clarified scope.
+Settle its installed discovery route, distribution boundary and reusable Python/Playwright attachment contract with a bounded packaging design.
+Deliver the existing experience to agents in other projects; do not restart a viewer redesign or general audience study.
+Then assign implementation and release placement, and disposition the two presentation intake items through normal routing.
+The existing human acceptance stands; acceptance of this slice proves the installed authoring route in an unrelated project.
+Compatibility, test-improvements and the other queue items remain pending.
+Any implementation-workstream switch still needs the owner's specific instruction.
 
 ## Validation And Checkout State
 
@@ -227,17 +232,18 @@ The owner's saved edits remain outside project-management commits:
 
 ## Open Threads
 
-- Audience settled: both equally. Awaiting the owner: the real adopter project and first feature journey.
-- Weighed and unresolved: first adopter journey, recording surface, toolkit distribution, standalone support, ownership and release target.
-- The audience scope is accepted; the delivery proposal remains a discussion draft, not a work order or observed visual-quality assessment.
-- The 20 intake items, nine documentation choices, C17, test-session timing and three ideas remain pending.
+- Audience settled: both equally. Viewer quality accepted by the owner, with Florin's human test reported.
+- Scope settled: package discoverable Markdown guidance and reusable Python/Playwright recording and presentation support for other projects.
+- Open engineering choices: installed discovery route, distribution, browser/desktop attachment and dependency setup.
+- Open coordination choices: implementation owner, release placement and the external acceptance fixture.
+- The 20 intake items, nine documentation choices, C17, test-session timing and three ideas remain pending until disposition.
 - Local test failures do not block project-management planning, by explicit owner direction on November 16.
 - Mainline includes the IDE changes; retained raw evidence stays ignored and outside commits.
 - Deliberately not preserved: no transcript, tokened link in Git, new experiment, service, container or deployment.
 
 ## Workstream Document Index
 
-- [Presentation excellence proposal](2026-11-16-design-presentation-excellence.md): both audiences accepted; open for the first journey, proposed acceptance and delivery scope.
+- [Packaged presentation-authoring scope](2026-11-16-design-presentation-excellence.md): owner clarification, accepted viewer baseline, required delivery and installed-tool acceptance.
 
 - [Prior coordination status, preserved November 12](2026-11-12-record-prior-coordination-status.md): verbatim pre-resumption status and historical open threads; use this file's current state for routing.
 
