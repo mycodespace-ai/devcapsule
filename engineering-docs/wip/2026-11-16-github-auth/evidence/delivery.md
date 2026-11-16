@@ -47,8 +47,13 @@ negative control and cleanup. Evidence:
 `devcapsule-src/tests/e2e/evidence/github-ssh-proxy-release-merge/20261116T100132Z/`.
 Merged PEX SHA-256:
 `af7fa02ca2c2737f3a1678226341312682b71cfdd37eb892f29a42ad5c31b78c`.
-The host broker remained the earlier build; its broker/transport sources are
-unchanged. The preserved video depicts the earlier build, not this repeat.
+That unrecorded repeat used the earlier host broker. A subsequent host relaunch
+now supplies the merged PEX to both parent and child. New recorded acceptance
+`20261116T103152Z-af7fa02c` passed clone, missing-socket refusal, restored read,
+independent Git/Docker checks and cleanup. The new 45.42-second video is at
+`devcapsule-src/tests/e2e/evidence/github-ssh-proxy/20261116T103152Z-af7fa02c/scenario-video.webm`
+in the primary checkout. The earlier video remains preserved separately. Neither
+video has been uploaded or attached to a PR.
 
 Latest validation: 41 focused cases passed; types passed over 350 files and
 conventions reported zero breaches. Unit gate: 3309 passed, 3 failed, 1 skipped,

@@ -4,7 +4,7 @@ Mnemonic: `github-auth`
 
 Start date: 2026-11-16
 
-State: paused; full release-0.3.1 merge and fresh-capsule acceptance complete; inherited gate failures and owner-operated PR delivery remain.
+State: paused; full release merge and new merged-build recording passed; inherited gate failures and owner-operated PR delivery remain.
 
 Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -26,11 +26,14 @@ outside this slice. Review partner: Antigravity, `gemini-4-hydrogen-high`.
 
 ## Current state
 
-A clean checkout at `/home/devcapsule/worktrees/github-auth` preserves the previous
-checkout, its maintenance records commit, and its independent website gitlink.
-The branch starts at fetched canonical main: no synchronization is required now.
-No open bug is owned by this newly registered workstream. Mail and intake are empty.
-The new feature belongs here, not in the maintenance release.
+At the owner's request, the active checkout is now
+`/workspace/301e4208ef81-ChatGPT_Codex`, on `ws-github-auth/ssh-proxy`.
+The earlier worktree is detached at `9e5bf073` and retains the built PEX and
+previous evidence. The website submodule's prior commit remains on its
+`presentations` branch; the active checkout uses the tracked submodule revision.
+Canonical main is unchanged after fetch, so synchronization is unnecessary for
+this recording-only task. No open bug is owned by github-auth; mail and intake
+are empty. The owner requested a new recorded E2E against the merged build.
 
 ## Implementation and evidence
 
@@ -296,6 +299,41 @@ and transport sources are unchanged by the merge. This run validates the merged
 child launcher/runtime against that live broker; a physical-host restart with the
 merged PEX has not been performed. Canonical main is unchanged, so separate main
 synchronization remains unnecessary for this slice.
+
+## New merged-build recording, 2026-11-16
+
+The owner requested a new recording after selecting the feature branch in the
+primary checkout. The running capsule's PEX now matches the merged artifact:
+`af7fa02ca2c2737f3a1678226341312682b71cfdd37eb892f29a42ad5c31b78c`, built from
+`7fc77f24`. This supersedes the earlier outer-broker restart limitation.
+
+One fresh VSCodium capsule with browser-automation and explicit github-ssh consent
+passed the recorded journey. The real terminal showed zero SSH files, no agent,
+and a connected proxy, cloned the canonical repository, and displayed its SSH
+origin and commit. The missing-socket read failed with exit 128; the normal proxy
+read then succeeded. Each network command finished before the next command.
+Independent Docker and Git checks verified both capsule runtimes' checksum, the
+same read-only host socket, no child SSH mount/files/agent, expected GitHub HEAD
+`1942f396`, clean tree, and README. Container, workspace and checkout records were
+independently confirmed removed. No GitHub write was made.
+
+New evidence in this primary checkout:
+`devcapsule-src/tests/e2e/evidence/github-ssh-proxy/20261116T103152Z-af7fa02c/`.
+The movie is `scenario-video.webm`: 545 frames at 12 fps, 45.42 seconds,
+2,116,032 bytes; SHA-256
+`57457f07f8b40fcbfa3e3d2dff4a99584829f616b68b6c6e4552587dec6ba5ee`.
+Full capture, poster, screenshots, action trace, executable reproduction scripts,
+run provenance, verification and cleanup results are retained alongside it.
+Host directory:
+`/opt/costin3/myProjects/devcapsule/devcapsule-src/tests/e2e/evidence/github-ssh-proxy/20261116T103152Z-af7fa02c/`.
+Evidence is outside build output and ignored by Git. Prior recordings remain in
+the earlier detached worktree; no prior evidence was overwritten.
+
+This task changed records only and used the already validated merged PEX; the
+full gate was not rerun. Its inherited failures and pending review corrections
+remain as documented above. The new E2E and encoding passed on their first run.
+The initial script-extraction command used the wrong working-directory-relative
+path and was corrected before any E2E launch; no failed product run was discarded.
 
 ## Open Threads
 

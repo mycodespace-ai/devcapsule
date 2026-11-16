@@ -147,3 +147,24 @@ showcase, with the complete raw capture retained, rather than a polished tutoria
 For future runs, send each network command separately and wait for its observable
 completion before typing the next. A successful controller action means that the
 keystrokes were delivered; it does not mean the shell command has finished.
+
+## New recording of the merged build
+
+Run `20261116T103152Z-af7fa02c` passed in the primary checkout. Parent and child
+runtime SHA-256 both equal
+`af7fa02ca2c2737f3a1678226341312682b71cfdd37eb892f29a42ad5c31b78c` (merge `7fc77f24`).
+The terminal clone and restored-proxy read returned 0; the missing-socket read
+returned 128. The independent checks and cleanup passed. Unlike the earlier
+recording, this run counts SSH files correctly from the start and waits for each
+network command's completion before typing the next.
+
+Evidence: `devcapsule-src/tests/e2e/evidence/github-ssh-proxy/20261116T103152Z-af7fa02c/`.
+`scenario-video.webm` is 45.42 seconds (545 frames at 12 fps), 2,116,032 bytes,
+SHA-256 `57457f07f8b40fcbfa3e3d2dff4a99584829f616b68b6c6e4552587dec6ba5ee`.
+The full capture, poster, screenshots, action trace, run metadata, independent
+verification and cleanup results are beside it. The saved scripts identify the
+exact executable; they use the existing controller and test-owned exit markers
+to wait for commands. No product source changed for this recording.
+
+Host path:
+`/opt/costin3/myProjects/devcapsule/devcapsule-src/tests/e2e/evidence/github-ssh-proxy/20261116T103152Z-af7fa02c/scenario-video.webm`.
