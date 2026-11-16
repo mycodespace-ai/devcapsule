@@ -1,7 +1,7 @@
 ---
 description: Committing, pushing and pulling from inside the capsule, and how credentials reach Git without your host keys entering the capsule.
 weight: 2
-updated: 2026-10-30
+updated: 2026-11-16
 ---
 # Git
 
@@ -57,7 +57,45 @@ This avoids giving the capsule remote credentials. Review commits before
 pushing: processes inside the capsule can change the working tree and local
 Git history.
 
-### 2. Forward your host SSH agent for a session
+### 2. Use the launcher’s GitHub SSH proxy
+
+On Linux or WSL with native Docker, authorize the proxy once from your host:
+
+```bash
+devcapsule project config authorize github-ssh true
+devcapsule project run
+```
+
+For a single run, use `devcapsule project run --authorize github-ssh true`.
+Inside the capsule, ordinary `git clone`, `git fetch`, `git pull`, and `git push`
+with `git@github.com:OWNER/REPO.git` or `ssh://git@github.com/OWNER/REPO.git` use
+OpenSSH on your host. The host's SSH configuration selects the identity and
+verifies GitHub's host key. Neither private keys nor the host's agent socket are
+mounted into the capsule. Other Git SSH hosts use the capsule's own SSH.
+
+The host must already trust GitHub's host key and be able to authenticate
+without a prompt. Unlock encrypted keys on the host with `ssh-add` before
+launching. Hardware keys may still require their normal touch. The proxy never
+asks the capsule for a host key passphrase. GitHub connection failures and SSH
+diagnostics appear in the capsule's Git output.
+
+The grant lets every process in this capsule fetch and push **all GitHub
+repositories accessible to that host identity**. It is not a per-repository
+grant. The proxy accepts only Git transfer commands, not general host commands.
+It lives with the outside launcher; stopping that launcher closes the proxy
+and cancels active transfers. A later launch creates a new proxy.
+
+Withdraw the saved grant with `devcapsule project config deny github-ssh` and
+relaunch. Configuration changes apply to the next launch, not the running one.
+
+This first implementation does not provide HTTPS credentials, `gh` API login,
+SSH commit signing, arbitrary GitHub SSH aliases, or a general `ssh -T` command.
+Git LFS's separate authentication protocol is not supported. Docker Desktop on
+macOS needs another transport and reports that limitation when enabled.
+An inner capsule launch can reuse an authorized outer proxy; it cannot create
+one that reads credentials on the physical host.
+
+### 3. Forward your host SSH agent for a session
 
 When you want `git push` and `git pull` over SSH inside the capsule without
 copying private key files into the container, run this from your host terminal.
@@ -80,7 +118,7 @@ Keep two details in mind:
   agent to sign challenges while the session is open. Load only the key you
   need or require per-use confirmation (`ssh-add -c`) on your host.
 
-### 3. Use a repository-scoped credential per checkout
+### 4. Use a repository-scoped credential per checkout
 
 If a workflow inside the capsule must push or call forge APIs unattended, create
 a **fine-grained HTTPS personal access token** or **single-repository SSH deploy

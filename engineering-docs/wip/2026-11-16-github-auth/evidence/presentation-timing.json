@@ -1,0 +1,15 @@
+{
+  "run": "20261116T103152Z-af7fa02c",
+  "video_sha256": "57457f07f8b40fcbfa3e3d2dff4a99584829f616b68b6c6e4552587dec6ba5ee",
+  "frames": 545,
+  "fps": 12,
+  "provenance": "Cumulative frames_recorded returned by the interactive controller after each selected action batch; final total from stop-result.json. These are chapter boundaries for this recording, not per-action replay timings.",
+  "chapters": [
+    {"frames_after": 103, "screenshot": "step-003.png", "caption": "Open a terminal in the fresh capsule. The outside launcher already has explicit GitHub SSH authorization."},
+    {"frames_after": 184, "screenshot": "step-004.png", "caption": "Zero SSH files. No SSH agent. The capsule connects to the host-owned proxy socket."},
+    {"frames_after": 285, "screenshot": "step-006.png", "caption": "A real GitHub SSH clone succeeds. The private key stays on the host."},
+    {"frames_after": 331, "screenshot": "step-007.png", "caption": "Point just this command at a missing proxy socket: the GitHub read fails."},
+    {"frames_after": 395, "screenshot": "step-008.png", "caption": "The failed read exited 128. Using the normal proxy again returns GitHub HEAD successfully."},
+    {"frames_after": 533, "screenshot": "step-009.png", "caption": "The recorded commands and independent checks agree: host identity, no copied key, working Git access."}
+  ]
+}

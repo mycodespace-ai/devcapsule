@@ -171,4 +171,3 @@ def test_selecting_another_ide_forgets_the_provider_chosen_for_the_one_it_replac
     selection.ide = "python-ide"
 
     assert selection.local() == LocalCapabilities(("claude-code-agent", "python-ide"))
-
