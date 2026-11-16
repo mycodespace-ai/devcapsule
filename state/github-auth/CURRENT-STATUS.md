@@ -4,7 +4,7 @@ Mnemonic: `github-auth`
 
 Start date: 2026-11-16
 
-State: active; resumed at owner direction; implementation PR #47 and review PR #44 are open; inherited gate failures remain.
+State: paused; Pair Review complete; PR #47 targets release-0.3.1; two inherited unit-gate failures remain.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -26,22 +26,36 @@ outside this slice. Review partner: Antigravity, `gemini-4-hydrogen-high`.
 
 ## Current state
 
-The owner switched this checkout back from presentations on 2026-11-16.
-The checkout is `/workspace/301e4208ef81-ChatGPT_Codex`, on
-`ws-github-auth/ssh-proxy`. Presentations was already paused, committed and
-published; its claim was released. This branch was clean on selection.
+The owner directed completion of Pair Review and delivery to release-0.3.1 on
+2026-11-16. Antigravity Gemini 4 Hydrogen High completed round 2 at `455d3acc`.
+The implementor inspected and accepted its diff, posted an assessment, and merged
+[review PR #44](https://github.com/mycodespace-ai/devcapsule/pull/44) at `9638cb11`.
+[Implementation PR #47](https://github.com/mycodespace-ai/devcapsule/pull/47)
+now targets `release-0.3.1`; its title and description state the scope and checks.
+The prescribed GitHub CLI is installed and authenticated as `ccozianu`.
 
-Fetched canonical upstream and read its live coordination state. Mail and intake
-are empty; no bug record is owned by github-auth. Main has one merge commit not
-in this branch, `dac6b9d4` (#42); the workflow definition and local rules are
-identical. Defer synchronization for this selection-only task; reassess before
-implementation or integration. No source, validation scope or release target changed.
+Combined validation: 64 focused cases passed; types (351 files), conventions,
+CLI smoke, PEX build/smoke, docs contract (249 pages), and 474 console tests passed.
+The full gate had 3320 passed and two inherited recursive Docker gid-zero failures.
+The rebuilt PEX passed a real GitHub read through the inherited broker with an
+empty HOME; the missing-socket control failed with exit 128. No new container,
+GitHub write, physical-host restart or launcher replacement occurred.
 
-The prescribed GitHub CLI is now installed and authenticated as `ccozianu`.
-Verified implementation PR #47 is open against main, review PR #44 is open
-against this branch, and the earlier implementation PR #45 is closed.
-No PR was changed. Prior runtime and E2E evidence below remains historical;
-no new runtime or acceptance check was requested or run during selection.
+Package/workflow version files and docs/versions.yaml match release-0.3.1 exactly.
+The release baseline is already an ancestor. Do not merge main into this slice:
+its next-development version does not belong here. Unrelated main-only documents
+were removed from the release-targeted tree, with their index entries.
+The bump command refused the lower version; restoring the three exact release
+files implements the owner's release-target decision without changing workflow
+rules or the installed workflow declaration. This is a recorded tooling gap.
+
+The owner explicitly requested finishing the existing PR cycle and retargeting it;
+PR metadata was updated with the inherited failures disclosed after the required
+unit/full-gate run. This does not waive the failing release-acceptance gate.
+No open bug is owned by github-auth; mailbox and intake were empty at resumption.
+Earlier sections below are historical evidence, including superseded main targets,
+CLI absence and pending-review statements. Current disposition is above and in the
+[final review record](evidence/2026-11-16-final-review.md).
 
 ## Implementation and evidence
 
@@ -82,23 +96,13 @@ checkout remains untouched. Review evidence and prepared PR text are indexed bel
 
 ## Planned next step
 
-Current owner direction: finish Pair Review #44 into this branch, then deliver
-PR #47 to `release-0.3.1`. The human merges the release. Maintenance subsequently
-carries the release to main; do not conclude before main includes this tree.
-The implementation version and docs manifest now match the release baseline.
-Unrelated main-only documents are removed from the release-targeted diff.
-Do not merge main into this slice: the release already supplies its baseline
-and the workflow rules are identical. Earlier main-targeted handoffs are history.
-The version-bump command refuses a lower version. For this owner-directed
-release retarget, restored the release ref's three version-bearing files exactly;
-no workflow rule or declared installed workflow version changed.
-
-
-Resolve the inherited gate failures with maintenance, then integrate and validate
-review PR #44 and complete implementation PR #47. The prescribed GitHub CLI is
-available; the human merges into main.
-The full release merge and requested combined validation are complete. Review
-corrections remain separate and require validation after integration.
+Review the two disclosed inherited gate failures with maintenance before release
+acceptance. The human merges PR #47 into release-0.3.1; consult live hosted checks
+at that time. After the owner reports the merge, fetch and verify the release
+contains this tree. Maintenance owns carrying the release to main. Do not conclude
+this workstream until remote main contains the finished tree.
+Pair Review is complete; do not restart it or repeat the recorded E2E without a
+new change or unresolved concern. The review branch remains pushed.
 
 ## Rootless Docker fix propagation
 
@@ -454,20 +458,24 @@ remote PR existence remains unverified.
 
 ## Open Threads
 
-- Host relaunch, recursive inheritance and recorded fresh-project E2E passed.
-  Full-gate environment and delivery through PR #47 remain open.
-- Engineering choices: initial transport must account for Linux/rootless Docker
-  permissions; Docker Desktop cannot bind ordinary host Unix sockets.
-- Physical-host relaunch is observed working; Docker Desktop transport remains deferred.
-- Implementation PR #47 and review PR #44 are open, verified on resumption.
-  The recording remains local; the PR description draft retains validation limits.
-- The prescribed GitHub CLI is installed and authenticated. The human merges main.
-- Reviewer worktree removed at pause; pushed `ws-github-auth/ssh-proxy-review`
-  preserves its commit. Review corrections are not yet merged into implementation.
-- Unimplemented review proposals and exact baseline failure IDs are in the assessment.
-- Deliberately not preserved: scratch logs/venvs, credentials or console decision tokens in Git.
+- Awaiting the human: release acceptance and merge of PR #47 into release-0.3.1;
+  the two inherited recursive Docker gid-zero test failures remain unresolved.
+- Maintenance subsequently carries the release to main; preserve main's version,
+  three main-only documents and index entries listed in the final review record.
+- Pair Review #44 is merged; no reviewer correction remains pending.
+- Docker Desktop transport, aliases, HTTPS/gh, LFS and signing remain out of scope.
+- Follow-ups: cap send time by the operation deadline; separate runtime effects
+  more strictly under Host Inputs. This review does not claim those are done.
+- Process integration tests depend on Linux /proc and bounded startup/scheduling;
+  the deadline fixture assumes startup and PID recording within 0.5 seconds.
+- Earlier recorded E2E predates final review; final PEX read and refusal passed.
+- Disposable logs are at /var/tmp/github-auth-review-cycle and
+  /var/tmp/github-auth-review-unit.log. No credentials or tokened links are in Git.
 
 ## Workstream document index
+
+- [Final Pair Review and release-target validation](evidence/2026-11-16-final-review.md)
+- [Round 2 brief](evidence/round-2.md)
 
 - [Recorded E2E procedure and console presentation](evidence/showcase.md)
 - [Presentation producer for the retained run](evidence/present-showcase.py)
