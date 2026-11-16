@@ -35,7 +35,7 @@ class Recording:
                     "actions": [{"reason": f"{n}. {step.action}"}
                                 for n, step in enumerate(script.steps, 1)]}
         plan_presentation(scenario, script)
-        if not ffmpeg or not all(isinstance(part, str) and part for part in ffmpeg):
+        if isinstance(ffmpeg, (str, bytes)) or not ffmpeg or not all(isinstance(part, str) and part for part in ffmpeg):
             raise PresentationError("supply the ffmpeg command from the browser-automation environment")
         evidence.mkdir(parents=True, exist_ok=False)
         self.evidence = evidence
@@ -124,18 +124,20 @@ class Recording:
             raise PresentationError("no complete visual evidence; inspect scenario-result.json and action-log.json")
         complete = self.last_step == len(self.script.steps) and not self.failure
         suffix = "" if complete else " (FAILED)" if self.failure else " (INCOMPLETE)"
-        scenario = dict(self.scenario, title=self.scenario["title"] + suffix, actions=self.actions)
+        scenario = dict(self.scenario, title=self.scenario["title"].strip() + suffix, actions=self.actions)
         reached = Script(self.script.goal, self.script.stack, self.script.illustrates,
                          self.script.steps[:self.last_step])
         plan = plan_presentation(scenario, reached)
         document = plan.timed(self.frames_after_actions, self.frame_count, 12,
                               video="scenario-video.webm", poster="poster.png", screenshots=self.screenshots)
+        video = self.evidence / "scenario-video.webm"
         with self.frames.open("rb") as frames, (self.evidence / "ffmpeg.log").open("wb") as log:
             subprocess.run(
                 [*self.ffmpeg, "-y", "-f", "image2pipe", "-vcodec", "mjpeg", "-r", "12",
-                 "-i", "pipe:0", "-c:v", "libvpx", "-b:v", "3M", "-crf", "10",
-                 str(self.evidence / "scenario-video.webm")],
+                 "-i", "pipe:0", "-c:v", "libvpx", "-b:v", "3M", "-crf", "10", str(video)],
                 stdin=frames, stdout=log, stderr=log, check=True, timeout=120,
             )
+        if not video.is_file() or video.stat().st_size == 0:
+            raise PresentationError("video encoding produced no scenario-video.webm; inspect ffmpeg.log")
         (self.evidence / "poster.png").write_bytes((self.evidence / self.screenshots[0]).read_bytes())
         return write_presentation(self.evidence, document)

@@ -299,6 +299,19 @@ def plan_presentation(scenario: Mapping[str, Any], script: Script) -> Presentati
         if not isinstance(value, str) or not value.strip():
             raise PresentationError(f"the scenario has no {key}")
         texts[key] = value.strip()
+    if not isinstance(script.goal, str) or not script.goal.strip():
+        raise PresentationError("the script has no goal")
+    if not script.steps:
+        raise PresentationError("the script has no steps")
+    for index, step in enumerate(script.steps, start=1):
+        for field_name, field_value in (("title", step.title), ("action", step.action), ("expected", step.expected)):
+            if not isinstance(field_value, str) or not field_value.strip():
+                raise PresentationError(f"script step {index} has no {field_name}")
+    if any(not isinstance(item, str) or not item.strip() for item in script.illustrates):
+        raise PresentationError("script illustrations must be non-empty texts")
+    if any(not isinstance(name, str) or not name.strip() or not isinstance(detail, str) or not detail.strip()
+           for name, detail in script.stack):
+        raise PresentationError("script stack entries must have non-empty name and detail")
     actions = scenario.get("actions")
     if not isinstance(actions, list) or not actions:
         raise PresentationError("the scenario has no actions")

@@ -33,8 +33,15 @@ def presentation_link(folder: Path, *, project: Path, console_url: str, token: s
         part in ("..", "node_modules") or part.startswith(".") for part in relative.parts
     ):
         raise ValueError("presentation must be in a visible subdirectory of the console project")
+    if not console_url or any(ch.isspace() for ch in console_url):
+        raise ValueError("supply the capsule's HTTP(S) console URL")
     origin = urlsplit(console_url)
-    if origin.scheme not in ("http", "https") or not origin.netloc or origin.username or origin.password:
+    try:
+        _ = origin.port
+    except ValueError as error:
+        raise ValueError("supply the capsule's HTTP(S) console URL") from error
+    if (origin.scheme not in ("http", "https") or not origin.hostname
+            or origin.username is not None or origin.password is not None):
         raise ValueError("supply the capsule's HTTP(S) console URL")
     path = "/presentations/" + quote(relative.as_posix(), safe="/")
     return urlunsplit((origin.scheme, origin.netloc, path, urlencode({"token": token}) if token else "", ""))
