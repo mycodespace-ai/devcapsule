@@ -1,9 +1,10 @@
 # Pair Review brief: Antigravity, Gemini 4 Hydrogen (High)
 
-Status: prepared, not launched. The implementation PR must exist first. The
-implementor supplies its number when this brief is used. The prescribed GitHub
-CLI is absent in the implementor checkout; the owner operates GitHub until it
-is installed. Do not silently substitute another credential or delivery route.
+Implementation PR: https://github.com/mycodespace-ai/devcapsule/pull/43
+Base: `release-0.3.1`. Head: `ws-presentations/0.3.1-authoring`.
+The prescribed GitHub CLI is now installed and the implementor's authentication
+check passed. Check authentication once in your own session as directed below.
+The PR is a draft pending this review and its hosted checks.
 
 ## Goal and checkout
 
@@ -68,8 +69,11 @@ and command-line test restrictions. Do not weaken tests to obtain a green gate.
 
 ## Environment and validation
 
-The implementor prepares a separate `devcapsule-src/.venv` in your worktree
-using the local workflow's validation instructions. Run from `devcapsule-src`:
+The implementor has prepared a separate `devcapsule-src/.venv` in your worktree
+using the local workflow's validation instructions. Your branch starts at
+`78f512c2`; later implementor commits only update review records. As the review
+partner, do not run workflow claim, mail or publish commands; the Pair Review
+exception governs over the ordinary session-start instructions. Run from `devcapsule-src`:
 
 ```sh
 mkdir -p /var/tmp/presentations-antigravity
@@ -91,7 +95,8 @@ Report what the hosted gate does not catch.
 
 Check `git var GIT_AUTHOR_IDENT`. Preserve the human author
 `Costin Cozianu <ccozianu@gmail.com>`. Credit the actual reviewer engine/model
-using the project's Antigravity co-author convention in WORKFLOW-LOCAL.
+using `Co-authored-by: Antigravity (Gemini 4 Hydrogen High) <noreply@google.com>`,
+consistent with existing Antigravity commits; verify the actual model before crediting it.
 
 Detect GitHub CLI only at `/opt/xtras/miniconda3/envs/gh/bin/gh`. In each shell
 using it, activate it first:
@@ -132,4 +137,4 @@ Run detached in the review worktree, capture its streaming output in session
 scratch and append its exit status. Relay start, commits, gate results and end
 to the human. Keep this brief as the reviewer's only task context. Record the
 actual invocation and outcome in the Pair Review development document after
-the loop runs; this prepared brief is not evidence of a completed review.
+the loop runs; this brief alone is not evidence of a completed review.

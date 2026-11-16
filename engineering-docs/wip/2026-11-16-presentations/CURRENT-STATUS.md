@@ -2,7 +2,7 @@
 
 Mnemonic: `presentations`
 Start date: 2026-11-16
-State: paused; implementation prepared; owner-operated PR and Pair Review pending
+State: active; PR #43 opened; Antigravity Pair Review in progress
 Branch association: `ws-presentations/0.3.1-authoring`
 Branch prefix: `ws-presentations/`
 Integration target: `release-0.3.1`
@@ -45,8 +45,9 @@ The self-contained handoff names the exact paths and evidence.
 ## Planned next step
 
 The authoring kit is implemented and the installed-artifact checks passed.
-The owner must open the implementation PR against `release-0.3.1`, or install the prescribed GitHub CLI.
-Then start the requested Antigravity Pair Review from its committed brief, in its own worktree.
+Implementation PR [#43](https://github.com/mycodespace-ai/devcapsule/pull/43) targets `release-0.3.1`.
+Run the requested Antigravity Pair Review from its committed brief, in its own worktree;
+assess its actual diff, integrate accepted fixes through its stacked PR, and validate the final branch.
 The implementation has not been pair-reviewed and must not be described as ready to merge.
 Disclose the known local gate limitation and verify the hosted checks on the implementation PR.
 Do not restart a viewer redesign, audience study or general process invention.
@@ -56,7 +57,10 @@ Do not restart a viewer redesign, audience study or general process invention.
 The implementation branch starts at `upstream/release-0.3.1` (`10e7fda3`), carrying only this workstream's registration commits from the former `ws-presentations/authoring`.
 Do not synchronize with main: its development-version changes do not belong in this release-targeted slice.
 The workflow text differs only in its source-version stamp; its rules were read.
-The required GitHub CLI location is absent; prepare and push changes, then hand PR creation to the owner under WORKFLOW-LOCAL.
+The owner installed the prescribed GitHub CLI. Authentication passed as `ccozianu` on resumption.
+Re-fetched upstream: release is unchanged and main differs in workflow only by the development-version stamp.
+Keep the release baseline; do not merge next-cycle development-version changes.
+The required pre-PR unit session again stopped at the known Docker-group failure after 1438 passes.
 No open bug is owned by presentations at registration.
 Product changes: `presentations guide`, `export` and `hand-off`; the existing producer is now shipped
 and the repository replay harness imports it through an adapter. The portable recording helper accepts
@@ -76,7 +80,7 @@ The local artifact is a development validation build, not a published release ca
 ## Open Threads
 
 - Implementation authorized; release target and reviewer settled.
-- GitHub PR delivery requires the owner or installation of the prescribed CLI. No reviewer run has started.
+- PR #43 is open as a draft; reviewer results and hosted checks remain pending.
 - Preserve the recorded viewer acceptance and demonstrated external-project recording reuse.
 - Local full gate still fails on the known recursive Docker-group test; no unrelated fixture fix is included.
 - Automated checks establish the kit and existing viewer contract, not a second human acceptance of presentation quality.
@@ -88,7 +92,7 @@ The local artifact is a development validation build, not a published release ca
 
 - [Validation record](2026-11-16-record-authoring-validation.md): installed-artifact and browser checks, counts and limits.
 - [Implementation PR draft](2026-11-16-record-pr-draft.md): owner-operated delivery to release 0.3.1.
-- [Pair Review brief](evidence/2026-11-16-review-brief.md): pending PR creation; exact Antigravity model and high effort.
+- [Pair Review brief](evidence/2026-11-16-review-brief.md): PR #43; exact Antigravity model and high effort.
 - [Full use-case handoff](2026-11-16-record-use-case-handoff.md): owner-defined flow, constraints and original correspondence references.
 
 - [Intake](intake/README.md): handoff and correspondence awaiting acknowledgement.
