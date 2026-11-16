@@ -6,7 +6,7 @@ Start date: 2026-11-16
 
 State: paused; full release-0.3.1 merge and fresh-capsule acceptance complete; inherited gate failures and owner-operated PR delivery remain.
 
-Definition read: WORKFLOW.md@89de30622697, WORKFLOW-LOCAL.md@d92bdcbb0a01
+Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
 Branch association: `ws-github-auth/ssh-proxy`, from canonical `upstream/main` at `1942f396`.
 
