@@ -4,7 +4,7 @@ Mnemonic: `project-management`
 
 Start date: 2026-08-09
 
-State: active 2026-11-16; upgrades committed to first release after 0.3.1; 17 intake items pending
+State: active 2026-11-16; 17-item console questionnaire awaits owner; upgrade successor commitment retained
 
 Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -22,6 +22,30 @@ Own project-wide priorities, sequencing, dependencies and lifecycle decisions.
 This reserved workstream remains open for the lifetime of multiple-stream mode.
 
 ## Current State
+
+### Seventeen-item decision questionnaire, 2026-11-16
+
+The owner replaced the sequential intake presentation with one console
+questionnaire covering all 17 remaining items, with 1–5 options each and
+free-text decisions or discussion. Reviewed every intake and relevant current
+contracts/source; the questionnaire uses 2–3 options per item and distinguishes
+old observations from current evidence. The existing successor upgrade gate
+stands; additional release gates are options awaiting the owner, not decisions.
+
+Questionnaire ID: `2026-11-16-project-management-17-intake-decisions`.
+The document, drafting inputs and any answers live only in capsule state under
+`$XDG_STATE_HOME/devcapsule/`; no tokened link or questionnaire content is in Git.
+The console supports per-item notes with no selected option and partial answers.
+All 17 items remain in intake until their individual outcomes are recorded.
+
+On reply, read the corresponding answer document and prefer newer chat rulings
+for the same item. Record and route unambiguous choices or free-text decisions
+without reconfirmation. Keep unanswered items, requests for discussion and
+conflicts pending; continue only those. A decision to commission design settles
+routing/scope, not the later product-design choices. Do not delete the decision
+or answer until all outcomes are recorded. If useful, issue a follow-up page
+containing only unresolved questions; never silently discard a submitted answer.
+
 
 ### Upgrade release commitment, 2026-11-16
 
@@ -222,13 +246,24 @@ product and scope choices; neither is silently adopted or assigned a release.
 
 ## Planned Next Step
 
-Continue the owner's intake review one item at a time. Item one is acknowledged:
-upgrades gate the first release after 0.3.1. Resolve any follow-up on that decision
-before presenting item two. Component-upgrades must reconcile current behavior
-and propose scope and acceptance for the embedded-agent upgrade experience.
-Project-management must carry the gate into successor scope/cut and acceptance.
+Process the owner's answers to the 17-item console questionnaire. Record clear
+outcomes individually, deliver any work through coordination mail, and remove
+each decided intake in the same commit as its disposition. Continue discussion
+only for unanswered, ambiguous or explicitly discussion-marked items. Do not
+execute proposed scope or new release gates before the owner chooses them.
 
 ## Validation And Checkout State
+
+### Questionnaire checkpoint, 2026-11-16
+
+The standard `decisions from-table` builder created the document; `decisions
+check` accepts all 17 questions as unanswered. Verified exact intake coverage,
+unique keys, 2–3 options per question and existence of every cited local path.
+The running console API serves all 17 items with no answer. Read the console's
+submission code: note-only responses and partial submission are supported.
+No answers were fabricated or submitted. Whitespace checks pass; no product
+code or test environment changed, under the standing planning exception.
+
 
 ### Upgrade commitment checkpoint, 2026-11-16
 
@@ -303,7 +338,7 @@ The owner's saved edits remain outside project-management commits:
 
 ## Open Threads
 
-- Awaiting the human: continue the one-at-a-time intake review after the upgrade decision.
+- Awaiting the human: answers to the 17-item console questionnaire; the owner superseded the one-at-a-time presentation.
 - Successor upgrades are committed; detailed scope and acceptance remain to be agreed.
 - The release-relative workflow gap is pending with workflow-improvements; enforcement is procedural.
 - Presentations PR #43 awaits owner merge into release-0.3.1; Pair Review is done.
