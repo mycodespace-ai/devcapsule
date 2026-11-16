@@ -186,6 +186,7 @@ status file; internal WIP/archive documents use the local index in that status.
 - [Project management current status](engineering-docs/wip/2026-08-09-project-management/CURRENT-STATUS.md)
 - [Workflow improvements current status](engineering-docs/wip/2026-08-09-workflow-improvements/CURRENT-STATUS.md)
 - [Component upgrades current status](engineering-docs/wip/2026-09-21-component-upgrades/CURRENT-STATUS.md)
+- [GitHub authentication current status](engineering-docs/wip/2026-11-16-github-auth/CURRENT-STATUS.md)
 - [Maintenance current status](engineering-docs/wip/2026-09-18-maintenance/CURRENT-STATUS.md)
 - [Capsule web console current status](engineering-docs/wip/2026-10-09-capsule-webconsole/CURRENT-STATUS.md)
 - [Wrapped projects current status](engineering-docs/wip/2026-11-02-wrapped-projects/CURRENT-STATUS.md)
