@@ -180,6 +180,8 @@ status file; internal WIP/archive documents use the local index in that status.
 
 ## Workstream Status
 
+- [Presentations](engineering-docs/wip/2026-11-16-presentations/CURRENT-STATUS.md): agent-driven E2E recordings and presentations in adopter projects.
+
 - [Multiple-stream workflow successful archive](engineering-docs/archive/2026-08-08-multi-workflow/CURRENT-STATUS.md)
 - [Recursive dogfood E2E successful archive](engineering-docs/archive/2026-08-06-recursive-e2e/CURRENT-STATUS.md)
 - [Eclipse interactive surface, concluded 2026-10-01 and folded into component-catalog](engineering-docs/archive/2026-09-09-eclipse-surface/CURRENT-STATUS.md)
