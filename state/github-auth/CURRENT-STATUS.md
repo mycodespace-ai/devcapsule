@@ -404,6 +404,33 @@ Ownership and packaging/interface choices remain for that workstream and the own
 This audit does not claim future capsules already have that authoring support.
 Structured artifact observations are in evidence/portability-audit.json.
 
+## Consolidated handoff and branch delivery, 2026-11-16
+
+The owner reports that an agent in a separate project running DevCapsule 0.3.0
+successfully reused this repository's recorder through an ad-hoc clone. Adding
+presentations and the remaining setup was too much work. This is owner-reported
+reuse evidence, not an independently repeated test or proof of shipped 0.3.0
+presentation support.
+
+At the owner's request, sent the complete findings and this new evidence to
+project-management as `2026-11-16-github-auth-presentation-authoring-handoff.md`
+on coordination at `b61ff973196a`. The self-contained item covers source locations,
+discovery, scripted versus interactive generation, reusable Python, installed-PEX
+omissions, the tested SSH presentation, durable documentation and proposed
+installation-only acceptance in an unrelated project. It supplements the earlier
+messages without selecting a toolkit interface, release or implementation owner.
+
+Refreshed the implementation PR draft around the final merged build, latest movie,
+presentation and portability findings. All authored changes are committed and
+pushed on the implementation branch; raw media remains intentionally ignored.
+Canonical main was fetched and is still fully included, so no synchronization
+was needed. No source or runtime behavior changed in this handoff. The existing
+full-gate limitations remain; no new E2E or full gate was run for this record update.
+The prescribed GitHub CLI remains absent. Under WORKFLOW-LOCAL.md's GitHub rules
+4–5, the owner must edit the remote PR after resolving the gate prerequisites.
+A push updates any existing PR's commits, not its description or attachments;
+remote PR existence remains unverified.
+
 ## Open Threads
 
 - Host relaunch, recursive inheritance and recorded fresh-project E2E passed.
