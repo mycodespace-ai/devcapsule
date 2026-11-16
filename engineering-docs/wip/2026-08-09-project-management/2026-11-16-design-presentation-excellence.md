@@ -51,7 +51,7 @@ Do not start that design work in this use-case definition or make selecting a ne
 
 ## References
 
-- [Consolidated handoff](intake/2026-11-16-github-auth-presentation-authoring-handoff.md).
-- [Portability handoff](intake/2026-11-16-presentation-authoring-portability.md).
+- [Consolidated handoff](https://github.com/mycodespace-ai/devcapsule/blob/cac3861e/engineering-docs/wip/2026-08-09-project-management/intake/2026-11-16-github-auth-presentation-authoring-handoff.md).
+- [Portability handoff](https://github.com/mycodespace-ai/devcapsule/blob/cac3861e/engineering-docs/wip/2026-08-09-project-management/intake/2026-11-16-presentation-authoring-portability.md).
 - [Existing presentation contract](../../../devcapsule-webconsole/PRESENTATIONS.md).
 - [Existing recording instructions](../../development/running-e2e-scenario-recordings.md).
