@@ -1,0 +1,5 @@
+who: Costin Cozianu
+branch: ws-github-auth/ssh-proxy
+slice: Build local PEX and prepare host relaunch handoff
+since: 2026-11-16T08:42:15+00:00
+expires: 2026-11-16T20:42:15+00:00
