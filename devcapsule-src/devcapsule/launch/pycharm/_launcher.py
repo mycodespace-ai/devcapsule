@@ -729,6 +729,8 @@ def describe_run_command(command: list[str], config: PycharmRunConfig,
         )
     if config.host_browser_socket is not None:
         comments.append("Host-browser socket requires a live broker; a broker owned by this invocation stops on return.")
+    if config.github_socket is not None:
+        comments.append("GitHub SSH socket requires a live broker; a broker owned by this invocation stops on return.")
     if config.display_transport == CONTAINED_DISPLAY_TRANSPORT:
         comments.append("Contained display needs its temporary token file; the chosen host port is not reserved for later use.")
     if config.console_host_port is not None:
@@ -2329,7 +2331,11 @@ Host browser integration:
   Enabled through a URL-only HTTP(S) broker. Any process running as the
   capsule user can ask the physical host to navigate its default browser."""
     if config.github_socket is not None:
-        host_browser_disclosure += "\n  GitHub SSH: host-authenticated Git fetch/push proxy (all repositories your host identity can access)."
+        host_browser_disclosure += """
+
+GitHub SSH integration:
+  Host-authenticated Git fetch/push proxy (all repositories your host identity
+  can access); private keys stay on the host."""
     host_browser_disclosure += display_disclosure(config) + console_disclosure(config)
     if config.interactive_state_mounts:
         component_id = (

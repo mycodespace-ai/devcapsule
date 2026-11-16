@@ -1236,7 +1236,7 @@ class ConfigForgetCommand(Command):
 class ConfigDenyCommand(Command):
     name = "deny"
     capsule_access: ClassVar[CapsuleAccess] = CapsuleAccess.MUTATES
-    help = "Deny a host access for this checkout, recorded: network, docker-daemon, development-sudo, host-browser, host-x11."
+    help = "Deny a host access for this checkout, recorded: network, docker-daemon, development-sudo, host-browser, host-x11, github-ssh."
 
     @classmethod
     def configure(cls, parser: argparse.ArgumentParser) -> None:

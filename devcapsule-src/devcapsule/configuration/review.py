@@ -20,6 +20,8 @@ from .launcher_values import resolve_launcher_values
 from .trust import HomeTrust
 from .values import RuntimeEffects, resolve_configuration_values
 
+__all__ = ["HostAccess", "ConfigurationReview", "review_configuration"]
+
 
 @dataclass(frozen=True)
 class HostAccess:

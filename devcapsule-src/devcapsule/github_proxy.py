@@ -45,10 +45,6 @@ def _read_exact(connection: socket.socket, length: int) -> bytes:
     return bytes(chunks)
 
 
-def _send_frame(connection: socket.socket, kind: bytes, payload: bytes) -> None:
-    connection.sendall(kind + struct.pack("!I", len(payload)) + payload)
-
-
 class GitHubBroker:
     """One session's GitHub bridge. Close cancels active children and removes its socket.
 
