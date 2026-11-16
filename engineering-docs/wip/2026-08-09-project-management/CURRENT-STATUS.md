@@ -4,7 +4,7 @@ Mnemonic: `project-management`
 
 Start date: 2026-08-09
 
-State: active 2026-11-16; permanent coordination; packaged E2E presentation authoring scoped, packaging design next
+State: active 2026-11-16; permanent coordination; engineer-directed E2E recording and presentation use case defined
 
 Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -32,23 +32,21 @@ The owner reports that those tests pass on GitHub's agents; this session did not
 Use record review and relevant document checks for this planning work. Do not rerun the full gate for each planning checkpoint.
 The known local Docker-group failure remains recorded, but does not block this workstream's planning.
 
-The owner clarified the delivery gap after choosing both audiences.
-The current viewer already meets the prospective-user quality goal: Florin, the other developer, tested it and was wowed.
-Treat that as human acceptance, not an open audience or viewer-design question.
-The required work packages Markdown instructions and supporting Python that cooperate with Playwright in another project's capsule.
-The engineer gives numbered E2E steps; the local agent discovers the apparatus, records the test and produces a console presentation.
-No DevCapsule source clone, repository reverse-engineering or manually reconstructed chapter timings should be needed.
+The owner clarified the use case and explicitly deferred design work.
+In another DevCapsule/codebase, the engineer asks the agent to run E2E with recording and presentation.
+The scenario comes from an existing Markdown file or inline plain English.
+The agent executes the scenario, records it, creates the presentation and returns its web-console link.
+The [use-case definition](2026-11-16-design-presentation-excellence.md) now states that flow without architecture or packaging design.
+Its historical filename is retained so existing references keep resolving.
 
-Rewrote the [delivery scope](2026-11-16-design-presentation-excellence.md) around discoverable instructions, reusable Python,
-automatic interactive/replay presentation generation, installed delivery and unrelated-project acceptance.
-Read the existing producer, recorder and Todo controller boundaries to establish the concrete extraction issue.
-The standard-library producer is reusable, but repo-relative paths and the recorder's IDE smoke imports need a supported boundary.
-No product code, browser session, environment or test run was needed to establish this planning scope.
+The owner reports this recording capability already worked in another project after pointing its agent at this repository.
+The existing viewer has human acceptance, including Florin's test and enthusiastic response.
+The gap is making the proven instructions and supporting Python/Playwright code available to adopter agents.
+No new process, viewer-quality exercise or external-project selection is needed to define the use case.
+The earlier proposal to do packaging/interface design here is superseded by the owner's explicit direction.
 
-The audience decision remains both equally. The earlier broad viewer-quality proposal is superseded.
-Choosing a particular adopter scenario is not a prerequisite for preparing the package or its work order.
-Next resolve the installed discovery route, distribution and Playwright attachment boundary, then assign implementation.
-The two presentation intake items remain pending until routing. Release placement and outside-capsule support remain unassigned.
+Both audiences remain in scope. Implementation design, assignment and release placement are later work.
+The two presentation intake items remain pending until the agreed work is routed.
 
 
 ### Mainline synchronized again, 2026-11-16
@@ -159,11 +157,11 @@ product and scope choices; neither is silently adopted or assigned a release.
 
 ## Planned Next Step
 
-Prepare the presentation-authoring implementation work order from the owner's clarified scope.
-Settle its installed discovery route, distribution boundary and reusable Python/Playwright attachment contract with a bounded packaging design.
-Deliver the existing experience to agents in other projects; do not restart a viewer redesign or general audience study.
-Then assign implementation and release placement, and disposition the two presentation intake items through normal routing.
-The existing human acceptance stands; acceptance of this slice proves the installed authoring route in an unrelated project.
+Continue project-management discussion from the defined engineer-directed E2E recording and presentation use case.
+Use the engineer's existing Markdown scenario or inline English as input and the final web-console link as the visible outcome.
+Do not start packaging, interface or architecture design here; the owner explicitly deferred that work.
+The existing recording reuse and viewer acceptance are the baseline.
+Implementation assignment, release placement and intake disposition remain later coordination work.
 Compatibility, test-improvements and the other queue items remain pending.
 Any implementation-workstream switch still needs the owner's specific instruction.
 
@@ -232,18 +230,18 @@ The owner's saved edits remain outside project-management commits:
 
 ## Open Threads
 
-- Audience settled: both equally. Viewer quality accepted by the owner, with Florin's human test reported.
-- Scope settled: package discoverable Markdown guidance and reusable Python/Playwright recording and presentation support for other projects.
-- Open engineering choices: installed discovery route, distribution, browser/desktop attachment and dependency setup.
-- Open coordination choices: implementation owner, release placement and the external acceptance fixture.
-- The 20 intake items, nine documentation choices, C17, test-session timing and three ideas remain pending until disposition.
+- Use case defined: engineer supplies a Markdown file or inline English; agent runs, records, presents and returns the web-console link.
+- Existing recording reuse and viewer human acceptance stand; both audiences remain in scope.
+- The owner explicitly deferred design work. Do not proceed into package boundaries, interfaces or installation choices here.
+- Implementation assignment, release placement and the two presentation intake dispositions remain open.
+- The wider queue remains pending; no additional product choice is inferred from this use-case definition.
 - Local test failures do not block project-management planning, by explicit owner direction on November 16.
-- Mainline includes the IDE changes; retained raw evidence stays ignored and outside commits.
+- Retained raw evidence stays ignored and outside commits.
 - Deliberately not preserved: no transcript, tokened link in Git, new experiment, service, container or deployment.
 
 ## Workstream Document Index
 
-- [Packaged presentation-authoring scope](2026-11-16-design-presentation-excellence.md): owner clarification, accepted viewer baseline, required delivery and installed-tool acceptance.
+- [E2E recording and presentation use case](2026-11-16-design-presentation-excellence.md): engineer inputs, agent flow and returned web-console link; design explicitly deferred.
 
 - [Prior coordination status, preserved November 12](2026-11-12-record-prior-coordination-status.md): verbatim pre-resumption status and historical open threads; use this file's current state for routing.
 
