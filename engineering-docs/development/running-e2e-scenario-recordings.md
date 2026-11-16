@@ -291,3 +291,41 @@ is a worked example using the existing recording and measured controller counts.
 After generation, reload **Presentations**; no console restart, registration or
 website build is needed. Check the listing, step navigation, media loading,
 captions and playback stopping at the selected step's boundary in a real browser.
+
+## 6. Asking an agent in another project
+
+The console viewer is reusable across projects. The authoring tools described in
+this guide are currently **source-repository tooling**, not installed by the PEX
+or workflow bootstrap. Provision this guide, the presentation contract and a
+pinned copy of the producer before expecting another project's agent to follow
+the same procedure. The source revision `d94973f8a289454a6899a80a35a26077f2df0b1b`
+contains the worked SSH example. Keep source and license attribution when bringing
+tools into another project.
+
+`scenario_presentation.py` uses Python's standard library and can serve another
+project's recording harness. The IDE recorder has dependencies on the other
+`tests/e2e` modules and creates disposable smoke projects; do not present it as an
+installed, general-purpose application-test runner. The optional
+`browser-automation` component provides Playwright and browser binaries, not these
+DevCapsule-specific helpers. A project's existing E2E runner can supply its own
+video, screenshots and measured time boundaries to a compatible producer.
+
+With those prerequisites understood, a developer can give an agent this brief:
+
+> Create a recorded, step-by-step DevCapsule web-console presentation of
+> **[the user journey and acceptance criteria]**. First check the installed
+> recording tools and presentation authoring support; identify missing prerequisites
+> rather than inventing commands. Use the supplied DevCapsule authoring guide and
+> pinned presentation producer. Write the Markdown scenario with its goal, numbered
+> user actions, expected observations and captions. Drive the real application
+> through our E2E harness, verify the outcome independently, and retain screenshots
+> and measured video-time boundaries. Generate and validate `presentation.json`.
+> Save the complete run under `tests/e2e/evidence/<scenario>/<run>/` inside this
+> project's mount, outside clean-build output. Check that it appears in the running
+> console's Presentations page, play every step with its captions, and give me the
+> link. Keep authentication tokens out of saved documentation and Git.
+
+This is a task brief, not a claim that the current launcher supplies its
+prerequisites. A short prompt alone does not close the packaging gap. The
+[portability table](../../devcapsule-webconsole/PRESENTATIONS.md#use-in-projects-other-than-devcapsule)
+states what ships today and what still requires a supported authoring kit.
