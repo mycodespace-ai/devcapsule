@@ -153,15 +153,26 @@ def _wait_pids_stopped(pids: list[int], timeout: float = 2.0) -> None:
 
 
 def _read_ready_line(stream: IO[bytes], expected: bytes, timeout: float = 5.0) -> None:
+    fd = stream.fileno()
+    received = bytearray()
+    deadline = time.monotonic() + timeout
     with selectors.DefaultSelector() as selector:
-        selector.register(stream, selectors.EVENT_READ)
-        if not selector.select(timeout):
-            raise TimeoutError(f"Timed out waiting {timeout}s for ready signal {expected!r}")
-    assert stream.readline() == expected
+        selector.register(fd, selectors.EVENT_READ)
+        while len(received) < len(expected):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0 or not selector.select(remaining):
+                raise TimeoutError(
+                    f"Timed out waiting {timeout}s for ready signal {expected!r}; received {bytes(received)!r}"
+                )
+            chunk = os.read(fd, len(expected) - len(received))
+            if not chunk:
+                break
+            received.extend(chunk)
+    assert bytes(received) == expected
 
 
 def test_operation_deadline_stops_a_stalled_ssh_process(tmp_path: Path) -> None:
-    """A stalled host SSH process and its descendant are terminated (no running process remains) and the capsule fails."""
+    """A stalled host SSH process and its descendant are terminated within the deadline (assumes fixture startup completes within 0.5s)."""
     pid_file = tmp_path / 'pids'
     program = (
         "import os, subprocess, sys, time\n"
@@ -170,10 +181,11 @@ def test_operation_deadline_stops_a_stalled_ssh_process(tmp_path: Path) -> None:
         f"Path({str(pid_file)!r}).write_text(f'{{os.getpid()}}\\n{{grandchild.pid}}\\n')\n"
         "time.sleep(60)\n"
     )
-    with _broker(tmp_path, program, operation_timeout=0.2) as (path, env):
+    with _broker(tmp_path, program, operation_timeout=0.5) as (path, env):
         result = _client(path, env)
     assert result.returncode != 0
     assert b'connection ended' in result.stderr
+    assert pid_file.exists(), "Fixture did not finish recording PIDs before the 0.5s operation deadline."
     pids = [int(line) for line in pid_file.read_text().splitlines() if line]
     assert len(pids) == 2
     _wait_pids_stopped(pids)
@@ -207,9 +219,13 @@ def test_broker_shutdown_cancels_active_ssh_process_group(tmp_path: Path) -> Non
         client.communicate(timeout=5)
         assert returncode != 0
     finally:
-        if client is not None and client.poll() is None:
-            client.kill()
-            client.communicate(timeout=5)
+        if client is not None:
+            if client.poll() is None:
+                client.kill()
+                client.communicate(timeout=5)
+            for pipe in (client.stdin, client.stdout, client.stderr):
+                if pipe is not None and not pipe.closed:
+                    pipe.close()
     pids = [int(line) for line in started.read_text().splitlines() if line]
     assert len(pids) == 2
     _wait_pids_stopped(pids)

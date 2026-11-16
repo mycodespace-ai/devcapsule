@@ -26,13 +26,13 @@ def test_docker_desktop_bridge_is_refused_when_enabled() -> None:
             pass
 
 
-def test_containerized_bridge_requires_an_inherited_canonical_socket() -> None:
+@pytest.mark.parametrize("environment", [{}, {SOCKET_ENV: "/tmp/forged.sock"}])
+def test_containerized_bridge_requires_an_inherited_canonical_socket(environment: dict[str, str]) -> None:
     """An inner capsule cannot enable github-ssh without the launcher's canonical socket variable."""
-    for environment in ({}, {SOCKET_ENV: "/tmp/forged.sock"}):
-        with pytest.raises(GitHubTransportError, match="outside launcher"):
-            with github_ssh_bridge(environment, enabled=True, containerized=True, binds_unix_sockets=True):
-                pass
     assert str(SOCKET_DESTINATION) != "/tmp/forged.sock"
+    with pytest.raises(GitHubTransportError, match="outside launcher"):
+        with github_ssh_bridge(environment, enabled=True, containerized=True, binds_unix_sockets=True):
+            pass
 
 
 def test_host_bridge_requires_openssh_on_path(tmp_path: Path) -> None:
