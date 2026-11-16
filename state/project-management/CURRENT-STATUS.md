@@ -4,7 +4,7 @@ Mnemonic: `project-management`
 
 Start date: 2026-08-09
 
-State: active 2026-11-16; permanent coordination; inbound mail received, next slice awaits owner choice
+State: active 2026-11-16; permanent coordination; presentation excellence scope under discussion
 
 Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -22,6 +22,28 @@ Own project-wide priorities, sequencing, dependencies and lifecycle decisions.
 This reserved workstream remains open for the lifetime of multiple-stream mode.
 
 ## Current State
+
+### Presentation excellence selected, 2026-11-16
+
+The owner selected presentation excellence as the next project-management slice.
+This resolves the previous next-slice decision to `presentations`; the other queue items remain pending.
+The owner explicitly permits project-management work despite local unit-test failures.
+The owner reports that those tests pass on GitHub's agents; this session did not independently verify that report.
+Use record review and relevant document checks for this planning work. Do not rerun the full gate for each planning checkpoint.
+The known local Docker-group failure remains recorded, but does not block this workstream's planning.
+
+Read the presentation contract, recording guide, consolidated handoff and reusable-assets idea.
+Drafted [presentation excellence](2026-11-16-design-presentation-excellence.md): proposed outcomes, acceptance criteria and the first adopter journey.
+The proposal separates documented behavior and recorded evidence from unvalidated quality improvements.
+It covers discoverable authoring, story and legibility, interactive/replay generation, reliable run evidence, and reuse.
+No new browser session, product change, recording or environment was needed for this bounded planning slice.
+
+The first open product question is the primary audience: engineering reviewers, prospective users/tutorial readers, or both equally.
+Recommend engineering review first; the owner has not accepted that recommendation.
+Decision `2026-11-16-presentation-audience` remains pending in capsule state.
+The two presentation intake items remain pending until an agreed deliverable is assigned.
+No implementing workstream, toolkit interface, release target or standalone support commitment is selected.
+
 
 ### Mainline synchronized again, 2026-11-16
 
@@ -131,16 +153,12 @@ product and scope choices; neither is silently adopted or assigned a release.
 
 ## Planned Next Step
 
-With the owner, select the next slice from the received correspondence and existing queue.
-Recommend scoping portable presentation authoring: intended adopter journey, supported deliverable,
-installation-only acceptance, then ownership and sequencing. No interface or release is selected yet.
-Alternatives are the compatibility promise after 0.3.1, test-improvements reconciliation, or broader queue review.
-The test-improvements work order must be reconciled with maintenance's delivered host-input rewrite before allocation.
-All 20 intake items, the nine documentation decisions, C17 and all three ideas remain pending.
-This resumption does not authorize a switch to an implementing workstream.
-
-Done for the next slice means a recorded owner choice, bounded outcome and acceptance criteria,
-followed by the appropriate routing or intake disposition. No product test reruns are needed to compare planning records.
+Settle the primary presentation audience with the owner, then select the unrelated project's first acceptance journey.
+Use the proposed quality bar to define a bounded work order, delivery boundary, implementation owner and acceptance evidence.
+Review the actual viewer with the owner before deciding whether its layout needs redesign.
+Resolve the two presentation intake items when the agreed work is routed; keep the wider reusable-assets idea pending.
+Compatibility retains the owner's post-0.3.1 direction. Test-improvements and the rest of the queue remain pending.
+This planning work stays on project management; any implementation-workstream switch needs the owner's specific instruction.
 
 ## Validation And Checkout State
 
@@ -207,15 +225,17 @@ The owner's saved edits remain outside project-management commits:
 
 ## Open Threads
 
-- Awaiting the owner: select presentation-authoring scope, compatibility policy, test-improvements reconciliation, or broader queue review.
-- Weighed and unresolved: presentation toolkit packaging/interface, implementation ownership and release target remain open.
-- Keep compatibility's post-0.3.1 direction and the newer release-cut exclusions when assessing older scheduling mail.
+- Awaiting the owner: primary presentation audience (`review`, `demo`, or `both`).
+- Weighed and unresolved: first adopter journey, recording surface, toolkit distribution, standalone support, ownership and release target.
+- The presentation proposal is a discussion draft, not an accepted work order or an observed visual-quality assessment.
 - The 20 intake items, nine documentation choices, C17, test-session timing and three ideas remain pending.
-- The synchronized gate stops on the recursive dry-run Docker-group failure; later gate phases remain unrun.
-- Mainline now includes the IDE changes; retained raw evidence remains ignored and outside commits.
+- Local test failures do not block project-management planning, by explicit owner direction on November 16.
+- Mainline includes the IDE changes; retained raw evidence stays ignored and outside commits.
 - Deliberately not preserved: no transcript, tokened link in Git, new experiment, service, container or deployment.
 
 ## Workstream Document Index
+
+- [Presentation excellence proposal](2026-11-16-design-presentation-excellence.md): open for the audience choice, proposed acceptance and author-to-viewer scope.
 
 - [Prior coordination status, preserved November 12](2026-11-12-record-prior-coordination-status.md): verbatim pre-resumption status and historical open threads; use this file's current state for routing.
 
