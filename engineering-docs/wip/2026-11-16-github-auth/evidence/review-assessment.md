@@ -3,7 +3,17 @@
 Date: 2026-11-16. Implementor: GPT-6 Codex. Reviewer: Antigravity,
 `gemini-4-hydrogen-high` (Gemini 4 Hydrogen High).
 
-## Disposition
+## Final disposition, 2026-11-16
+
+Round 2 accepted at `455d3acc`; review PR #44 merged at `9638cb11`.
+Both pairs posted their assessments on #44. PR #47 targets release-0.3.1.
+The full combined gate and remaining checks are in the [final record](2026-11-16-final-review.md).
+Two inherited recursive Docker gid-zero unit failures remain; they do not arise
+from the review corrections. The reviewer's broad Host Inputs compliance claim
+is qualified: pure parsing/decisions are separated, but the broker/relay/bridge
+still perform runtime effects. Stricter separation remains a follow-up.
+
+## Earlier local disposition (superseded by the final disposition)
 
 Round 1 accepted locally at `388f62a34fe373882201f9118faaf34cec61680b`.
 The reviewer branch is pushed as `ws-github-auth/ssh-proxy-review`.
