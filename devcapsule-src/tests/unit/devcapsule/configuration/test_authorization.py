@@ -67,3 +67,11 @@ def test_a_lock_without_a_base_declares_no_base_image_decision() -> None:
     """Precondition: a lock with no base table. Action: build the declarations.
     Postcondition: there is no base-image declaration to answer."""
     assert "base-image" not in authorization_declarations({}, {"components": {}})
+
+
+def test_github_access_is_available_but_never_recommended_by_omission() -> None:
+    """A project without recommendations exposes the optional GitHub decision without granting it."""
+    declaration = authorization_declarations({}, {"components": {}})['github-ssh']
+    assert declaration.recommended_value is True
+    assert declaration.project_recommended is False
+    assert declaration.required is False

@@ -27,6 +27,7 @@ class HostAccess:
     docker_daemon: str = "none"
     network: str = "bridge"
     development_sudo: bool = False
+    github_ssh: bool = False
     host_browser: bool = False
     host_x11: bool | None = None
 
@@ -35,6 +36,7 @@ class HostAccess:
             "docker-daemon": ("docker_daemon", ("none", "host-socket")),
             "network": ("network", ("bridge", "host")),
             "development-sudo": ("development_sudo", (False, True)),
+            "github-ssh": ("github_ssh", (False, True)),
             "host-browser": ("host_browser", (False, True)),
             "host-x11": ("host_x11", (False, True)),
         }
@@ -127,7 +129,7 @@ class ConfigurationReview:
     def effective_host(self, overrides: Mapping[str, Any] | None = None) -> HostAccess:
         answers = {
             name: value for name, value in self.resolved_authorizations().items()
-            if name in {"docker-daemon", "network", "development-sudo", "host-browser", "host-x11"}
+            if name in {"docker-daemon", "network", "development-sudo", "host-browser", "host-x11", "github-ssh"}
         }
         return self.legacy_host.overlay(answers).overlay(overrides or {})
 

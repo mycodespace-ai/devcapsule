@@ -2164,7 +2164,7 @@ class RecursiveE2EGroup(Group):
 
 # The authorization nodes whose run-once answers feed the launch plan; every
 # other authorization (base-image, acquisitions) is inherently persistent.
-_RUN_ONCE_AUTHORIZATIONS = ("docker-daemon", "network", "development-sudo", "host-browser", "host-x11")
+_RUN_ONCE_AUTHORIZATIONS = ("docker-daemon", "network", "development-sudo", "host-browser", "host-x11", "github-ssh")
 
 
 class ProjectRunCommand(Command):
@@ -2468,6 +2468,7 @@ class ProjectRunCommand(Command):
                 extra_docker_args=["--pull=never", *saved_docker_args, *prepared.environment_tokens, *docker_options],
                 project_state=None,
                 enable_host_browser=selected_host_browser,
+                enable_github_ssh=host_access.github_ssh,
                 display_transport=display_transport,
                 web_console=web_console,
                 capsule_platform=lock_platform(lock),

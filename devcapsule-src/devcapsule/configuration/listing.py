@@ -61,7 +61,7 @@ __all__ = ["Decision", "LISTING_SCHEMA_VERSION", "Listing", "ListingRow", "asses
 
 LISTING_SCHEMA_VERSION = 2
 
-HOST_ACCESS_NODES = ("network", "docker-daemon", "development-sudo", "host-browser", "host-x11")
+HOST_ACCESS_NODES = ("network", "docker-daemon", "development-sudo", "host-browser", "host-x11", "github-ssh")
 
 
 @dataclass(frozen=True)

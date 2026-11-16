@@ -80,6 +80,11 @@ HOME_CAPABILITY_DEFAULTS: dict[str, tuple[AuthorizationScalar, str]] = {
         True,
         "Enable the declared development-sudo behavior inside the capsule.",
     ),
+    "github-ssh": (
+        True,
+        "Allow GitHub Git fetch and push through the outside launcher using the host SSH identity. "
+        "All repositories accessible to that identity are accessible; private keys stay on the host.",
+    ),
     "host-browser": (
         True,
         "Open HTTP(S) links from the capsule in the physical host's default browser "
