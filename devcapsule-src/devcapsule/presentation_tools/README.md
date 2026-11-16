@@ -84,8 +84,10 @@ Print the engineer's link with the installed CLI:
 devcapsule presentations hand-off evidence/login-success/run-001 --project "$PROJECT_PATH"
 ```
 
-It uses `$DEVCAPSULE_CONSOLE_URL` and the mounted console token; `--console-url`
-and `--token-file` supply explicit values. Keep tokened links in chat only, never
+Run this from the console project root: a relative evidence folder resolves
+from the current working directory, and `--project` supplies the console root
+used to form the relative link. It uses `$DEVCAPSULE_CONSOLE_URL` and the
+mounted console token; `--console-url` and `--token-file` supply explicit values. Keep tokened links in chat only, never
 in a source file, log or committed record. If no token can be read, the link
 requires a browser session that already opened the console. If there is no
 console URL, report that missing environment input rather than inventing a URL.

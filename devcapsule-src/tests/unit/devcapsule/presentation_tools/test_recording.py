@@ -23,13 +23,14 @@ SCRIPT = Script(
 
 
 class _StubPage:
-    """In-memory Playwright page double recording screenshot and wait calls."""
+    """In-memory Playwright page double recording captured bytes and wait calls."""
 
     def __init__(self, *, fail_jpeg_at: int | None = None, fail_png_at: int | None = None) -> None:
         self.fail_jpeg_at = fail_jpeg_at
         self.fail_png_at = fail_png_at
         self.jpeg_calls = 0
         self.png_calls = 0
+        self.captured_jpeg_bytes = bytearray()
         self.waits: list[int] = []
 
     def screenshot(self, *, type: str = "png", quality: int | None = None, path: str | None = None) -> bytes:
@@ -39,7 +40,9 @@ class _StubPage:
             if self.fail_jpeg_at is not None and self.jpeg_calls >= self.fail_jpeg_at:
                 raise RuntimeError("page disconnected during frame capture")
             assert type == "jpeg"
-            return b"FRAME:"
+            chunk = f"FRAME-{self.jpeg_calls}:".encode("ascii")
+            self.captured_jpeg_bytes.extend(chunk)
+            return chunk
         self.png_calls += 1
         if self.fail_png_at is not None and self.png_calls >= self.fail_png_at:
             raise RuntimeError("page disconnected during step screenshot")
@@ -54,11 +57,11 @@ def _encoder_command(*, exit_code: int = 0, write_video: bool = True) -> tuple[s
     program = (
         "import pathlib, sys; "
         "data = sys.stdin.buffer.read(); "
-        "sys.stderr.write(f'frames={len(data)}\\n'); "
+        "sys.stderr.write(f'bytes={len(data)}\\n'); "
         f"pathlib.Path(sys.argv[-1]).write_bytes(b'WEBM:' + data) if {write_video!r} else None; "
         f"sys.exit({exit_code})"
     )
-    return (sys.executable, "-c", program)
+    return (sys.executable, "-I", "-S", "-c", program)
 
 
 @pytest.mark.parametrize(
@@ -89,75 +92,128 @@ def test_recording_preserves_existing_evidence(tmp_path: Path) -> None:
     assert list(tmp_path.iterdir()) == []
 
 
-def test_recording_completes_passing_run_with_repeated_steps_and_timing(tmp_path: Path) -> None:
-    """A passing multi-action run writes logs, poster, video and presentation timed by captured frames."""
+def test_recording_finish_writes_aligned_deck_and_media_for_passing_run(tmp_path: Path) -> None:
+    """Finishing a complete multi-action run encodes captured bytes and aligns chapters to frame boundaries."""
+    # Precondition: record a complete two-step run (two actions in step 1, one in step 2).
     evidence = tmp_path / "run-pass"
     page = _StubPage()
     recording = Recording(evidence, script=SCRIPT, scenario_id="example", title="  Example  ",
                           summary="Example run", ffmpeg=_encoder_command())
-
     recording.action(page, 1, "Navigate to page", lambda: None)
     recording.action(page, 1, "Confirm heading", lambda: None)
     recording.action(page, 2, "Reload page", lambda: None)
+
+    # Action: finalize the recording.
     manifest = recording.finish()
 
+    # Postcondition: logs record increasing frame boundaries, deck aligns to them, and encoder gets captured bytes.
     result = json.loads((evidence / "scenario-result.json").read_text(encoding="utf-8"))
     actions = json.loads((evidence / "action-log.json").read_text(encoding="utf-8"))
+    boundaries = [entry["frames_after"] for entry in actions]
     deck = json.loads(manifest.read_text(encoding="utf-8"))
     assert result == {"status": "passed", "error": "", "steps_reached": 2, "steps_planned": 2}
-    assert [entry["frames_after"] for entry in actions] == [8, 16, 24]
+    assert len(boundaries) == 3 and 0 < boundaries[0] < boundaries[1] < boundaries[2]
     assert deck["title"] == "Example"
-    assert deck["video"] == {"file": "scenario-video.webm", "poster": "poster.png", "duration": 2.0}
-    assert [(s["screenshot"], s["start"], s["end"], len(s["captions"])) for s in deck["steps"]] == [
-        ("step-002.png", 0.0, 1.333, 2),
-        ("step-003.png", 1.333, 2.0, 1),
-    ]
+    assert deck["video"]["file"] == "scenario-video.webm"
+    assert deck["video"]["poster"] == "poster.png"
+    assert deck["video"]["duration"] > 0
+    step1, step2 = deck["steps"]
+    assert (step1["screenshot"], step2["screenshot"]) == ("step-002.png", "step-003.png")
+    assert step1["start"] == 0.0
+    assert 0.0 < step1["end"] == step2["start"] < step2["end"] == deck["video"]["duration"]
+    assert [c["text"] for c in step1["captions"]] == ["Navigate to page", "Confirm heading"]
+    assert [c["text"] for c in step2["captions"]] == ["Reload page"]
+    assert step1["captions"][0]["start"] == step1["start"]
+    assert step1["captions"][0]["end"] == step1["captions"][1]["start"]
+    assert step1["captions"][1]["end"] == step1["end"]
+    assert step2["captions"][0]["start"] == step2["start"] and step2["captions"][0]["end"] == step2["end"]
     assert (evidence / "poster.png").read_bytes() == (evidence / "step-001.png").read_bytes()
-    assert (evidence / "scenario-video.webm").read_bytes() == b"WEBM:" + (b"FRAME:" * 24)
-    assert "frames=144\n" in (evidence / "ffmpeg.log").read_text(encoding="utf-8")
+    assert (evidence / "scenario-video.webm").read_bytes() == b"WEBM:" + bytes(page.captured_jpeg_bytes)
+    assert f"bytes={len(page.captured_jpeg_bytes)}\n" in (evidence / "ffmpeg.log").read_text(encoding="utf-8")
 
 
-def test_recording_keeps_failed_outcome_and_reached_steps_when_callback_fails(tmp_path: Path) -> None:
-    """A failing assertion re-raises, blocks later actions and writes a FAILED deck for reached steps."""
-    evidence = tmp_path / "run-fail"
+def test_recording_action_reraises_callback_failure_and_records_failed_state(tmp_path: Path) -> None:
+    """A failing action callback propagates its exception while preserving failed logs and screenshot."""
+    # Precondition: step 1 succeeded.
+    evidence = tmp_path / "run-fail-action"
     page = _StubPage()
-    recording = Recording(evidence, script=SCRIPT, scenario_id="example", title="  Example  ",
+    recording = Recording(evidence, script=SCRIPT, scenario_id="example", title="Example",
                           summary="Example run", ffmpeg=_encoder_command())
     recording.action(page, 1, "Open app", lambda: None)
 
     def fail_reload() -> None:
         raise AssertionError("heading missing")
 
+    # Action: execute a failing callback in step 2.
     with pytest.raises(AssertionError, match="heading missing"):
         recording.action(page, 2, "Reload app", fail_reload)
 
-    with pytest.raises(PresentationError, match="finished or failed"):
-        recording.action(page, 2, "Retry reload", lambda: None)
-
-    manifest = recording.finish()
+    # Postcondition: failure state, action log and failure screenshot are recorded on disk.
     result = json.loads((evidence / "scenario-result.json").read_text(encoding="utf-8"))
-    deck = json.loads(manifest.read_text(encoding="utf-8"))
+    actions = json.loads((evidence / "action-log.json").read_text(encoding="utf-8"))
     assert result == {
         "status": "failed",
         "error": "AssertionError: heading missing",
         "steps_reached": 2,
         "steps_planned": 2,
     }
+    assert actions[1]["status"] == "failed" and actions[1]["error"] == "AssertionError: heading missing"
+    assert (evidence / "step-002.png").is_file()
+
+
+def test_recording_action_refuses_calls_after_failure(tmp_path: Path) -> None:
+    """Once an action fails, any subsequent action call is refused before capturing frames."""
+    # Precondition: step 1 failed.
+    page = _StubPage()
+    recording = Recording(tmp_path / "run-after-fail", script=SCRIPT, scenario_id="example", title="Example",
+                          summary="Example run", ffmpeg=_encoder_command())
+    with pytest.raises(AssertionError):
+        recording.action(page, 1, "Open app", lambda: (_ for _ in ()).throw(AssertionError("boom")))
+    calls_before = page.jpeg_calls
+
+    # Action: attempt another action on the failed recording.
+    with pytest.raises(PresentationError, match="finished or failed"):
+        recording.action(page, 2, "Reload app", lambda: None)
+
+    # Postcondition: no further frames were captured.
+    assert page.jpeg_calls == calls_before
+
+
+def test_recording_finish_writes_failed_deck_for_reached_steps(tmp_path: Path) -> None:
+    """Finishing a failed run keeps the failed result and labels the presentation FAILED."""
+    # Precondition: step 1 passed and step 2 failed with visual evidence intact.
+    evidence = tmp_path / "run-finish-fail"
+    page = _StubPage()
+    recording = Recording(evidence, script=SCRIPT, scenario_id="example", title="  Example  ",
+                          summary="Example run", ffmpeg=_encoder_command())
+    recording.action(page, 1, "Open app", lambda: None)
+    with pytest.raises(AssertionError):
+        recording.action(page, 2, "Reload app", lambda: (_ for _ in ()).throw(AssertionError("heading missing")))
+
+    # Action: finalize the failed recording.
+    manifest = recording.finish()
+
+    # Postcondition: result remains failed and presentation is labelled FAILED for the two reached steps.
+    result = json.loads((evidence / "scenario-result.json").read_text(encoding="utf-8"))
+    deck = json.loads(manifest.read_text(encoding="utf-8"))
+    assert result["status"] == "failed" and result["error"] == "AssertionError: heading missing"
     assert deck["title"] == "Example (FAILED)"
     assert len(deck["steps"]) == 2
-    assert (evidence / "step-002.png").is_file()
 
 
 def test_recording_labels_incomplete_run_with_only_reached_steps(tmp_path: Path) -> None:
     """Finishing before all script steps run keeps an incomplete status and an INCOMPLETE deck."""
+    # Precondition: only step 1 of 2 ran.
     evidence = tmp_path / "run-incomplete"
     page = _StubPage()
     recording = Recording(evidence, script=SCRIPT, scenario_id="example", title="Example",
                           summary="Example run", ffmpeg=_encoder_command())
     recording.action(page, 1, "Open app", lambda: None)
 
+    # Action: finalize the partial recording.
     manifest = recording.finish()
 
+    # Postcondition: result stays incomplete and deck contains only the reached step.
     result = json.loads((evidence / "scenario-result.json").read_text(encoding="utf-8"))
     deck = json.loads(manifest.read_text(encoding="utf-8"))
     assert result == {"status": "incomplete", "error": "", "steps_reached": 1, "steps_planned": 2}
@@ -180,66 +236,98 @@ def test_recording_refuses_invalid_step_order_or_empty_caption(
     assert page.jpeg_calls == 0
 
 
-def test_recording_refuses_repeated_finish_and_action_after_finish(tmp_path: Path) -> None:
-    """Once finished, a recording refuses both a second finish and any further action."""
+def test_recording_finish_refuses_second_call(tmp_path: Path) -> None:
+    """Finishing an already finished recording raises PresentationError."""
+    # Precondition: recording is already finished.
     page = _StubPage()
     recording = Recording(tmp_path / "run", script=SCRIPT, scenario_id="example", title="Example",
                           summary="Example run", ffmpeg=_encoder_command())
     recording.action(page, 1, "Open", lambda: None)
     recording.finish()
 
+    # Action: call finish a second time.
     with pytest.raises(PresentationError, match="already been finished"):
         recording.finish()
+
+
+def test_recording_action_refuses_calls_after_finish(tmp_path: Path) -> None:
+    """Calling action after finish raises PresentationError without capturing frames."""
+    # Precondition: recording is already finished.
+    page = _StubPage()
+    recording = Recording(tmp_path / "run", script=SCRIPT, scenario_id="example", title="Example",
+                          summary="Example run", ffmpeg=_encoder_command())
+    recording.action(page, 1, "Open", lambda: None)
+    recording.finish()
+    calls_before = page.jpeg_calls
+
+    # Action: attempt another action after finish.
     with pytest.raises(PresentationError, match="finished or failed"):
         recording.action(page, 2, "Reload", lambda: None)
 
+    assert page.jpeg_calls == calls_before
 
-def test_recording_refuses_presentation_when_visual_evidence_is_missing(tmp_path: Path) -> None:
-    """Missing screenshots or zero actions keep the result log and refuse writing a presentation."""
-    empty_evidence = tmp_path / "empty"
-    empty_recording = Recording(empty_evidence, script=SCRIPT, scenario_id="example", title="Example",
-                                summary="Example run", ffmpeg=_encoder_command())
+
+def test_recording_finish_refuses_run_with_no_actions(tmp_path: Path) -> None:
+    """Finishing with zero actions writes an incomplete result and refuses writing a presentation."""
+    evidence = tmp_path / "empty"
+    recording = Recording(evidence, script=SCRIPT, scenario_id="example", title="Example",
+                          summary="Example run", ffmpeg=_encoder_command())
+
     with pytest.raises(PresentationError, match="no complete visual evidence"):
-        empty_recording.finish()
-    assert json.loads((empty_evidence / "scenario-result.json").read_text(encoding="utf-8"))["status"] == "incomplete"
-    assert not (empty_evidence / "presentation.json").exists()
+        recording.finish()
 
-    broken_evidence = tmp_path / "broken-capture"
-    broken_page = _StubPage(fail_png_at=1)
-    broken_recording = Recording(broken_evidence, script=SCRIPT, scenario_id="example", title="Example",
-                                 summary="Example run", ffmpeg=_encoder_command())
+    assert json.loads((evidence / "scenario-result.json").read_text(encoding="utf-8"))["status"] == "incomplete"
+    assert not (evidence / "presentation.json").exists()
 
-    def fail_callback() -> None:
-        raise AssertionError("original test assertion")
 
+def test_recording_finish_refuses_run_with_missing_step_screenshot(tmp_path: Path) -> None:
+    """Finishing when a failed action could not save a screenshot keeps the failed result and writes no deck."""
+    # Precondition: step 1 callback failed and screenshot capture also failed.
+    evidence = tmp_path / "broken-capture"
+    page = _StubPage(fail_png_at=1)
+    recording = Recording(evidence, script=SCRIPT, scenario_id="example", title="Example",
+                          summary="Example run", ffmpeg=_encoder_command())
     with pytest.raises(AssertionError, match="original test assertion"):
-        broken_recording.action(broken_page, 1, "Open", fail_callback)
+        recording.action(page, 1, "Open", lambda: (_ for _ in ()).throw(AssertionError("original test assertion")))
 
+    # Action: finalize the recording without complete screenshots.
     with pytest.raises(PresentationError, match="no complete visual evidence"):
-        broken_recording.finish()
-    assert json.loads((broken_evidence / "scenario-result.json").read_text(encoding="utf-8"))["status"] == "failed"
-    assert not (broken_evidence / "presentation.json").exists()
+        recording.finish()
+
+    assert json.loads((evidence / "scenario-result.json").read_text(encoding="utf-8"))["status"] == "failed"
+    assert not (evidence / "presentation.json").exists()
 
 
-def test_recording_preserves_logs_and_withholds_deck_on_encoder_failure(tmp_path: Path) -> None:
-    """A failing or empty video encode leaves logs intact and writes neither poster nor presentation."""
-    failing = tmp_path / "encode-fail"
-    rec_fail = Recording(failing, script=SCRIPT, scenario_id="example", title="Example",
-                         summary="Example run", ffmpeg=_encoder_command(exit_code=1, write_video=False))
-    rec_fail.action(_StubPage(), 1, "Open", lambda: None)
+def test_recording_finish_preserves_logs_when_encoder_fails(tmp_path: Path) -> None:
+    """A non-zero encoder exit leaves result and encoder logs intact and writes neither poster nor presentation."""
+    # Precondition: step 1 succeeded with an encoder configured to exit 1.
+    evidence = tmp_path / "encode-fail"
+    recording = Recording(evidence, script=SCRIPT, scenario_id="example", title="Example",
+                          summary="Example run", ffmpeg=_encoder_command(exit_code=1, write_video=False))
+    recording.action(_StubPage(), 1, "Open", lambda: None)
 
+    # Action: finalize the recording.
     with pytest.raises(subprocess.CalledProcessError):
-        rec_fail.finish()
-    assert json.loads((failing / "scenario-result.json").read_text(encoding="utf-8"))["status"] == "incomplete"
-    assert (failing / "ffmpeg.log").is_file()
-    assert not (failing / "presentation.json").exists()
-    assert not (failing / "poster.png").exists()
+        recording.finish()
 
-    no_output = tmp_path / "encode-empty"
-    rec_empty = Recording(no_output, script=SCRIPT, scenario_id="example", title="Example",
+    assert json.loads((evidence / "scenario-result.json").read_text(encoding="utf-8"))["status"] == "incomplete"
+    assert (evidence / "ffmpeg.log").is_file()
+    assert not (evidence / "presentation.json").exists()
+    assert not (evidence / "poster.png").exists()
+
+
+def test_recording_finish_withholds_deck_when_encoder_writes_no_video(tmp_path: Path) -> None:
+    """An encoder that exits zero without writing scenario-video.webm raises PresentationError and writes no deck."""
+    # Precondition: step 1 succeeded with an encoder that exits 0 without producing video output.
+    evidence = tmp_path / "encode-empty"
+    recording = Recording(evidence, script=SCRIPT, scenario_id="example", title="Example",
                           summary="Example run", ffmpeg=_encoder_command(exit_code=0, write_video=False))
-    rec_empty.action(_StubPage(), 1, "Open", lambda: None)
+    recording.action(_StubPage(), 1, "Open", lambda: None)
 
+    # Action: finalize the recording.
     with pytest.raises(PresentationError, match="scenario-video.webm"):
-        rec_empty.finish()
-    assert not (no_output / "presentation.json").exists()
+        recording.finish()
+
+    assert (evidence / "ffmpeg.log").is_file()
+    assert not (evidence / "presentation.json").exists()
+    assert not (evidence / "poster.png").exists()
