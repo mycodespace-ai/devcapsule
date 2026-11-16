@@ -61,7 +61,19 @@ def test_link_refuses_folders_the_console_cannot_list(folder: str) -> None:
                           console_url="http://localhost:8000", token="")
 
 
-@pytest.mark.parametrize("url", ["", "file:///tmp", "https:///missing-host", "https://user:secret@example.org"])
+@pytest.mark.parametrize(
+    "url",
+    [
+        "",
+        "file:///tmp",
+        "https:///missing-host",
+        "http://:8000",
+        "http://@example.org",
+        "http://localhost:bad",
+        "http://localhost:8000 ",
+        "https://user:secret@example.org",
+    ],
+)
 def test_link_refuses_invalid_console_origins(url: str) -> None:
     """The console origin must be HTTP(S) and must not embed user credentials."""
     with pytest.raises(ValueError):

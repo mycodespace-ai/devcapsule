@@ -63,7 +63,7 @@ class HandOffCommand(Command):
         token_path = arguments.token_file or Path(os.environ.get("DEVCAPSULE_CONSOLE_TOKEN_FILE") or "/run/devcapsule-console-token")
         try:
             token = token_path.read_text(encoding="utf-8").strip()
-        except OSError:
+        except (OSError, UnicodeError):
             token = ""
         try:
             if not (folder / "presentation.json").is_file():
