@@ -52,7 +52,10 @@ rules or the installed workflow declaration. This is a recorded tooling gap.
 The owner explicitly requested finishing the existing PR cycle and retargeting it;
 PR metadata was updated with the inherited failures disclosed after the required
 unit/full-gate run. This does not waive the failing release-acceptance gate.
-No open bug is owned by github-auth; mailbox and intake were empty at resumption.
+No open bug is owned by github-auth; mailbox and intake were empty at finish.
+Sent maintenance `2026-11-16-github-auth-release-delivery.md` by coordination mail,
+carrying the owner-selected release target, test results and main-propagation
+preservation constraint. The review worktree was removed; its branch is pushed.
 Earlier sections below are historical evidence, including superseded main targets,
 CLI absence and pending-review statements. Current disposition is above and in the
 [final review record](evidence/2026-11-16-final-review.md).
