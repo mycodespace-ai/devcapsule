@@ -313,7 +313,7 @@ def write_xauthority(path: Path, display_number: int, cookie: bytes) -> None:
 
 
 def _own(path: Path, plan: RuntimePlan) -> None:
-    if os.geteuid() == 0:
+    if os.geteuid() == 0 and (plan.identity.uid != 0 or plan.identity.gid != 0):
         os.chown(path, plan.identity.uid, plan.identity.gid)
 
 

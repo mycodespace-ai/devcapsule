@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 import json
+import os
 from pathlib import Path
 import socket
 from threading import Event
@@ -1882,4 +1883,88 @@ def test_build_run_config_omits_checkout_console_source_under_a_built_launcher_u
     assert default_config.runtime_plan.console.source_path == ""
     assert opted_in_config.runtime_plan is not None and opted_in_config.runtime_plan.console is not None
     assert opted_in_config.runtime_plan.console.source_path == "/workspace/project/devcapsule-webconsole"
+
+
+def test_rootless_docker_runs_container_as_mapped_root_while_rootful_keeps_host_uid(
+    tmp_path: Path,
+) -> None:
+    """Rootless Docker maps host mounts to ``0:0`` and drops ``--user``/``IDE_*`` to ``0:0``/``root``; non-rootless preserves host identity."""
+    env = base_env(tmp_path)
+    env["XDG_RUNTIME_DIR"] = str(tmp_path / "runtime")
+    rootful_config = contained_config(tmp_path)
+    rootless_config = contained_config(tmp_path, rootless_docker=True)
+    assert rootful_config.rootless_docker is False
+    assert rootless_config.rootless_docker is True
+
+    rootful_files = prepare_temp_runtime_files(rootful_config, env)
+    rootless_files = prepare_temp_runtime_files(rootless_config, env)
+    try:
+        rootful_args = build_docker_args(rootful_config, rootful_files, env)
+        rootless_args = build_docker_args(rootless_config, rootless_files, env)
+
+        host_uid, host_gid = os.getuid(), os.getgid()
+        assert rootful_args[rootful_args.index("--user") + 1] == f"{host_uid}:{host_gid}"
+        assert f"IDE_UID={host_uid}" in rootful_args
+        assert f"IDE_GID={host_gid}" in rootful_args
+
+        assert rootless_args[rootless_args.index("--user") + 1] == "0:0"
+        assert "IDE_UID=0" in rootless_args
+        assert "IDE_GID=0" in rootless_args
+        assert "IDE_USER=root" in rootless_args
+        assert rootless_files.passwd_file.read_text(encoding="utf-8") == (
+            "root:x:0:0:PyCharm Docker User:/home/devcapsule:/bin/bash\n"
+        )
+        assert rootless_files.group_file.read_text(encoding="utf-8") == "root:x:0:\n"
+    finally:
+        cleanup_temp_runtime_files(rootful_files)
+        cleanup_temp_runtime_files(rootless_files)
+
+
+def test_rootless_host_docker_socket_owned_by_host_user_maps_to_container_root_group(
+    tmp_path: Path,
+) -> None:
+    """In rootless ``host`` Docker mode, a daemon socket owned by the host user's GID maps to container GID ``0``; rootful keeps its host GID."""
+    sock_path = tmp_path / "docker.sock"
+    listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    listener.bind(str(sock_path))
+    try:
+        rootful_config = contained_config(
+            tmp_path, docker_mode=DockerMode.host, host_docker_socket=sock_path, rootless_docker=False
+        )
+        rootless_config = contained_config(
+            tmp_path, docker_mode=DockerMode.host, host_docker_socket=sock_path, rootless_docker=True
+        )
+        assert rootful_config.host_docker_gid == os.getgid()
+        assert rootless_config.host_docker_gid == 0
+
+        env = base_env(tmp_path)
+        env["XDG_RUNTIME_DIR"] = str(tmp_path / "runtime")
+        files = prepare_temp_runtime_files(rootless_config, env)
+        try:
+            args = build_docker_args(rootless_config, files, env)
+            assert args[args.index("--user") + 1] == "0:0"
+            assert args[args.index("--group-add") + 1] == "0"
+            assert files.group_file.read_text(encoding="utf-8") == "root:x:0:\n"
+        finally:
+            cleanup_temp_runtime_files(files)
+    finally:
+        listener.close()
+
+
+def test_rootless_sudoers_policy_ownership_accepts_host_user_file_without_chown(
+    tmp_path: Path,
+) -> None:
+    """Under rootless Docker, the host-owned sudoers policy is already container-root-owned so preparation skips ``chown``."""
+    env = base_env(tmp_path)
+    env["XDG_RUNTIME_DIR"] = str(tmp_path / "runtime")
+    config = contained_config(tmp_path, enable_sudo=True, rootless_docker=True)
+    files = prepare_temp_runtime_files(config, env)
+    try:
+        ensure_sudoers_policy_ownership(config, files, env)
+        assert files.sudoers_volume is None
+        assert "ide-sudo:x:" in files.group_file.read_text(encoding="utf-8")
+        assert files.shadow_file is not None
+        assert files.shadow_file.read_text(encoding="utf-8").startswith("root:*:")
+    finally:
+        cleanup_temp_runtime_files(files)
 

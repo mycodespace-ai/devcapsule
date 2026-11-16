@@ -26,6 +26,7 @@ from devcapsule.materialization import (
     canonical_json,
     component_runtime_template,
     descriptor_differences,
+    NotOnThisMachine,
     ensure_materialized_surface,
     formation_descriptor,
     formation_identity,
@@ -1241,3 +1242,78 @@ def test_ensure_materialized_surface_refuses_runtime_pex_without_webconsole_bund
             build=lambda _spec: None,
             runtime_pex=incomplete_pex,
         )
+
+
+# A look without fetching: ``ensure_materialized_surface(fetch=False)``, which ``project run --print-command`` asks for.
+
+def test_a_look_without_fetching_returns_the_environment_that_is_on_this_machine(tmp_path: Path) -> None:
+    """With ``fetch`` false and the canonical image present, the image is returned as reused and nothing is built."""
+    spec = artifact(tmp_path / "missing.tar.gz")
+    canonical, labels = expected_labels("sha256:base", spec)
+    builds: list[object] = []
+
+    image, created = ensure_materialized_surface(
+        base_reference="base:debug",
+        base_identity="sha256:base",
+        platform="linux-amd64",
+        artifact=spec,
+        cache_root=tmp_path / "cache",
+        inspect_image=lambda reference: image_details(reference, labels) if reference == canonical else None,
+        build=builds.append,
+        fetch=False,
+    )
+
+    assert (image, created) == (canonical, False)
+    assert builds == []
+
+
+def test_a_look_without_fetching_names_the_environment_it_does_not_find_and_downloads_nothing(tmp_path: Path) -> None:
+    """With ``fetch`` false and no canonical image, ``NotOnThisMachine`` names the image and the artifact a launch
+    would download. The artifact is not read, although it is there to be read, and nothing is built."""
+    archive = tmp_path / "pycharm.tar.gz"
+    digest = hashlib.sha256(fixture_archive(archive)).hexdigest()
+    spec = artifact(archive, digest)
+    canonical, _labels = expected_labels("sha256:base", spec)
+    builds: list[object] = []
+
+    with pytest.raises(NotOnThisMachine) as missing:
+        ensure_materialized_surface(
+            base_reference="base:debug",
+            base_identity="sha256:base",
+            platform="linux-amd64",
+            artifact=spec,
+            cache_root=tmp_path / "cache",
+            inspect_image=lambda reference: None,
+            build=builds.append,
+            fetch=False,
+        )
+
+    message = str(missing.value)
+    assert f"environment {canonical} is not built on this machine" in message
+    assert f"A launch downloads 1 artifact ({archive.as_uri()}) and builds it" in message
+    assert "nothing was downloaded or built now" in message
+    assert builds == []
+    assert not (tmp_path / "cache" / "artifacts").exists()
+
+
+def test_a_look_without_fetching_does_not_rebuild_a_boot_configuration(tmp_path: Path) -> None:
+    """With ``fetch`` false, an image whose boot configuration differs from its record is not repaired:
+    ``NotOnThisMachine`` says a launch rebuilds it, and nothing is built."""
+    spec = artifact(tmp_path / "missing.tar.gz")
+    canonical, labels = expected_labels("sha256:base", spec)
+    drifted = ImageDetails(canonical, "sha256:image", labels, "linux", "amd64", entrypoint=("/bin/another-entrypoint",))
+    builds: list[object] = []
+
+    with pytest.raises(NotOnThisMachine, match="needs its boot configuration rebuilt .*A launch rebuilds it; nothing was rebuilt now"):
+        ensure_materialized_surface(
+            base_reference="base:debug",
+            base_identity="sha256:base",
+            platform="linux-amd64",
+            artifact=spec,
+            cache_root=tmp_path / "cache",
+            inspect_image=lambda reference: drifted if reference == canonical else None,
+            build=builds.append,
+            fetch=False,
+        )
+
+    assert builds == []

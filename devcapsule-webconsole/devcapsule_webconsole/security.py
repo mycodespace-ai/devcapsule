@@ -4,8 +4,8 @@ Every request carries the token or is refused; the token arrives in the URL
 the launcher prints and is kept in a port-scoped cookie from then on. Every
 file or directory the console reads lies inside the project mount; a path that
 escapes it is refused before its contents are read. Public operations on the
-project mount are ``confine``, ``list_project_directory``, ``open_project_file``,
-``read_project_bytes`` and ``read_project_text``.
+project mount are ``confine``, ``find_project_folders``, ``list_project_directory``,
+``open_project_file``, ``read_project_bytes`` and ``read_project_text``.
 """
 
 from __future__ import annotations
@@ -31,6 +31,7 @@ __all__ = [
     "TOKEN_QUERY_PARAMETER",
     "TokenGate",
     "confine",
+    "find_project_folders",
     "list_project_directory",
     "open_project_file",
     "read_project_bytes",
@@ -43,6 +44,12 @@ TOKEN_COOKIE = "devcapsule-console-token"
 TOKEN_HEADER = "x-devcapsule-token"
 TOKEN_HEADER_BYTES = TOKEN_HEADER.encode("ascii")
 REFUSAL_BODY = b"devcapsule web console: missing or invalid run token\n"
+# Where find_project_folders does not look: a directory whose name starts with
+# a dot (version control, environments, caches), and the package trees named
+# here. They hold other people's files by the tens of thousands.
+UNSEARCHED_DIRECTORIES = frozenset({"node_modules"})
+# The most directories one search visits before it reports itself incomplete.
+FOLDER_SEARCH_BUDGET = 20_000
 
 
 def token_cookie_name(port: int | None = None) -> str:
@@ -324,3 +331,37 @@ def list_project_directory(root: Path, requested: str = "") -> dict[str, Any]:
                 })
     entries.sort(key=lambda item: (item["kind"] != "directory", item["name"].casefold(), item["name"]))
     return {"path": clean_path, "entries": entries}
+
+
+def find_project_folders(root: Path, marker: str, *, budget: int = FOLDER_SEARCH_BUDGET) -> dict[str, Any]:
+    """The folders below ``root`` that hold a regular file named ``marker``.
+
+    The result is ``{"folders": [...], "complete": bool}``: paths relative to
+    ``root`` with ``/`` separators, sorted, and whether every directory was
+    visited. The root itself is never among them. The walk opens each
+    directory by descriptor from its parent and enters no symbolic link, so it
+    cannot leave the mount; a ``marker`` that is itself a link or a directory
+    does not count. It does not enter a directory whose name starts with a dot
+    or is in ``UNSEARCHED_DIRECTORIES``, visits directories in name order, and
+    stops after ``budget`` of them with ``complete`` false. A directory that
+    cannot be read is passed over.
+    """
+    base = root.resolve()
+    folders: list[str] = []
+    visited = 0
+    for path, directories, files, descriptor in os.fwalk(base, follow_symlinks=False):
+        if visited == budget:
+            return {"folders": sorted(folders), "complete": False}
+        visited += 1
+        directories[:] = sorted(
+            name for name in directories if not name.startswith(".") and name not in UNSEARCHED_DIRECTORIES
+        )
+        if marker not in files or Path(path) == base:
+            continue
+        try:
+            mode = os.stat(marker, dir_fd=descriptor, follow_symlinks=False).st_mode
+        except OSError:
+            continue
+        if stat.S_ISREG(mode):
+            folders.append(Path(path).relative_to(base).as_posix())
+    return {"folders": sorted(folders), "complete": True}

@@ -43,6 +43,12 @@ imports none of the runtime's internals. Its API is the runtime CLI's
   and adds an attachment disposition only when `download=1` is requested. DOT
   output is an image, so its links are inactive. Record headings have fragment
   targets; relative URL paths are decoded before resolution inside the project.
+- A presentation is a project folder that holds a `presentation.json`: the
+  page at `/presentations/<folder>` shows a recorded scenario as slides beside
+  its recording, with captions, and `/presentations` lists the project's
+  presentations (see [PRESENTATIONS.md](PRESENTATIONS.md)). The search for
+  them enters no symbolic link, no directory whose name starts with a dot and
+  no `node_modules`. The page reads through the raw route and writes nothing.
 
 ## Running it on a host
 
@@ -56,6 +62,13 @@ printf '%s\n' "$(python3 -c 'import secrets; print(secrets.token_hex(24))')" > /
 ```
 
 Then open `http://127.0.0.1:8080/?token=$(cat /tmp/console-token)`.
+
+## Trying a change
+
+From `devcapsule-src`, `.venv/bin/python -m nox -s webconsole-preview` serves
+this checkout's console on `http://127.0.0.1:8787` with the package installed
+editable, and prints the links to open. See
+[PRESENTATIONS.md](PRESENTATIONS.md#trying-a-change).
 
 ## Checks
 

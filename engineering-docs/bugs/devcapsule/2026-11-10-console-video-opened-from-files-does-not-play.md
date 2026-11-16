@@ -1,7 +1,7 @@
 ---
-status: confirmed
+status: fixed
 severity: untriaged
-target: none
+target: 0.3.1
 owner: maintenance
 opened: 2026-11-10
 requirements: []
@@ -149,6 +149,45 @@ and the token cookie is `SameSite=Strict` (`security.py`,
 the token and be refused. Removing `sandbox` for those types avoids that
 and gives up, for them, the isolation the Files slice kept on purpose.
 Neither variant was tried in a browser.
+
+## Fixed on the branch, 2026-11-14
+
+The human asked the web console pair for the fix in session. It is on
+`ws-capsule-webconsole/video-in-files`, cut from `release-0.3.1` at
+`27985163`, and follows the proposal above; `target` is set from that
+branch's base. `severity` is still the owner's to rate, and `owner` is
+unchanged: closing needs the observation below on a built executable.
+
+- `/api/project/tree` gives each regular file's entry a `type`, the media
+  type `raw_content_type` serves the file as; other entries have `null`.
+- `/files/<path>` for a file whose type is `video/…` or `audio/…` shows the
+  breadcrumbs, the player and the download link in the console's page. The
+  page reads the type from the listing of the file's directory. Any other
+  file leaves for the raw route as before, or for Records when Markdown, and
+  now keeps the address's fragment.
+- A listing row links a video or audio file to `/files/<path>`.
+- A link in a Markdown record to a file that is not Markdown leads to
+  `/files/<path>`, not to the raw route. This is wider than "a link to a
+  recording": a record's renderer cannot ask the server for each target's
+  type, so every such link takes the Files address, which plays a recording
+  and sends anything else on to the raw route after two small requests.
+  Images embedded in a record still load from the raw route directly.
+- `/api/project/raw` is unchanged.
+
+Not covered: a symbolic link to a recording. A link's row still leads to
+the raw route, and a link has no `type`.
+
+Checked on the branch: `nox -s webconsole`, whose tests now assert the tree
+entry's type against the raw route's `Content-Type`, the player for a video
+and for an audio address, the listing rows, the unchanged redirect of other
+files and the record link. In headless Chromium against
+`nox -s webconsole-preview`: a `.webm` opened from the listing played,
+played on from a position set at 25 s, and loaded from its pasted
+`/files/…` address in a second tab; the browser console showed no
+`Content Security Policy` message; a JSON file still went to the raw route
+and a raw range request still carried the policy unchanged. This is not
+the close criterion: that asks for Chrome and an executable that carries
+the fix. Audio was not played in a browser.
 
 ## Not verified
 

@@ -61,3 +61,48 @@ release ships and retired when the version leaves support.
 Opened 2026-10-18 by `maintenance` at the owner's direction, during the
 0.3.0 cycle. No target: it is validation work for the next planning, not a
 0.3.0 gate.
+
+## Progress, 2026-11-12
+
+On `ws-maintenance/launch-phases`, pull request #29, not merged.
+
+`test_repository_lock_is_launchable_by_this_launcher` is deleted. It read
+the lock in the working tree, and since 0.3 a project whose IDE is
+recommended has a shared lock without one, which the launch's reader
+rightly refuses alone; the test failed wherever a 0.3 launcher had
+rewritten this repository's configuration. Its claim is now held on frozen
+inputs by `tests/unit/devcapsule/configuration/test_capability_commands.py`:
+the offline check of `project config check`, `check_documents`, accepts the
+manifest and lock of three captured projects, `v026.2`, `v0.2.11` and
+`repository-2026-10-25`, the last being this repository's own project as
+committed, written from matrix `embedded-28`.
+
+Still open, against the expected behaviour above:
+
+- No capture was written by a released 0.3.0 client. For 0.2.14 and 0.2.15
+  see the ruling below.
+- No checkout record or authorization of a capture is read by the new
+  test; `tests/test_upgrade_recovery.py` does that for `v0.2.11` only.
+- The release runbook names no capture step.
+- `v026-formation`, the hand-authored adopter shape, does not pass the
+  check: `components.codex.npm-package must be '@openai/codex'`. Not
+  judged here; the standing test of that capture covers inspection only.
+
+## Owner ruling, 2026-11-12
+
+Compatibility with 0.2.14, 0.2.15 and earlier releases may be dropped. No
+capture from them is required, and the expected behaviour above no longer
+names them.
+
+What DevCapsule promises its users about compatibility is not yet defined.
+It needs a story, which releases a project and a checkout stay usable
+across and what a user does when they do not, and a packaging, how the
+promise is stated, shipped and tested. The owner targets that for after
+0.3.1. Until it exists:
+
+- R-COMPAT-001 and R-CONFIG-001 stand as written; the story revises them.
+- The captures `v026.2`, `v0.2.11` and `v026-formation` and the tests that
+  read them stand. They are not a promise. A change that has to break one
+  retires the capture and says so; it is not blocked by it.
+- This record stays open as the test half of that work. Its close criteria
+  are rewritten when the story is.

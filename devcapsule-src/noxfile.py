@@ -5,6 +5,7 @@ import json
 import hashlib
 import uuid
 import argparse
+import secrets
 import shutil
 from pathlib import Path
 
@@ -23,6 +24,8 @@ PUBLIC_PEX_REPOSITORY_ENV = "DEVCAPSULE_PUBLIC_PEX_SOURCE_REPOSITORY"
 PEX_UNDER_TEST_ENV = "DEVCAPSULE_PEX_UNDER_TEST"
 VERSION_SCRIPT = PROJECT_ROOT / "scripts" / "bump-version.py"
 WEBCONSOLE_ROOT = REPO_ROOT / "devcapsule-webconsole"
+WEBCONSOLE_PREVIEW_PORT = 8787
+WEBCONSOLE_SAMPLE_PRESENTATION = "devcapsule-webconsole/resources/presentations/todo-fastapi-postgres-react"
 
 
 def install_locked(session: nox.Session) -> None:
@@ -530,6 +533,41 @@ def recursive_dogfood_e2e(session: nox.Session) -> None:
 def webconsole(session: nox.Session) -> None:
     """Checks of the capsule web console, in its own environment."""
     run_webconsole_checks(session)
+
+
+@nox.session(name="webconsole-preview", python="3.12")
+def webconsole_preview(session: nox.Session) -> None:
+    """Serve this checkout's web console on loopback, to try a change before building; Ctrl+C ends it.
+
+    The console is installed editable, so an edit to a page, a script or a
+    stylesheet shows on a browser reload. ``-- --project <path>`` serves
+    another DevCapsule project than this repository and ``-- --port <n>``
+    another port. The links logged carry a token made for this run; the
+    console refuses every request without it.
+    """
+    arguments = argparse.ArgumentParser(prog="nox -s webconsole-preview --")
+    arguments.add_argument("--project", type=Path, default=REPO_ROOT)
+    arguments.add_argument("--port", type=int, default=WEBCONSOLE_PREVIEW_PORT)
+    options = arguments.parse_args(session.posargs)
+    project = options.project.resolve()
+    session.install("--require-hashes", "-r", str(WEBCONSOLE_ROOT / "requirements-dev.txt"))
+    session.install("-e", str(WEBCONSOLE_ROOT), "--no-deps")
+    # The launcher too: the pages show what its commands report about the project.
+    session.install("-e", str(PROJECT_ROOT))
+    state = Path(session.create_tmp())
+    token = secrets.token_hex(24)
+    token_file = state / "console-token"
+    token_file.write_text(token + "\n", encoding="utf-8")
+    token_file.chmod(0o600)
+    origin = f"http://127.0.0.1:{options.port}"
+    session.log(f"Web console: {origin}/?token={token}")
+    if project == REPO_ROOT:
+        session.log(f"Sample presentation: {origin}/presentations/{WEBCONSOLE_SAMPLE_PRESENTATION}?token={token}")
+    session.run(
+        "python", "-m", "devcapsule_webconsole", "--project", str(project), "--token-file", str(token_file),
+        "--decisions", str(state / "decisions"), "--configuration", str(state / "configuration"),
+        "--port", str(options.port),
+    )
 
 
 @nox.session(name="docs-contract", python=False)

@@ -17,7 +17,7 @@ export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$IDE_PROJECT_STATE_PATH/home/.cache}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 
 RUN_AS_IDE_USER=()
-if [ "$(id -u)" -eq 0 ] && [ -n "$IDE_UID" ] && [ -n "$IDE_GID" ]; then
+if [ "$(id -u)" -eq 0 ] && [ -n "$IDE_UID" ] && [ -n "$IDE_GID" ] && { [ "$IDE_UID" != "0" ] || [ "$IDE_GID" != "0" ]; }; then
   if [ "$ENABLE_SUDO" = "1" ] && getent passwd "$IDE_USER" >/dev/null 2>&1; then
     RUN_AS_IDE_USER=(gosu "$IDE_USER")
   else
@@ -38,7 +38,7 @@ install_ide_file() {
   local dst="$2"
   local mode="$3"
 
-  if [ "$(id -u)" -eq 0 ] && [ -n "$IDE_UID" ] && [ -n "$IDE_GID" ]; then
+  if [ "$(id -u)" -eq 0 ] && [ -n "$IDE_UID" ] && [ -n "$IDE_GID" ] && { [ "$IDE_UID" != "0" ] || [ "$IDE_GID" != "0" ]; }; then
     install -o "$IDE_UID" -g "$IDE_GID" -m "$mode" "$src" "$dst"
   else
     install -m "$mode" "$src" "$dst"
