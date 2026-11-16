@@ -1,6 +1,6 @@
 # Presentation excellence: outcome and proposed acceptance
 
-Status: proposal for discussion; no implementation work order or release commitment.
+Status: both audiences accepted by the owner; delivery scope remains a proposal. No implementation work order or release commitment.
 Owner direction, 2026-11-16: focus project management on what presentations need to reach excellence.
 
 ## The outcome to design for
@@ -9,9 +9,27 @@ An agent in an unrelated project can turn a real feature journey into a presenta
 A person can understand the journey, inspect the result and revisit a relevant moment without the author explaining it live.
 The presentation remains useful when the recording ends and when the software changes.
 
-The intended first audience remains a product decision: engineering reviewers, prospective users, or both.
-The recommendation is engineering review first, with the same artifact designed to support later demonstrations.
-That recommendation is provisional. A sales or teaching audience would change the narrative, sharing and acceptance priorities.
+Owner decision, 2026-11-16: serve engineering reviewers and prospective users/tutorial readers equally from the first delivery.
+The chat answer `both` resolves decision `2026-11-16-presentation-audience`.
+Acceptance must cover each audience explicitly. Neither is a later enhancement.
+
+## What equal priority requires
+
+One recorded journey should support a clear explanation and close inspection of what happened.
+The proposed design uses a shared recording, script and run identity, with the amount of visible detail suited to the reader.
+This is a design direction to assess, not a requirement for two modes or two separate presentation products.
+
+| Audience | What the presentation must help them do | Proposed acceptance observation |
+|---|---|---|
+| Prospective user | Understand the problem, the benefit and the visible result without repository or conversation context. | A first-time viewer can explain what the feature does and why they might use it. |
+| Tutorial reader | Follow the prerequisites and meaningful actions, then recognize the expected result. | A reader can perform the demonstrated journey in the agreed setup and identify where their result differs. |
+| Engineering reviewer | Locate a step, inspect the actual result, and understand the run's identity and limits. | A reviewer can trace a presented claim to its recorded moment and supporting evidence, including any failure or incomplete check. |
+
+The same scenario is evaluated from all three perspectives before acceptance.
+The overview and captions carry the explanation; run details and evidence remain readily accessible.
+A demonstration's smooth pacing must preserve what was actually observed and disclose relevant time compression.
+Public sharing needs a supported audience-appropriate route; the route and publication policy still require a scope decision.
+
 
 ## Evidence and its limits
 
@@ -32,11 +50,11 @@ No fresh visual review or usability session was conducted for this proposal.
 | Outcome | What needs to be true | Evidence for acceptance |
 |---|---|---|
 | Easy authoring | Installed, discoverable agent guidance, one worked template and supported recording/generation tools serve the project's own journey. | An agent with no conversation context produces a presentation in an unrelated project without cloning DevCapsule or importing its tests. |
-| A clear story | The overview explains the purpose. Each step explains the action and what to notice. Captions describe meaningful moments. | A reviewer can state the scenario's purpose and observed result from the presentation alone. The owner judges this. |
+| A clear story | The overview explains the purpose. Each step explains the action and what to notice. Captions describe meaningful moments. | A new viewer understands the benefit, a tutorial reader can follow the journey, and a reviewer can inspect the observed result. The owner judges these separately. |
 | Readable viewing | Text and screenshots remain legible. Pacing leaves time to understand. Zoom, keyboard use and step navigation keep the viewer oriented. | Review an agreed display size and a long caption, dense terminal output and a GUI result. Check actual playback and legibility. |
 | Trustworthy evidence | Text, screenshots and time ranges refer to the same run. Expected behavior is distinguished from observed results. Incomplete or failed runs remain explicit. | A changed video, missing screenshot or incomplete run cannot silently appear as a complete, passing presentation. |
 | Reuse | Scripted and interactive runs produce the same presentation contract. Editorial changes regenerate metadata without recording again. | Record once, improve the explanation, regenerate, then record a changed journey and verify that no old assets are silently reused. |
-| Durable delivery | A documented folder contains the presentation and its media, survives builds and can be moved through a supported sharing route. | Reopen retained evidence after a build and test the sharing route selected for the first audience. No absolute author-machine paths are required. |
+| Durable delivery | A documented folder contains the presentation and its media, survives builds and can be moved through a supported sharing route. | Reopen retained evidence after a build and test the sharing route selected for both audiences. No absolute author-machine paths are required. |
 
 These are proposed acceptance criteria, not claims about defects in each existing viewer behavior.
 Exact screen sizes, supported browsers and packaging interfaces belong in the eventual work order.
@@ -82,23 +100,29 @@ One complete author-to-viewer journey in an unrelated DevCapsule project, using 
 Use the owner's real adopter experience to select the project and scenario.
 Provide the agent only the project and the desired feature journey.
 The agent discovers the installed guidance, records, generates and opens a valid presentation.
-A person who did not author it reviews the result and identifies anything unclear.
+Review the same artifact with explicit tasks for each audience:
+
+- A first-time viewer explains the feature's purpose, benefit and visible result.
+- A tutorial reader follows its prerequisites and actions in the agreed setup.
+- An engineering reviewer locates a claimed result, inspects its recorded moment and finds the run's identity and limitations.
+
+Record separate findings for each task. Passing only one does not meet the agreed audience scope.
 The author then edits one caption and regenerates without repeating the recording.
 A second run demonstrates that the metadata and media still agree.
 
 Record setup steps, manual interventions and readability findings; set numeric budgets after seeing that baseline.
 Do not turn guessed effort numbers into acceptance requirements.
-The first work order must name its supported recording surface and product audience.
+The first work order must name its supported recording surface and the acceptance tasks for both agreed audiences.
 Keep the toolkit boundary portable; decide support outside a capsule explicitly rather than assuming it is cheap.
 
 ## Decisions before implementation
 
-1. Primary audience: engineering reviewers, prospective users/tutorial readers, or equal priority for both.
+1. Settled: engineering reviewers and prospective users/tutorial readers have equal priority from the first delivery.
 2. First supported recording journey and delivery boundary: the selected adopter project, its surface, and whether standalone use is required immediately.
 3. Toolkit distribution and supported interface, after the journey is agreed.
 4. Implementation owner and review arrangement, followed by release placement.
 
-Only the first question is handed to the owner now. Keep later choices open until it is answered.
+Next choose a real adopter project and feature journey. That choice makes the recording surface and delivery needs concrete.
 The project-management pair remains on this workstream.
 The two presentation intake items remain pending until the agreed scope is routed through the normal work order or intake process.
 The broader reusable-assets idea remains in the pile; this proposal does not decide its other parts.
