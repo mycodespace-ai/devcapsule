@@ -4,7 +4,7 @@ Mnemonic: `github-auth`
 
 Start date: 2026-11-16
 
-State: paused after successful recorded GitHub SSH proxy E2E; review integration and baseline gate disposition remain open.
+State: active; merging all of release-0.3.1 and validating the combined tree at the owner's request.
 
 Definition read: WORKFLOW.md@89de30622697, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
@@ -71,12 +71,11 @@ checkout remains untouched. Review evidence and prepared PR text are indexed bel
 
 ## Planned next step
 
-The owner-authorized host relaunch and recorded fresh-capsule E2E are complete.
-The next delivery step is to resolve the known gate baseline and have the owner
-merge the separate Gemini review corrections through the prepared PR process.
-Validate the combined branch before integration; the recorded PEX does not contain
-those corrections. The engineering showcase and procedure are indexed below.
-No further restart or host credential setup is needed for this completed test.
+Owner explicitly requested the full release-0.3.1 merge on 2026-11-16, including
+its other fixes, instead of relying on the earlier adapted port. Merge the fetched
+release tip `10e7fda3`, run the combined gate and focused proxy/runtime checks,
+then build the merged PEX and repeat fresh-capsule proxy acceptance. The running
+outside broker remains from the earlier build; report that boundary explicitly.
 
 ## Rootless Docker fix propagation
 
@@ -229,6 +228,29 @@ Types passed over 340 files; the corrected convention check found zero breaches.
 used the stale default origin/main comparison and stopped on three unrelated
 convention differences. The corrected run used DEVCAPSULE_DIFF_BASE=upstream/main. Its log is retained at
 `~/.cache/devcapsule-gate/github-auth-showcase-build-upstream.log`.
+
+## Full release merge, 2026-11-16
+
+The owner authorized merging release-0.3.1 into this published feature branch.
+Use a merge, preserving both histories. Canonical main remains unchanged and needs
+no separate synchronization. The fetched release tip is `10e7fda3` (PR #40).
+Resolve the overlap with the earlier port by taking the release's CapsuleUser and
+filesystem implementation; retain the feature's extra mixed-ID/rootless coverage
+on those APIs, combine authorization coverage and review history, and keep the
+feature branch's development version. No release ref or other checkout is edited.
+
+The imported workflow now keeps scenario recordings outside build output. Copied
+the completed first recording to `devcapsule-src/tests/e2e/evidence/github-ssh-proxy-pre-merge/`
+before rebuilding so the evidence survives a clean build. The imported host-input
+and test rules also apply to this combined tree. The combined unit gate reports 3309 passed, 3 failed, 1 skipped, 187 deselected,
+1 xfailed and 1 xpassed. The three failure IDs are a subset of the previous 19:
+unmountable staging and the two recursive dry-run cases (host Docker gid 0).
+No new failure ID. Types and conventions passed. All 41 focused identity,
+filesystem, authorization and proxy integration cases passed. The first focused
+invocation used the repository root instead of devcapsule-src and triggered the
+new repository-input guard on an editable-install metadata path; correcting the
+working directory followed the declared validation setup. No guard was disabled.
+Packaging, remaining gate components and fresh-capsule acceptance follow the merge.
 
 ## Open Threads
 

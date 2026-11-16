@@ -1236,8 +1236,10 @@ This prepares the currently selected environment through ordinary configuration
 and authorization checks, then prints the shell-quoted Docker command, masking
 inline environment values from saved or one-off extra options. A redacted
 command is a preview; use `project run` to supply the actual saved values.
-It may acquire/build the image and prepare state; it does not launch the project
-container, open a desktop, check/select component updates or record successful use.
+It pulls, downloads and builds nothing: when the environment is not on this
+machine yet, it exits 2 and names what a launch would fetch. It does not launch
+the project container, open a desktop, check/select component updates or record
+successful use.
 Preparation messages go to stderr, keeping stdout suitable for a file or editor.
 Run-once configuration choices and accepted Docker passthrough options still apply.
 

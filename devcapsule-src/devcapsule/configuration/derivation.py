@@ -14,28 +14,40 @@ yet, composes the checkout's selection (with a run-once IDE or agent laid
 over it when asked), derives and writes the resolution, and hands the
 launch a :class:`ResolvedProject`. Asking the developer is the command's
 job; the structured decisions come from the listing.
+
+Reading and deciding are apart here. :func:`load_state` reads: it is the only
+place that opens the project's lock, the home's settings and the checkout's
+record. :class:`CheckoutState` holds what was read and answers from it, in
+memory. A test of a decision builds a state from documents it writes as
+values and never calls :func:`load_state`.
 """
 
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from functools import cached_property
+import os
 from pathlib import Path
 import tomllib
 import shlex
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 from devcapsule.compat import DecisionPending
-from devcapsule.materialization import validate_base_image
+from devcapsule.materialization import ImageDetails, validate_base_image
+from devcapsule.platforms import Platform
 from devcapsule.project import sanitize_name
 from devcapsule.resolution_matrix import MATRICES, ResolutionMatrix, known_base_image
 
 from .authorization import authorized_base_selection
+from .bindings import DirectoryLookup, host_directory
 from .capabilities import CapabilityPolicy, LocalCapabilities, RequirementDeparture, resolution_recommendations
 from .capability_commands import pin_selection, release_deselected
 from .capability_selection import compose_lock, effective_lock, local_pins, inspection_capabilities, inspection_providers, known_policy_names
 from .console_requests import deferred_rows
 from .file_formats import ProjectConfigurationError, canonical_digest, render_checkout, render_toml
-from .listing import Listing, assess_checkout
+from .listing import Listing, ListingRow, assess_checkout
 from .model import Configuration
 from .manifest_document import Recommendations
 from .trust import HomeTrust
@@ -47,7 +59,7 @@ from .storage import (
     find_checkout_record,
     load_checkout,
     load_toml,
-    load_settings, config_root,
+    load_settings, config_root, validate_settings,
     named_checkout_record_paths,
     recommendation_lock_for,
     resolved_record_path,
@@ -55,7 +67,27 @@ from .storage import (
 from .file_formats import selected_version_lock
 from .docker_arguments import arguments_path, read_arguments, read_environment
 
-__all__ = ["CheckoutState", "Selection", "derive_plan", "load_state", "register_checkout"]
+__all__ = ["CheckoutState", "Host", "Selection", "derive_plan", "load_state", "register_checkout"]
+
+
+@dataclass(frozen=True)
+class Host:
+    """What a decision may ask of the machine it runs on, given to it as functions.
+
+    A decision cannot know these in advance: which image it must look up
+    follows from what the developer selects, and the moment of an acceptance
+    is the moment it is given. So the reading phase binds the functions and
+    the decision calls them. A test passes its own.
+    """
+
+    local_image: Callable[[str], ImageDetails]
+    """The Docker daemon's details of the local image with this reference; it refuses when there is none."""
+    now: Callable[[], datetime]
+    """The current time, with its time zone."""
+    environment: Mapping[str, str]
+    """The environment of the developer's shell. A decision asks whether a variable is set, never for its value."""
+    directory: DirectoryLookup
+    """What the host says of a directory the developer named: its path and whether it exists."""
 
 
 class Selection:
@@ -102,44 +134,56 @@ class Selection:
             self.providers[name] = component
 
 
+@dataclass
 class CheckoutState:
-    """One checkout's documents as loaded for a launch, registered or not, writing nothing on load."""
+    """One checkout's documents and surroundings, in memory.
 
-    def __init__(self, root: Path, manifest: dict[str, Any]) -> None:
-        self.root = root
-        self.manifest = manifest
-        self.platform = project_platform(root)
-        self.matrix = MATRICES[self.platform]
-        self.surfaces = {name: self.matrix.resolve_provider(name) or name for name in self.matrix.ide_capabilities()}
-        self.lock_path, self.shared_lock = recommendation_lock_for(root, manifest)
-        self.home = load_settings()
-        # The named departures of this launch from the project's contract
-        # (``project run --ide IDE --force``). In memory only: the manifest,
-        # the lock and the record are never written with them.
-        self.departures: tuple[RequirementDeparture, ...] = ()
-        record = find_checkout_record(manifest, root)
-        self.input_path: Path | None = record
-        self.checkout: dict[str, Any] = load_checkout(record, manifest, root) if record is not None else tomllib.loads(
-            render_checkout(manifest, root, {}, {})
-        )
-        if record is None:
-            try:
-                self.input_path, _ = checkout_record_paths(manifest, root)
-            except ProjectConfigurationError:
-                self.input_path = None  # the default record belongs to another checkout of this project
-        self.saved_environment: dict[str, str | None] = {}
-        if record is not None:
-            read_arguments(arguments_path(record))  # Malformed storage is a refusal.
-            try:
-                self.saved_environment = read_environment(arguments_path(record))
-            except ProjectConfigurationError:
-                # Ambiguous Docker tokens remain literal passthrough. They
-                # cannot establish answers to declared environment inputs.
-                self.saved_environment = {}
+    Nothing here opens a file or reads the environment. :func:`load_state`
+    does that and builds a state; a test builds one from values. The review
+    of a launch changes the state as answers are staged: the home's trust,
+    the saved environment, the departures.
+    """
+
+    root: Path
+    """The project's directory."""
+    manifest: dict[str, Any]
+    platform: Platform
+    """The capsule platform this host runs the project as."""
+    lock_path: Path
+    shared_lock: dict[str, Any]
+    """The project's committed lock for ``platform``, as ``lock_path`` holds it."""
+    home: dict[str, Any]
+    """The home's settings document."""
+    home_path: Path
+    """The home's directory, which the listing names in what it tells the developer."""
+    host: Host
+    input_path: Path | None
+    """The checkout's record: the one found, or the default one it would get.
+
+    None when the checkout has no record and the default one belongs to
+    another checkout of the project; :func:`register_checkout` then names one.
+    """
+    registered: bool
+    """Whether the record at ``input_path`` exists."""
+    checkout: dict[str, Any]
+    """The record's document; for an unregistered checkout, the empty record it would start with."""
+    saved_environment: dict[str, str | None] = field(default_factory=dict)
+    """The variables saved with the checkout's Docker arguments; None for one taken from the host."""
+    deferred: tuple[ListingRow, ...] = ()
+    """The console's requests that await the developer's confirmation, as listing rows."""
+    departures: tuple[RequirementDeparture, ...] = ()
+    """The named departures of this launch from the project's contract
+    (``project run --ide IDE --force``). In memory only: the manifest, the
+    lock and the record are never written with them."""
 
     @property
-    def registered(self) -> bool:
-        return self.input_path is not None and self.input_path.is_file()
+    def matrix(self) -> ResolutionMatrix:
+        return MATRICES[self.platform]
+
+    @cached_property
+    def surfaces(self) -> dict[str, str]:
+        """Each IDE capability of the platform with the component that provides it."""
+        return {name: self.matrix.resolve_provider(name) or name for name in self.matrix.ide_capabilities()}
 
     @property
     def policy(self) -> CapabilityPolicy:
@@ -178,14 +222,15 @@ class CheckoutState:
         providers = inspection_providers(self.manifest, lock, document)
         listing = assess_checkout(
             self.manifest, self.shared_lock, lock, document,
-            home_path=config_root(), home=self.home, saved_environment=self.saved_environment,
+            home_path=self.home_path, home=self.home, saved_environment=self.saved_environment,
             surfaces=self.surfaces, project=self.root, registered=self.registered,
             access_lock=access_lock, capability_versions=versions,
             capability_providers=providers,
             base_display=base.contract.display if check_display and base is not None else None,
             departures=self.departures,
+            host_environment=self.host.environment, directory=self.host.directory,
         )
-        return Listing(listing.rows + tuple(deferred_rows(self.input_path, self.root)), listing.notes, listing.departures)
+        return Listing(listing.rows + self.deferred, listing.notes, listing.departures)
 
     def with_selection(self, selection: Selection, *, allow_unverified: bool = False,
                        checkout: Mapping[str, Any] | None = None) -> dict[str, Any]:
@@ -212,8 +257,65 @@ class CheckoutState:
         return document
 
 
-def load_state(root: Path, manifest: dict[str, Any]) -> CheckoutState:
-    return CheckoutState(root, manifest)
+def _this_host() -> Host:
+    """The machine this process runs on."""
+    def local_image(reference: str) -> ImageDetails:
+        # Looked up through the operations adapter when called, not when bound:
+        # it is the one seam that legacy tests of the launch patch for the local daemon.
+        from . import operations
+        return operations.required_local_image(reference)
+
+    return Host(local_image=local_image, now=lambda: datetime.now(timezone.utc),
+                environment=dict(os.environ), directory=host_directory)
+
+
+def load_state(root: Path, manifest: dict[str, Any], *, home: Mapping[str, Any] | None = None) -> CheckoutState:
+    """Read one checkout's documents and surroundings into memory. Nothing is written.
+
+    This is the reading half of every command that works on a checkout: the
+    platform and its committed lock from the project, the settings from the
+    home, the checkout's record or the path it would get, the environment
+    saved with its Docker arguments, and the console's deferred requests.
+
+    ``home`` is the home's settings document, for a caller that holds it
+    already; the home's file is then not read. An empty document is a home
+    with no settings file. Any other is admitted as a settings file is.
+    Owner ruling of 2026-11-12: legacy tests of the launch pass it, to say
+    what their home has accepted. No command passes it yet.
+    """
+    platform = project_platform(root)
+    lock_path, shared_lock = recommendation_lock_for(root, manifest)
+    if home is None:
+        settings = load_settings()
+    else:
+        settings = deepcopy(dict(home))
+        if settings:
+            validate_settings(settings, config_root() / "settings.toml")
+    record = find_checkout_record(manifest, root)
+    input_path: Path | None = record
+    if record is not None:
+        checkout = load_checkout(record, manifest, root)
+    else:
+        checkout = tomllib.loads(render_checkout(manifest, root, {}, {}))
+        try:
+            input_path, _ = checkout_record_paths(manifest, root)
+        except ProjectConfigurationError:
+            input_path = None  # the default record belongs to another checkout of this project
+    saved_environment: dict[str, str | None] = {}
+    if record is not None:
+        read_arguments(arguments_path(record))  # Malformed storage is a refusal.
+        try:
+            saved_environment = read_environment(arguments_path(record))
+        except ProjectConfigurationError:
+            # Ambiguous Docker tokens remain literal passthrough. They
+            # cannot establish answers to declared environment inputs.
+            saved_environment = {}
+    return CheckoutState(
+        root=root, manifest=manifest, platform=platform, lock_path=lock_path, shared_lock=shared_lock,
+        home=settings, home_path=config_root(), host=_this_host(), input_path=input_path, registered=record is not None,
+        checkout=checkout, saved_environment=saved_environment,
+        deferred=tuple(deferred_rows(input_path, root)),
+    )
 
 
 def register_checkout(state: CheckoutState, *, write: bool = True) -> Path:
@@ -222,6 +324,10 @@ def register_checkout(state: CheckoutState, *, write: bool = True) -> Path:
     Answer 14 of the work order: ``run`` registers a second checkout of the
     same project by itself, with a name derived from its path; each checkout
     keeps its own record and inherits nothing.
+
+    With ``write=False`` this only names the record on the state. Finding a
+    free name looks at the project's other records, so this belongs with the
+    reading, before any decision.
     """
     if state.registered:
         assert state.input_path is not None
@@ -238,6 +344,7 @@ def register_checkout(state: CheckoutState, *, write: bool = True) -> Path:
     assert state.input_path is not None
     if write:
         atomic_write(state.input_path, render_toml(state.checkout))
+        state.registered = True
     return state.input_path
 
 
@@ -265,16 +372,14 @@ def derive_plan(state: CheckoutState, checkout: Mapping[str, Any] | None = None,
         ) from exc
     if not lock.get("components", {}).get("interactive-surface"):
         raise ProjectConfigurationError("Choose your IDE for this checkout: devcapsule project config ide IDE.")
-    configuration = Configuration(state.manifest, lock, document, state.home, departures=state.departures)
+    configuration = Configuration(state.manifest, lock, document, state.home, departures=state.departures,
+                                  directory=state.host.directory)
     configuration.review().require_ready(state.root)
     resolution = configuration.resolve()
     trust = HomeTrust.read(state.home)
     base_selection = authorized_base_selection(lock, document, trust=trust) if "base" in lock else None
     if base_selection is not None and base_selection.local_image_identity is not None:
-        # Looked up through the operations adapter, the one seam the launch
-        # and its tests patch for the local daemon.
-        from . import operations
-        local_base = operations.required_local_image(base_selection.reference)
+        local_base = state.host.local_image(base_selection.reference)
         validate_base_image(local_base, platform=str(lock["platform"]), expected_identity=base_selection.local_image_identity)
     assert state.input_path is not None
     resolution_path = resolved_record_path(state.input_path)

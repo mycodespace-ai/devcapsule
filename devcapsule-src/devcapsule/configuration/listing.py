@@ -43,7 +43,7 @@ from .authorization import (
     render_authorization_value,
     review_authorizations,
 )
-from .bindings import component_secret_inputs, configuration_binding_declarations
+from .bindings import DirectoryLookup, component_secret_inputs, configuration_binding_declarations, host_directory
 from .capabilities import CapabilityPolicy, LocalCapabilities, RequirementDeparture, capability_notes
 from .file_formats import ProjectConfigurationError, render_toml_scalar, table
 from .launcher_values import launcher_value_source
@@ -199,8 +199,16 @@ def assess_checkout(
     capability_versions: Mapping[str, str | None] | None = None,
     capability_providers: Mapping[str, tuple[str, str]] | None = None,
     departures: tuple[RequirementDeparture, ...] = (),
+    host_environment: Mapping[str, str] | None = None,
+    directory: DirectoryLookup | None = None,
 ) -> Listing:
     """The listing of one checkout, from its documents, writing nothing.
+
+    ``host_environment`` is the environment of the developer's shell, asked
+    whether a variable is set, never for its value. ``directory`` tells what
+    the host says of a bound directory. Owner ruling of 2026-11-12, until the
+    legacy tests that call this are retired: when either is left out, this
+    process's environment and this machine's file system are asked.
 
     ``composed_lock`` is the shared lock with the checkout's pins laid over
     it (``capability_selection.compose_lock``); ``surfaces`` maps IDE
@@ -235,12 +243,14 @@ def assess_checkout(
     rows.extend(_launcher_value_rows(manifest, checkout, home, project))
     rows.extend(_access_rows(manifest, composed_lock if access_lock is None else access_lock,
                              checkout, project, base_display, home, home_path))
-    rows.extend(_environment_rows(manifest, saved_environment or {}, project))
+    if host_environment is None:
+        host_environment = os.environ
+    rows.extend(_environment_rows(manifest, saved_environment or {}, project, host_environment))
     rows.extend(_source_rows(manifest))
     has_surface = bool(table(composed_lock, "components").get("interactive-surface"))
     if has_surface:
-        rows.extend(_binding_rows(composed_lock, checkout, project))
-        rows.extend(_secret_rows(composed_lock, checkout, project))
+        rows.extend(_binding_rows(composed_lock, checkout, project, directory or host_directory))
+        rows.extend(_secret_rows(composed_lock, checkout, project, host_environment))
     else:
         notes.append("State directories and component secrets are listed once an IDE is chosen.")
     rows.extend(_value_rows(manifest, checkout, project))
@@ -444,6 +454,7 @@ def _source_rows(manifest: Mapping[str, Any]) -> list[ListingRow]:
 
 def _environment_rows(
     manifest: Mapping[str, Any], saved: Mapping[str, str | None], project: Path | None,
+    host_environment: Mapping[str, str],
 ) -> list[ListingRow]:
     rows: list[ListingRow] = []
     environment = EnvironmentPolicy.read(manifest)
@@ -463,7 +474,7 @@ def _environment_rows(
         effective = "set" if saved[name] is not None else "from the host's variable"
         rows.append(ListingRow("env", name, effective, "checkout"))
     for index, row in enumerate(rows):
-        if row.name in saved and saved[row.name] is None and row.name not in os.environ:
+        if row.name in saved and saved[row.name] is None and row.name not in host_environment:
             rows[index] = ListingRow("env", row.name, "unset", row.source,
                                      "the bound host variable is missing in this shell",
                                      _command(project, "env", "set", row.name, "VALUE"),
@@ -472,7 +483,8 @@ def _environment_rows(
     return rows
 
 
-def _binding_rows(lock: Mapping[str, Any], checkout: Mapping[str, Any], project: Path | None) -> list[ListingRow]:
+def _binding_rows(lock: Mapping[str, Any], checkout: Mapping[str, Any], project: Path | None,
+                  directory: DirectoryLookup) -> list[ListingRow]:
     try:
         declarations = configuration_binding_declarations(lock)
     except ProjectConfigurationError as exc:
@@ -483,8 +495,9 @@ def _binding_rows(lock: Mapping[str, Any], checkout: Mapping[str, Any], project:
     for name in sorted(declarations):
         bound = bindings.get(name, adopted.get(name))
         if isinstance(bound, str):
-            path = Path(bound).expanduser()
-            if path.is_dir():
+            found = directory(bound)
+            path = found.expanded
+            if found.exists:
                 rows.append(ListingRow("binding", name, str(path), "checkout"))
             else:
                 rows.append(ListingRow("binding", name, str(path), "checkout", "the directory does not exist",
@@ -494,7 +507,8 @@ def _binding_rows(lock: Mapping[str, Any], checkout: Mapping[str, Any], project:
     return rows
 
 
-def _secret_rows(lock: Mapping[str, Any], checkout: Mapping[str, Any], project: Path | None) -> list[ListingRow]:
+def _secret_rows(lock: Mapping[str, Any], checkout: Mapping[str, Any], project: Path | None,
+                 host_environment: Mapping[str, str]) -> list[ListingRow]:
     try:
         declarations = component_secret_inputs(lock)
     except ProjectConfigurationError as exc:
@@ -504,7 +518,7 @@ def _secret_rows(lock: Mapping[str, Any], checkout: Mapping[str, Any], project: 
     for name, declaration in sorted(declarations.items()):
         variable = declaration.environment_variable
         if name in bound:
-            available = variable in os.environ
+            available = variable in host_environment
             rows.append(ListingRow("secret", name, f"from {variable}", "checkout" if available else "checkout (variable unset in this shell)"))
         elif declaration.required:
             command = _command(project, "bind", name, f"host-environment:{variable}")

@@ -1,5 +1,5 @@
 ---
-status: confirmed
+status: closed
 severity: blocking
 target: 0.3.1
 owner: maintenance
@@ -77,6 +77,38 @@ Markdown changes only, and on an extract of the tag `v0.3.1-rc2`.
   environment, whose installed metadata still says 0.2.15; the gate run used
   the environment Nox built. The 17 failures are from the gate run.
 
+### A unit test downloads vendor artifacts
+
+Found on 2026-11-10 while running the suite for another change.
+`test_offered_agent_still_needs_consent_and_can_be_omitted`, in
+`tests/unit/devcapsule/legacy_refactoring/test_capability_minimums.py`, runs
+`project run --print-command` and expects it to stop for consent to the
+Claude Code channel. In the owner's capsule the mounted settings have
+accepted that channel, so the launch preparation goes on to acquire the
+project's artifacts from the network, into the test's own cache under its
+temporary directory:
+
+- 1,490 MB in that one test's directory after the run, among them four
+  files of 326, 205, 187 and 114 MB under
+  `user/cache/devcapsule/artifacts/sha256/`. The largest carries the digest
+  `426c3381…bf61f`, the Claude Code 2.1.321 `linux-x64` build pinned for
+  0.3.1.
+- The test process was observed in that test for more than ten minutes,
+  with a download file growing and an HTTPS connection open. The whole run
+  took 727 s without coverage; the gate run of the same day took 733 s with
+  it. A run with the mounted settings hidden took 70 s, though 41 of its
+  tests ended early for an unrelated reason, a temporary path too long for
+  a Unix socket.
+- The test is marked expected to fail inside a capsule, so it reports as an
+  expected failure after the download and nothing looks wrong.
+- pytest keeps the temporary roots of its last three runs under
+  `/tmp/pytest-of-<user>`. Inside a capsule `/tmp` is a 2 GB tmpfs, so the
+  second or third run of the suite fills it; it did on 2026-11-10, with
+  `No space left on device`.
+
+So the twelve minutes of the local unit gate, and the overflow of `/tmp`
+that `WORKFLOW-LOCAL.md` warns about, come largely from this cause.
+
 ## Cause
 
 `settings_source` in `devcapsule/configuration/storage.py` returns the
@@ -116,6 +148,9 @@ The owner's rating of 2026-11-10: this is fixed before 0.3.1 ships.
   failures, and the release procedure's own gate cannot pass from a capsule.
 - It grows without anyone touching the code: each channel a developer
   accepts changes which tests fail.
+- It makes a unit test download more than a gigabyte of vendor software on
+  every run, which is most of the local gate's twelve minutes and what
+  fills the capsule's `/tmp`.
 
 This supersedes, for this cause, the disposition in the 0.3.1 bug table
 that the tests expected to fail inside a capsule are not a release gate.
@@ -154,6 +189,153 @@ Not in this record:
 - A guard worth adding: one test that builds a mounted settings file with an
   accepted channel and asserts that a default test home does not see it.
 
+## Progress, 2026-11-12
+
+On `ws-maintenance/launch-phases`, pull request #29, not merged. The cause
+stands: the shared fixture still gives a home that falls back to the mount.
+What changed is that the tests which failed now say what their home is.
+
+- The 17 failing tests pass inside the owner's capsule. Ten, which call
+  `prepare_launch` or the file's `accept` helper, hand in the home's
+  settings as a value, `home={}`. `load_state`, `prepare_launch`,
+  `accept_channel` and `write_settings` take that value; left out, they
+  read the home as before. Seven, which drive the command line, get a named
+  home from their own file's fixture, `DEVCAPSULE_CONFIG_HOME` under the
+  test's directory, in five legacy files.
+- The test that downloaded vendor artifacts is rewritten. It was the one
+  test of `tests/unit/devcapsule/legacy_refactoring/test_capability_minimums.py`
+  and drove the command line. It is now two tests of the launch review that
+  build their checkout in memory, and its file is deleted. The network guard
+  of `tests/conftest.py`, new in pull request #26, fails any unit test that
+  tries the network.
+- The product changed too, on the owner's word: `project run
+  --print-command` no longer pulls the base image, downloads artifacts or
+  builds the environment. It prints the command of an environment that is
+  on the machine, and otherwise names what a launch would fetch and exits 2.
+- Two more marked tests are rewritten and their holding-pen files deleted.
+  The one test of `test_console_channel.py` became six tests in memory and
+  four integration tests that run the channel as processes. The one test
+  of `test_capability_commands_v2.py`, three cases, became four tests of
+  the launch review in memory: a provider the project recommends, the
+  checkout chose or the command line names accepts no channel, and a
+  pending save stages nothing.
+- The three marked tests of `test_repository_manifest_compatibility.py`
+  never failed for this cause. They read this repository's own
+  `.devcapsule` files and failed wherever a launcher had rewritten them,
+  in a capsule or not. They are deleted with their legacy file, on the
+  owner's word, and replaced by
+  `tests/unit/devcapsule/configuration/test_capability_commands.py`, which
+  reads frozen copies.
+- `nox -s tests` passes inside the owner's capsule: 3105 passed, 3 expected
+  to fail, 10 unexpectedly passed, in 170 seconds where it took 815.
+
+- The shared fixture is fixed. `private_user_directories` sets the two
+  fixed paths by which the product knows a capsule, `CONTEXT_PATH` and
+  `CHANNEL_PATH` of `devcapsule.runtime_configuration`, to places that do
+  not exist, so no test of the unit suite sees the capsule it runs in. The
+  lever queued on 2026-11-03, naming the home, was tried with a diagnostic
+  plugin and breaks 31 tests that assert the home's layout. A test of the
+  conftest holds the fixture; with the fixture's lines removed, that test
+  and the seven command-line tests fail inside the capsule. The five
+  per-file fixtures that named the home are removed again: one mechanism.
+  The ten calls that hand in `home={}` stay; they are values.
+- The last two cases that still failed behind a mark are rewritten in
+  memory and their holding-pen files deleted: four tests of
+  `review_authorizations` in the authorization mirror, two of the launch
+  review.
+- `nox -s tests` inside the owner's capsule: 3112 passed, 1 expected to
+  fail, 10 unexpectedly passed, in 146 seconds. With the marks ignored,
+  3122 pass and one fails, a workflow test with a mark of its own.
+
+Against the close criteria:
+
+1. Holds, for the owner's capsule as it is today.
+2. Does not hold yet. Every outcome is now the same as on the hosted run
+   but for nine cases that pass behind a mark which applies only inside a
+   capsule, so the counts differ by nine.
+3. Does not hold yet. Six marks remain, on those nine cases, in two
+   holding-pen files: five in `test_trust.py`, whose stated reason is the
+   mounted settings, and one in `test_home.py`, a walk of the repository
+   for a retired word, another cause. Their legacy twins stand, so the
+   gate refuses the removal of a mark; each file goes when its tests are
+   rewritten elsewhere or judged not worth keeping.
+4. Holds: `engineering-docs/development/unit-tests.md` describes the
+   fixture as a private home on a machine that is no capsule.
+
+No unit test opens a network connection: the guard records none.
+
+Outside the unit suite, one integration test still reads the mounted
+settings, `tests/integration/test_pex_runtime.py::test_built_pex_authors_shared_policy_and_keeps_personal_selection_local`:
+it starts the built launcher with the environment of the test process,
+which inside a capsule names no home. 4 does not hold:
+`private_user_directories` is unchanged, and a test that uses neither a
+named home nor a handed-in one still reads the mount. The next channel the
+developer accepts can turn other tests red.
+
+## Fixed on the branch, 2026-11-13
+
+On `ws-maintenance/launch-phases`, pull request #29, at `8af31910`. The
+fix is committed; the record closes when the owner has validated it and
+the pull request is merged.
+
+The two holding-pen files that remained are gone, and with them the last
+marks. The five tests of `test_trust.py` are rewritten: in memory on the
+launch review, the review of authorizations and the trust listing, and as
+processes in `tests/integration/test_home_trust_cli.py`, one of them on a
+pseudo-terminal. The one test of `test_home.py`, a walk of the repository
+for a retired word, is deleted on the owner's word. The holding pen and its
+package of empty target modules no longer exist.
+
+Against the close criteria, all four now hold:
+
+1. `nox -s tests` passes inside the owner's capsule, whose mounted settings
+   carry three accepted channels: 3129 passed, 1 expected to fail, 1
+   unexpectedly passed, in 155 seconds.
+2. The hosted run at `8af31910` gives the same counts: 3129 passed, 1
+   expected to fail, 1 unexpectedly passed. The two marked tests are
+   workflow tests with causes of their own, one of them dependent on the
+   clock, so that pair can read 2 and 0 on another run. A run with empty
+   mounted settings was not made: the mount is the owner's and read-only.
+   It cannot differ, because the fixture hides the capsule from every test
+   and a test of the conftest holds the fixture.
+3. No expected-to-fail mark names the mounted settings, and none depends on
+   whether the suite runs in a capsule. The network guard records no
+   attempt.
+4. `engineering-docs/development/unit-tests.md` describes the fixture as a
+   private home on a machine that is no capsule.
+
+Outside the unit suite the same cause had two more faces, both gone at
+`33331a1d`:
+
+- `tests/integration/test_pex_runtime.py` built the launcher's environment
+  from the test process's own, which names no home, and one of its tests
+  failed inside a capsule. The file is retired in place: every executable
+  it starts gets an environment the test builds, with a named home.
+- `tests/test_console_channel.py` started `project config` as processes
+  with no named home. Inside a capsule each read the launcher's mounted
+  settings and compared their `minimum-devcapsule` with the version of the
+  distribution installed in its interpreter. So the file passed under
+  `nox -s tests`, whose environment is installed fresh, and failed under a
+  checkout's `.venv` whose installed version was an old one, 0.2.15: every
+  command was refused with "requires DevCapsule 0.3.0; this launcher is
+  0.2.15". The file is retired: unit tests in memory, and integration
+  tests that name the home of every process.
+
+The integration tests that need no Docker now pass inside the owner's
+capsule: 146 passed, 3 skipped. `.venv/bin/python -m pytest tests/`, with
+the stale interpreter, passes too: 3212 passed.
+
+## Closed, 2026-11-13
+
+Closed on the owner's word, after their merge of pull request #29 into
+`release-0.3.1` at `82b9c07e`. The merge commit's tree is the tree of the
+pull request's head, `a8c8408f`, whose hosted run passed.
+
+On the merged tree, in the owner's capsule, `nox -s tests`: 3212 passed, 1
+expected to fail, 1 unexpectedly passed, in 143 seconds; the hosted run at
+the pull request's head gave the same counts. The conventions check counts
+no breach. The four close criteria hold as the section above records them.
+
 ## Verification target and close criteria
 
 1. `nox -s tests` passes inside a capsule whose mounted settings carry
@@ -163,6 +345,7 @@ Not in this record:
    same counts.
 3. No expected-to-fail mark remains whose reason is the mounted settings:
    each such test passes unmarked or is rewritten under rule 5.
+   No unit test opens a network connection in that run.
 4. `engineering-docs/development/unit-tests.md` describes
    `private_user_directories` as a private home without the exception.
 

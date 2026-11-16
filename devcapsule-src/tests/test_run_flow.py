@@ -92,10 +92,10 @@ def test_a_second_checkout_is_registered_under_its_directory_name(project: Path,
     for name in ("devcapsule.toml", "devcapsule.linux-amd64.lock"):
         (second / ".devcapsule" / name).write_bytes((project / ".devcapsule" / name).read_bytes())
     with pytest.raises(DecisionPending):  # its own record: no IDE; the base's channel is the home's question
-        prepare_launch(second, RunFlags(), interactive=False)
+        prepare_launch(second, RunFlags(), interactive=False, home={})
     prompts = io.StringIO()
     prepared = prepare_launch(second, RunFlags(ide="python-ide", authorize=()), interactive=True,
-                              input_stream=io.StringIO("y\n"), output_stream=prompts)
+                              input_stream=io.StringIO("y\n"), output_stream=prompts, home={})
     assert "Accept for this DevCapsule home?" in prompts.getvalue()
     assert load_toml(settings_path())["trust"]["channels"]["devcapsule-base"]["vendor"]
     names = {item.checkout_name: item.checkout_path for item in registered_checkouts()}
@@ -111,7 +111,7 @@ def test_interactive_questions_record_answers_where_the_config_family_would(proj
     prompts = io.StringIO()
     # In listing order: IDE by number; network: once; docker-daemon: deny; the base's channel: yes; env value.
     answers = io.StringIO("3\no\nd\ny\ndb.example.org\n")
-    prepared = prepare_launch(project, RunFlags(), interactive=True, input_stream=answers, output_stream=prompts)
+    prepared = prepare_launch(project, RunFlags(), interactive=True, input_stream=answers, output_stream=prompts, home={})
     transcript = prompts.getvalue()
     assert "Choose one:" in transcript and "3. frontend-ide" in transcript
     assert "removes network namespace isolation" in transcript
@@ -194,7 +194,7 @@ def test_save_with_pending_consent_writes_nothing(project: Path, tmp_path: Path,
     with pytest.raises(DecisionPending, match='trust devcapsule-base'):
         prepare_launch(root, RunFlags(ide='python-ide', memory='6g', environment=('PRIVATE=value',),
                                      authorize=(('network', 'host'),), save=True),
-                       interactive=False, print_only=print_only)
+                       interactive=False, print_only=print_only, home={})
     assert snapshot(tmp_path) == before
 
 
@@ -204,7 +204,7 @@ def test_partial_terminal_review_saves_no_answers(project: Path, tmp_path: Path,
     before = snapshot(tmp_path)
     with pytest.raises(DecisionPending):
         prepare_launch(second, RunFlags(memory='6g', save=True), interactive=True,
-                       input_stream=io.StringIO(answers), output_stream=io.StringIO())
+                       input_stream=io.StringIO(answers), output_stream=io.StringIO(), home={})
     assert snapshot(tmp_path) == before
 
 

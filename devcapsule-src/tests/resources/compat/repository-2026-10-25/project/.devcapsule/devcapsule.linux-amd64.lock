@@ -1,0 +1,77 @@
+"capabilities-digest" = "5a8581f94902def37cc35f11e607c81bf0ecce7cd8b2d70417a3502d24fc4468"
+"devcapsule-lock-format-version" = 1
+"platform" = "linux-amd64"
+"resolution-matrix-version" = "embedded-28"
+
+["base"]
+"build-mnemonic" = "v0.3.0-rc6"
+"contract" = "ubuntu-24.04@11"
+"recipe-source" = "devcapsule-src/devcapsule/images/base.py"
+"reference" = "docker.io/mycodespaceai/devcapsule-base@sha256:8c97d308b4ac8172ce91ef4f96406063bfcd85a55efb09d4a23e795b10a834a3"
+
+["capability-providers"]
+"antigravity-agent" = ["antigravity-cli"]
+"claude-code-agent" = ["claude-code"]
+"codex-agent" = ["codex"]
+"docker-cli" = []
+"python" = []
+"python-ide" = ["pycharm"]
+
+["components"]
+"interactive-surface" = "pycharm"
+
+["components"."antigravity-cli"]
+"acquisition-authorization" = "antigravity-download"
+"delivery-policy" = "local-materialization"
+"distribution" = "user-acquired-not-redistributed"
+"license" = "Proprietary"
+"terms-url" = "https://antigravity.google/terms/"
+"version" = "1.4.2"
+
+["components"."antigravity-cli"."artifacts"]
+
+["components"."antigravity-cli"."artifacts"."linux-amd64"]
+"archive-member" = "antigravity"
+"sha256" = "6395837ac0e193dd3fe50f1228e1c4aea345ca99636d54404ab7e74397d4091c"
+"upstream-sha512" = "4a393afc1369cee94e817c1b430c9128d02b12ebd4d5703ace5cd47b2333e216d673fb0097cbf7195f757b110163ba9850e9eea3fdbbaddd4b25668b82c03f05"
+"url" = "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.4.2-4835981233356800/linux-x64/cli_linux_x64.tar.gz"
+
+["components"."claude-code"]
+"acquisition-authorization" = "claude-code-download"
+"delivery-policy" = "local-materialization"
+"distribution" = "user-acquired-not-redistributed"
+"license" = "Proprietary"
+"terms-url" = "https://www.anthropic.com/legal/commercial-terms"
+"version" = "2.1.302"
+
+["components"."claude-code"."artifacts"]
+
+["components"."claude-code"."artifacts"."linux-amd64"]
+"sha256" = "60d7eb7f12fbb28a52533fe8be5884097403562aa02dc73991a021c7067e29a5"
+"url" = "https://downloads.claude.ai/claude-code-releases/2.1.302/linux-x64/claude"
+
+["components"."codex"]
+"delivery-policy" = "local-materialization"
+"license" = "Apache-2.0"
+"npm-package" = "@openai/codex"
+"sha256" = "1a71db36560bb446d2c2e63ae675c4a3018c38ace38ca533f8d1b25d3e6555b4"
+"url" = "https://registry.npmjs.org/@openai/codex/-/codex-0.163.0.tgz"
+"version" = "0.163.0"
+
+["components"."codex"."artifacts"]
+
+["components"."codex"."artifacts"."linux-amd64"]
+"npm-package" = "@openai/codex-linux-x64"
+"sha256" = "30efc97738b975940d78b59a9bea115fa34040b732807d54ec35ae6b7528de94"
+"url" = "https://registry.npmjs.org/@openai/codex/-/codex-0.163.0-linux-x64.tgz"
+
+["components"."pycharm"]
+"delivery-policy" = "local-materialization"
+"sha256" = "4a37cb2d15703553c61e814d8e014bfa47308508470de5f968c4e9645b771675"
+"url" = "https://download.jetbrains.com/python/pycharm-2026.2.0.1.tar.gz"
+"variant" = "professional"
+"version" = "2026.2.0.1"
+
+["materialization"]
+"recipe" = "jetbrains-local-materialization"
+"recipe-version" = "1"
