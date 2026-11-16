@@ -92,3 +92,22 @@ def test_prepare_filesystem_assigns_ownership_only_to_newly_created_ancestors_wh
         (tmp_path / "runtime", 1000, 1001),
         (runtime_dir, 1000, 1001),
     ]
+
+
+def test_mapped_root_creates_directories_without_redundant_chown(tmp_path: Path) -> None:
+    """Rootless 0:0 preparation creates private directories without requiring chown capabilities."""
+    home = tmp_path / "home"
+    runtime_dir = tmp_path / "runtime"
+    plan = FilesystemPlan(
+        directories=(str(home), str(home / ".ssh"), str(runtime_dir)),
+        environment={"HOME": str(home), "XDG_RUNTIME_DIR": str(runtime_dir)},
+    )
+    chowned: list[tuple[Path, int, int]] = []
+    prepare_filesystem(
+        plan, Identity(0, 0, "root"), caller_uid=0,
+        chown=lambda path, uid, gid: chowned.append((path, uid, gid)),
+    )
+    assert chowned == []
+    assert all(Path(directory).is_dir() for directory in plan.directories)
+    assert stat.S_IMODE((home / ".ssh").stat().st_mode) == 0o700
+    assert stat.S_IMODE(runtime_dir.stat().st_mode) == 0o700

@@ -53,7 +53,7 @@ def prepare_filesystem(
             missing.append(cursor)
             cursor = cursor.parent
         path.mkdir(parents=True, exist_ok=True)
-        if effective_uid == 0:
+        if effective_uid == 0 and (identity.uid != 0 or identity.gid != 0):
             for created in reversed(missing):
                 apply_chown(created, identity.uid, identity.gid)
     Path(plan.environment["XDG_RUNTIME_DIR"]).chmod(0o700)

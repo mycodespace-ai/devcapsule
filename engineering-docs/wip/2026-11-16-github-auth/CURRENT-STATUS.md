@@ -4,7 +4,7 @@ Mnemonic: `github-auth`
 
 Start date: 2026-11-16
 
-State: paused for owner host relaunch; local PEX built, recursive authentication E2E next.
+State: active; propagating the released rootless Docker fix and rebuilding the host-relaunch PEX.
 
 Definition read: WORKFLOW.md@89de30622697, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
@@ -79,6 +79,34 @@ recorded E2E scenario using a fresh project and explicit github-ssh authorizatio
 Observe the Git checkout independently and retain WebM/screenshots/action evidence.
 Recursive proxy inheritance is still unproved; do not report success until observed.
 The 19 reproduced full-gate failures and formal PR delivery remain open separately.
+
+## Rootless Docker fix propagation
+
+The owner's first host relaunch failed with an unwritable PEX cache and permission
+denied on `/etc/devcapsule/home/settings.toml`. Fetched canonical `release-0.3.1`
+and identified `a1a54eba3098eb3c80fd78ef3e483d1bb5314466`, merged in PR #38 and
+recorded as owner-verified on the target host by `8bd56eb3`. Neither current main
+nor this feature branch included it. Main has no new commits to synchronize.
+
+Applied that fix's deliverable/test patch, without release version changes or
+another workstream's records, under the owner's explicit propagation request and
+WORKFLOW-LOCAL.md's release-fix propagation exception. The branch predates the
+release's CapsuleUser refactor: adapted its `command` correction to the existing
+`foreground_command`, and its `owner_changes` correction to `prepare_filesystem`.
+Rootless launches use container 0:0 (the host user's mapped identity), map the
+Docker socket group and home accordingly, and avoid redundant gosu/chown under
+dropped capabilities. Rootful behavior is preserved. The available Docker daemon
+reports `name=rootless`; no container was launched for this propagation.
+
+Checks so far: 151 focused tests passed, then all 12 GitHub proxy integration
+cases passed after extending socket-grant coverage to both daemon modes. The
+full gate's type check passed over 340 files; conventions found zero breaches.
+New pure identity tests and filesystem preparation tests cover the adaptation.
+Full gate: 19 failed, 2942 passed, 1 skipped, 78 deselected, 14 xfailed,
+7 xpassed. All 19 failure IDs match the previously reproduced mainline/environment
+baseline exactly; no new failure IDs. Packaging/smoke is run separately because
+the full gate stops at pytest. The rebuilt artifact identity follows below.
+Mainline integration and the separate Gemini review branch remain pending.
 
 ## Host relaunch handoff
 

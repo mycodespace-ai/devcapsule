@@ -249,6 +249,8 @@ class PycharmRunOptions:
     # caller (commands/project.py); without it the launcher announces the
     # absence once and plans no console: no port, no token, no wait.
     web_console: WebConsoleAvailability = WebConsoleAvailability(True, None)
+    # True only when the host Docker daemon reports rootless mode.
+    rootless_docker: bool = False
 
 
 @dataclass
@@ -320,6 +322,7 @@ class PycharmRunConfig:
     libgl_always_software: str = "1"
     mesa_loader_driver_override: str = "llvmpipe"
     libgl_dri3_disable: str = "1"
+    rootless_docker: bool = False
 
 
 HOST_NETWORK_UNAVAILABLE_ON_MACOS = (
@@ -1006,7 +1009,10 @@ def build_run_config(options: PycharmRunOptions, env: Mapping[str, str]) -> Pych
         # daemon already holds root on its virtual machine, so the group adds
         # no authority. Elsewhere the host socket file's group applies.
         socket_gid = HostOs.current().docker_socket_gid
-        host_docker_gid = socket_gid if socket_gid is not None else host_docker_socket.stat().st_gid
+        raw_socket_gid = socket_gid if socket_gid is not None else host_docker_socket.stat().st_gid
+        host_docker_gid = (
+            0 if options.rootless_docker and raw_socket_gid == host_user.gid else raw_socket_gid
+        )
 
     if enable_sudo:
         while ide_sudo_gid in {0, host_user.gid, host_docker_gid}:
@@ -1238,6 +1244,7 @@ def build_run_config(options: PycharmRunOptions, env: Mapping[str, str]) -> Pych
             env.get("MESA_LOADER_DRIVER_OVERRIDE", "llvmpipe"),
         ),
         libgl_dri3_disable=env.get("PYCHARM_LIBGL_DRI3_DISABLE", env.get("LIBGL_DRI3_DISABLE", "1")),
+        rootless_docker=options.rootless_docker,
     )
 
 
@@ -1353,6 +1360,10 @@ def build_docker_args(
     # launcher is not a case this product has; the recursive dogfood holds
     # its successor's launcher open exactly as a developer holds `project run`.
     host_user = current_host_user()
+    rootless = bool(getattr(config, "rootless_docker", False))
+    container_uid, container_gid, container_user = (
+        (0, 0, "root") if rootless else (host_user.uid, host_user.gid, host_user.name)
+    )
     args = [
         "--rm",
         "-i",
@@ -1385,11 +1396,11 @@ def build_docker_args(
         "--env",
         "IDE_PROJECT_STATE_PATH=/ide-project-state",
         "--env",
-        f"IDE_UID={host_user.uid}",
+        f"IDE_UID={container_uid}",
         "--env",
-        f"IDE_GID={host_user.gid}",
+        f"IDE_GID={container_gid}",
         "--env",
-        f"IDE_USER={host_user.name}",
+        f"IDE_USER={container_user}",
         "--env",
         f"LIBGL_ALWAYS_SOFTWARE={config.libgl_always_software}",
         "--env",
@@ -1620,12 +1631,16 @@ def _display_mount_args(config: PycharmRunConfig, files: TempRuntimeFiles) -> li
 
 
 def append_docker_mode_args(args: list[str], config: PycharmRunConfig, host_user: HostUser) -> None:
+    rootless = bool(getattr(config, "rootless_docker", False))
+    container_uid, container_gid = (
+        (0, 0) if rootless else (host_user.uid, host_user.gid)
+    )
     if config.docker_mode == "host":
         print_host_docker_warning(config)
         args.extend(
             [
                 "--user",
-                f"{host_user.uid}:{host_user.gid}",
+                f"{container_uid}:{container_gid}",
                 "--group-add",
                 str(config.host_docker_gid),
                 "--env",
@@ -1662,7 +1677,7 @@ def append_docker_mode_args(args: list[str], config: PycharmRunConfig, host_user
         args.extend(
             [
                 "--user",
-                f"{host_user.uid}:{host_user.gid}",
+                f"{container_uid}:{container_gid}",
                 "--env",
                 "ENABLE_DIND=0",
                 "--env",
@@ -1870,37 +1885,54 @@ def write_xauthority(xauth_file: Path, env: Mapping[str, str]) -> None:
 
 
 def write_user_files(config: PycharmRunConfig, files: TempRuntimeFiles) -> None:
-    host_user = current_host_user()
-    files.passwd_file.write_text(
-        "\n".join(
-            [
-                "root:x:0:0:root:/root:/bin/bash",
-                f"{host_user.name}:x:{host_user.uid}:{host_user.gid}:PyCharm Docker User:/home/devcapsule:/bin/bash",
-                "",
-            ]
+    if bool(getattr(config, "rootless_docker", False)):
+        files.passwd_file.write_text(
+            "root:x:0:0:PyCharm Docker User:/home/devcapsule:/bin/bash\n"
         )
-    )
-    group_lines = [
-        "root:x:0:",
-        f"{host_user.group_name}:x:{host_user.gid}:",
-    ]
-    if config.host_docker_gid not in (None, 0, host_user.gid):
-        group_lines.append(f"host-docker:x:{config.host_docker_gid}:")
-    if config.enable_sudo:
-        group_lines.append(f"ide-sudo:x:{config.ide_sudo_gid}:{host_user.name}")
-        files.shadow_file = make_temp(files.group_file.parent, "pycharm-docker-shadow.")
-        shadow_last_change = int(time.time()) // 86400
-        files.shadow_file.write_text(
+        group_lines = ["root:x:0:"]
+        if config.host_docker_gid not in (None, 0):
+            group_lines.append(f"host-docker:x:{config.host_docker_gid}:")
+        if config.enable_sudo:
+            group_lines.append(f"ide-sudo:x:{config.ide_sudo_gid}:root")
+            files.shadow_file = make_temp(files.group_file.parent, "pycharm-docker-shadow.")
+            shadow_last_change = int(time.time()) // 86400
+            files.shadow_file.write_text(
+                f"root:*:{shadow_last_change}:0:99999:7:::\n"
+            )
+            files.shadow_file.chmod(0o600)
+        files.group_file.write_text("\n".join([*group_lines, ""]))
+    else:
+        host_user = current_host_user()
+        files.passwd_file.write_text(
             "\n".join(
                 [
-                    f"root:*:{shadow_last_change}:0:99999:7:::",
-                    f"{host_user.name}:*:{shadow_last_change}:0:99999:7:::",
+                    "root:x:0:0:root:/root:/bin/bash",
+                    f"{host_user.name}:x:{host_user.uid}:{host_user.gid}:PyCharm Docker User:/home/devcapsule:/bin/bash",
                     "",
                 ]
             )
         )
-        files.shadow_file.chmod(0o600)
-    files.group_file.write_text("\n".join([*group_lines, ""]))
+        group_lines = [
+            "root:x:0:",
+            f"{host_user.group_name}:x:{host_user.gid}:",
+        ]
+        if config.host_docker_gid not in (None, 0, host_user.gid):
+            group_lines.append(f"host-docker:x:{config.host_docker_gid}:")
+        if config.enable_sudo:
+            group_lines.append(f"ide-sudo:x:{config.ide_sudo_gid}:{host_user.name}")
+            files.shadow_file = make_temp(files.group_file.parent, "pycharm-docker-shadow.")
+            shadow_last_change = int(time.time()) // 86400
+            files.shadow_file.write_text(
+                "\n".join(
+                    [
+                        f"root:*:{shadow_last_change}:0:99999:7:::",
+                        f"{host_user.name}:*:{shadow_last_change}:0:99999:7:::",
+                        "",
+                    ]
+                )
+            )
+            files.shadow_file.chmod(0o600)
+        files.group_file.write_text("\n".join([*group_lines, ""]))
     files.passwd_file.chmod(0o644)
     files.group_file.chmod(0o644)
 
@@ -1913,6 +1945,10 @@ def ensure_sudoers_policy_ownership(
     policy = files.sudoers_file
     if not config.enable_sudo or policy is None:
         raise PycharmRunError("Development sudo requires a generated sudoers policy.")
+    if bool(getattr(config, "rootless_docker", False)):
+        # Rootless Docker maps files owned by the host user directly to 0:0
+        # inside the container while host-side st_uid remains the host UID.
+        return
     if not HostOs.current().chown_reaches_bind_mounts:
         files.sudoers_volume = prepare_sudoers_policy_volume(config, policy, env)
         return

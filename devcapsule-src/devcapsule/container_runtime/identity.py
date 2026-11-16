@@ -18,12 +18,13 @@ def foreground_command(
     """Wrap ``command`` so it runs as the capsule user when the caller is root.
 
     Named for its first use; every supervised child, infrastructure included,
-    is wrapped the same way, so no display or IDE process ever runs as root.
+    is wrapped the same way. A rootless Docker target of 0:0 already has the
+    correct identity; invoking gosu there would require dropped capabilities.
     """
 
     if not command:
         raise ValueError("foreground command must not be empty")
     effective_uid = os.geteuid() if caller_uid is None else caller_uid
-    if effective_uid == 0:
+    if effective_uid == 0 and (identity.uid != 0 or identity.gid != 0):
         return ("gosu", f"{identity.uid}:{identity.gid}", *command)
     return command

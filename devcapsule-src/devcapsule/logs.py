@@ -282,9 +282,9 @@ def events_logger(component: str) -> logging.Logger:
 
 
 def own(path: Path, owner: Owner) -> None:
-    """Give ``path`` to ``owner`` when this process is root; a no-op otherwise."""
+    """Give ``path`` to ``owner`` when this process is root and ownership differs."""
 
-    if owner is not None and os.geteuid() == 0:
+    if owner is not None and os.geteuid() == 0 and owner != (os.geteuid(), os.getegid()):
         os.chown(path, owner[0], owner[1])
 
 

@@ -140,8 +140,9 @@ def test_broker_shutdown_closes_incomplete_requests(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize('enabled', [False, True])
-def test_launcher_exposes_the_socket_only_with_the_grant(tmp_path: Path, enabled: bool) -> None:
-    """The Docker plan carries the Git adapter and broker mount only after explicit authorization."""
+@pytest.mark.parametrize('rootless', [False, True])
+def test_launcher_exposes_the_socket_only_with_the_grant(tmp_path: Path, enabled: bool, rootless: bool) -> None:
+    """Rootless and rootful plans carry the adapter/socket only with authorization and use the corresponding identity."""
     from devcapsule.launch.pycharm._launcher import PycharmRunOptions, DockerMode, TempRuntimeFiles, build_run_config, build_docker_args
     from devcapsule.platforms import Platform
     from devcapsule.github_proxy import GIT_SSH_COMMAND, SOCKET_DESTINATION
@@ -152,10 +153,11 @@ def test_launcher_exposes_the_socket_only_with_the_grant(tmp_path: Path, enabled
         env = {**env, 'DISPLAY': ':1', 'PYCHARM_GIT_IDENTITY_FROM_HOST': '0', SOCKET_ENV: str(path)}
         config = build_run_config(PycharmRunOptions(project=project, capsule_platform=Platform.LINUX_AMD64,
                                   docker_mode=DockerMode.none, enable_sudo=False, network_mode='bridge',
-                                  enable_github_ssh=enabled), env)
+                                  enable_github_ssh=enabled, rootless_docker=rootless), env)
         files = TempRuntimeFiles(xauth_file=tmp_path / 'xauth', passwd_file=tmp_path / 'passwd', group_file=tmp_path / 'group')
         args = build_docker_args(config, files, env)
     assert (f'GIT_SSH_COMMAND={GIT_SSH_COMMAND}' in args) is enabled
     assert (f'{SOCKET_ENV}={SOCKET_DESTINATION}' in args) is enabled
     assert (f'type=bind,src={path},dst={SOCKET_DESTINATION},ro' in args) is enabled
+    assert args[args.index('--user') + 1] == ('0:0' if rootless else f'{os.getuid()}:{os.getgid()}')
     assert not any('.ssh' in arg or 'SSH_AUTH_SOCK=' in arg for arg in args)
