@@ -89,6 +89,9 @@ The implementation version and docs manifest now match the release baseline.
 Unrelated main-only documents are removed from the release-targeted diff.
 Do not merge main into this slice: the release already supplies its baseline
 and the workflow rules are identical. Earlier main-targeted handoffs are history.
+The version-bump command refuses a lower version. For this owner-directed
+release retarget, restored the release ref's three version-bearing files exactly;
+no workflow rule or declared installed workflow version changed.
 
 
 Resolve the inherited gate failures with maintenance, then integrate and validate
@@ -478,4 +481,3 @@ remote PR existence remains unverified.
 
 - [Review assessment](evidence/review-assessment.md)
 - [Prepared PR delivery](evidence/delivery.md)
-
