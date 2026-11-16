@@ -74,6 +74,7 @@ __all__ = [
     "MATERIALIZATION_RECIPE_ID",
     "MATERIALIZATION_RECIPE_VERSION",
     "NPM_CACHE_PATH",
+    "NotOnThisMachine",
     "NPM_INSTALL_OPTIONS",
     "NpmProject",
     "RUNTIME_COMMAND_PATH",
@@ -322,6 +323,16 @@ class ArtifactUnavailable(CliError):
     def __init__(self, url: str, reason: object) -> None:
         self.url = url
         super().__init__(f"Cannot download locked artifact {url!r}: {reason}")
+
+
+class NotOnThisMachine(CliError):
+    """A launch would have to pull, download or build something, and the caller asked for nothing to be fetched.
+
+    The message names what is missing and what a launch does about it. It is
+    how ``project run --print-command`` ends on a machine that has not yet
+    launched the environment: it prints the command of what is here, and
+    brings nothing here.
+    """
 
 
 def acquire_artifact(spec: ArtifactSpec, root: Path) -> Acquisition:
@@ -773,7 +784,18 @@ def ensure_materialized_surface(
     list_formations: Callable[[], tuple[ImageDetails, ...]] | None = None,
     runtime_pex: Path | None = None,
     runtime_command: RuntimeCommand = RuntimeCommand.STANDARD,
+    fetch: bool = True,
 ) -> tuple[str, bool]:
+    """The canonical image of one environment, reused when it is on this machine and built when it is not.
+
+    Returns the image's name and whether this call built it. Building
+    downloads the component's artifacts into ``cache_root`` and runs
+    ``build``.
+
+    With ``fetch`` false nothing is downloaded and nothing is built: an image
+    that is here and needs nothing is returned, and anything else raises
+    :class:`NotOnThisMachine`, naming what a launch would do.
+    """
     profile = surface_profile(component_id)
     descriptor = formation_descriptor(
         platform=platform,
@@ -796,6 +818,11 @@ def ensure_materialized_surface(
             drift = runtime_config_drift(existing, descriptor)
             if not drift:
                 return image, False
+            if not fetch:
+                raise NotOnThisMachine(
+                    f"The {component_id} environment {image} needs its boot configuration rebuilt "
+                    f"({'; '.join(drift)}). A launch rebuilds it; nothing was rebuilt now."
+                )
             # The record is right and the image content is right; only the
             # boot configuration predates enforcement. Repair in place with a
             # configuration-only build (owner ruling 2026-09-05) instead of
@@ -820,6 +847,13 @@ def ensure_materialized_surface(
             verify_materialized_image(repaired, descriptor=descriptor, canonical_name=image)
             return image, False
 
+        if not fetch:
+            downloads = [artifact.url, *(item.url for item in ancillary_artifacts)]
+            raise NotOnThisMachine(
+                f"The {component_id} environment {image} is not built on this machine. A launch downloads "
+                f"{len(downloads)} artifact{'s' if len(downloads) != 1 else ''} ({', '.join(downloads)}) "
+                "and builds it; nothing was downloaded or built now."
+            )
         _explain_materialization(say, descriptor, image, component_id, list_formations)
         acquisition = acquire_artifact(artifact, cache_root)
         ancillary_acquisitions = tuple(

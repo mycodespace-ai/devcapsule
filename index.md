@@ -45,6 +45,10 @@ status file; internal WIP/archive documents use the local index in that status.
 - [Integration tests](engineering-docs/development/integration-tests.md)
 - [End-to-end tests](engineering-docs/development/e2e-tests.md)
 - [Running E2E scenario recordings from a shell with nox](engineering-docs/development/running-e2e-scenario-recordings.md)
+- [Web console presentations: discovery, storage and generation](devcapsule-webconsole/PRESENTATIONS.md)
+- [E2E scenario script: GitHub SSH through the host proxy](devcapsule-src/tests/e2e/scripts/github-ssh-proxy.md)
+- [E2E scenario script: FastAPI + PostgreSQL 17 + React Todo application](devcapsule-src/tests/e2e/scripts/todo-fastapi-postgres-react.md)
+- [E2E scenario script: Java 25 + Spring Boot + PostgreSQL 17 in IntelliJ IDEA](devcapsule-src/tests/e2e/scripts/springboot-postgres-java.md)
 - [Pair Review Loop](engineering-docs/development/review-partner-loop.md)
 
 ## Releases
@@ -103,7 +107,6 @@ status file; internal WIP/archive documents use the local index in that status.
 - [Capability configuration: implementation and test correctness](engineering-docs/implementation-notes/devcapsule/2026-10-06-configuration-correctness.md)
 - [Capability configuration: persistent selection versus execution projection](engineering-docs/implementation-notes/devcapsule/2026-10-08-configuration-composition-correctness.md)
 - [Scenario-driven E2E IDE controller and pause-free WebM video recorder](engineering-docs/implementation-notes/devcapsule/2026-10-21-e2e-scenario-video-recorder.md)
-- [Testing the macOS launcher on cloud Mac hardware, and the alternatives](engineering-docs/implementation-notes/devcapsule/2026-11-08-testing-the-macos-launcher-on-cloud-mac-hardware.md)
 - [Eclipse Java component and recorded smoke validation](engineering-docs/implementation-notes/devcapsule/2026-10-04-eclipse-validation.md)
 - [Linux .NET SDK and Rider validation](engineering-docs/implementation-notes/devcapsule/2026-10-04-dotnet-rider-validation.md)
 - [IntelliJ, Playwright and graphical smoke validation](engineering-docs/implementation-notes/devcapsule/2026-10-04-intellij-playwright-validation.md)
@@ -145,7 +148,6 @@ status file; internal WIP/archive documents use the local index in that status.
 
 ## Work Orders
 
-- [Test improvements: declared public surfaces, no patching of project modules, the discovery module first](engineering-docs/work-orders/2026-11-08-test-improvements.md)
 - [Wrapped projects: a foreign repository as a submodule, three commands](engineering-docs/work-orders/2026-11-02-wrapped-projects.md)
 - [0.3.0 user documentation CLI alignment, full stub authoring, and prose review — maintenance, 0.3.0](engineering-docs/work-orders/2026-10-30-user-docs-0-3-0-cli-alignment.md)
 - [CI path gating and advisory diff coverage — maintenance, 0.3.0](engineering-docs/work-orders/2026-10-30-ci-path-gating-and-diff-coverage.md)
@@ -245,7 +247,6 @@ status file; internal WIP/archive documents use the local index in that status.
 
 ## Development Blog
 
-- [Thirteen hours, thirty-five tests. Part 1: the AI's audit](engineering-docs/blog/2026-11-13-thirteen-hours-thirty-five-tests.md) — Claude's unedited audit of its own pull request against stricter test standards: the ledger, what got worse, where the rules are wrong, and why LLMs wrote tests the other way; Part 2 to follow.
 - [Diagnosing a capsule from both sides](engineering-docs/blog/2026-10-28-diagnosing-a-capsule-from-both-sides.md) — probing a live browser desktop from outside and inside a nested PyCharm capsule, with embedded recording; draft for owner review.
 - [An AI takes our IDEs for a test drive](engineering-docs/blog/2026-10-04-an-ai-takes-intellij-for-a-test-drive.md) — shared AI graphical tests across IntelliJ, Rider and Eclipse, the .NET build, and three original recordings; draft for owner review.
 - [The workflow explains itself](engineering-docs/blog/2026-10-03-the-workflow-explains-itself.md) — preamble, information model, merge rule, and a bug filed against ourselves; draft for owner review.
@@ -312,6 +313,7 @@ history; record current decisions in the active documents above.
 
 ## Bugs
 
+- [Inside a capsule on another machine, `devcapsule` warns on `/home/devcapsule/.cache/pex` and aborts with `Permission denied` reading `/etc/devcapsule/home/settings.toml`](engineering-docs/bugs/devcapsule/2026-11-15-in-capsule-devcapsule-fails-on-mounted-settings-and-pex-cache.md)
 - [Markdown-only changes run the whole Python unit suite: the hosted path filter lists too few non-inputs, and the local gate has no filter](engineering-docs/bugs/devcapsule/2026-11-10-markdown-only-changes-run-the-python-unit-suite.md)
 - [Unit tests read the developer's real launcher settings inside a capsule: the consent and trust tests fail or prove nothing there](engineering-docs/bugs/devcapsule/2026-11-10-unit-tests-read-the-capsules-mounted-launcher-settings.md)
 - [Web console changes in `v0.3.1-rc1` do not reach capsules: the PEX omits the console package and the self-hosting override shadows it](engineering-docs/bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md)

@@ -168,14 +168,24 @@ def load_trust(env: Mapping[str, str] | None = None) -> dict[str, Any]:
     return dict(table(load_settings(env), "trust"))
 
 
-def write_settings(document: Mapping[str, Any], env: Mapping[str, str] | None = None) -> Path:
+def write_settings(document: Mapping[str, Any], env: Mapping[str, str] | None = None, *,
+                   current: Mapping[str, Any] | None = None) -> Path:
     """Merge changed tables, retain headers, and replace only changed content.
 
     Atomic replacement prevents partial reads. Concurrent updates of the same
     table use the last writer's value; this is not a transaction across launchers.
+
+    ``current`` is the home's settings as the caller holds them, the document
+    the changed tables are merged onto; an empty one is a home with no
+    settings file. Left out, the settings are read here, at the moment of the
+    write. Inside a capsule that read is of the launcher's mounted settings
+    until the capsule's home has a file of its own, so a first write starts
+    from what the launcher's home holds. Owner ruling of 2026-11-12: a legacy
+    test passes ``current`` through ``accept_channel`` to say what its home
+    held; no command passes it.
     """
     path = settings_path(env)
-    before = load_settings(env)
+    before = load_settings(env) if current is None else dict(current)
     after = {**before, **document}
     after.setdefault("devcapsule-settings-schema-version", 1)
     after.setdefault("minimum-devcapsule", launcher_release())

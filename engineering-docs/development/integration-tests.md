@@ -31,7 +31,7 @@ cd devcapsule-src
 ```
 
 The session builds `dist/devcapsule-local.pex` and runs
-`pytest -m integration tests/integration`. The one module there,
+`pytest -m integration tests/integration`. One module there,
 `test_pex_runtime.py`, proves what only the packaged form can prove:
 
 - the built executable dispatches the in-container `runtime` entrypoint and
@@ -73,6 +73,32 @@ them, without writing the site. It is skipped with a notice where the
 website submodule is not initialized or npm is absent, which is the case on
 the hosted runner. The contract it checks is
 [the content–website contract](../specifications/product/content-website-contract.md).
+
+## Commands as processes, and a terminal
+
+A command whose work is to start another command, or to ask a developer at
+a terminal, is tested by starting it. `test_console_channel_cli.py`,
+`test_home_trust_cli.py` and `test_print_command_cli.py` do that, and they
+share three rules.
+
+- **The test builds the environment of every process it starts.** A search
+  path, a home directory, and a named DevCapsule home,
+  `DEVCAPSULE_CONFIG_HOME`, under the test's directory. Nothing of the
+  developer's shell is handed on. The suite's fixture that hides the
+  capsule from a unit test cannot reach a program the test starts; a
+  process with no named home, started inside a capsule, reads the
+  launcher's mounted settings. With a named home the outcome is the same on
+  a plain host and inside a capsule, and under any interpreter that can
+  import `devcapsule`, whatever version its installed distribution says.
+- **Docker is a stand-in on the search path.** A shell script named
+  `docker` answers that no image is local and refuses everything else. A
+  launch then ends at its first pull, after its questions and its writes,
+  and a launcher that asked Docker for more would be seen.
+- **A question is answered on a pseudo-terminal.** `project run` asks only
+  when its input is a terminal. The test opens a pty, starts the launch on
+  it, types each answer when the output ends with the prompt it waits for,
+  and reads what was shown. This is the only test of the terminal's
+  dialogue while `commands/_run_flow.py` has no unit test file of its own.
 
 ## Where the next integration test goes
 

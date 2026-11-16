@@ -13,6 +13,8 @@ from pathlib import Path, PurePosixPath
 import sys
 from typing import Any
 
+__all__ = ["build_annotations", "escape", "main", "publish"]
+
 MAX_ANNOTATIONS = 10  # GitHub's warning annotation limit per step.
 MAX_SUMMARY_BYTES = 900_000  # Leave room below GitHub's 1 MiB per-step limit.
 

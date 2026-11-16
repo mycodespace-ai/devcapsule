@@ -6,6 +6,8 @@ import os
 import sys
 from typing import Any
 
+__all__ = ["check", "main"]
+
 
 def check(needs: dict[str, Any]) -> None:
     changes = needs.get("changes", {})

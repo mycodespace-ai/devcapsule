@@ -123,11 +123,11 @@ def test_ide_comes_alive(surface: IdeSurface, built_pex: Path, tmp_path: Path, e
             (evidence / "component-browser.json").write_text(browser.stdout, encoding="utf-8")
             assert json.loads(browser.stdout)["text"] == "component browser alive"
         if scenario_name := os.environ.get("DEVCAPSULE_SMOKE_SCENARIO"):
-            from tests.e2e.scenario_recorder import load_scenario, run_scenario_replay
+            from tests.e2e.scenario_recorder import EVIDENCE_DIR, load_scenario, run_scenario_replay
 
             spec = load_scenario(scenario_name)
             assert spec.surface == surface.name, f"Scenario {spec.id} targets {spec.surface}, not {surface.name}"
-            run_scenario_replay(session, evidence, spec)
+            run_scenario_replay(session, EVIDENCE_DIR / spec.id, spec)
         if os.environ.get("DEVCAPSULE_SMOKE_AGENT") == "1":
             from tests.e2e.visual_smoke import run_visual_smoke
 
