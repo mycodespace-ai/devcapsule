@@ -6,13 +6,13 @@ Start date: 2026-09-18
 
 State: active 2026-11-10; releasing 0.3.1 from `release-0.3.1`, cut from `main` at `31e8fec7`; candidate 2 (`v0.3.1-rc2` on `be0140ca`, merged to `main` via PR #22 `aabace3c`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered `devcapsule_webconsole` `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed `0bc31c64`); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open (Mac/arm64 executables, compatibility feed's website path) plus end-to-end run, `notes.md`, and docs promotion before final `v0.3.1`; the blocking bug of 2026-11-10, unit tests reading the capsule's mounted launcher settings, closed 2026-11-13 on the owner's word after the merge of pull request #29 (`82b9c07e`); one blocking bug open since 2026-11-13, this repository's own project configuration predates 0.3: the refresh is checked on a copy and waits for the owner's `project init --regenerate` on the host; one major bug in fixing, the Python route and its guard, merged through #25 with the local gate's routing open; a follow-up to PR #18 on `ws-maintenance/host-inputs-at-source`, by Pair Review, for the owner's review; rewritten 2026-11-12 on the owner's direction so that host inputs are values and no touched test patches; the rule *Host Inputs* written into `WORKFLOW-LOCAL.md` on the owner's word and the rewrite reviewed by the partner through #28, merged at `83d238b8`; the owner's reading of #26 and rulings on the rule's open readings are next; *Unit Tests* rules 8 and 9 added on the owner's word and held by machine, the command line only in `test_cli.py` with eight files in a debt list, and no network in a unit test; the owner's read-then-decide direction merged through #29, on top of #26: the launch's decisions are testable from values, the holding pen is empty and three files remain in the command-line debt list
 
-Definition read: WORKFLOW.md@e83f22a20701, WORKFLOW-LOCAL.md@e84d2678942b
+Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
 Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
@@ -5439,6 +5439,25 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
+- Website raw gitlink in GitHub Actions, 2026-11-16 (`ws-maintenance/website-gitlink-actions`
+  -> `release-0.3.1`): `.github/workflows/tests.yml` (`docs-build`) and
+  `.github/workflows/website.yml` (`build` and `candidate`) now materialize
+  `website` at `HEAD:website` over HTTPS without requiring a `.gitmodules`
+  entry, initialize nested submodules inside `website` recursively, and update
+  any declared sibling submodules in `.gitmodules`. Verified by
+  `tests/integration/test_ci_workflow.py` (`70 passed`), `mypy` (`344` files),
+  `validate_unittests_follow_conventions.py` (`0` breaches), `nox -s smoke pex
+  docs-contract webconsole`, `npm --prefix website test` (`23 passed`), and
+  `3,264` passing unit tests (`2` pre-existing `gid=0` legacy failures in
+  `test_recursive_orchestrator.py` inside this rootless-Docker `0:0` capsule).
+  The local `website` checkout at `c57a50c9` stays untouched in the working
+  tree. Awaiting the human: open and merge the pull request into
+  `release-0.3.1` (`gh` CLI is absent in this capsule), then re-run or merge
+  PR #40 (`release-0.3.1-tmp4gitlink`).
+- Intake item `2026-11-10-project-management-console-video-does-not-play-from-files.md`
+  is acknowledged on 2026-11-16. Pull request #35 (`6ff6bf18`) committed
+  [the bug record](../../bugs/devcapsule/2026-11-10-console-video-opened-from-files-does-not-play.md)
+  with `status: fixed` and `target: 0.3.1`. Browser verification closes it.
 - Blocking for 0.3.1, fixed on `ws-maintenance/0.3.1-rootless-docker` 2026-11-15
   (host rootless validation pending): when `docker info` reports
   `Security Options: rootless`, entry layers pass `uid=0, gid=0, user="root"`
