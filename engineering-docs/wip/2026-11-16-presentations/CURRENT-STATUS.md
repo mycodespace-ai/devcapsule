@@ -8,7 +8,7 @@ Branch prefix: `ws-presentations/`
 Integration target: `release-0.3.1`
 Delivery method: pull request; records published on coordination
 
-Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
+Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
 ## Goal and agreed use case
 
