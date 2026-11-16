@@ -4,7 +4,7 @@ Mnemonic: `github-auth`
 
 Start date: 2026-11-16
 
-State: paused; Pair Review complete; PR #47 targets release-0.3.1; two inherited unit-gate failures remain.
+State: paused; PR #47 merged into release-0.3.1 at a464088d; main propagation remains.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -25,6 +25,15 @@ The owner selected the new `github-auth` workstream and Git over SSH first on
 outside this slice. Review partner: Antigravity, `gemini-4-hydrogen-high`.
 
 ## Current state
+
+PR #47 merged into release-0.3.1 at `a464088d05c58647e8aed16543a9d1b8d479322e`,
+verified by GitHub and fetched release ref after the owner reported the merge.
+Remote main still lacks this work. GitHub deleted both remote SSH proxy branches;
+their stale tracking refs were pruned. Local branches and evidence remain under
+WORKFLOW.md 10.4 until main contains the work. The owner now selects project-management.
+This records-only pause checkpoint is local and published on coordination; do not
+recreate the deleted remote branch solely to deliver this record.
+
 
 The owner directed completion of Pair Review and delivery to release-0.3.1 on
 2026-11-16. Antigravity Gemini 4 Hydrogen High completed round 2 at `455d3acc`.
@@ -100,9 +109,7 @@ checkout remains untouched. Review evidence and prepared PR text are indexed bel
 ## Planned next step
 
 Review the two disclosed inherited gate failures with maintenance before release
-acceptance. The human merges PR #47 into release-0.3.1; consult live hosted checks
-at that time. After the owner reports the merge, fetch and verify the release
-contains this tree. Maintenance owns carrying the release to main. Do not conclude
+acceptance. PR #47 is verified merged into release-0.3.1. Maintenance owns carrying the release to main. Do not conclude
 this workstream until remote main contains the finished tree.
 Pair Review is complete; do not restart it or repeat the recorded E2E without a
 new change or unresolved concern. The review branch remains pushed.
@@ -461,8 +468,8 @@ remote PR existence remains unverified.
 
 ## Open Threads
 
-- Awaiting the human: release acceptance and merge of PR #47 into release-0.3.1;
-  the two inherited recursive Docker gid-zero test failures remain unresolved.
+- PR #47 is merged into release-0.3.1; main propagation and release acceptance
+  remain with maintenance. The two inherited Docker gid-zero failures remain.
 - Maintenance subsequently carries the release to main; preserve main's version,
   three main-only documents and index entries listed in the final review record.
 - Pair Review #44 is merged; no reviewer correction remains pending.
