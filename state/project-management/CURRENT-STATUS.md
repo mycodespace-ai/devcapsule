@@ -38,9 +38,11 @@ The proposal separates documented behavior and recorded evidence from unvalidate
 It covers discoverable authoring, story and legibility, interactive/replay generation, reliable run evidence, and reuse.
 No new browser session, product change, recording or environment was needed for this bounded planning slice.
 
-The first open product question is the primary audience: engineering reviewers, prospective users/tutorial readers, or both equally.
-Recommend engineering review first; the owner has not accepted that recommendation.
-Decision `2026-11-16-presentation-audience` remains pending in capsule state.
+The owner answered `both`: engineering reviewers and prospective users/tutorial readers have equal priority from the first delivery.
+This resolves decision `2026-11-16-presentation-audience`; remove its capsule-state document after this outcome is committed.
+The design proposal now requires separate acceptance tasks for explanation, tutorial use and evidence inspection on the same scenario.
+A shared recording and script with accessible supporting detail is the proposed design direction; no separate mode or UI is prescribed.
+Next select the real adopter project and feature journey before choosing the recording surface and delivery boundary.
 The two presentation intake items remain pending until an agreed deliverable is assigned.
 No implementing workstream, toolkit interface, release target or standalone support commitment is selected.
 
@@ -153,7 +155,7 @@ product and scope choices; neither is silently adopted or assigned a release.
 
 ## Planned Next Step
 
-Settle the primary presentation audience with the owner, then select the unrelated project's first acceptance journey.
+Select the unrelated project and feature journey with the owner; the first delivery must serve both agreed audiences equally.
 Use the proposed quality bar to define a bounded work order, delivery boundary, implementation owner and acceptance evidence.
 Review the actual viewer with the owner before deciding whether its layout needs redesign.
 Resolve the two presentation intake items when the agreed work is routed; keep the wider reusable-assets idea pending.
@@ -225,9 +227,9 @@ The owner's saved edits remain outside project-management commits:
 
 ## Open Threads
 
-- Awaiting the owner: primary presentation audience (`review`, `demo`, or `both`).
+- Audience settled: both equally. Awaiting the owner: the real adopter project and first feature journey.
 - Weighed and unresolved: first adopter journey, recording surface, toolkit distribution, standalone support, ownership and release target.
-- The presentation proposal is a discussion draft, not an accepted work order or an observed visual-quality assessment.
+- The audience scope is accepted; the delivery proposal remains a discussion draft, not a work order or observed visual-quality assessment.
 - The 20 intake items, nine documentation choices, C17, test-session timing and three ideas remain pending.
 - Local test failures do not block project-management planning, by explicit owner direction on November 16.
 - Mainline includes the IDE changes; retained raw evidence stays ignored and outside commits.
@@ -235,7 +237,7 @@ The owner's saved edits remain outside project-management commits:
 
 ## Workstream Document Index
 
-- [Presentation excellence proposal](2026-11-16-design-presentation-excellence.md): open for the audience choice, proposed acceptance and author-to-viewer scope.
+- [Presentation excellence proposal](2026-11-16-design-presentation-excellence.md): both audiences accepted; open for the first journey, proposed acceptance and delivery scope.
 
 - [Prior coordination status, preserved November 12](2026-11-12-record-prior-coordination-status.md): verbatim pre-resumption status and historical open threads; use this file's current state for routing.
 
