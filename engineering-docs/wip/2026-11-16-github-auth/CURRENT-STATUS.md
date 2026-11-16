@@ -45,22 +45,42 @@ HTTPS/API credentials are not implemented in this slice.
 Focused validation: 42 tests pass, including real Git clone/fetch/push through a
 fixture SSH process, binary streaming, refusal, deadline, shutdown and authorized
 Docker arguments. Initial mypy over the touched import graph passed (157 files).
-Full build gate is running. Its first attempt failed in pytest setup because
+The full build gate reached the unit suite: 20 failed, 2917 passed, 1 skipped,
+14 xfailed and 7 xpassed. A selected rerun on an archive of unchanged
+`upstream/main` reproduced 19 of those failures; the added authorization exposed
+one exact-vocabulary legacy test. That file was refurbished into its proper
+module mirror, preserving its contracts in 20 passing cases. The original gate
+attempt failed in pytest setup because
 `/opt` is read-only and `/opt/devcapsule-gate` does not exist. Scratch now uses
 `/home/devcapsule/.cache/devcapsule-gate/github-auth` per the local rule allowing
 another directory with space. No Docker containers or real credential files changed.
 
+Additional checks: CLI smoke, PEX build and smoke, and documentation contract
+pass. The console gate identified a mirrored authorization-table omission; after
+alignment, all 458 console tests pass. A read-only live `git ls-remote` through
+both the source adapter and the built PEX returned GitHub HEAD `1942f396`.
+That used the current capsule's already-installed SSH credentials on the broker
+side; it is not physical-host/capsule acceptance evidence.
+
+The branch is pushed to `upstream/ws-github-auth/ssh-proxy`. Gemini Hydrogen High
+is reviewing in `/home/devcapsule/worktrees/github-auth-review`. The first invocation
+received no brief through redirected stdin. The same conversation resumed with an
+explicit path to this committed brief; flags/model stayed unchanged. No credentials
+were examined to repair this CLI input issue.
+
 ## Planned next step
 
-Implement a constrained GitHub Git transport broker, capsule adapter, explicit
-host authorization, and lifecycle integration. Validate the transport and refusal
-paths, then run Pair Review with Gemini 4 Hydrogen High.
+Assess Gemini's review diff, incorporate accepted corrections, repeat affected
+checks, and prepare owner-operated PR delivery. Full gate remains blocked by the
+19 demonstrated mainline/environment failures; no test was disabled or reclassified
+to hide them.
 
 ## Open Threads
 
 - Awaiting the human: none for workstream or first delivery scope; both accepted.
 - Engineering choices: initial transport must account for Linux/rootless Docker
   permissions; Docker Desktop cannot bind ordinary host Unix sockets.
+- Physical-host launch acceptance and Docker Desktop transport remain open.
 - GitHub CLI is absent at the policy-prescribed path. PR creation/merging remains
   owner-operated under WORKFLOW-LOCAL.md; prepare reviewed commits and compare links.
 - Deliberately not preserved: no credentials or console decision tokens in Git.
