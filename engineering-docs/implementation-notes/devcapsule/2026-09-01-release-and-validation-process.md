@@ -45,7 +45,11 @@ substitute its version and candidate number; never recreate or move an existing
 published tag. Run Git commands from the repository root. Python commands use
 the checkout-local environment described in the [developer environment](../../development/developer-environment.md).
 
-1. **Prepare and cut.** The owner selects version, scope and the cut. The
+1. **Prepare and cut.** For the first release after 0.3.1, whether numbered
+   0.3.2 or 0.4.0, carry the [November 16 upgrade commitment](../../wip/2026-08-09-project-management/2026-11-16-decision-upgrades-next-release.md)
+   into the release overview before the cut, with owner and agreed closure
+   criteria. A version choice does not remove this mandatory scope.
+   The owner selects version, scope and the cut. The
    workstream whose deliverable is the headline drives; maintenance drives a
    patch to an already released version; project-management settles an unclear
    driver. Integrate the driving workstream's prepared slice into main, then
@@ -91,7 +95,12 @@ the checkout-local environment described in the [developer environment](../../de
    the release branch, account for the bug on main using the appropriate method,
    and publish the next RC number without changing earlier tags. Repeat until
    an exact candidate is accepted; do not add unrelated development to the release.
-4. **Record acceptance.** Run `prepare-promotion.py` as shown below with the
+4. **Record acceptance.** For the first release after 0.3.1, require evidence
+   satisfying the agreed upgrade closure criteria, linked in the overview, or
+   a new explicit product-owner decision amending the November 16 commitment.
+   Without one of those, stop acceptance. This is a procedural check; the
+   promotion script does not enforce it automatically.
+   Run `prepare-promotion.py` as shown below with the
    accepted RC, preparation baseline, accepting operator, and evidence. Review
    the generated record. Recheck the freshness review's vendor pointers; a
    version that appeared meanwhile gets an adopt-or-hold decision, never a

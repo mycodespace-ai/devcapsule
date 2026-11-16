@@ -20,6 +20,21 @@ automatic reminders or a mandatory trigger field. The revisit conditions below
 are this workstream's scheduling notes, not a new generic workflow rule.
 No accepted commitment is postponed by this explanation.
 
+### Upgrade Experience: First Release After 0.3.1
+
+Owner: `component-upgrades`; project-management retains release coordination.
+Priority: `gating` for the first release after 0.3.1, whether 0.3.2 or 0.4.0;
+not a gate for 0.3.1. Owner decision, 2026-11-16, in
+[Upgrades In The First Release After 0.3.1](2026-11-16-decision-upgrades-next-release.md).
+
+Before successor scope selection/cut, carry this obligation into its overview
+with ownership and agreed closure criteria. Before final acceptance, require
+upgrade acceptance evidence or a new explicit owner decision changing scope.
+The first task is to reconcile existing upgrades with the embedded Codex and
+Antigravity prompts and version persistence across launch/recreation. Detailed
+implementation and acceptance design remain with component-upgrades and the owner.
+The original September 3 intake is acknowledged and delivered onward.
+
 ### Configuration Presentation
 
 Owner for implementation: `component-upgrades`, within the upgrade experience.

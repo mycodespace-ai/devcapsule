@@ -4,7 +4,7 @@ Mnemonic: `project-management`
 
 Start date: 2026-08-09
 
-State: active 2026-11-16; resumed at owner direction; delivery facts refreshed; 18 intake items pending
+State: active 2026-11-16; upgrades committed to first release after 0.3.1; 17 intake items pending
 
 Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -22,6 +22,30 @@ Own project-wide priorities, sequencing, dependencies and lifecycle decisions.
 This reserved workstream remains open for the lifetime of multiple-stream mode.
 
 ## Current State
+
+### Upgrade release commitment, 2026-11-16
+
+The owner decided the first intake item: upgrades are required in the first
+release after 0.3.1, whether 0.3.2 or 0.4.0. The
+[accepted scope decision](2026-11-16-decision-upgrades-next-release.md) and
+[coordination backlog](coordination-backlog.md) retain the obligation, owner,
+release checkpoints and next scoping task. This does not gate 0.3.1.
+The embedded Codex/Antigravity update prompts and persistence across later
+launch/recreation are the owner's motivating case; no reproduction is claimed.
+
+Delivered the acknowledged intake to component-upgrades and maintenance at
+coordination b07446bce231 for successor handoff. The generic gap was delivered
+to workflow-improvements at coordination 43fbafb0a8fb. Seventeen intake items remain;
+continue reviewing one at a time. Do not advance to the second without the human.
+
+Workflow topic 3 judgment: the definition permits formal scope decisions and
+gates but has no release-relative target propagation procedure. Use an explicit
+ordinal target, the existing backlog and release checklist checkpoints; send
+the generic gap to workflow-improvements. No automatic enforcement is claimed,
+and no generic definition is edited. This branch is zero commits behind main;
+no synchronization is needed. Planning validation remains document-only under
+the owner's standing exception.
+
 
 ### Resumption after SSH proxy delivery, 2026-11-16
 
@@ -198,14 +222,23 @@ product and scope choices; neither is silently adopted or assigned a release.
 
 ## Planned Next Step
 
-Continue project-wide coordination from the 18 pending intake items and current
-release delivery state. Presentations is implemented and awaits owner merge of
-PR #43 into release-0.3.1; SSH proxy PR #47 is already merged there. Maintenance
-owns subsequent main propagation. Compatibility policy, test-improvements
-reconciliation and the remaining coordination queue await the owner's next-slice
-choice. Do not restart presentation use-case definition or registration.
+Continue the owner's intake review one item at a time. Item one is acknowledged:
+upgrades gate the first release after 0.3.1. Resolve any follow-up on that decision
+before presenting item two. Component-upgrades must reconcile current behavior
+and propose scope and acceptance for the embedded-agent upgrade experience.
+Project-management must carry the gate into successor scope/cut and acceptance.
 
 ## Validation And Checkout State
+
+### Upgrade commitment checkpoint, 2026-11-16
+
+Reviewed the scope decision, release-checklist change and intake disposition.
+All 78 local links in changed documents resolve; whitespace checks pass.
+Seventeen intake items remain. No product code changed or product tests ran,
+under the owner's standing planning-validation exception.
+The decision and checklist remain on the project-management branch until ordinary
+integration; coordination mail carries the obligation to its recipients now.
+
 
 ### Current synchronized checkout, 2026-11-16
 
@@ -270,17 +303,20 @@ The owner's saved edits remain outside project-management commits:
 
 ## Open Threads
 
-- Awaiting the human: next project-management slice from the remaining queue;
-  this turn selected the workstream, not a product or implementation scope.
+- Awaiting the human: continue the one-at-a-time intake review after the upgrade decision.
+- Successor upgrades are committed; detailed scope and acceptance remain to be agreed.
+- The release-relative workflow gap is pending with workflow-improvements; enforcement is procedural.
 - Presentations PR #43 awaits owner merge into release-0.3.1; Pair Review is done.
 - SSH proxy #47 is merged into the release; main propagation remains with maintenance.
 - Compatibility policy and test-improvements boundaries remain unresolved.
-- All 18 intake items and three ideas remain pending; no new disposition was made.
+- Seventeen intake items and three ideas remain pending; the first intake is acknowledged and routed.
 - Existing owner permission permits planning despite local Docker-group test failures.
 - No new service, container or environment was started. Retained evidence is ignored.
 - Deliberately not preserved: no transcript, tokened link or speculative design.
 
 ## Workstream Document Index
+
+- [Upgrades in the first release after 0.3.1](2026-11-16-decision-upgrades-next-release.md): accepted scope obligation, concrete user problem and release checkpoints.
 
 - [E2E recording and presentation use case](2026-11-16-design-presentation-excellence.md): engineer inputs, agent flow and returned web-console link; design explicitly deferred.
 
@@ -311,7 +347,7 @@ The owner's saved edits remain outside project-management commits:
 - [0.2.14 bug triage](../../releases/v0.2.14/bugs.md): release dispositions and next actions; canonical bug records remain linked.
 
 - [Prior coordination status](2026-09-22-record-prior-coordination-status.md): full historical handoff, decisions, open-thread context and external-state claims; read when reconciling a specific prior topic.
-- [Intake decisions](intake-dispositions.md): append-only outcomes; `intake/` contains 18 undecided items as of November 16; receipt is not a disposition.
+- [Intake decisions](intake-dispositions.md): append-only outcomes; `intake/` contains 17 undecided items as of November 16; receipt is not a disposition.
 
 - [Diagnostic print-command and run-image retirement](2026-09-21-design-editable-project-launch.md): accepted simplified contract and maintenance implementation scope.
 - [Design issue: V1 completeness and the WOW experience](2026-09-19-v1-wow-functionality-areas.md)
