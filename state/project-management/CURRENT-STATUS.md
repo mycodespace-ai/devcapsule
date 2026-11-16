@@ -4,7 +4,7 @@ Mnemonic: `project-management`
 
 Start date: 2026-08-09
 
-State: paused 2026-11-16; use case handed to owner-requested presentations workstream; registration next
+State: active 2026-11-16; resumed at owner direction; delivery facts refreshed; 18 intake items pending
 
 Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -22,6 +22,32 @@ Own project-wide priorities, sequencing, dependencies and lifecycle decisions.
 This reserved workstream remains open for the lifetime of multiple-stream mode.
 
 ## Current State
+
+### Resumption after SSH proxy delivery, 2026-11-16
+
+The owner selected project-management after SSH proxy PR #47 merged into
+release-0.3.1 at `a464088d`. The SSH proxy workstream is paused and published;
+its local merge-handoff checkpoint is `e65ef398`. Its remote branches were deleted
+by GitHub. Its local branches and retained evidence remain until main propagation.
+No deleted remote branch was recreated for the records-only pause checkpoint.
+
+This checkout now selects `ws-project-management/coordination`, from a clean tree.
+Fetched canonical upstream: this branch is zero commits behind main and its
+workflow files match main, so no synchronization is needed. The live workstream
+list, local status, intake and three ideas in the pile were reviewed. No waiting
+mail was found and no open bug record is owned by project-management.
+
+Verified hosted delivery: presentations PR #43 is still open against release-0.3.1,
+with Pair Review complete according to its live status. SSH proxy PR #47 is merged
+into that release. Its work is not yet in remote main. Maintenance owns release-to-main
+propagation, including preservation of main's development version and main-only
+documents, handed over in `2026-11-16-github-auth-release-delivery.md`.
+
+The older presentation-registration and no-release-target statements below are
+historical. The 18 undecided intake items remain pending; this selection does not
+choose another implementation slice or dispose of those requests. Record-only
+validation follows the owner's existing planning exception: whitespace and changed
+record review, no repeated product gate or environment provisioning.
 
 ### Presentations creation and handoff, 2026-11-16
 
@@ -172,11 +198,12 @@ product and scope choices; neither is silently adopted or assigned a release.
 
 ## Planned Next Step
 
-On owner-directed resumption, review presentations' published state and the remaining 18 intake items.
-The presentation use case is assigned; its implementation and release placement are not decided by registration.
-Compatibility, test-improvements and other coordination questions remain pending.
-The pair is leaving this branch only to create the owner-requested presentations workstream.
-Returning to project management needs the owner's instruction.
+Continue project-wide coordination from the 18 pending intake items and current
+release delivery state. Presentations is implemented and awaits owner merge of
+PR #43 into release-0.3.1; SSH proxy PR #47 is already merged there. Maintenance
+owns subsequent main propagation. Compatibility policy, test-improvements
+reconciliation and the remaining coordination queue await the owner's next-slice
+choice. Do not restart presentation use-case definition or registration.
 
 ## Validation And Checkout State
 
@@ -243,13 +270,15 @@ The owner's saved edits remain outside project-management commits:
 
 ## Open Threads
 
-- Owner requested creation of presentations; its first branch is `ws-presentations/authoring` from canonical main.
-- The defined use case and two source messages were delivered as `2026-11-16-project-management-presentation-authoring.md`.
-- Design and implementation remain deferred; no release target is assigned.
-- The remaining 18 intake items and the wider queue remain pending.
-- Local test failures do not block project-management planning under the owner's November 16 direction.
-- No running service, container or new environment was created. Retained raw evidence remains ignored.
-- Deliberately not preserved: no transcript, tokened link in Git, new experiment or speculative architecture.
+- Awaiting the human: next project-management slice from the remaining queue;
+  this turn selected the workstream, not a product or implementation scope.
+- Presentations PR #43 awaits owner merge into release-0.3.1; Pair Review is done.
+- SSH proxy #47 is merged into the release; main propagation remains with maintenance.
+- Compatibility policy and test-improvements boundaries remain unresolved.
+- All 18 intake items and three ideas remain pending; no new disposition was made.
+- Existing owner permission permits planning despite local Docker-group test failures.
+- No new service, container or environment was started. Retained evidence is ignored.
+- Deliberately not preserved: no transcript, tokened link or speculative design.
 
 ## Workstream Document Index
 
@@ -282,7 +311,7 @@ The owner's saved edits remain outside project-management commits:
 - [0.2.14 bug triage](../../releases/v0.2.14/bugs.md): release dispositions and next actions; canonical bug records remain linked.
 
 - [Prior coordination status](2026-09-22-record-prior-coordination-status.md): full historical handoff, decisions, open-thread context and external-state claims; read when reconciling a specific prior topic.
-- [Intake decisions](intake-dispositions.md): append-only outcomes; `intake/` contains 20 undecided items as of November 16; receipt is not a disposition.
+- [Intake decisions](intake-dispositions.md): append-only outcomes; `intake/` contains 18 undecided items as of November 16; receipt is not a disposition.
 
 - [Diagnostic print-command and run-image retirement](2026-09-21-design-editable-project-launch.md): accepted simplified contract and maintenance implementation scope.
 - [Design issue: V1 completeness and the WOW experience](2026-09-19-v1-wow-functionality-areas.md)
