@@ -4,7 +4,7 @@ Mnemonic: `project-management`
 
 Start date: 2026-08-09
 
-State: active 2026-11-12; permanent coordination; resumed at owner direction
+State: active 2026-11-16; permanent coordination; inbound mail received, next slice awaits owner choice
 
 Definition read: WORKFLOW.md@89de30622697, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
@@ -23,7 +23,37 @@ This reserved workstream remains open for the lifetime of multiple-stream mode.
 
 ## Current State
 
-### Resumed 2026-11-12
+### Resumed 2026-11-16
+
+The owner selected project management and authorized `upstream/main` as the baseline.
+Local `main` now matches canonical `upstream/main` at `1942f396` and tracks it.
+The former local README relocation commit was discarded from `main` with the owner's permission.
+The clean github-auth branch was already paused and published; its mailbox was empty and its claim released.
+Selected `ws-project-management/coordination` and merged upstream main at `d137c0fb`.
+The workflow files already matched upstream; synchronization brings in the four remaining mainline commits.
+The known declaration/root-definition version mismatch remains unchanged.
+
+Read the published status, all intake, both ideas, and the current live workstream list.
+No open bug is owned by project-management.
+Received three messages at `45c2cbd7`; the intake now holds 20 undecided items:
+
+- `2026-11-12-maintenance-compatibility-promise-story-and-packaging.md` carries the owner's post-0.3.1 compatibility-policy request.
+  The existing ruling permits dropping compatibility with 0.2.14, 0.2.15 and earlier releases.
+  The support window, requirements, user documentation and release evidence still need a coherent design.
+- `2026-11-16-presentation-authoring-portability.md` identifies the gap between a shipped viewer and source-only authoring support.
+- `2026-11-16-github-auth-presentation-authoring-handoff.md` consolidates that evidence and the owner's successful, laborious reuse in another project.
+  It supplements the earlier message; both remain pending together.
+
+Receipt chooses no implementation owner, interface, priority or release target.
+The proposed next slice is portable presentation-authoring scope, based on fresh adopter evidence.
+The owner can instead choose compatibility, test-improvements reconciliation, or a broader queue review.
+The unanswered decision `2026-11-16-project-management-next-slice` lives in capsule state, outside Git.
+
+Maintenance's live publication now reports its mounted-settings bug closed after PR #29.
+The older blocked-gate statement below is historical, not the current reason for this checkout's gate failure.
+Prior stash and website-recovery statements below describe the November 12 session, not verified state in this checkout.
+
+### Historical resumption, 2026-11-12
 
 The owner requested project management first. In the console answer at
 `2026-11-12T02:20:44+00:00`, the owner selected `preserve-and-switch`,
@@ -84,20 +114,33 @@ product and scope choices; neither is silently adopted or assigned a release.
 
 ## Planned Next Step
 
-With the owner, select the next project-management slice from the reconciled
-queue. The concrete new request is registration and allocation of
-`test-improvements`: first reconcile its work order with maintenance's newer
-host-input rewrite, then define the boundary and confirm the pair and first
-slice. Keep the timing-design request, the nine documentation decisions, C17,
-the other intake and the two ideas pending until addressed. This resumption
-does not authorize a switch to an implementing workstream.
+With the owner, select the next slice from the received correspondence and existing queue.
+Recommend scoping portable presentation authoring: intended adopter journey, supported deliverable,
+installation-only acceptance, then ownership and sequencing. No interface or release is selected yet.
+Alternatives are the compatibility promise after 0.3.1, test-improvements reconciliation, or broader queue review.
+The test-improvements work order must be reconciled with maintenance's delivered host-input rewrite before allocation.
+All 20 intake items, the nine documentation decisions, C17 and both ideas remain pending.
+This resumption does not authorize a switch to an implementing workstream.
 
-Done for that next slice means a recorded owner choice, a bounded outcome and
-acceptance evidence, and the appropriate registration or intake acknowledgement.
-Verification uses current mainline and live recipient state; no test reruns are
-needed merely to compare planning records.
+Done for the next slice means a recorded owner choice, bounded outcome and acceptance criteria,
+followed by the appropriate routing or intake disposition. No product test reruns are needed to compare planning records.
 
 ## Validation And Checkout State
+
+### Current checkout, 2026-11-16
+
+Attempted the required build gate with the existing `.venv`.
+`/opt/devcapsule-gate` is read-only here, so used the permitted alternative `/var/tmp/pm-resume-20261116/pytest`.
+Version and syntax checks passed. Mypy stopped with five errors in two retained github-auth evidence scripts:
+`presentation-check/check.py` and `record.py` under `devcapsule-src/tests/e2e/evidence/github-ssh-proxy/20261116T103152Z-af7fa02c/`.
+Later gate phases did not run. The log is `.git/pm-resume-20261116-build.log`.
+No product source changed, no environment was provisioned, and no container or deployment was started.
+The retained evidence directory is untracked on this branch; it stays outside project-management commits.
+IDE changes to `.idea/modules.xml` and `.idea/rotated-consensus.iml` appeared after switching and remain untouched.
+The website checkout matches the synchronized gitlink.
+Release the setup claim after publishing; keep project management selected for the owner's next choice.
+
+### Historical validation and preservation, 2026-11-12
 
 The required build gate was attempted on the synchronized source with
 `PYTEST_ADDOPTS="--basetemp=/var/tmp/pm-resume-20261112/pytest --maxfail=1"`.
@@ -133,16 +176,13 @@ The owner's saved edits remain outside project-management commits:
 
 ## Open Threads
 
-- Awaiting the owner: the next project-management slice and the pair/first-slice
-  choices for the requested `test-improvements` workstream; no implementation
-  starts from this resumption alone.
-- Weighed and unresolved: the nine documentation choices, C17 placement,
-  test-session timing design, all remaining intake and the two ideas.
-  Keep the newer 0.3.1 cut exclusions when considering older scheduling mail.
-- The full gate remains blocked by the documented maintenance test-fixture bug.
-  Recheck maintenance's live state before treating its overlapping rewrite as delivered.
-- Deliberately not preserved: no transcript, new experiment, reminder service,
-  container or deployment. The prior handoff is preserved verbatim below.
+- Awaiting the owner: select presentation-authoring scope, compatibility policy, test-improvements reconciliation, or broader queue review.
+- Weighed and unresolved: presentation toolkit packaging/interface, implementation ownership and release target remain open.
+- Keep compatibility's post-0.3.1 direction and the newer release-cut exclusions when assessing older scheduling mail.
+- The 20 intake items, nine documentation choices, C17, test-session timing and two ideas remain pending.
+- The build gate stops on retained github-auth evidence scripts; no product validation is claimed by this resumption.
+- IDE changes and raw evidence remain local and excluded from project-management commits.
+- Deliberately not preserved: no transcript, tokened link in Git, new experiment, service, container or deployment.
 
 ## Workstream Document Index
 
@@ -173,7 +213,7 @@ The owner's saved edits remain outside project-management commits:
 - [0.2.14 bug triage](../../releases/v0.2.14/bugs.md): release dispositions and next actions; canonical bug records remain linked.
 
 - [Prior coordination status](2026-09-22-record-prior-coordination-status.md): full historical handoff, decisions, open-thread context and external-state claims; read when reconciling a specific prior topic.
-- [Intake decisions](intake-dispositions.md): append-only outcomes; `intake/` contains eight original undecided items plus the new testing-policy reconciliation, after 29 acknowledgements and the Stage 7 closure.
+- [Intake decisions](intake-dispositions.md): append-only outcomes; `intake/` contains 20 undecided items as of November 16; receipt is not a disposition.
 
 - [Diagnostic print-command and run-image retirement](2026-09-21-design-editable-project-launch.md): accepted simplified contract and maintenance implementation scope.
 - [Design issue: V1 completeness and the WOW experience](2026-09-19-v1-wow-functionality-areas.md)
