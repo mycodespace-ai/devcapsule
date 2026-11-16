@@ -4,7 +4,7 @@ Mnemonic: `github-auth`
 
 Start date: 2026-11-16
 
-State: paused for owner host relaunch; local PEX built, recursive authentication E2E next.
+State: paused for owner retry; rootless Docker fix propagated and local PEX rebuilt.
 
 Definition read: WORKFLOW.md@89de30622697, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
@@ -80,6 +80,37 @@ Observe the Git checkout independently and retain WebM/screenshots/action eviden
 Recursive proxy inheritance is still unproved; do not report success until observed.
 The 19 reproduced full-gate failures and formal PR delivery remain open separately.
 
+## Rootless Docker fix propagation
+
+The owner's first host relaunch failed with an unwritable PEX cache and permission
+denied on `/etc/devcapsule/home/settings.toml`. Fetched canonical `release-0.3.1`
+and identified `a1a54eba3098eb3c80fd78ef3e483d1bb5314466`, merged in PR #38 and
+recorded as owner-verified on the target host by `8bd56eb3`. Neither current main
+nor this feature branch included it. Main has no new commits to synchronize.
+
+Applied that fix's deliverable/test patch, without release version changes or
+another workstream's records, under the owner's explicit propagation request and
+WORKFLOW-LOCAL.md's release-fix propagation exception. The branch predates the
+release's CapsuleUser refactor: adapted its `command` correction to the existing
+`foreground_command`, and its `owner_changes` correction to `prepare_filesystem`.
+Rootless launches use container 0:0 (the host user's mapped identity), map the
+Docker socket group and home accordingly, and avoid redundant gosu/chown under
+dropped capabilities. Rootful behavior is preserved. The available Docker daemon
+reports `name=rootless`; no container was launched for this propagation.
+
+Checks so far: 151 focused tests passed, then all 12 GitHub proxy integration
+cases passed after extending socket-grant coverage to both daemon modes. The
+full gate's type check passed over 340 files; conventions found zero breaches.
+New pure identity tests and filesystem preparation tests cover the adaptation.
+Full gate: 19 failed, 2942 passed, 1 skipped, 78 deselected, 14 xfailed,
+7 xpassed. All 19 failure IDs match the previously reproduced mainline/environment
+baseline exactly; no new failure IDs. Packaging/smoke is run separately because
+the full gate stops at pytest. The separate PEX build and executable smoke passed (14 seconds). The imported
+rootless detector reports True against the available daemon. Fix commit: `d6fd93e0`.
+The rebuilt artifact identity follows below. Host relaunch itself still needs
+the owner to retry; no container or persistent configuration was changed here.
+Mainline integration and the separate Gemini review branch remain pending.
+
 ## Host relaunch handoff
 
 The owner explicitly chose a development-build self-hosting experiment. The normal
@@ -89,21 +120,22 @@ existing persistent state. The original checkout still has only its pre-existing
 website gitlink modification. Main remains unchanged; synchronization can wait.
 
 Build: `.venv/bin/python -m nox -s pex` passed, including shell syntax, packaging
-and executable smoke. Built from clean `712466ab9547ec7c9153977f725fc6cfe26344f6`.
+and executable smoke. Built from clean `d6fd93e0ba6c18915ace45b9dfef2881068d7b39` with the rootless Docker fix.
 The local PEX reports `v0.3.2.dev0-local-linux-x86_64` with revision `unknown` by
 local-build policy; the clean Git revision and checksum here identify its inputs
 and bytes independently. It contains the committed implementation, including the
 node-registry and console-table fixes. Review corrections at `388f62a3` remain on
 the separate review branch and are not included; their PR merge is still pending.
 
-SHA-256: `2f9470c6ca5efeaccd9844bf6feb1494d2e95564d054051a2c005afbc35d78ed`.
+SHA-256: `33c3c7bc7fe6ff6772eedee06424c95afcf4aebddca20ab99f9a31a7c103d35b`.
 
 Capsule artifact: `/home/devcapsule/worktrees/github-auth/devcapsule-src/dist/devcapsule-local.pex`.
 Host artifact (from Docker mount inspection):
 `/home/costin/.local/share/devcapsule/projects/by-path/fe326e03c822-devcapsule/home/worktrees/github-auth/devcapsule-src/dist/devcapsule-local.pex`.
 Checksum and build metadata are saved beside it, outside Git.
 
-After exiting Codex and stopping the current capsule normally, run on the host:
+Retry the same command with the replacement file. After exiting Codex and stopping
+the current capsule normally, run on the host:
 
 ```sh
 cd /opt/costin3/myProjects/devcapsule
@@ -141,7 +173,8 @@ of the proxy. No E2E container was launched during handoff preparation.
 
 ## Open Threads
 
-- Awaiting the human: exit/relaunch/resume using the command above.
+- Awaiting the human: retry exit/relaunch/resume using the rebuilt PEX above.
+  The first relaunch failed on the rootless identity defect, now propagated.
   Workstream selection, Git-over-SSH scope and the relaunch approach are accepted.
   Full-gate environment and owner-operated GitHub PR delivery also remain open.
 - Engineering choices: initial transport must account for Linux/rootless Docker
