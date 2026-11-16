@@ -4,7 +4,7 @@ Mnemonic: `github-auth`
 
 Start date: 2026-11-16
 
-State: active; merging all of release-0.3.1 and validating the combined tree at the owner's request.
+State: paused; full release-0.3.1 merge and fresh-capsule acceptance complete; inherited gate failures and owner-operated PR delivery remain.
 
 Definition read: WORKFLOW.md@89de30622697, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
@@ -71,11 +71,10 @@ checkout remains untouched. Review evidence and prepared PR text are indexed bel
 
 ## Planned next step
 
-Owner explicitly requested the full release-0.3.1 merge on 2026-11-16, including
-its other fixes, instead of relying on the earlier adapted port. Merge the fetched
-release tip `10e7fda3`, run the combined gate and focused proxy/runtime checks,
-then build the merged PEX and repeat fresh-capsule proxy acceptance. The running
-outside broker remains from the earlier build; report that boundary explicitly.
+Resolve the inherited gate failures with maintenance, then complete the pending
+review PR and implementation PR through the owner-operated GitHub workflow.
+The full release merge and requested combined validation are complete. Review
+corrections remain separate and require validation after integration.
 
 ## Rootless Docker fix propagation
 
@@ -108,7 +107,7 @@ The rebuilt artifact identity follows below. The owner subsequently relaunched
 successfully; the resumed-session observations are recorded below.
 Mainline integration and the separate Gemini review branch remain pending.
 
-## Host relaunch handoff
+## Earlier host relaunch handoff (superseded artifact)
 
 The owner explicitly chose a development-build self-hosting experiment. The normal
 host launcher is not replaced and remains the recovery route; no saved project
@@ -213,7 +212,7 @@ the README. A missing-socket read failed with exit 128. Ordinary proxy access
 succeeded again afterward. This proves recursive proxy inheritance on this
 rootless Linux host. No GitHub write was made.
 
-Evidence: `devcapsule-src/dist/e2e-evidence/github-auth/20261116T092248Z-33c3c7bc/`.
+Evidence preserved at `devcapsule-src/tests/e2e/evidence/github-ssh-proxy-pre-merge/`.
 The 38.17-second WebM, full desktop capture, poster, action trace, `run.json`,
 `verification.json` and `result.json` are retained outside Git. The test-owned
 container, fresh workspace and checkout records are independently confirmed gone.
@@ -250,7 +249,53 @@ filesystem, authorization and proxy integration cases passed. The first focused
 invocation used the repository root instead of devcapsule-src and triggered the
 new repository-input guard on an editable-install metadata path; correcting the
 working directory followed the declared validation setup. No guard was disabled.
-Packaging, remaining gate components and fresh-capsule acceptance follow the merge.
+Merge commit: `7fc77f24df45135770160c35f193c9abb78cd9c0`, with parents
+`ab1e30f9` and `10e7fda3`. The complete fetched release tip is an ancestor, not a
+patch port. Packaging and executable smoke passed, as did CLI smoke, documentation
+contracts, console types and all 474 console tests. Integration initially returned
+149 passed, 12 skipped and 3 failed; shortening the scratch path fixed the Unix
+socket path-length failure (targeted rerun: 1 passed). Two failures remain.
+
+All five remaining failures (three unit, two integration) reproduce on an untouched
+archive of release `10e7fda3`, with its own separately built PEX where required:
+
+- `test_host_daemon.py::test_unmountable_staging_fails_loudly`: persistent-home
+  scratch is mountable, contrary to the fixture expectation.
+- `test_recursive_orchestrator.py::test_public_dry_run_is_unique_redacted_and_cleans_owned_staging`
+  and `test_contained_display_dry_run_forwards_no_host_x11`: Docker socket gid 0
+  is rejected by the recursive host positive-ID check.
+- `test_print_command_cli.py::test_print_command_names_a_base_image_that_is_not_here_and_pulls_nothing`:
+  rootless detection adds Docker info to the fixture's expected image-inspect calls.
+- `test_runtime_entrypoint_cli.py::test_filesystem_applies_distinct_user_and_group_ids_to_new_directories`:
+  the rootless/dropped-capability environment cannot chown gid 1 despite uid 0.
+
+The gate is not green. Sent these reproductions to maintenance as
+`2026-11-16-release-merge-validation.md` on coordination (`815e42e7`). Logs remain
+under `~/.cache/devcapsule-gate/github-auth-release-*`. No tests were disabled.
+
+### Rebuilt merged artifact and acceptance
+
+Built with `.venv/bin/python -m nox -s pex` from clean merge `7fc77f24`.
+The artifact path and host path in the earlier handoff remain valid; its bytes
+and adjacent checksum/build metadata are now replaced. SHA-256:
+`af7fa02ca2c2737f3a1678226341312682b71cfdd37eb892f29a42ad5c31b78c`.
+Review corrections at `388f62a3` are still excluded.
+
+A new VSCodium capsule launched with that merged PEX passed real GitHub SSH clone
+acceptance: expected HEAD `1942f396`, SSH origin, clean tree, no child SSH files or
+agent, canonical read-only host broker mount, and exact delivered PEX checksum.
+The IDE window and console token guard passed. A missing-socket control failed
+with exit 128. The test container, workspace and checkout records were removed.
+Evidence and executable reproduction script are retained outside Git at
+`devcapsule-src/tests/e2e/evidence/github-ssh-proxy-release-merge/20261116T100132Z/`.
+This repeat saved machine-readable evidence; the earlier showcase video remains
+preserved separately and depicts the earlier PEX, not the merged build.
+
+The outside launcher/broker is still the earlier `33c3c7bc` PEX. Its GitHub broker
+and transport sources are unchanged by the merge. This run validates the merged
+child launcher/runtime against that live broker; a physical-host restart with the
+merged PEX has not been performed. Canonical main is unchanged, so separate main
+synchronization remains unnecessary for this slice.
 
 ## Open Threads
 

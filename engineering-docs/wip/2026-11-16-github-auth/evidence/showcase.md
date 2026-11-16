@@ -21,9 +21,10 @@ trust GitHub and authenticate noninteractively. An unencrypted default SSH key
 needs no host agent. The parent needs host Docker and host networking.
 
 From `devcapsule-src`, use the development virtualenv and the exact PEX under test.
-The recorded run uses SHA-256
+The historical recorded run uses SHA-256
 `33c3c7bc7fe6ff6772eedee06424c95afcf4aebddca20ab99f9a31a7c103d35b`, built from
-`d6fd93e0`. Do not rebuild between the launch and the evidence capture.
+`d6fd93e0`. The merged artifact now has different bytes; set the expected hash
+to the actual build being recorded for a new run. Do not rebuild between the launch and the evidence capture.
 
 ```sh
 .venv/bin/python -m pip install 'playwright==1.63.0'
@@ -50,7 +51,7 @@ from tests.e2e.scenario_recorder import ScenarioSpec, serve_interactive_controll
 pex = Path('dist/devcapsule-local.pex').resolve()
 digest = hashlib.sha256(pex.read_bytes()).hexdigest()
 assert digest == os.environ['DEVCAPSULE_EXPECTED_SHA256']
-evidence = Path('dist/e2e-evidence/github-auth') / (datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '-' + digest[:8])
+evidence = Path('tests/e2e/evidence/github-ssh-proxy') / (datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '-' + digest[:8])
 evidence.mkdir(parents=True)
 run = {'pex':str(pex), 'sha256':digest, 'version':json.loads(command(str(pex), 'version', '--json').stdout),
        'host':platform.platform(), 'docker':json.loads(command('docker', 'info', '--format', '{{json .}}').stdout),
@@ -108,7 +109,7 @@ PYTHONPATH=. .venv/bin/python -m tests.e2e.scenario_recorder ctl \
 ## Evidence
 
 Keep `run.json`, `verification.json`, `result.json`, `action-log.json`, the WebM,
-final screenshot and cleanup record together under `dist/e2e-evidence/github-auth/`.
+final screenshot and cleanup record together under `tests/e2e/evidence/github-ssh-proxy/`.
 The launcher log can contain ephemeral console/desktop URLs; redact those before
 sharing. Do not commit tokens, credentials, or raw logs to Git. Record failed
 attempts and their causes; never overwrite them with a later successful attempt.
@@ -136,7 +137,8 @@ The full desktop recording and screenshots are retained beside it. Independent
 cleanup checks found the container, workspace and checkout records absent.
 
 Evidence directory, relative to this checkout:
-`devcapsule-src/dist/e2e-evidence/github-auth/20261116T092248Z-33c3c7bc/`.
+`devcapsule-src/tests/e2e/evidence/github-ssh-proxy-pre-merge/` (copied from the
+original dist evidence directory before the release merge rebuild).
 `result.json` summarizes the checks and hashes the deliverables.
 The final on-screen remote read overlaps the next typed command; the actual Git
 outputs and independent verification remain valid. This is a recorded engineering

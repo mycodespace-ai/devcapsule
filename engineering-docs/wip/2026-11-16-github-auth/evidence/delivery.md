@@ -1,7 +1,7 @@
 # Prepared delivery
 
 No PR has been opened or edited by this agent; remote PR existence has not been
-verified. The implementation branch is pushed through `e45866b2`, including the
+verified. The implementation branch is pushed through merge `7fc77f24` and its validation records, including the
 recorded E2E procedure. A pre-existing PR from that branch receives the pushed
 commits automatically, but its description and attachments have not been updated. WORKFLOW-LOCAL.md, GitHub Integration rules 4–6,
 requires a passing unit gate before PR opening/updating, and assigns GitHub
@@ -35,17 +35,29 @@ checkout records were removed. No real GitHub push was performed.
 
 The [recorded E2E procedure](engineering-docs/wip/2026-11-16-github-auth/evidence/showcase.md)
 records the tested build and evidence. The 38-second WebM and full desktop capture
-are retained locally under `devcapsule-src/dist/e2e-evidence/github-auth/20261116T092248Z-33c3c7bc/`;
+are retained locally under `devcapsule-src/tests/e2e/evidence/github-ssh-proxy-pre-merge/`;
 they are not uploaded or attached to a PR. Tested PEX SHA-256:
 `33c3c7bc7fe6ff6772eedee06424c95afcf4aebddca20ab99f9a31a7c103d35b`.
 
-Latest validation: 62 recorder tests passed; types passed over 340 files and
-conventions reported zero breaches against canonical upstream/main. Full gate:
-19 failed, 2942 passed, 1 skipped, 78 deselected, 14 xfailed, 7 xpassed. All 19
-failure IDs match the recorded baseline; this is not a passing gate. Earlier
-combined review validation passed 75 focused cases; smoke/PEX/docs and 458
-console tests passed. The rootless Docker identity fix was adapted from
-release-0.3.1 commit `a1a54eba` into implementation commit `d6fd93e0`.
+The full release-0.3.1 tip `10e7fda3` is merged by `7fc77f24`, preserving
+both histories and including the release's other changes. A fresh capsule launched
+with the rebuilt merged PEX repeated SSH clone acceptance successfully, including
+IDE/console readiness, no child credentials, exact PEX bytes, missing-socket
+negative control and cleanup. Evidence:
+`devcapsule-src/tests/e2e/evidence/github-ssh-proxy-release-merge/20261116T100132Z/`.
+Merged PEX SHA-256:
+`af7fa02ca2c2737f3a1678226341312682b71cfdd37eb892f29a42ad5c31b78c`.
+The host broker remained the earlier build; its broker/transport sources are
+unchanged. The preserved video depicts the earlier build, not this repeat.
+
+Latest validation: 41 focused cases passed; types passed over 350 files and
+conventions reported zero breaches. Unit gate: 3309 passed, 3 failed, 1 skipped,
+187 deselected, 1 xfailed, 1 xpassed. CLI smoke, PEX packaging/smoke, docs contract,
+console types and 474 console tests passed. Integration: 149 passed, 12 skipped,
+3 failed initially; the socket-length case passed when rerun with shorter scratch,
+leaving two failures. All five remaining unit/integration failures reproduce on
+untouched release-0.3.1; maintenance received the reproduction details. This is
+not a passing full gate. See the workstream status for exact IDs and scope.
 
 Pair: GPT-6 Codex with Antigravity Gemini 4 Hydrogen High
 (`gemini-4-hydrogen-high`). Local round 1 accepted at `388f62a3`; formal review PR
