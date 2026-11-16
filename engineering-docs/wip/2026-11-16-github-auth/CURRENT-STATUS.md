@@ -4,7 +4,7 @@ Mnemonic: `github-auth`
 
 Start date: 2026-11-16
 
-State: active; first implementation slice.
+State: paused; implementation and local review prepared, gate and PR delivery pending.
 
 Definition read: WORKFLOW.md@89de30622697, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
@@ -62,28 +62,34 @@ both the source adapter and the built PEX returned GitHub HEAD `1942f396`.
 That used the current capsule's already-installed SSH credentials on the broker
 side; it is not physical-host/capsule acceptance evidence.
 
-The branch is pushed to `upstream/ws-github-auth/ssh-proxy`. Gemini Hydrogen High
-is reviewing in `/home/devcapsule/worktrees/github-auth-review`. The first invocation
-received no brief through redirected stdin. The same conversation resumed with an
-explicit path to this committed brief; flags/model stayed unchanged. No credentials
-were examined to repair this CLI input issue.
+The implementation and review branches are pushed to canonical upstream.
+Gemini Hydrogen completed local round 1 at `388f62a3`. Its corrections remain
+on the separate review branch for PR delivery. A temporary combined merge passed
+75 focused cases, type checking and conventions (zero breaches), then was aborted.
+Git connectivity integrity and authenticated fetch/push checks pass. The original
+checkout remains untouched. Review evidence and prepared PR text are indexed below.
 
 ## Planned next step
 
-Assess Gemini's review diff, incorporate accepted corrections, repeat affected
-checks, and prepare owner-operated PR delivery. Full gate remains blocked by the
-19 demonstrated mainline/environment failures; no test was disabled or reclassified
-to hide them.
+Resolve the 19 reproduced baseline/environment failures in an appropriate gate
+environment, then complete owner-operated implementation/review PR delivery and
+physical-host acceptance. Do not claim a green full gate or mainline integration.
+At resume, fetch upstream, check live workflow state and the review SHA, merge
+through the prescribed PR process, and validate the actual combined tree.
 
 ## Open Threads
 
-- Awaiting the human: none for workstream or first delivery scope; both accepted.
+- Awaiting the human: suitable gate environment and owner-operated GitHub PR delivery.
+  Workstream selection and Git-over-SSH scope are already accepted.
 - Engineering choices: initial transport must account for Linux/rootless Docker
   permissions; Docker Desktop cannot bind ordinary host Unix sockets.
 - Physical-host launch acceptance and Docker Desktop transport remain open.
 - GitHub CLI is absent at the policy-prescribed path. PR creation/merging remains
   owner-operated under WORKFLOW-LOCAL.md; prepare reviewed commits and compare links.
-- Deliberately not preserved: no credentials or console decision tokens in Git.
+- Reviewer worktree removed at pause; pushed `ws-github-auth/ssh-proxy-review`
+  preserves its commit. Review corrections are not yet merged into implementation.
+- Unimplemented review proposals and exact baseline failure IDs are in the assessment.
+- Deliberately not preserved: scratch logs/venvs, credentials or console decision tokens in Git.
 
 ## Workstream document index
 
@@ -91,3 +97,6 @@ to hide them.
 - [Review follow-up 1](evidence/round-1.md)
 - [Intake](intake/README.md)
 - [Intake decisions](intake-dispositions.md)
+
+- [Review assessment](evidence/review-assessment.md)
+- [Prepared PR delivery](evidence/delivery.md)
