@@ -4,7 +4,7 @@ Mnemonic: `github-auth`
 
 Start date: 2026-11-16
 
-State: paused; implementation and local review prepared, gate and PR delivery pending.
+State: paused for owner host relaunch; local PEX built, recursive authentication E2E next.
 
 Definition read: WORKFLOW.md@89de30622697, WORKFLOW-LOCAL.md@d92bdcbb0a01
 
@@ -71,16 +71,79 @@ checkout remains untouched. Review evidence and prepared PR text are indexed bel
 
 ## Planned next step
 
-Resolve the 19 reproduced baseline/environment failures in an appropriate gate
-environment, then complete owner-operated implementation/review PR delivery and
-physical-host acceptance. Do not claim a green full gate or mainline integration.
-At resume, fetch upstream, check live workflow state and the review SHA, merge
-through the prescribed PR process, and validate the actual combined tree.
+Owner chose on 2026-11-16 to exit this capsule, relaunch the same checkout from
+the physical host with the new local PEX and github-ssh enabled, then resume Codex.
+This supersedes the proposed SSH-to-host harness adaptation. After resumption,
+verify the inherited broker and executable bytes, then write and execute the
+recorded E2E scenario using a fresh project and explicit github-ssh authorization.
+Observe the Git checkout independently and retain WebM/screenshots/action evidence.
+Recursive proxy inheritance is still unproved; do not report success until observed.
+The 19 reproduced full-gate failures and formal PR delivery remain open separately.
+
+## Host relaunch handoff
+
+The owner explicitly chose a development-build self-hosting experiment. The normal
+host launcher is not replaced and remains the recovery route; no saved project
+configuration is changed by the run-once command. Reuse the same checkout and its
+existing persistent state. The original checkout still has only its pre-existing
+website gitlink modification. Main remains unchanged; synchronization can wait.
+
+Build: `.venv/bin/python -m nox -s pex` passed, including shell syntax, packaging
+and executable smoke. Built from clean `712466ab9547ec7c9153977f725fc6cfe26344f6`.
+The local PEX reports `v0.3.2.dev0-local-linux-x86_64` with revision `unknown` by
+local-build policy; the clean Git revision and checksum here identify its inputs
+and bytes independently. It contains the committed implementation, including the
+node-registry and console-table fixes. Review corrections at `388f62a3` remain on
+the separate review branch and are not included; their PR merge is still pending.
+
+SHA-256: `2f9470c6ca5efeaccd9844bf6feb1494d2e95564d054051a2c005afbc35d78ed`.
+
+Capsule artifact: `/home/devcapsule/worktrees/github-auth/devcapsule-src/dist/devcapsule-local.pex`.
+Host artifact (from Docker mount inspection):
+`/home/costin/.local/share/devcapsule/projects/by-path/fe326e03c822-devcapsule/home/worktrees/github-auth/devcapsule-src/dist/devcapsule-local.pex`.
+Checksum and build metadata are saved beside it, outside Git.
+
+After exiting Codex and stopping the current capsule normally, run on the host:
+
+```sh
+cd /opt/costin3/myProjects/devcapsule
+/home/costin/.local/share/devcapsule/projects/by-path/fe326e03c822-devcapsule/home/worktrees/github-auth/devcapsule-src/dist/devcapsule-local.pex project run \
+  --no-update-check \
+  --authorize github-ssh true \
+  --authorize network host \
+  --authorize docker-daemon host-socket
+```
+
+Keep that outside launcher running throughout the resumed session: it owns the
+broker. Host OpenSSH must already authenticate noninteractively to GitHub and
+trust its host key. A key without a passphrase needs no SSH agent.
+
+Inside the relaunched capsule:
+
+```sh
+cd /workspace/301e4208ef81-ChatGPT_Codex
+codex resume 01a1e25b-6b76-72d0-b311-614d6adca912
+```
+
+The session file exists under ~/.codex/sessions and Docker inspection shows
+~/.codex backed by the persistent Codex component home. Installed CLI help
+supports explicit session IDs. Conversation/history is resumable; process state
+and outstanding tool sessions are not. The feature checkout remains
+`/home/devcapsule/worktrees/github-auth`, on `ws-github-auth/ssh-proxy`.
+
+Resume checks before E2E: read this record, fetch upstream, inspect live workflow
+state, claim the slice, check the PEX checksum, verify
+`DEVCAPSULE_GITHUB_SOCKET=/run/devcapsule-github.sock` and that it is a socket,
+then perform an authenticated GitHub read through the adapter. Fresh E2E homes
+must have no copied key; the recording harness must authorize github-ssh for its
+fresh project. Do not use this current capsule's manually installed key as proof
+of the proxy. No E2E container was launched during handoff preparation.
 
 ## Open Threads
 
-- Awaiting the human: suitable gate environment and owner-operated GitHub PR delivery.
-  Workstream selection and Git-over-SSH scope are already accepted.
+- Awaiting the human: exit/relaunch/resume using the command above.
+  Workstream selection, Git-over-SSH scope and the relaunch approach are accepted.
+  Full-gate environment and owner-operated GitHub PR delivery also remain open.
 - Engineering choices: initial transport must account for Linux/rootless Docker
   permissions; Docker Desktop cannot bind ordinary host Unix sockets.
 - Physical-host launch acceptance and Docker Desktop transport remain open.
