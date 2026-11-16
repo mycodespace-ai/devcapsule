@@ -4,7 +4,7 @@ Mnemonic: `project-management`
 
 Start date: 2026-08-09
 
-State: active 2026-11-16; permanent coordination; engineer-directed E2E recording and presentation use case defined
+State: paused 2026-11-16; use case handed to owner-requested presentations workstream; registration next
 
 Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -22,6 +22,21 @@ Own project-wide priorities, sequencing, dependencies and lifecycle decisions.
 This reserved workstream remains open for the lifetime of multiple-stream mode.
 
 ## Current State
+
+### Presentations creation and handoff, 2026-11-16
+
+The owner requested an existing presentations workstream, or creation if absent.
+Checked canonical mainline, live publications, open/archive directories and remote branches.
+There is no standalone presentations workstream. The merged viewer branch belonged to capsule-webconsole.
+Create `presentations` on `ws-presentations/authoring`, from current canonical main `dac6b9d4`.
+The use case is its goal; creation starts no design or implementation work.
+Delivered `2026-11-16-project-management-presentation-authoring.md` through coordination mail, with the use case and original source revisions.
+Dispositioned the two presentation messages as delivered onward; 18 intake items remain.
+The source messages remain in Git at `cac3861e`, linked from the use-case document.
+Pause project-management to register the new workstream on its own branch under WORKFLOW.md 7.5.
+No unrelated state is carried to that branch. Records checked for whitespace and link targets; no product code changed.
+The owner-authorized planning validation rule remains in force.
+
 
 ### Presentation excellence selected, 2026-11-16
 
@@ -157,13 +172,11 @@ product and scope choices; neither is silently adopted or assigned a release.
 
 ## Planned Next Step
 
-Continue project-management discussion from the defined engineer-directed E2E recording and presentation use case.
-Use the engineer's existing Markdown scenario or inline English as input and the final web-console link as the visible outcome.
-Do not start packaging, interface or architecture design here; the owner explicitly deferred that work.
-The existing recording reuse and viewer acceptance are the baseline.
-Implementation assignment, release placement and intake disposition remain later coordination work.
-Compatibility, test-improvements and the other queue items remain pending.
-Any implementation-workstream switch still needs the owner's specific instruction.
+On owner-directed resumption, review presentations' published state and the remaining 18 intake items.
+The presentation use case is assigned; its implementation and release placement are not decided by registration.
+Compatibility, test-improvements and other coordination questions remain pending.
+The pair is leaving this branch only to create the owner-requested presentations workstream.
+Returning to project management needs the owner's instruction.
 
 ## Validation And Checkout State
 
@@ -230,14 +243,13 @@ The owner's saved edits remain outside project-management commits:
 
 ## Open Threads
 
-- Use case defined: engineer supplies a Markdown file or inline English; agent runs, records, presents and returns the web-console link.
-- Existing recording reuse and viewer human acceptance stand; both audiences remain in scope.
-- The owner explicitly deferred design work. Do not proceed into package boundaries, interfaces or installation choices here.
-- Implementation assignment, release placement and the two presentation intake dispositions remain open.
-- The wider queue remains pending; no additional product choice is inferred from this use-case definition.
-- Local test failures do not block project-management planning, by explicit owner direction on November 16.
-- Retained raw evidence stays ignored and outside commits.
-- Deliberately not preserved: no transcript, tokened link in Git, new experiment, service, container or deployment.
+- Owner requested creation of presentations; its first branch is `ws-presentations/authoring` from canonical main.
+- The defined use case and two source messages were delivered as `2026-11-16-project-management-presentation-authoring.md`.
+- Design and implementation remain deferred; no release target is assigned.
+- The remaining 18 intake items and the wider queue remain pending.
+- Local test failures do not block project-management planning under the owner's November 16 direction.
+- No running service, container or new environment was created. Retained raw evidence remains ignored.
+- Deliberately not preserved: no transcript, tokened link in Git, new experiment or speculative architecture.
 
 ## Workstream Document Index
 
