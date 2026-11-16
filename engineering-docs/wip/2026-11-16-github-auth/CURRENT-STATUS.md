@@ -10,7 +10,7 @@ Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
 Branch association: `ws-github-auth/ssh-proxy`, from canonical `upstream/main` at `1942f396`.
 
-Integration target: `main`
+Integration target: `release-0.3.1` (owner direction, 2026-11-16)
 
 Delivery method: pull request with Pair Review; the human merges.
 
@@ -81,6 +81,15 @@ Git connectivity integrity and authenticated fetch/push checks pass. The origina
 checkout remains untouched. Review evidence and prepared PR text are indexed below.
 
 ## Planned next step
+
+Current owner direction: finish Pair Review #44 into this branch, then deliver
+PR #47 to `release-0.3.1`. The human merges the release. Maintenance subsequently
+carries the release to main; do not conclude before main includes this tree.
+The implementation version and docs manifest now match the release baseline.
+Unrelated main-only documents are removed from the release-targeted diff.
+Do not merge main into this slice: the release already supplies its baseline
+and the workflow rules are identical. Earlier main-targeted handoffs are history.
+
 
 Resolve the inherited gate failures with maintenance, then integrate and validate
 review PR #44 and complete implementation PR #47. The prescribed GitHub CLI is
@@ -469,3 +478,4 @@ remote PR existence remains unverified.
 
 - [Review assessment](evidence/review-assessment.md)
 - [Prepared PR delivery](evidence/delivery.md)
+
