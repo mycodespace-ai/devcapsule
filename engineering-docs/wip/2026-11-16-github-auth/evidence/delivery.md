@@ -53,7 +53,11 @@ now supplies the merged PEX to both parent and child. New recorded acceptance
 independent Git/Docker checks and cleanup. The new 45.42-second video is at
 `devcapsule-src/tests/e2e/evidence/github-ssh-proxy/20261116T103152Z-af7fa02c/scenario-video.webm`
 in the primary checkout. The earlier video remains preserved separately. Neither
-video has been uploaded or attached to a PR.
+video has been uploaded or attached to a PR. The latest recording also has a
+six-step presentation served directly by the running console from that evidence
+folder. Its authored script and reproducible metadata producer are versioned; the
+media and generated presentation remain local. Discovery, captions and each step's
+playback boundary passed real-browser validation.
 
 Latest validation: 41 focused cases passed; types passed over 350 files and
 conventions reported zero breaches. Unit gate: 3309 passed, 3 failed, 1 skipped,

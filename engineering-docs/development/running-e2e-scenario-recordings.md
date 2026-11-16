@@ -165,6 +165,11 @@ run in seconds and names what to correct. A scenario that names no script is
 recorded as before, without a presentation; the interactive `serve` mode
 writes none.
 
+Thus presentation generation is automatic for a suitably authored **replay**,
+not for every E2E run. The console discovers existing `presentation.json` files;
+it does not generate them on demand. A plain video or an interactive action log
+will not appear as a presentation on its own.
+
 ### 5.1 The scenario names its script
 
 The scenario's JSON carries `"script": "scripts/<scenario-id>.md"`, a path
@@ -260,3 +265,29 @@ Two limits to know. The page slows the video down; it cannot add frames, so
 a recording of sparse frames looks stepped at half speed. And
 `scenario-video.webm` does not state its own length, because `ffmpeg` writes
 it to a pipe; the page takes the length from `presentation.json`.
+
+### 5.5 Presenting a retained interactive run
+
+Keep the video, poster and step screenshots in one folder beneath the project
+mount. The console searches there recursively, including Git-ignored E2E evidence
+and run subdirectories. It skips dot-directories, `node_modules` and symbolic
+links. A recording in a separate worktree outside this mount is not visible.
+The [console presentation contract](../../devcapsule-webconsole/PRESENTATIONS.md#finding-the-presentations)
+maps the source locations and URL paths; website assets are one possible location,
+not a publishing prerequisite.
+
+An interactive run does not retain per-action timestamps in `action-log.json`.
+Save the controller's cumulative `frames_recorded` response at each chapter
+boundary and its screenshot, plus the final count returned by `stop`. At 12 fps,
+a boundary at frame 184 is 15.333 seconds of the encoded recording. Author the
+step text and captions, then use `parse_script`, `plan_presentation` and
+`PresentationPlan.timed` to produce the document with `write_presentation`.
+Chapter groups may serve as the producer's timing units; do not label them as
+per-action timings or a runnable replay scenario. Bind retained timing metadata
+to the movie checksum so another recording cannot silently use it.
+
+The [SSH proxy showcase](../wip/2026-11-16-github-auth/evidence/showcase.md#presentation-in-the-running-console)
+is a worked example using the existing recording and measured controller counts.
+After generation, reload **Presentations**; no console restart, registration or
+website build is needed. Check the listing, step navigation, media loading,
+captions and playback stopping at the selected step's boundary in a real browser.

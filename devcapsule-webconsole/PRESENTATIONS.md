@@ -19,6 +19,28 @@ to them. It writes nothing.
 
 ## Finding the presentations
 
+The content root is the console's **mounted project directory**, not a fixed
+presentation asset directory and not the host's whole filesystem. A URL such as
+`/presentations/website/_site/assets/presentations/todo-fastapi-postgres-react`
+means that exact folder relative to the project root. The website build is one
+possible source of content; it is not required for a console presentation.
+
+In this repository the relevant locations are:
+
+| Location relative to the project root | Purpose |
+| --- | --- |
+| `devcapsule-src/tests/e2e/evidence/<scenario-id>/` | Local recorded runs, ignored by Git and preserved across clean builds. A run subdirectory is also discovered. |
+| `devcapsule-webconsole/resources/presentations/` | Retained sample media for developing the console; not bundled in its distribution. |
+| `website/_site/assets/presentations/` | Generated website assets, when a website build is present in this checkout. |
+| `devcapsule-src/tests/e2e/scripts/` | Authored scenario text; these Markdown files alone are not presentations. |
+
+A recording in another worktree outside the mounted project is not discovered.
+Keep its complete presentation folder under this mount to make it available;
+linking to an outside directory does not work because discovery and file serving
+refuse symbolic links. Git tracking is not required. Writing a valid
+`presentation.json` beside the media and reloading **Presentations** is enough:
+there is no registration command, website build or console restart to perform.
+
 `GET /api/project/presentations` answers
 `{"folders": ["path/of/a/folder", …], "complete": true}`: the folders below
 the project root that hold a regular file named `presentation.json`, sorted.
@@ -89,14 +111,31 @@ the contract is refused whole, and the page names every breach.
 
 ## Where the document comes from
 
-Nobody writes it by hand. A replay of a recorded scenario writes it beside
-the recording: `devcapsule-src/tests/e2e/scenario_presentation.py` takes the
+Generation and discovery are separate. The console only reads existing files;
+opening **Presentations** does not turn a video into a presentation.
+
+| Recording mode | Generates `presentation.json`? |
+| --- | --- |
+| Scripted scenario replay with a `script` and numbered actions | Yes, after successful video encoding, from the script and measured frame counts. |
+| Replay without a `script` | No; it produces a recording only. |
+| Interactive `serve` / `ctl` | No, even when a scenario names a script; this path does not call the presentation producer. |
+| Ordinary E2E or IDE smoke run | No general presentation-generation guarantee. |
+
+Use the shared producer instead of assembling the generated JSON by hand.
+`devcapsule-src/tests/e2e/scenario_presentation.py` takes the
 overview and the steps from the scenario's script, the captions from the
 scenario's actions, and the times from the count of frames the recorder had
 taken after each action. What a scenario's author provides is described in
 [running scenario recordings](../engineering-docs/development/running-e2e-scenario-recordings.md),
 section 5. Any other producer may write the document; the contract above is
 all the page knows.
+
+An existing interactive recording needs authored step text and retained frame
+boundaries before it can be presented. The action log alone has no timestamps.
+The [SSH proxy showcase procedure](../engineering-docs/wip/2026-11-16-github-auth/evidence/showcase.md)
+gives a concrete producer for the retained run, with chapter timings tied to its
+movie checksum. It adds metadata to the original recording without rerunning Git
+or changing the movie. This is not automatic interactive-mode support.
 
 ## What the page does
 

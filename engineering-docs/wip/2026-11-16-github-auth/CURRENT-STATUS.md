@@ -4,7 +4,7 @@ Mnemonic: `github-auth`
 
 Start date: 2026-11-16
 
-State: paused; full release merge and new merged-build recording passed; inherited gate failures and owner-operated PR delivery remain.
+State: paused; merged-build recording and live six-step presentation passed; inherited gate failures and owner-operated PR delivery remain.
 
 Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -335,6 +335,46 @@ remain as documented above. The new E2E and encoding passed on their first run.
 The initial script-extraction command used the wrong working-directory-relative
 path and was corrected before any E2E launch; no failed product run was discarded.
 
+## Live console presentation, 2026-11-16
+
+The owner explicitly authorized investigating presentation behavior in this
+checkout and documenting the cross-scope findings while adding the SSH showcase.
+The workstream selection remains github-auth. No main synchronization is needed:
+this follows the same fetched main and the same validated recording.
+
+The live console discovers `presentation.json` beneath its mounted project and
+serves named media through `/api/project/raw`. It does not generate metadata.
+Scripted replay generates the document when given a script and numbered actions;
+interactive serve/ctl does not. The earlier recording was interactive. The
+example URL under website/_site names website output relative to the project;
+there is no single required presentation assets directory. Outside worktrees and
+symbolic links are not discovery paths. These distinctions and source locations
+are now explicit in PRESENTATIONS.md and the scenario-recording guide.
+
+Added a six-step Markdown script and a producer using the shared presentation
+module. The chapter boundaries come from the recorded controller responses and
+are bound to the existing movie checksum. The producer writes presentation.json
+beside run `20261116T103152Z-af7fa02c`; no recording was rerun or altered. It is
+visible immediately on the current console's Presentations page, with route:
+`/presentations/devcapsule-src/tests/e2e/evidence/github-ssh-proxy/20261116T103152Z-af7fa02c#overview`.
+This is local evidence served from the project mount, not a website publication.
+
+Validation: authenticated with the supplied session token and then a cookie,
+confirmed discovery, inspected the overview, and played all six steps in real
+Chromium. Each screenshot loaded, its caption appeared, and playback stopped at
+the selected boundary. Byte-range media requests returned 206 with matching bytes;
+no browser errors occurred. The 39 existing presentation-producer tests and the
+docs-contract check passed. Browser screenshots and structured results are under
+the run's `presentation-check/`. No runtime source or PEX changed; the previously
+recorded full-gate limitations still apply.
+
+Sent the broader usability finding to capsule-webconsole as
+`2026-11-16-interactive-presentations.md`. Automatic presentations for interactive
+runs remain a product/design follow-up, not an implemented feature of this slice.
+The tracked script, timing input and producer make this retained deck reproducible;
+media and generated metadata remain ignored evidence. Tokens and cookies are not
+in Git, the presentation document, or browser screenshots.
+
 ## Open Threads
 
 - Host relaunch, recursive inheritance and recorded fresh-project E2E passed.
@@ -354,7 +394,10 @@ path and was corrected before any E2E launch; no failed product run was discarde
 
 ## Workstream document index
 
-- [Recorded E2E procedure](evidence/showcase.md)
+- [Recorded E2E procedure and console presentation](evidence/showcase.md)
+- [Presentation producer for the retained run](evidence/present-showcase.py)
+- [Recorded chapter boundaries](evidence/presentation-timing.json)
+- [SSH proxy scenario script](../../../devcapsule-src/tests/e2e/scripts/github-ssh-proxy.md)
 - [Review brief](evidence/review-brief.md)
 - [Review follow-up 1](evidence/round-1.md)
 - [Intake](intake/README.md)

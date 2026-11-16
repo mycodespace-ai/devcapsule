@@ -168,3 +168,35 @@ to wait for commands. No product source changed for this recording.
 
 Host path:
 `/opt/costin3/myProjects/devcapsule/devcapsule-src/tests/e2e/evidence/github-ssh-proxy/20261116T103152Z-af7fa02c/scenario-video.webm`.
+
+## Presentation in the running console
+
+The interactive recorder does not automatically generate presentation metadata.
+The retained run now has a six-step presentation generated with the shared
+`scenario_presentation` producer from the
+[authored script](../../../../devcapsule-src/tests/e2e/scripts/github-ssh-proxy.md)
+and [recorded chapter boundaries](presentation-timing.json). Those boundaries are
+the cumulative frame counts returned by the controller at the selected batches;
+they are not inferred from wall-clock time. The movie checksum prevents using
+these timings with a different run. The existing movie is not edited or copied.
+
+From `devcapsule-src`, regenerate the document with:
+
+```sh
+PYTHONPATH=. .venv/bin/python \
+  ../engineering-docs/wip/2026-11-16-github-auth/evidence/present-showcase.py \
+  tests/e2e/evidence/github-ssh-proxy/20261116T103152Z-af7fa02c
+```
+
+Reload the console's **Presentations** page. It discovers the new document at:
+
+```text
+/presentations/devcapsule-src/tests/e2e/evidence/github-ssh-proxy/20261116T103152Z-af7fa02c#overview
+```
+
+The route is relative to the current console origin. Authenticate with the current
+session's normal console link; do not put its token in a record. This local deck
+is served from the mounted project, not deployed to the website. Media and generated
+metadata stay in ignored evidence; the script, timing metadata and producer are
+versioned. The older recordings remain in the detached worktree outside this
+console's project mount.
