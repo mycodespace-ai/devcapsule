@@ -2,7 +2,7 @@
 
 Mnemonic: `presentations`
 Start date: 2026-11-16
-State: active; PR #43 opened; Antigravity Pair Review in progress
+State: paused; Pair Review complete; PR #43 awaits owner merge to release 0.3.1
 Branch association: `ws-presentations/0.3.1-authoring`
 Branch prefix: `ws-presentations/`
 Integration target: `release-0.3.1`
@@ -44,12 +44,11 @@ The self-contained handoff names the exact paths and evidence.
 
 ## Planned next step
 
-The authoring kit is implemented and the installed-artifact checks passed.
-Implementation PR [#43](https://github.com/mycodespace-ai/devcapsule/pull/43) targets `release-0.3.1`.
-Run the requested Antigravity Pair Review from its committed brief, in its own worktree;
-assess its actual diff, integrate accepted fixes through its stacked PR, and validate the final branch.
-The implementation has not been pair-reviewed and must not be described as ready to merge.
-Disclose the known local gate limitation and verify the hosted checks on the implementation PR.
+The scoped implementation and Pair Review are complete. The owner merges
+[PR #43](https://github.com/mycodespace-ai/devcapsule/pull/43) into `release-0.3.1`.
+Consult the PR's live hosted checks before merging. Only the human merges the release target.
+After the owner reports the merge, fetch upstream and verify the release contains this tree.
+Maintenance owns carrying the release to main; do not conclude this workstream before main contains it.
 Do not restart a viewer redesign, audience study or general process invention.
 
 ## Validation and checkout state
@@ -67,11 +66,11 @@ and the repository replay harness imports it through an adapter. The portable re
 ordinary Playwright callbacks and derives chapters/captions from captured frames. Failed and incomplete
 runs keep their outcome and have labelled decks. The viewer is unchanged.
 
-Validation on this slice: 121 focused and repository-recorder compatibility tests passed; syntax, mypy (352 files) and conventions (0 breaches)
-passed. The full gate stopped at the inherited Docker-group failure after 1438 passes and 1 skip.
+Final validation after merging review PR #46: 148 focused/compatibility tests and 11 integration tests passed;
+syntax, mypy (353 files) and conventions (0 breaches) passed. The full gate stopped at the inherited Docker-group failure after 1438 passes and 1 skip (178 deselected).
 Separate PEX build/smoke, docs contract (249 pages) and webconsole checks (474 tests) passed.
-An unrelated scratch project used only the exported kit and produced passing, failed and incomplete
-recordings; all six chapters played in the viewer extracted from the built PEX. See the validation record.
+An unrelated scratch project used only the final exported kit and produced passing, failed and incomplete
+recordings; all six chapters played in the viewer extracted from the rebuilt PEX. See the validation record.
 The exported example driver also passed its two-step browser run.
 Maintenance was notified by coordination mail of the owner-directed 0.3.1 dependency.
 No Docker image or capsule was launched. Temporary loopback application and console services were stopped.
@@ -79,29 +78,36 @@ The local artifact is a development validation build, not a published release ca
 
 ## Pair Review
 
-Initial review: Antigravity `gemini-4-hydrogen-high` with `--effort high`, conversation
-`861df986-5407-4636-8a5d-3a2d26da53fc`, exit 0. Review PR
-[#46](https://github.com/mycodespace-ai/devcapsule/pull/46), commit `e40d16a5`.
-Product guards accepted in principle; Round 1 requests one-action unit tests,
-contract-based timing assertions, isolated encoder interpreter startup and a
-clarification of cwd-relative hand-off paths. No merge yet. Hosted checks on PR #43 passed.
+Antigravity `gemini-4-hydrogen-high` with `--effort high` reviewed in its own worktree.
+Conversation `861df986-5407-4636-8a5d-3a2d26da53fc`; initial invocation and `-c` correction round both exited 0.
+Review PR [#46](https://github.com/mycodespace-ai/devcapsule/pull/46) delivered input/output guards,
+recorder lifecycle tests and installed-CLI/PEX coverage. Round 1 split multi-operation unit tests,
+removed fixed-cadence assertions, isolated encoder interpreter startup and clarified cwd-relative paths.
+Accepted final review commit `e331693f` after reading its actual diff; merged at `d4564313`.
+The assessment and acceptance comments are on PR #46. Final implementor checks are recorded below and
+in the validation record. Hosted checks passed on the pre-review implementation; PR #43 holds the final live results.
+
+Reviewer proposals: the relative-path clarification is included. The optional nox smoke expansion was
+not adopted because the new PEX integration test covers the installed delivery boundary. The requested
+Chromium check and the docs contract both passed again on the merged implementation.
 
 ## Open Threads
 
 - Implementation authorized; release target and reviewer settled.
-- PR #43 is open as a draft; reviewer results and hosted checks remain pending.
+- PR #43 awaits owner merge to release-0.3.1, followed by maintenance's release-to-main integration.
 - Preserve the recorded viewer acceptance and demonstrated external-project recording reuse.
 - Local full gate still fails on the known recursive Docker-group test; no unrelated fixture fix is included.
 - Automated checks establish the kit and existing viewer contract, not a second human acceptance of presentation quality.
-- Raw acceptance files and logs are in `/var/tmp/presentations-acceptance` and `/var/tmp/presentations-*.log`;
+- Final raw acceptance files and logs are in `/var/tmp/presentations-final-acceptance`,
+  `/var/tmp/presentations-antigravity` and `/var/tmp/presentations-*.log`;
   they are disposable and not committed. Durable outcomes are in the validation record.
 - No transcript or tokened link is preserved in Git.
 
 ## Workstream Document Index
 
 - [Validation record](2026-11-16-record-authoring-validation.md): installed-artifact and browser checks, counts and limits.
-- [Implementation PR draft](2026-11-16-record-pr-draft.md): owner-operated delivery to release 0.3.1.
-- [Round 1 brief](evidence/2026-11-16-review-round-1.md): test-contract corrections and hand-off path clarification.
+- [Implementation PR draft](2026-11-16-record-pr-draft.md): description prepared for PR #43, targeting release 0.3.1.
+- [Round 1 brief](evidence/2026-11-16-review-round-1.md): accepted test-contract corrections and hand-off path clarification.
 - [Pair Review brief](evidence/2026-11-16-review-brief.md): PR #43; exact Antigravity model and high effort.
 - [Full use-case handoff](2026-11-16-record-use-case-handoff.md): owner-defined flow, constraints and original correspondence references.
 
