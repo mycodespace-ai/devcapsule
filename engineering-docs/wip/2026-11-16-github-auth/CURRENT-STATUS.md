@@ -4,7 +4,7 @@ Mnemonic: `github-auth`
 
 Start date: 2026-11-16
 
-State: paused; merged-build recording and live six-step presentation passed; inherited gate failures and owner-operated PR delivery remain.
+State: active; resumed at owner direction; implementation PR #47 and review PR #44 are open; inherited gate failures remain.
 
 Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -26,14 +26,22 @@ outside this slice. Review partner: Antigravity, `gemini-4-hydrogen-high`.
 
 ## Current state
 
-At the owner's request, the active checkout is now
-`/workspace/301e4208ef81-ChatGPT_Codex`, on `ws-github-auth/ssh-proxy`.
-The earlier worktree is detached at `9e5bf073` and retains the built PEX and
-previous evidence. The website submodule's prior commit remains on its
-`presentations` branch; the active checkout uses the tracked submodule revision.
-Canonical main is unchanged after fetch, so synchronization is unnecessary for
-this recording-only task. No open bug is owned by github-auth; mail and intake
-are empty. The owner requested a new recorded E2E against the merged build.
+The owner switched this checkout back from presentations on 2026-11-16.
+The checkout is `/workspace/301e4208ef81-ChatGPT_Codex`, on
+`ws-github-auth/ssh-proxy`. Presentations was already paused, committed and
+published; its claim was released. This branch was clean on selection.
+
+Fetched canonical upstream and read its live coordination state. Mail and intake
+are empty; no bug record is owned by github-auth. Main has one merge commit not
+in this branch, `dac6b9d4` (#42); the workflow definition and local rules are
+identical. Defer synchronization for this selection-only task; reassess before
+implementation or integration. No source, validation scope or release target changed.
+
+The prescribed GitHub CLI is now installed and authenticated as `ccozianu`.
+Verified implementation PR #47 is open against main, review PR #44 is open
+against this branch, and the earlier implementation PR #45 is closed.
+No PR was changed. Prior runtime and E2E evidence below remains historical;
+no new runtime or acceptance check was requested or run during selection.
 
 ## Implementation and evidence
 
@@ -74,8 +82,9 @@ checkout remains untouched. Review evidence and prepared PR text are indexed bel
 
 ## Planned next step
 
-Resolve the inherited gate failures with maintenance, then complete the pending
-review PR and implementation PR through the owner-operated GitHub workflow.
+Resolve the inherited gate failures with maintenance, then integrate and validate
+review PR #44 and complete implementation PR #47. The prescribed GitHub CLI is
+available; the human merges into main.
 The full release merge and requested combined validation are complete. Review
 corrections remain separate and require validation after integration.
 
@@ -434,15 +443,13 @@ remote PR existence remains unverified.
 ## Open Threads
 
 - Host relaunch, recursive inheritance and recorded fresh-project E2E passed.
-  Full-gate environment and owner-operated GitHub PR delivery remain open.
+  Full-gate environment and delivery through PR #47 remain open.
 - Engineering choices: initial transport must account for Linux/rootless Docker
   permissions; Docker Desktop cannot bind ordinary host Unix sockets.
 - Physical-host relaunch is observed working; Docker Desktop transport remains deferred.
-- PR description draft now includes the successful recorded E2E and current
-  validation limits. No PR was created or edited by this agent; remote PR existence
-  remains unverified. The recording is retained locally, not attached to GitHub.
-- GitHub CLI is absent at the policy-prescribed path. PR creation/merging remains
-  owner-operated under WORKFLOW-LOCAL.md; prepare reviewed commits and compare links.
+- Implementation PR #47 and review PR #44 are open, verified on resumption.
+  The recording remains local; the PR description draft retains validation limits.
+- The prescribed GitHub CLI is installed and authenticated. The human merges main.
 - Reviewer worktree removed at pause; pushed `ws-github-auth/ssh-proxy-review`
   preserves its commit. Review corrections are not yet merged into implementation.
 - Unimplemented review proposals and exact baseline failure IDs are in the assessment.
