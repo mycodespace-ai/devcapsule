@@ -32,22 +32,27 @@ class CapsuleUser:
         """``command`` as a supervised child runs it: behind ``gosu`` when the caller is root.
 
         Every supervised child, infrastructure included, is wrapped the same
-        way, so no display or IDE process ever runs as root.
+        way, so no display or IDE process ever runs as root. When the caller
+        is root and the target identity is already ``0:0`` (as under rootless
+        Docker, where host UID/GID map to container root), return ``command``
+        unchanged rather than invoking ``gosu 0:0``, which ``--cap-drop ALL``
+        refuses.
         """
 
         if not command:
             raise ValueError("foreground command must not be empty")
-        if self.caller_is_root:
+        if self.caller_is_root and (self.identity.uid != 0 or self.identity.gid != 0):
             return ("gosu", f"{self.identity.uid}:{self.identity.gid}", *command)
         return command
 
     def owner_changes(self, created: Iterable[Path]) -> tuple[tuple[Path, int, int], ...]:
         """The ``(path, uid, gid)`` changes that give ``created`` to the capsule user.
 
-        One per path, in the given order, when the caller is root; none
-        otherwise, since what another caller creates is the user's already.
+        One per path, in the given order, when the caller is root and the
+        target identity is non-root; none otherwise, since the caller owns them
+        already.
         """
 
-        if not self.caller_is_root:
+        if not self.caller_is_root or (self.identity.uid == 0 and self.identity.gid == 0):
             return ()
         return tuple((path, self.identity.uid, self.identity.gid) for path in created)

@@ -10,8 +10,10 @@ from devcapsule.container_runtime.contract import Identity
 from devcapsule.container_runtime.identity import CapsuleUser
 
 DEVELOPER = Identity(1000, 1001, "developer")
+ROOT = Identity(0, 0, "root")
 PREPARED_BY_ROOT = CapsuleUser(DEVELOPER, caller_uid=0)
 PREPARED_BY_THE_USER = CapsuleUser(DEVELOPER, caller_uid=1000)
+ROOTLESS_ROOT = CapsuleUser(ROOT, caller_uid=0)
 
 
 def test_command_drops_to_the_capsule_user_when_the_caller_is_root() -> None:
@@ -45,3 +47,13 @@ def test_owner_changes_give_each_created_path_to_the_capsule_user_when_the_calle
 def test_owner_changes_are_none_when_the_caller_is_not_root() -> None:
     """For any caller but root, ``owner_changes`` is empty: what that caller creates is its own."""
     assert PREPARED_BY_THE_USER.owner_changes((Path("/home/developer/.ssh"),)) == ()
+
+
+def test_command_does_not_wrap_root_identity_in_gosu() -> None:
+    """When both the caller and the target identity are ``0:0`` (rootless Docker), ``command`` omits ``gosu``."""
+    assert ROOTLESS_ROOT.command(("ide", "--wait")) == ("ide", "--wait")
+
+
+def test_owner_changes_are_none_when_the_target_identity_is_root() -> None:
+    """When the caller and target identity are both ``0:0``, ``owner_changes`` avoids redundant ``chown`` calls."""
+    assert ROOTLESS_ROOT.owner_changes((Path("/home/devcapsule/.ssh"),)) == ()

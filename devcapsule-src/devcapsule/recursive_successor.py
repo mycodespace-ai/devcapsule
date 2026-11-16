@@ -13,6 +13,7 @@ import time
 from typing import Any, Callable, Mapping, Sequence
 
 from devcapsule.build_info import current_build_info
+from devcapsule.host_daemon import daemon_is_rootless
 from devcapsule.launch.pycharm import DockerMode, PycharmRunOptions
 from devcapsule.launch.pycharm._launcher import (
     PycharmRunError,
@@ -154,7 +155,12 @@ def launch_successor(
 
     selected = fresh_resolved_project(checkout)
     realized = realize_environment(selected)
-    runtime_plan = project_runtime_plan(selected, realized.locked)
+    rootless_docker = daemon_is_rootless()
+    runtime_plan = (
+        project_runtime_plan(selected, realized.locked, uid=0, gid=0, user="root")
+        if rootless_docker
+        else project_runtime_plan(selected, realized.locked)
+    )
     source_revision = current_build_info().source_revision
     name = successor_container_name(run_id)
     options = _resolved_run_options(
@@ -165,6 +171,7 @@ def launch_successor(
         run_id=run_id,
         source_revision=source_revision,
         image_labels=realized.image.labels,
+        rootless_docker=rootless_docker,
     )
     config = build_run_config(options, env)
     successor_display_url: str | None = None
@@ -189,7 +196,7 @@ def launch_successor(
         args = build_docker_args(config, files, launch_env)
         context = _launch_context(report, config.persistent_home, args)
         host_args = _translate_bind_sources(args, context)
-        if files.sudoers_file is not None:
+        if files.sudoers_file is not None and not rootless_docker:
             _make_root_owned(files.sudoers_file, launch_env)
         plan = _expected_plan(host_args, files, realized)
         _write_expected_plan(run_root, plan)
@@ -473,6 +480,7 @@ def _resolved_run_options(
     run_id: str,
     source_revision: str,
     image_labels: Mapping[str, str] | None = None,
+    rootless_docker: bool = False,
 ) -> PycharmRunOptions:
     runtime = selected.resolution.get("runtime", {})
     state_root = selected.resolution.get("state", {})
@@ -544,6 +552,7 @@ def _resolved_run_options(
             "--label",
             f"devcapsule.e2e.role={SUCCESSOR_ROLE}",
         ],
+        rootless_docker=rootless_docker,
     )
 
 
