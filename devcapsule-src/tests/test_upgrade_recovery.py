@@ -106,7 +106,8 @@ def install_external_fakes(monkeypatch, events, *, contained=True):
         base = known_base_image(reference)
         return replace(base, contract=replace(base.contract, display="contained" if contained else "host-x11-only")) if base else None
     monkeypatch.setattr(derivation, "known_base_image", fake_base, raising=False)
-    def realize(selected, *, report, prepare_base, trust=None):
+    def realize(selected, *, report, prepare_base, trust=None, fetch=True):
+        # ``fetch`` is what --print-command passes. These stand-ins fetch nothing either way.
         def obtain(reference):
             events.append("obtain-base")
             return ImageDetails(reference, LOCAL_ID, {

@@ -79,6 +79,7 @@ include = ["devcapsule*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+norecursedirs = ["evidence", "resources", ".*", "build", "dist", "*.egg"]
 addopts = [
   "--cov=devcapsule",
   "--cov-report=term-missing",
@@ -109,6 +110,7 @@ skip_covered = true
 [tool.mypy]
 python_version = "3.12"
 files = ["devcapsule", "tests", "noxfile.py", "scripts/bump-version.py", "scripts/release-manifest.py", "scripts/ci_gate.py", "scripts/diff_coverage_annotations.py", "scripts/validate_unittests_follow_conventions.py", "scripts/publish_coverage_numbers_to_pr.py"]
+exclude = ["^tests/e2e/evidence/"]
 warn_unused_configs = true
 show_error_codes = true
 pretty = true

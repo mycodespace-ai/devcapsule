@@ -17,6 +17,7 @@ from devcapsule.images.metadata import inspect_local_image
 from devcapsule.materialization import (
     ImageDetails,
     LockedEnvironment,
+    NotOnThisMachine,
     cache_root,
     ensure_materialized_surface,
     parse_locked_environment,
@@ -66,8 +67,15 @@ def realize_environment(
     report: Callable[[str], None] | None = None,
     prepare_base: Callable[[ImageDetails], None] | None = None,
     trust: HomeTrust | None = None,
+    fetch: bool = True,
 ) -> RealizedEnvironment:
-    """Strictly reuse or materialize the canonical image for one resolved project."""
+    """Strictly reuse or materialize the canonical image for one resolved project.
+
+    With ``fetch`` false the environment is only looked for on this machine:
+    the base image is not pulled, no artifact is downloaded and no image is
+    built. What is missing raises :class:`NotOnThisMachine`, which says what a
+    launch would bring. ``project run --print-command`` asks for that.
+    """
 
     from devcapsule.configuration.capabilities import CapabilityPolicy
     if (base_override is not None and "capabilities" in selected.manifest
@@ -112,14 +120,16 @@ def realize_environment(
             selection.local_image_identity if local_authorization else locked.base_identity
         )
 
+    inspect = inspect_image or optional_local_image
+    require = require_image or required_local_image
     if obtain_image is not None:
         obtain = obtain_image
+    elif not fetch:
+        obtain = lambda reference: _image_on_this_machine(reference, inspect)
     elif local_authorization:
         obtain = required_local_image
     else:
         obtain = lambda reference: ensure_local_image(reference, capsule_platform)
-    inspect = inspect_image or optional_local_image
-    require = require_image or required_local_image
     base = obtain(base_reference)
     validate_base_image(
         base,
@@ -153,6 +163,7 @@ def realize_environment(
             "runtime_command": RuntimeCommand(runtime.get("devcapsule-command", RuntimeCommand.STANDARD)),
             "report": report,
             "list_formations": lambda: component_formations(locked.component_id),
+            "fetch": fetch,
         }
     )
     canonical, created = materialize_environment(
@@ -179,6 +190,14 @@ def realize_environment(
         created=created,
         explicit_base_override=explicit_override,
     )
+
+
+def _image_on_this_machine(reference: str, inspect: ImageLookup) -> ImageDetails:
+    """The base image at ``reference`` when the local daemon has it; no pull."""
+    image = inspect(reference)
+    if image is None:
+        raise NotOnThisMachine(f"The base image {reference} is not on this machine. A launch pulls it; nothing was pulled now.")
+    return image
 
 
 def ensure_local_image(reference: str, platform: Platform) -> ImageDetails:

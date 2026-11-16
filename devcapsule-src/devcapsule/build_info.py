@@ -10,14 +10,17 @@ import json
 from pathlib import Path
 import re
 import tomllib
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 from zipfile import BadZipFile, ZipFile
 
 __all__ = [
     "BuildInfo",
     "BuildInfoError",
     "build_info_json",
+    "build_info_text",
     "current_build_info",
+    "distribution_build_info",
+    "embedded_build_info",
     "is_built_distribution",
     "read_pex_build_info",
 ]
@@ -89,10 +92,7 @@ class BuildInfo:
 _SOURCE_PYPROJECT = Path(__file__).parents[1] / "pyproject.toml"
 
 
-def is_built_distribution(
-    *,
-    record_paths: Sequence[Traversable | Path] | None = None,
-) -> bool:
+def is_built_distribution() -> bool:
     """Whether this process runs from a ``scripts/build-pex.sh`` artifact rather than source.
 
     Only that script creates ``_build_info.json``, so the record's presence is
@@ -102,69 +102,57 @@ def is_built_distribution(
     record raises :class:`BuildInfoError` instead of masquerading as source.
     """
 
-    return _embedded_build_info(record_paths) is not None
+    return embedded_build_info(_package_locations()) is not None
 
 
-def current_build_info(
-    *,
-    record_paths: Sequence[Traversable | Path] | None = None,
-    pyproject_path: Path | None = None,
-    installed_version: str | None = None,
-) -> BuildInfo:
+def current_build_info() -> BuildInfo:
     """Describe this running distribution: its stamped build, or its source form.
 
-    Only ``scripts/build-pex.sh`` creates ``_build_info.json``, so the record's
-    presence is the definition of a built artifact; a present-but-malformed
-    record therefore stays an error rather than masquerading as source. In its
-    absence this is a source-form run — nothing was built, so there is no build
-    to describe — and the identity is derived: the version from the installed
-    distribution metadata that ``pyproject.toml`` alone authors, and the
-    ``v<version>-local`` mnemonic that marks an unbuilt source run.
+    This names where the running distribution keeps its package, its authored
+    ``pyproject.toml`` and its installed metadata; :func:`distribution_build_info`
+    decides from them.
     """
 
-    embedded = _embedded_build_info(record_paths)
+    return distribution_build_info(
+        package_locations=_package_locations(),
+        pyproject_path=_SOURCE_PYPROJECT,
+        installed_version=_installed_version,
+    )
+
+
+def _package_locations() -> tuple[Traversable | Path, ...]:
+    return (
+        files("devcapsule"),
+        # Some editable installers expose the project root as the package's
+        # resource location even though imports resolve to this source tree.
+        # The module's own directory preserves source/PEX command parity
+        # without weakening the packaged-resource validation.
+        Path(__file__).parent,
+    )
+
+
+def distribution_build_info(
+    *,
+    package_locations: Sequence[Traversable | Path],
+    pyproject_path: Path,
+    installed_version: Callable[[], str],
+) -> BuildInfo:
+    """Describe the distribution these locations belong to: its stamped build, or its source form.
+
+    Only ``scripts/build-pex.sh`` creates ``_build_info.json``, so the record's
+    presence in the package is the definition of a built artifact; a
+    present-but-malformed record therefore stays an error rather than
+    masquerading as source. In its absence this is a source-form run — nothing
+    was built, so there is no build to describe — and the identity is derived:
+    the version from ``pyproject_path`` when that is the authored file of a
+    source checkout, else from ``installed_version``, which is asked only then;
+    and the ``v<version>-local`` mnemonic that marks an unbuilt source run.
+    """
+
+    embedded = embedded_build_info(package_locations)
     if embedded is not None:
         return embedded
-    return _source_form_build_info(
-        pyproject_path=_SOURCE_PYPROJECT if pyproject_path is None else pyproject_path,
-        installed_version=installed_version,
-    )
-
-
-def _embedded_build_info(
-    record_paths: Sequence[Traversable | Path] | None = None,
-) -> BuildInfo | None:
-    """The stamped record of a built artifact, or ``None`` in a source-form run."""
-
-    candidates: Sequence[Traversable | Path] = (
-        record_paths
-        if record_paths is not None
-        else (
-            files("devcapsule").joinpath("_build_info.json"),
-            # Some editable installers expose the project root as the package's
-            # resource location even though imports resolve to this source tree.
-            # The sibling path preserves source/PEX command parity without
-            # weakening the packaged-resource validation.
-            Path(__file__).with_name("_build_info.json"),
-        )
-    )
-    for candidate in candidates:
-        try:
-            text = candidate.read_text(encoding="utf-8")
-        except OSError:
-            continue
-        return BuildInfo.from_json(text)
-    return None
-
-
-def _source_form_build_info(
-    *,
-    pyproject_path: Path,
-    installed_version: str | None,
-) -> BuildInfo:
-    package_version = _authored_version(pyproject_path) or (
-        installed_version if installed_version is not None else _installed_version()
-    )
+    package_version = _authored_version(pyproject_path) or installed_version()
     return BuildInfo(
         schema_version=2,
         version=package_version,
@@ -173,6 +161,18 @@ def _source_form_build_info(
         source_url="unknown",
         build_mnemonic=f"v{package_version}-local",
     )
+
+
+def embedded_build_info(package_locations: Sequence[Traversable | Path]) -> BuildInfo | None:
+    """The stamped ``_build_info.json`` of the first of ``package_locations`` that holds a readable one, or ``None``."""
+
+    for location in package_locations:
+        try:
+            text = location.joinpath("_build_info.json").read_text(encoding="utf-8")
+        except OSError:
+            continue
+        return BuildInfo.from_json(text)
+    return None
 
 
 def _authored_version(pyproject_path: Path) -> str | None:
@@ -224,6 +224,17 @@ def read_pex_build_info(path: str | Path) -> BuildInfo:
 
 def build_info_json(info: BuildInfo) -> str:
     return json.dumps(info.to_mapping(), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def build_info_text(info: BuildInfo) -> str:
+    """The lines ``devcapsule version`` shows a person: the build, then where its source is."""
+
+    return "\n".join((
+        f"DevCapsule {info.build_mnemonic} (package {info.version})",
+        f"Source repository: {info.source_repository}",
+        f"Source revision: {info.source_revision}",
+        f"Source URL: {info.source_url}",
+    ))
 
 
 def _string(value: Mapping[str, Any], key: str) -> str:

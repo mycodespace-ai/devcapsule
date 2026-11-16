@@ -1,0 +1,161 @@
+/* The presentation page: a deck of slides beside one recording. The colours
+   and the type are console.css's; the screen is dark because recordings are. */
+body[data-page="presentation"] { --measure: 112rem; }
+main.presentation { padding-top: 1.25rem; padding-bottom: 0; }
+.presentation .deck {
+  display: grid;
+  grid-template-columns: minmax(19rem, 5fr) 9fr;
+  gap: 2.5rem;
+  align-items: start;
+}
+.presentation .deck.wide { grid-template-columns: 1fr; }
+.presentation .deck.wide .stage { order: -1; }
+@media (max-width: 62rem) {
+  .presentation .deck { grid-template-columns: 1fr; }
+  .presentation .deck .stage { order: -1; }
+}
+
+/* The slide's text. */
+.presentation .slide { min-width: 0; }
+.presentation .eyebrow {
+  margin: 0 0 0.5rem;
+  color: var(--brand);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.presentation .slide { font-size: 0.97rem; }
+.presentation .slide h1 { font-size: 1.7rem; line-height: 1.25; margin: 0 0 0.9rem; }
+.presentation .slide h1 code { font-size: 0.85em; }
+.presentation .slide h2 {
+  margin: 1.5rem 0 0.35rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.presentation .slide p { margin: 0; max-width: 40rem; }
+.presentation .slide p.summary { color: var(--lead); font-size: 1.08rem; }
+.presentation .slide details { margin-top: 1.5rem; }
+.presentation .slide details summary {
+  color: var(--muted); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;
+}
+.presentation .slide details dl { margin-top: 0.6rem; }
+.presentation .slide ul { margin: 0; padding-left: 1.1rem; max-width: 40rem; }
+.presentation .slide ul li { margin: 0.3rem 0; }
+.presentation dl.stack { display: grid; grid-template-columns: max-content 1fr; gap: 0.3rem 1.25rem; margin: 0; }
+.presentation dl.stack dt { color: var(--muted); }
+.presentation dl.stack dd { margin: 0; }
+.presentation ol.outline { margin: 0; padding-left: 1.4rem; }
+.presentation ol.outline li { margin: 0.2rem 0; }
+.presentation button.link {
+  font: inherit; text-align: left; color: var(--brand); background: none; border: 0; padding: 0; cursor: pointer;
+}
+.presentation button.link:hover { text-decoration: underline; }
+
+/* The captions of a step, as a list that follows the recording. */
+.presentation ol.moments { list-style: none; margin: 0; padding: 0; max-width: 40rem; }
+.presentation button.moment {
+  display: grid; grid-template-columns: 2.6rem 1fr; gap: 0.5rem; width: 100%;
+  font: inherit; text-align: left; color: var(--lead);
+  background: none; border: 0; border-left: 3px solid var(--line);
+  padding: 0.4rem 0.6rem; cursor: pointer;
+}
+.presentation button.moment:hover { background: var(--code-bg); }
+.presentation button.moment .at { color: var(--muted); font-variant-numeric: tabular-nums; }
+.presentation button.moment[aria-current] { color: var(--ink); background: var(--brand-soft); border-left-color: var(--brand); }
+
+/* The stage: the screen, the caption under it, the transport. */
+.presentation .stage { min-width: 0; position: sticky; top: 1rem; }
+.presentation .deck.wide .stage { position: static; }
+/* Beside the text, the player is as wide as its column unless that would push
+   the transport and the slide buttons below the window; --aspect is the
+   recording's width over its height, set by the script. */
+.presentation .player { width: min(100%, calc((100vh - 21rem) * var(--aspect, 1.6))); margin: 0 auto; }
+.presentation .deck.wide .player { width: 100%; }
+.presentation .screen {
+  position: relative;
+  aspect-ratio: var(--aspect, 1.6);
+  background: #0f1417;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+}
+.presentation .screen video,
+.presentation .screen .still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.presentation .screen video { cursor: pointer; }
+.presentation .screen .still[hidden], .presentation .screen .overlay[hidden] { display: none; }
+.presentation .screen .overlay {
+  position: absolute; inset: 0; width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(15, 20, 23, 0.28); border: 0; cursor: pointer;
+}
+.presentation .screen .overlay:hover { background: rgba(15, 20, 23, 0.4); }
+.presentation .screen .pill {
+  font: inherit; font-weight: 600; color: #fff;
+  background: var(--brand); border-radius: 2rem; padding: 0.7rem 1.6rem;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+.presentation .caption {
+  margin: 0;
+  min-height: 4.2rem;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0.6rem 1.25rem;
+  background: #0f1417; color: #f2f5f3;
+  border-radius: 0 0 8px 8px;
+  font-size: 1.1rem; line-height: 1.4; text-align: center;
+}
+.presentation .caption code { background: rgba(255, 255, 255, 0.14); color: inherit; }
+.presentation .caption .hint { color: #8a968f; font-size: 0.95rem; }
+.presentation .transport { display: flex; align-items: center; gap: 1rem; margin-top: 0.9rem; flex-wrap: wrap; }
+.presentation .progress { flex: 1 1 8rem; height: 0.4rem; background: var(--line); border-radius: 3px; overflow: hidden; }
+.presentation .progress span { display: block; height: 100%; width: 0; background: var(--brand); }
+.presentation .time { color: var(--muted); font-size: 0.9rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.presentation .speed { color: var(--muted); font-size: 0.9rem; white-space: nowrap; }
+.presentation .speed select { font: inherit; padding: 0.15rem 0.3rem; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+.presentation .stage .notice { margin: 0.9rem 0 0; max-width: none; }
+.presentation .stage .notice[hidden] { display: none; }
+
+.presentation button.primary {
+  font: inherit; font-weight: 600; color: #fff; background: var(--brand);
+  border: 0; border-radius: 4px; padding: 0.45rem 1.1rem; cursor: pointer; min-width: 11.5rem;
+}
+.presentation button.quiet {
+  font: inherit; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 4px; padding: 0.4rem 0.9rem; cursor: pointer;
+}
+.presentation button.quiet:hover:not([disabled]) { border-color: var(--brand); }
+.presentation button[disabled] { opacity: 0.45; cursor: default; }
+
+/* The slides, in order. */
+.presentation .deck-nav {
+  position: sticky; bottom: 0; z-index: 2;
+  display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap;
+  margin-top: 1.5rem; padding: 0.8rem 0; background: var(--page); border-top: 1px solid var(--line);
+}
+.presentation .chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.presentation button.chip {
+  font: inherit; font-size: 0.9rem; color: var(--lead); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 2rem; min-width: 2.1rem; padding: 0.2rem 0.7rem; cursor: pointer;
+}
+.presentation button.chip:hover { border-color: var(--brand); }
+.presentation button.chip[aria-current] { color: #fff; background: var(--brand); border-color: var(--brand); }
+.presentation .deck-nav button.quiet:last-child { margin-left: auto; }
+body[data-page="presentation"] footer.console-foot { padding-top: 1rem; }
+
+/* The list of the project's presentations. */
+.presentation .shows { display: grid; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); gap: 1.5rem; }
+.presentation .show {
+  display: flex; flex-direction: column; gap: 0.45rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0 0 1rem;
+  color: var(--ink); text-decoration: none; overflow: hidden;
+}
+.presentation a.show:hover { border-color: var(--brand); }
+.presentation .show img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: #0f1417; margin-bottom: 0.4rem; }
+.presentation .show strong, .presentation .show span { padding: 0 1.1rem; }
+.presentation .show strong { color: var(--brand); font-size: 1.05rem; line-height: 1.3; }
+.presentation .show .summary { color: var(--lead); font-size: 0.95rem; }
+.presentation .show .meta { color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
+.presentation .show.refused { padding-top: 1rem; }
+.presentation .show.refused .failure { margin: 0 1.1rem; padding: 0.6rem 0.8rem; font-size: 0.8rem; }

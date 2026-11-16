@@ -119,7 +119,7 @@ Adopt **Option A** (`launcher-package`) and **Option 1** (`source-or-opt-in`):
 3. The base image continues to provide `/opt/devcapsule-webconsole/venv` and a
    baseline console copy. Inside the capsule, the runtime supervisor and
    `project checkout decisions` select the console package by one rule,
-   `console_package_path` in `devcapsule/container_runtime/console.py`, in
+   `ConsoleInstallation.package_path` in `devcapsule/container_runtime/console.py`, in
    precedence order: an explicit checkout `console.source_path`, otherwise
    `/opt/devcapsule/webconsole` when present, otherwise the base image's
    `/opt/devcapsule-webconsole` copy. Compatibility with the base interpreter

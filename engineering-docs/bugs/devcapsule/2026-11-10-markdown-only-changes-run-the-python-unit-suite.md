@@ -1,7 +1,7 @@
 ---
-status: confirmed
-severity: minor
-target: none
+status: fixing
+severity: major
+target: 0.3.1
 owner: maintenance
 opened: 2026-11-10
 requirements: []
@@ -75,8 +75,14 @@ Nothing else was opened: not `WORKFLOW-humane.md`, `WORKFLOW-LOCAL.md`,
 under `engineering-docs/` except that one notes file.
 
 A second finding from the same run: the filter lists `docs/**/*.md` as a
-non-input of the Python route, yet a test reads fifty of those files. The
-listing is harmless only while that test stays marked expected to fail.
+non-input of the Python route, yet a test reads fifty of those files.
+
+Corrected the same day. That test's expected-to-fail mark carries a
+condition, `IN_CAPSULE`: it holds inside a capsule only. On the hosted runner
+the `[docs]` case of `test_replaced_scope_word_is_absent` runs for real and
+its outcome counts, so the old filter skipped a counted test on every
+docs-only pull request. The same is true of the other tests marked on
+2026-11-04: on the hosted runner they are ordinary tests.
 
 Limits of the measurement:
 
@@ -112,9 +118,58 @@ Local: `nox -s tests` and `nox -s build` take no account of what changed.
 run may be left out, so an agent that follows it runs the whole suite for
 any change.
 
-## Fix notes
+## Rating
 
-Not started. The choices are the owner's.
+Re-rated by the owner on 2026-11-10 from minor to major: whatever slows the
+work and breaks its rhythm is major. The target is 0.3.1, the release the
+fix branch is cut from; the owner did not name it and may change it.
+
+## Fix, on `ws-maintenance/python-route-guard`
+
+The owner's concern with any shorter list was that a later test, or an
+expected-to-fail test that loses its mark, would come to depend on a file
+the filter skips, and would silently not run. The fix makes that
+impossible to merge rather than unlikely, and the owner chose its wider
+form on 2026-11-10: the Python route is a short list of inputs, and
+everything else is skipped.
+
+- `.github/ci-python-inputs.yml` lists the inputs: `devcapsule-src/`, the
+  console, `.github/`, and the paths legacy tests still read from the
+  repository, each with its reader named. `.github/ci-paths.yml` keeps the
+  docs route only. The workflow reads each file with its own filter step.
+- `tests/conftest.py` holds the suite to the same list. An audit hook fails
+  a counted test that opens or lists a repository path outside it, at the
+  access, and the session fails if a breach was recorded. A dependency on an
+  unlisted file can only arrive in a change to a test or to the package,
+  which runs the suite, where the guard refuses it. Removing an
+  expected-to-fail mark is such a change.
+- What the suite reads outside `devcapsule-src/`, measured again for every
+  kind of file with the Nox environment: `.devcapsule/` (two files),
+  `.github/` (four), `component-status/policy-v1.json`,
+  `docs/versions.yaml`, `engineering-docs/releases/v0.2.14/notes.md`, and
+  all of `docs/` through the scan named above. Nothing else.
+- `tests/test_ci_reporting.py`, a legacy file whose filter test the change
+  breaks, is refurbished whole under *Unit Tests* rule 5: the gate and the
+  annotation bridge into `tests/unit/scripts/`, the route script, both
+  filter files and the real diff-cover run into
+  `tests/integration/test_ci_workflow.py`.
+
+What this does not yet give:
+
+- `docs/**` is an input, so a docs-only pull request now runs the suite,
+  where the old filter skipped it unsoundly. It leaves the list when the
+  `[docs]` scan no longer reads the repository, which rule 5 ties to
+  refurbishing `tests/test_home.py`.
+- The local gate still runs everything; close criterion 2 is open.
+- The routing tests no longer run in the hosted job, since they are
+  integration tests; they run with `nox -s integration`.
+- The guard does not see a file read by a program a test starts, nor a
+  path whose existence alone is tested. Every push to `main` runs the whole
+  suite.
+
+## Fix notes as first written
+
+The choices were the owner's; kept for the record.
 
 - Hosted, the small step: list the proven non-inputs.
   `engineering-docs/pile-of-ideas/**` and `WORKFLOW-humane.md` are read by

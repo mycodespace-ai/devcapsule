@@ -5,11 +5,17 @@ from __future__ import annotations
 from pathlib import Path
 import stat
 
-import pytest
-
 from devcapsule.components.pycharm import runtime_template as pycharm_runtime_template
 from devcapsule.container_runtime.contract import Identity, RuntimePlan
-from devcapsule.container_runtime.filesystem import FilesystemPlan, plan_filesystem, prepare_filesystem
+from devcapsule.container_runtime.filesystem import (
+    FilesystemPlan,
+    create_directories,
+    plan_filesystem,
+    prepare_filesystem,
+)
+from devcapsule.container_runtime.identity import CapsuleUser
+
+DEVELOPER = Identity(1000, 1001, "developer")
 
 
 def sandboxed_plan(tmp_path: Path) -> RuntimePlan:
@@ -18,7 +24,7 @@ def sandboxed_plan(tmp_path: Path) -> RuntimePlan:
         pycharm_runtime_template(),
         project_path=str(tmp_path / "project"),
         home=str(tmp_path / "home"),
-        identity=Identity(1000, 1001, "developer"),
+        identity=DEVELOPER,
     )
     document = base.to_mapping()
     document["state_slots"] = [
@@ -28,67 +34,69 @@ def sandboxed_plan(tmp_path: Path) -> RuntimePlan:
     return RuntimePlan.from_mapping(document)
 
 
-@pytest.mark.parametrize("custom_root", [False, True])
-def test_plan_filesystem_places_xdg_runtime_dir_under_the_requested_root(
-    tmp_path: Path, custom_root: bool,
+def filesystem_under(root: Path) -> FilesystemPlan:
+    """A ``FilesystemPlan`` whose home, ``.ssh`` and runtime directory all lie beneath ``root``."""
+    home = root / "home"
+    runtime_directory = root / "runtime" / "devcapsule-runtime-1000"
+    return FilesystemPlan(
+        directories=(str(home), str(home / ".ssh"), str(runtime_directory)),
+        environment={"HOME": str(home), "XDG_RUNTIME_DIR": str(runtime_directory)},
+    )
+
+
+def test_plan_filesystem_derives_the_session_directories_from_the_home_the_user_and_the_slots(
+    tmp_path: Path,
 ) -> None:
-    """``plan_filesystem`` places ``XDG_RUNTIME_DIR`` under ``/tmp`` by default or under an explicit ``runtime_root``."""
+    """``plan_filesystem`` puts the XDG directories under the home, names the runtime directory after the uid under /tmp, and lists them with every state slot."""
     runtime = sandboxed_plan(tmp_path)
-    expected_root = (tmp_path / "runtime") if custom_root else Path("/tmp")
 
-    plan = (
-        plan_filesystem(runtime, runtime_root=expected_root)
-        if custom_root
-        else plan_filesystem(runtime)
-    )
+    plan = plan_filesystem(runtime)
 
-    expected_runtime_dir = str(expected_root / "devcapsule-runtime-1000")
-    assert plan.environment["XDG_RUNTIME_DIR"] == expected_runtime_dir
-    assert expected_runtime_dir in plan.directories
-    assert all(slot.path in plan.directories for slot in runtime.state_slots)
+    runtime_directory = "/tmp/devcapsule-runtime-1000"
+    assert plan.environment["HOME"] == str(tmp_path / "home")
+    assert plan.environment["XDG_CONFIG_HOME"] == str(tmp_path / "home" / ".config")
+    assert plan.environment["XDG_RUNTIME_DIR"] == runtime_directory
+    assert {str(tmp_path / "home"), str(tmp_path / "home" / ".config"), runtime_directory} <= set(plan.directories)
+    assert {slot.path for slot in runtime.state_slots} <= set(plan.directories)
 
 
-def test_prepare_filesystem_creates_sandboxed_directories_and_private_modes(tmp_path: Path) -> None:
-    """For a non-root caller, ``prepare_filesystem`` creates home, XDG, runtime, and slot directories with ``0700`` private modes."""
-    runtime = sandboxed_plan(tmp_path)
-    filesystem = plan_filesystem(runtime, runtime_root=tmp_path / "runtime")
-    chowned: list[tuple[Path, int, int]] = []
+def test_create_directories_creates_every_directory_and_keeps_ssh_and_runtime_private(tmp_path: Path) -> None:
+    """``create_directories`` creates each directory of the plan and sets ``0700`` on ``.ssh`` and the runtime directory."""
+    filesystem = filesystem_under(tmp_path)
 
-    prepare_filesystem(
-        filesystem,
-        runtime.identity,
-        caller_uid=1000,
-        chown=lambda path, uid, gid: chowned.append((path, uid, gid)),
-    )
+    create_directories(filesystem)
 
-    assert chowned == []
     assert all(Path(directory).is_dir() for directory in filesystem.directories)
-    ssh_mode = stat.S_IMODE((Path(filesystem.environment["HOME"]) / ".ssh").stat().st_mode)
-    runtime_mode = stat.S_IMODE(Path(filesystem.environment["XDG_RUNTIME_DIR"]).stat().st_mode)
-    assert ssh_mode == 0o700
-    assert runtime_mode == 0o700
+    assert stat.S_IMODE((tmp_path / "home" / ".ssh").stat().st_mode) == 0o700
+    assert stat.S_IMODE(Path(filesystem.environment["XDG_RUNTIME_DIR"]).stat().st_mode) == 0o700
 
 
-def test_prepare_filesystem_assigns_ownership_only_to_newly_created_ancestors_when_root(tmp_path: Path) -> None:
-    """When ``caller_uid`` is 0, ``prepare_filesystem`` invokes ``chown`` only on directories that did not already exist."""
-    existing = tmp_path / "home"
-    existing.mkdir()
-    runtime_dir = tmp_path / "runtime" / "devcapsule-runtime-1000"
-    plan = FilesystemPlan(
-        directories=(str(existing), str(existing / ".ssh"), str(runtime_dir)),
-        environment={"HOME": str(existing), "XDG_RUNTIME_DIR": str(runtime_dir)},
-    )
-    chowned: list[tuple[Path, int, int]] = []
+def test_create_directories_returns_only_what_it_created_a_parent_before_its_child(tmp_path: Path) -> None:
+    """``create_directories`` returns each directory it made, missing parents included and first, and leaves out one that existed."""
+    filesystem = filesystem_under(tmp_path)
+    (tmp_path / "home").mkdir()
 
-    prepare_filesystem(
-        plan,
-        Identity(1000, 1001, "developer"),
-        caller_uid=0,
-        chown=lambda path, uid, gid: chowned.append((path, uid, gid)),
+    created = create_directories(filesystem)
+
+    assert created == (
+        tmp_path / "home" / ".ssh",
+        tmp_path / "runtime",
+        tmp_path / "runtime" / "devcapsule-runtime-1000",
     )
 
-    assert chowned == [
-        (existing / ".ssh", 1000, 1001),
-        (tmp_path / "runtime", 1000, 1001),
-        (runtime_dir, 1000, 1001),
-    ]
+
+def test_create_directories_returns_nothing_when_every_directory_exists(tmp_path: Path) -> None:
+    """Run again on a prepared filesystem, ``create_directories`` creates nothing and says so."""
+    filesystem = filesystem_under(tmp_path)
+    create_directories(filesystem)
+
+    assert create_directories(filesystem) == ()
+
+
+def test_prepare_filesystem_creates_the_directories_for_a_caller_that_is_not_root(tmp_path: Path) -> None:
+    """For a caller that is not root, ``prepare_filesystem`` creates the plan's directories without failing on an owner it may not set."""
+    filesystem = filesystem_under(tmp_path)
+
+    prepare_filesystem(filesystem, CapsuleUser(DEVELOPER, caller_uid=1000))
+
+    assert all(Path(directory).is_dir() for directory in filesystem.directories)
