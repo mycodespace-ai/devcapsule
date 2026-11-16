@@ -1,5 +1,11 @@
 # Running E2E Scenario Recordings From A Shell With Nox
 
+For another project, use the shipped `devcapsule presentations guide` and
+`devcapsule presentations export <new-directory>` commands. The
+[portable kit](../../devcapsule-src/devcapsule/presentation_tools/README.md)
+contains the shared producer and Playwright helper without this repository's
+IDE harness. This document covers the repository-specific replay commands.
+
 [Development](README.md) · [End-to-end tests](e2e-tests.md) · [Implementation note](../implementation-notes/devcapsule/2026-10-21-e2e-scenario-video-recorder.md)
 
 This note shows how to run a recorded IDE scenario—or author a new one with an

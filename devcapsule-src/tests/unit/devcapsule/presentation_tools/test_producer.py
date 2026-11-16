@@ -1,4 +1,4 @@
-"""Unit tests for ``tests.e2e.scenario_presentation``."""
+"""Unit tests for ``devcapsule.presentation_tools.producer``."""
 from __future__ import annotations
 
 import json
@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from tests.e2e.scenario_presentation import (
+from devcapsule.presentation_tools.producer import (
     PresentationError,
     Script,
     ScriptStep,
