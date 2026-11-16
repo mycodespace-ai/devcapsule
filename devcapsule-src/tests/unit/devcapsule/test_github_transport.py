@@ -6,12 +6,15 @@ import pytest
 from devcapsule.github_transport import GitHubRequest, GitHubTransportError, decode_request, parse_git_ssh
 
 
-@pytest.mark.parametrize('command,service', [("git-upload-pack 'acme/widgets.git'", 'git-upload-pack'),
-                                            ("git-receive-pack '/acme/widgets'", 'git-receive-pack')])
-def test_git_arguments_select_only_the_service_and_repository(command: str, service: str) -> None:
-    """Git's destination and v2 request admit a GitHub transfer with no SSH option forwarding."""
-    request = parse_git_ssh(['-o', 'SendEnv=GIT_PROTOCOL', 'git@github.com', command])
-    assert request == GitHubRequest(service, 'acme/widgets.git' if service == 'git-upload-pack' else 'acme/widgets')
+@pytest.mark.parametrize('arguments,expected', [
+    (['-o', 'SendEnv=GIT_PROTOCOL', 'git@github.com', "git-upload-pack 'acme/widgets.git'"],
+     GitHubRequest('git-upload-pack', 'acme/widgets.git')),
+    (['-oSendEnv=GIT_PROTOCOL', '-p', '22', 'github.com', "git-receive-pack '/acme/widgets'"],
+     GitHubRequest('git-receive-pack', 'acme/widgets')),
+])
+def test_git_arguments_select_only_the_service_and_repository(arguments: list[str], expected: GitHubRequest) -> None:
+    """Git's destination, standard port 22, and v2 request admit a GitHub transfer with no SSH option forwarding."""
+    assert parse_git_ssh(arguments) == expected
 
 
 @pytest.mark.parametrize('command', ["sh 'acme/repo'", "git-upload-pack 'acme/repo'; id", "git-upload-pack 'a/../b'",
@@ -33,9 +36,13 @@ def test_capsule_ssh_options_cannot_change_host_execution(arguments: list[str]) 
         parse_git_ssh(arguments)
 
 
-def test_other_git_hosts_are_not_forwarded_to_the_host() -> None:
-    """A different destination selects the capsule's ordinary SSH fallback."""
-    assert parse_git_ssh(['git@example.test', "git-upload-pack 'acme/repo'"]) is None
+@pytest.mark.parametrize('arguments', [
+    ['git@example.test', "git-upload-pack 'acme/repo'"],
+    ['-p', '2222', 'git@example.test', "git-upload-pack 'acme/repo'"],
+])
+def test_other_git_hosts_are_not_forwarded_to_the_host(arguments: list[str]) -> None:
+    """A different destination, including with a custom port, selects the capsule's ordinary SSH fallback."""
+    assert parse_git_ssh(arguments) is None
 
 
 @pytest.mark.parametrize('document', [{}, {'version': True, 'service': 'git-upload-pack', 'repository': 'a/b'},
@@ -60,6 +67,18 @@ def test_host_command_keeps_verification_and_disables_forwarding() -> None:
     assert '-oClearAllForwardings=yes' in command
     assert '-oPermitLocalCommand=no' in command
     assert '-oControlPath=none' in command
+
+
+@pytest.mark.parametrize('payload', [
+    b'{',
+    b'\xff',
+    b'[]',
+    json.dumps({'version': 1, 'service': 'git-upload-pack', 'repository': 'a/' + 'b' * 255}).encode(),
+])
+def test_wire_validation_rejects_malformed_and_oversized_repository_payloads(payload: bytes) -> None:
+    """Malformed JSON, non-object frames and overlong repository paths are refused on the wire."""
+    with pytest.raises(GitHubTransportError):
+        decode_request(payload)
 
 
 def test_valid_wire_request_roundtrips() -> None:

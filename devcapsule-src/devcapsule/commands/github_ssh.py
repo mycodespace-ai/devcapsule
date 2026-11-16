@@ -23,8 +23,16 @@ class GitHubSshCommand(Command):
     def run(cls, arguments: argparse.Namespace, context: object | None) -> int:
         try:
             request = parse_git_ssh(arguments.ssh_arguments)
-            if request is None:
+        except GitHubTransportError as error:
+            raise CliError(
+                f"GitHub proxy: {error} Host keys must be trusted and encrypted keys unlocked on the host."
+            ) from error
+        if request is None:
+            try:
                 return subprocess.run(["ssh", *arguments.ssh_arguments], check=False).returncode
+            except OSError as error:
+                raise CliError(f"Capsule SSH: {error}") from error
+        try:
             path = os.environ.get(SOCKET_ENV)
             if not path:
                 raise GitHubTransportError("No authorized GitHub proxy. Enable github-ssh on the host launcher.")
