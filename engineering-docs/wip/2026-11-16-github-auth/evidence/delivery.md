@@ -1,6 +1,9 @@
 # Prepared delivery
 
-No PR has been opened. WORKFLOW-LOCAL.md, GitHub Integration rules 4–6,
+No PR has been opened or edited by this agent; remote PR existence has not been
+verified. The implementation branch is pushed through `e45866b2`, including the
+recorded E2E procedure. A pre-existing PR from that branch receives the pushed
+commits automatically, but its description and attachments have not been updated. WORKFLOW-LOCAL.md, GitHub Integration rules 4–6,
 requires a passing unit gate before PR opening/updating, and assigns GitHub
 operations to the human when its prescribed gh installation is absent. The
 current environment has both blockers. Preserve both branches until the gate
@@ -22,11 +25,27 @@ Linux/WSL with native Docker is supported first; Docker Desktop is refused.
 Host trust and unlocked encrypted keys are prerequisites. The capability grants
 Git access to all repositories available to that host identity.
 
-Validation: combined local candidate passed 75 focused tests, type checking and
-convention checks; source/PEX authenticated read-only GitHub probe passed; local
-Git clone/fetch/push, smoke/PEX/docs and 458 console tests passed. Full gate remains
-blocked by 19 failures also reproduced on unchanged main. Physical-host launch
-acceptance is outstanding. See the workstream review assessment for exact limits.
+Validation: the physical-host relaunch and recorded recursive E2E passed on
+rootless Linux Docker. A fresh VSCodium capsule, with no SSH files or agent,
+cloned `git@github.com:mycodespace-ai/devcapsule.git` through the inherited host
+broker. Independent checks confirmed the expected commit, SSH origin, clean tree,
+read-only socket mount from the same host source, and exact runtime PEX checksum.
+A missing-socket control failed with exit 128. The container, workspace and
+checkout records were removed. No real GitHub push was performed.
+
+The [recorded E2E procedure](engineering-docs/wip/2026-11-16-github-auth/evidence/showcase.md)
+records the tested build and evidence. The 38-second WebM and full desktop capture
+are retained locally under `devcapsule-src/dist/e2e-evidence/github-auth/20261116T092248Z-33c3c7bc/`;
+they are not uploaded or attached to a PR. Tested PEX SHA-256:
+`33c3c7bc7fe6ff6772eedee06424c95afcf4aebddca20ab99f9a31a7c103d35b`.
+
+Latest validation: 62 recorder tests passed; types passed over 340 files and
+conventions reported zero breaches against canonical upstream/main. Full gate:
+19 failed, 2942 passed, 1 skipped, 78 deselected, 14 xfailed, 7 xpassed. All 19
+failure IDs match the recorded baseline; this is not a passing gate. Earlier
+combined review validation passed 75 focused cases; smoke/PEX/docs and 458
+console tests passed. The rootless Docker identity fix was adapted from
+release-0.3.1 commit `a1a54eba` into implementation commit `d6fd93e0`.
 
 Pair: GPT-6 Codex with Antigravity Gemini 4 Hydrogen High
 (`gemini-4-hydrogen-high`). Local round 1 accepted at `388f62a3`; formal review PR
@@ -56,8 +75,18 @@ Full gate and owner-operated PR delivery remain outstanding.
    run the required gate on the combined candidate before PR opening/updating.
 3. The owner creates the implementation and review PRs, then merges the review
    into the implementation branch. Record the formal assessment at its SHA.
-4. Fetch that merged branch, run required validation and physical-host acceptance:
-   authorize `github-ssh` once, launch with the rebuilt outside PEX, and exercise
-   GitHub reads plus a push to an explicitly chosen disposable repository.
+4. Fetch that merged branch and run required validation. The physical-host clone
+   acceptance above used the implementation without review corrections; repeat
+   relevant acceptance against the merged executable. A real GitHub write test
+   remains separate and requires an explicitly selected disposable repository.
 5. The owner merges the implementation PR into main; fetch and verify main's tree
    before recording integration. No release or installation has been performed.
+
+
+## Owner delivery links
+
+- [Implementation comparison](https://github.com/mycodespace-ai/devcapsule/compare/main...ws-github-auth/ssh-proxy?expand=1)
+- [Review comparison](https://github.com/mycodespace-ai/devcapsule/compare/ws-github-auth/ssh-proxy...ws-github-auth/ssh-proxy-review?expand=1)
+
+Use the body above when the gate and GitHub-operation prerequisites are resolved.
+The branch push does not upload the local recording or change a PR description.
