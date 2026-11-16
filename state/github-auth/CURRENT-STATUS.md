@@ -237,6 +237,9 @@ convention differences. The corrected run used DEVCAPSULE_DIFF_BASE=upstream/mai
 - Engineering choices: initial transport must account for Linux/rootless Docker
   permissions; Docker Desktop cannot bind ordinary host Unix sockets.
 - Physical-host relaunch is observed working; Docker Desktop transport remains deferred.
+- PR description draft now includes the successful recorded E2E and current
+  validation limits. No PR was created or edited by this agent; remote PR existence
+  remains unverified. The recording is retained locally, not attached to GitHub.
 - GitHub CLI is absent at the policy-prescribed path. PR creation/merging remains
   owner-operated under WORKFLOW-LOCAL.md; prepare reviewed commits and compare links.
 - Reviewer worktree removed at pause; pushed `ws-github-auth/ssh-proxy-review`
