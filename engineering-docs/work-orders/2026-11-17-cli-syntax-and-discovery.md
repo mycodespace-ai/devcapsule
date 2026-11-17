@@ -1,8 +1,8 @@
 # Work Order: Simplify CLI Syntax And Help Discovery
 
 Date: 2026-11-17.
-Owner: presentations, by explicit product-owner direction.
-Status: owner decisions recorded; review and remaining decisions precede implementation.
+Owner: maintenance, transferred from presentations by explicit product-owner direction on 2026-11-17.
+Status: RC4 scope implemented and reviewed in PR #52, with review PRs #53 and #54 merged into it; awaiting owner integration. All implementation choices are answered. Broader CLI changes remain scheduled after 0.3.1.
 Release scope: RC4 gets the help bug fix and presentations cleanup; broader CLI cleanup follows 0.3.1.
 The exact next release number remains undecided.
 
@@ -16,22 +16,36 @@ Make the current project the default CLI context. Reduce the ordinary command li
 Use options for variations of an operation. Keep advanced operations discoverable.
 Preserve the implementation's behavior and storage model.
 
-The owner assigned this cleanup to presentations during an iterative CLI review.
+The owner assigned this cleanup to presentations during an iterative CLI review,
+then directed a maintenance branch from that checkout after PR #51 merged.
+The implementation branch is `ws-maintenance/cli-syntax`.
 This work order records those decisions. The original six-question questionnaire's structure was rejected,
 but the owner subsequently answered all six items at 2026-11-17T20:16:44Z.
 Chat decisions take precedence where they conflict with those older options.
-The separate four-question review page remains unanswered.
+The review questions were subsequently answered in chat. Their outcomes are recorded below.
 
 ### Recorded questionnaire outcomes
 
 - Remove the separate skill-install command, consistent with the later removal of the presentations group.
 - Group help by purpose. The older option to keep command paths does not override the explicit chat renames.
 - Explain and group configuration operations; do not add an unrequested hierarchy for project and personal settings.
-- Standardize project selection on `--project`, retaining existing selector aliases.
-  This does not settle compatibility aliases for every renamed command or the selector's exact placement.
+- Standardize project selection on `--project`.
+  The later no-legacy-alias ruling supersedes the older compatibility suggestion; exact placement remains proposed.
 - Rewrite help across the command tree with short summaries, meaningful arguments, examples, and discoverable operations.
 - RC4 gets the help bug fix and presentations cleanup. Broader changes belong to the first release after 0.3.1.
   Do not interpret this as permission to implement the entire proposed layout for RC4.
+
+### Final review decisions from the owner
+
+- Do not support old command aliases. Update callers to the new syntax.
+- Remove legacy PyCharm implementation code made unreachable by removing the public command group.
+  Preserve code still used by other operations; establish reachability before deleting it.
+- Move host-side checkout registration to `devcapsule config --register NAME`.
+- Install the complete recording helper directory and instructions alongside the skill during workflow setup.
+  The owner explicitly accepts the bounded resource-installation change needed for this delivery.
+  Retain automatic installation for wrapper setup as already directed.
+
+These decisions supersede the reviewer's suggestions to retain hidden old commands.
 
 ## Evidence and existing contracts
 
@@ -42,7 +56,7 @@ The separate four-question review page remains unanswered.
   Retain the release baseline for this document; no main synchronization is needed.
 - A recursive inspection exercised 102 help invocations against the local PEX from the reviewed source.
   One invocation, `pycharm check-runtime --help`, ran diagnostics instead of printing help.
-  This work removes that public command; it does not authorize changing its diagnostic implementation.
+  This work removes that public command and any legacy implementation code left without callers.
 - Both `project config show` and `project info` were run inside the current capsule.
   They overlap, but neither is a complete replacement for the other.
   The first shows effective choices, sources, and pending decisions.
@@ -60,17 +74,19 @@ The separate four-question review page remains unanswered.
 
 ## Binding implementation boundary
 
-This is a CLI syntax refactor. The owner expressly forbids changes to underlying implementation files.
+This is a CLI syntax refactor. Keep underlying implementation unchanged except for the two explicit owner grants:
+remove unused legacy PyCharm code, and install the complete recording kit with the skill.
 Limit production changes to a well-delimited CLI adapter layer: parse arguments, construct values,
 dispatch to existing operations, and compose their existing reports.
-The adapter boundary includes `devcapsule/cli.py` and `commands/framework.py`, not only leaf command definitions.
+The adapter boundary includes `devcapsule/cli.py`, `commands/framework.py`, and the console's CLI caller adapter.
+Migrate affected command invocations and user-facing command suggestions mechanically; do not change their domain behavior.
 Update directly affected tests, instructions, examples, and documentation.
 Do not move domain behavior into command adapters to evade this boundary.
 
 Preserve storage layouts, defaults, consent rules, validation, side effects, and host-access boundaries.
 Changing vocabulary does not grant new global settings or new in-capsule mutation capabilities.
-Keep machine-readable consumers working; settle any required compatibility exception with the owner.
-If an agreed interface needs implementation changes, stop at that dependency and ask for a bounded exception.
+Update machine-readable consumers with the new syntax while preserving existing report contracts.
+If an agreed interface needs further implementation changes beyond the recorded grants, ask for a bounded exception.
 Do not perform the implementation as part of preparing or reviewing this work order.
 
 ## Accepted public vocabulary
@@ -110,7 +126,7 @@ All examples below have the `devcapsule` prefix.
 | Old syntax | New syntax or disposition |
 | --- | --- |
 | `project <command> ...` | `<command> ...`, subject to the more specific mappings below |
-| `project --path DIR ...` | Use `--project DIR`; retain existing selector aliases; exact placement remains proposed |
+| `project --path DIR ...` | Use `--project DIR`; no old command alias; exact placement remains proposed |
 | `home ...` | `config -g ...` or `config --global ...`; map individual operations before implementation |
 | `bootstrap project` | `workflow bootstrap` |
 | `project config ...` | `config ...` |
@@ -119,10 +135,11 @@ All examples below have the `devcapsule` prefix.
 | `project wrap URL ...` | `init --wrap URL ...` |
 | `project state adopt --from DIR SLOT` | `config --set-state SLOT DIR` |
 | `project versions ...` | `config software ...`; operations appear only in advanced software help |
-| `project checkout ...` | `instance ...`; settle individual operation syntax and context constraints |
+| `project checkout register NAME` | `config --register NAME`, preserving host-side registration behavior |
+| Other `project checkout ...` operations | `instance ...`, preserving their existing access rules |
 | `presentations hand-off ...` | `instance --get-link PATH-OR-URL`, generalized to project content |
-| `presentations guide`, `export`, `install-skill` | Remove public commands; preserve the recording skill's ability to do its work |
-| `pycharm ...` | Remove the entire public command group as obsolete legacy functionality |
+| `presentations guide`, `export`, `install-skill` | Remove commands; install instructions and complete helper directory with the skill |
+| `pycharm ...` | Remove the public group and legacy implementation code made unused by its removal |
 | `project diagnose ...` | `diagnose ...`, shown only in advanced top-level help |
 | `project recursive-e2e ...` | `recursive-e2e ...`, shown only in advanced top-level help |
 | `runtime ...` | Remains callable; shown only in advanced top-level help |
@@ -131,8 +148,8 @@ All examples below have the `devcapsule` prefix.
 
 `project`, `home`, `bootstrap`, `info`, `wrap`, `state`, `versions`, `checkout`,
 `presentations`, and `pycharm` do not appear as ordinary top-level entries.
-Whether removed or renamed paths retain callable compatibility forms is not yet decided.
-The direction to remove public groups does not authorize deleting shared implementation code.
+Removed or renamed paths have no callable compatibility aliases.
+Do not delete shared implementation code that still has callers.
 
 ## Meaning of the selected forms
 
@@ -170,14 +187,17 @@ Its syntax does not grant a capsule access to an arbitrary host directory.
 `--set-state` selects one operation; it cannot be combined with a config subcommand or `--global`.
 Existing `config bind` behavior remains unchanged.
 
+`config --register NAME` dispatches to the existing host-side checkout registration operation.
+It registers this checkout, not global user settings, and preserves existing duplicate-registration checks.
+
 ### Running-instance operations and links
 
 The owner chose `instance --get-link PATH-OR-URL` for a general web console link operation.
 It runs inside the current capsule and uses that capsule's console and project context.
 It must serve project content generally, not only recorded presentations.
 Tokened links remain in chat or runtime output, never in Git records.
-The owner also moved all checkout operations under `instance`.
-The conflict with host-side checkout registration must be resolved before implementation.
+Notifications and decisions move under `instance`, retaining their existing host/capsule access rules.
+The owner resolved the host-side registration conflict by placing it under `config --register NAME`.
 
 Do not assume that an arbitrary project directory has the same console route as a presentation.
 Decide the accepted input forms and supported destinations against existing console routes.
@@ -193,30 +213,44 @@ Determine whether all required formatting can stay in the adapter before request
 Install the skill with workflow files; retain the already requested automatic wrapper installation.
 The user should not need a separate skill-install command.
 Removing `presentations` must not strand instructions that invoke its deleted commands.
-Determine how the skill obtains the version-matched instructions and complete Python helper directory.
-Do not silently add an equivalent replacement public command or change bootstrap implementation to do this.
-Ask for a specific decision if preserving the complete workflow crosses the implementation boundary.
+Install the full instructions and Python helper directory alongside the skill, not only `SKILL.md`.
+Use the packaged kit from the workflow installer and record its version provenance.
+Update the skill to use those installed resources and the general instance link operation.
+Do not add a replacement export command or hidden legacy aliases.
+Define migration guidance for previously installed skills that invoke deleted commands.
+Preserve the existing protection of user-customized files; do not silently overwrite them during migration.
+
+## Implementation choices answered — 2026-11-17
+
+The owner answered `cli-syntax-implementation` at 23:19:31 UTC:
+
+- `--project DIR` belongs before the command only, in the broader CLI slice.
+- Retain `config -g show`, `default NAME VALUE`, `trust list/accept/withdraw`,
+  and the `instance notifications` and `instance decisions` verbs.
+- Filesystem paths always select the existing `/files` route. An absolute URL
+  on the current console origin may explicitly select `/files`, `/records`, or
+  `/presentations`. Reject external URLs and project-escaping paths. Add no route
+  or serving behavior. Keep the implementation a bounded CLI rewiring.
+
+These answers settle items 1–3 below; the release split is unchanged.
 
 ## Open decisions and stopping points
 
 These are not adopted solutions. Present concrete alternatives with reasons after review.
 
 1. `--project DIR` is selected by the questionnaire; should its canonical placement be before the command?
-2. Does `instance` permit host-side checkout registration, or does that operation need another disposition?
-   The requested move cannot silently remove an existing capability.
-3. Which individual global and instance operations keep subcommands, and which become modifiers?
+2. Which individual global and instance operations keep subcommands, and which become modifiers?
    Prefer modifiers for variations; do not convert every verb mechanically.
-4. How does the installed skill obtain its instructions and helpers after `presentations` disappears?
-5. What input forms and existing console destinations does `instance --get-link` support?
+3. What input forms and existing console destinations does `instance --get-link` support?
    Is a bounded implementation exception required for general links?
-6. What happens to old CLI paths, JSON contracts, runtime invocations, and generated command suggestions?
-   A hidden compatibility path, migration error, or immediate removal are different product choices.
+4. Inventory JSON consumers, runtime invocations, and generated command suggestions for migration.
+   Old CLI paths are removed without aliases; preserve schemas and operation behavior behind the new paths.
    The shipped console invokes old paths, but its application code travels in the PEX under D-0017.
    CLI and console callers can therefore change together without a base rebuild for syntax-only changes.
    The earlier claim of ordinary console/CLI version skew from base-only delivery was incorrect.
    Remedy strings and generated guidance also exist outside the CLI adapter layer.
-   Retaining aliases avoids immediate breakage but does not update those visible strings.
-7. RC4 scope is narrow and broader cleanup follows 0.3.1. Set the exact next release number when scheduling.
+   Update those strings without changing the operation they describe.
+5. RC4 scope is narrow and broader cleanup follows 0.3.1. Set the exact next release number when scheduling.
 
 Review may resolve editorial ambiguity within accepted decisions.
 Review cannot adopt product choices or enlarge the implementation boundary.
@@ -249,6 +283,7 @@ Keep unaffected accepted decisions binding while disputed parts await the owner.
 - Check ordinary and detailed reports on the host and inside a capsule, including provenance and redaction.
 - Check wrapper dispatch and state adoption with existing relevant tests and safe temporary fixtures.
 - Check the real shipped console consumer and internal launcher calls against the compatibility decision.
+- Verify removed command paths are not accepted as aliases. Confirm no live caller depends on deleted legacy PyCharm code.
 - Verify installed skill resources and generalized links using existing console routes.
   No fresh recording or container launch is required merely to review this document.
 - Run the repository's required build and targeted integration checks for the implementation changes.
@@ -257,9 +292,7 @@ Keep unaffected accepted decisions binding while disputed parts await the owner.
 
 ## Workstream and review
 
-The owner explicitly keeps this work in presentations; do not switch workstreams.
-The author must reread this order after writing it.
-The requested independent reviewer is Claude `fable-5.2` through the installed CLI.
-Verify and record the actual model reported by that session.
-Ask it to identify contradictions, missing mappings, and unnecessary vocabulary.
-Bring justified concerns back to the owner before making implementation changes.
+The owner changed the implementation review partner to Antigravity
+`gemini-4-hydrogen` on 2026-11-17, replacing Claude. Use the installed CLI.
+Verify and record the actual model reported by that session. The earlier
+Claude work-order review remains historical evidence.

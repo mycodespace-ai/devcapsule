@@ -350,10 +350,10 @@ def test_built_pex_carries_force_for_a_required_ide_to_the_launch_review(
 def test_built_pex_installs_recorded_e2e_skill_without_source_checkout(
     built_pex: Path, tmp_path: Path, environment: dict[str, str],
 ) -> None:
-    """The executable installs its packaged skill into a new project's Claude skill directory."""
+    """Workflow setup from the executable installs its packaged skill in a new project."""
     directory = ".claude/skills/devcapsule-recorded-e2e"
     installed = subprocess.run(
-        [str(built_pex), "presentations", "install-skill", directory],
+        [str(built_pex), "bootstrap"],
         cwd=tmp_path, env=environment, text=True, capture_output=True, check=False,
     )
     assert installed.returncode == 0, installed.stderr
@@ -362,29 +362,22 @@ def test_built_pex_installs_recorded_e2e_skill_without_source_checkout(
     )
 
 
-def test_built_pex_exports_standalone_presentation_tools(
+def test_built_pex_bootstrap_installs_standalone_presentation_tools(
     built_pex: Path, tmp_path: Path, environment: dict[str, str],
 ) -> None:
-    """The built executable prints the guide and exports a standalone ``presentation_tools`` kit."""
-    guide = subprocess.run(
-        [str(built_pex), "presentations", "guide"],
+    """Workflow setup delivers a complete importable kit without a source checkout."""
+    installed = subprocess.run(
+        [str(built_pex), "bootstrap"],
         cwd=tmp_path, env=environment, text=True, capture_output=True, check=False,
     )
-    assert guide.returncode == 0, guide.stderr
-    assert "# Run an E2E scenario with recording and presentation" in guide.stdout
-
-    kit = tmp_path / "exported-kit"
-    exported = subprocess.run(
-        [str(built_pex), "presentations", "export", str(kit)],
-        cwd=tmp_path, env=environment, text=True, capture_output=True, check=False,
-    )
-    assert exported.returncode == 0, exported.stderr
+    assert installed.returncode == 0, installed.stderr
+    kit = tmp_path / ".agents/skills/devcapsule-recorded-e2e"
     package = kit / "presentation_tools"
-    assert (package / "README.md").read_text(encoding="utf-8") + "\n" == guide.stdout
+    assert "# Run an E2E scenario with recording and presentation" in (package / "README.md").read_text()
     assert {path.name for path in package.iterdir()} == {
-        "__init__.py", "README.md", "example.py", "producer.py", "recording.py", "SKILL.md",
+        "__init__.py", "README.md", "example.py", "producer.py", "recording.py",
     }
-    assert (package / "SKILL.md").read_bytes() == (
+    assert (kit / "SKILL.md").read_bytes() == (
         files("devcapsule.presentation_tools").joinpath("SKILL.md").read_bytes()
     ), "The executable must deliver the authored skill without a source checkout"
 
