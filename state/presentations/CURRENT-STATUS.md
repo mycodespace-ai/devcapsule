@@ -16,11 +16,13 @@ Owner extension, 2026-11-17: keep the CLI syntax cleanup in presentations.
 The accepted vocabulary, implementation boundary, and unresolved choices are in the
 [CLI work order](../../work-orders/2026-11-17-cli-syntax-and-discovery.md).
 The owner requested the document, an author reread, and Claude Fable 5.2 review.
-Implementation awaits the remaining review decisions.
+All review-questionnaire decisions are now recorded from chat; no implementation has begun.
 The original six-question questionnaire was answered at 2026-11-17T20:16:44Z; outcomes are recorded in the work order.
 Explicit chat renames override its older keep-command-paths option.
 RC4 gets the help bug fix and presentations cleanup; broader CLI cleanup follows 0.3.1.
-`--project` is selected, with selector aliases retained; exact placement remains proposed.
+`--project` is selected; exact placement remains proposed. No legacy command aliases are supported.
+Registration becomes `config --register NAME`. Install the complete recording kit alongside the skill.
+The owner permits that resource-installation change and removal of PyCharm code made unused by deleting its CLI group.
 
 Synchronization rechecked against fetched main `0baf70bd` and release `757392b2`.
 Only the workflow development-version stamp differs. Retain this release baseline.
@@ -161,7 +163,7 @@ The self-contained handoff names the exact paths and evidence.
 ## Planned next step
 
 The author reread and Claude `claude-fable-5-2` review are complete.
-Resolve the motivated syntax and scope questions with the owner, then record answers before implementation.
+Review decisions are complete and recorded. Prepare the bounded implementation slices under the work order when directed.
 The automatic skill setup remains PR #51; consult its live state before integration work.
 Maintenance handles release propagation and tagging. The broader cleanup targets the first release after 0.3.1.
 
@@ -207,10 +209,10 @@ Chromium check and the docs contract both passed again on the merged implementat
 
 ## Open Threads
 
-- CLI vocabulary is recorded in the work order; unresolved scope and compatibility choices await the owner.
-- Pending console document: `2026-11-17-cli-work-order-review` (compatibility, registration, skill resources, explicit project selection).
-- Original questionnaire outcomes are recorded; the review page remains unanswered. Chat answers take precedence.
-- Console code is PEX-bundled under D-0017; correct the earlier base-only compatibility premise when deciding aliases.
+- CLI vocabulary and all questionnaire outcomes are recorded in the work order; chat answers take precedence.
+- No old aliases; remove unused legacy PyCharm code; use `config --register NAME`; install the full recording kit with the skill.
+- Review questionnaire is resolved and retired after recording outcomes. No CLI implementation changes have been made.
+- Console code is PEX-bundled under D-0017; migrate its CLI caller alongside the new syntax without a base rebuild.
 - Base-requirement enforcement evidence was mailed to project-management at `5e07a10cf47a`; scheduling is with that workstream.
 - Claude review completed successfully; its assessment records compatibility, instance scope, skill resources, links, and selection concerns.
 - General links remain required; the reviewer's suggestion to limit them to presentations was not adopted.
