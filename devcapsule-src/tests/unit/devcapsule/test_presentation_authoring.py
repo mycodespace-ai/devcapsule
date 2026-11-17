@@ -176,3 +176,11 @@ def test_project_install_rejects_incomplete_or_unsafe_kit(tmp_path: Path, assets
     with pytest.raises(ValueError, match="all packaged assets"):
         install_project_skills(tmp_path, assets, version="test-build")
     assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("version", ["", "   "])
+def test_project_install_rejects_blank_version(tmp_path: Path, version: str) -> None:
+    """An empty or whitespace-only version is rejected before writing either kit."""
+    with pytest.raises(ValueError, match="non-empty version"):
+        install_project_skills(tmp_path, kit(), version=version)
+    assert list(tmp_path.iterdir()) == []

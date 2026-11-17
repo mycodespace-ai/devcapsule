@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import tempfile
 from urllib.parse import quote, urlencode, urlsplit, urlunsplit
 
 __all__ = ["export_tools", "install_skill", "install_project_skills", "SkillInstallReport", "presentation_link"]
@@ -29,6 +30,8 @@ def install_project_skills(project: Path, assets: Mapping[str, bytes], *, versio
     missing = set(KIT_ASSETS) - assets.keys()
     if missing or any(Path(name).name != name or name in ("", ".", "..") for name in assets):
         raise ValueError("the recording kit requires all packaged assets with simple filenames")
+    if not version.strip():
+        raise ValueError("the recording kit requires a non-empty version")
     created: list[Path] = []
     preserved: list[Path] = []
     for relative in PROJECT_SKILL_DIRECTORIES:
@@ -38,11 +41,15 @@ def install_project_skills(project: Path, assets: Mapping[str, bytes], *, versio
         if destination.exists() or any((project / part).is_symlink() for part in (relative, *relative.parents)):
             preserved.append(relative)
             continue
-        export_tools(destination, {name: data for name, data in assets.items() if name != "SKILL.md"})
-        (destination / "SKILL.md").write_bytes(assets["SKILL.md"])
-        (destination / "kit-version.json").write_text(
-            json.dumps({"package": "devcapsule", "version": version}, indent=2) + "\n", encoding="utf-8",
-        )
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=destination.parent, prefix=f".{destination.name}.") as tmp_dir:
+            staged = Path(tmp_dir) / destination.name
+            export_tools(staged, {name: data for name, data in assets.items() if name != "SKILL.md"})
+            (staged / "SKILL.md").write_bytes(assets["SKILL.md"])
+            (staged / "kit-version.json").write_text(
+                json.dumps({"package": "devcapsule", "version": version}, indent=2) + "\n", encoding="utf-8",
+            )
+            staged.rename(destination)
         created.append(relative / "SKILL.md")
     return SkillInstallReport(tuple(created), tuple(preserved))
 
