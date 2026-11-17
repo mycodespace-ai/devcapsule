@@ -3,8 +3,8 @@
 Printing a launch's command brings nothing to the machine. Each test runs the
 built executable in an environment it builds: a home and a project under the
 test's directory, and a search path whose ``docker`` is a script the test
-writes. The script records every call, answers that no image is local, and
-refuses any other request, so a launcher that asked Docker to pull or build
+writes. The script records every call, answers read-only daemon identity
+and local-image queries, and refuses any other request, so a launcher that asked Docker to pull or build
 would be seen and would fail. The proxy variables send every download to a
 closed port of this machine: a launcher that tried one would fail at once and
 receive nothing.
@@ -21,8 +21,12 @@ import pytest
 pytestmark = pytest.mark.integration
 
 STAND_IN_DOCKER = """#!/bin/sh
-# Stands where docker is. Every call is recorded; only a question about a local image is answered.
+# Stands where docker is. Only read-only daemon identity and local-image queries are answered.
 echo "$*" >> "$DOCKER_STAND_IN_CALLS"
+if [ "$*" = 'info --format {{json .SecurityOptions}}' ]; then
+    echo '[]'
+    exit 0
+fi
 if [ "$1 $2" = "image inspect" ]; then
     echo "[]"
     echo "Error response from daemon: No such image: $3" >&2
@@ -66,7 +70,7 @@ def launcher(built_pex: Path, tmp_path: Path):
 
 def test_print_command_names_a_base_image_that_is_not_here_and_pulls_nothing(launcher, tmp_path: Path) -> None:
     """On a machine whose Docker has no image, ``run --print-command`` exits 2 and says that a launch pulls the
-    base image. It asks Docker only whether the image is local, prints no command, and downloads no file."""
+    base image. It may read daemon security options and local image availability, prints no command, and downloads no file."""
     created = launcher("init", "--require", "python", "--ide", "python-ide",
                        "--creator", "mailto:owner@example.test", "--authorize", "base-image", "default")
     assert created.returncode == 0, created.stderr
@@ -78,7 +82,11 @@ def test_print_command_names_a_base_image_that_is_not_here_and_pulls_nothing(lau
     assert "is not on this machine. A launch pulls it; nothing was pulled now." in printed.stderr
     assert "--print-command prints the command of an environment that is already here" in printed.stderr
     calls = (tmp_path / "docker-calls").read_text(encoding="utf-8").splitlines()
-    assert calls and all(call.startswith("image inspect ") for call in calls), calls
+    assert any(call.startswith("image inspect ") for call in calls), calls
+    assert all(
+        call.startswith("image inspect ") or call == "info --format {{json .SecurityOptions}}"
+        for call in calls
+    ), calls
     downloaded = [path for path in (tmp_path / "home").rglob("*") if path.is_file() and "artifacts" in path.parts]
     assert downloaded == []
 
