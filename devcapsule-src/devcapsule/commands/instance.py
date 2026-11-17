@@ -12,6 +12,7 @@ __all__ = ["COMMAND", "content_link"]
 
 def content_link(value: str, *, project: Path, cwd: Path, console_url: str, token: str) -> str:
     """Format an existing console route; paths use Files and URLs retain their viewer."""
+    project = project.resolve()
     origin = urlsplit(console_url)
     if (not console_url or any(ch.isspace() or ch == "\\" for ch in console_url)
             or origin.scheme not in ("http", "https") or not origin.hostname
