@@ -16,6 +16,18 @@ Branch association: `ws-maintenance/cli-syntax`, created from presentations hand
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
+## CLI review round 1 — 2026-11-17
+
+Antigravity `gemini-4-hydrogen` completed its first review with exit 0 and opened
+[PR53](https://github.com/mycodespace-ai/devcapsule/pull/53) at `5f6017c2`.
+It stages helper installation, rejects blank provenance, and changes symlinked
+root behavior. Reviewer checks: 32 focused unit and 3 integration passes; full
+gate stopped with 3377 unit passes and the same three local fixture failures.
+The implementor read the diff and requested round 1: retain staging and blank
+version validation, revert the unrelated symlink-root behavior change, and add
+an actual write-failure regression for staging. No review merge yet. Briefs are
+kept in `evidence/2026-11-17-cli-syntax/`. Three syntax choices remain pending.
+
 ## CLI Pair Review resumed — 2026-11-17
 
 The owner replaced Claude with Antigravity `gemini-4-hydrogen`. The exact model
@@ -6203,7 +6215,7 @@ Earlier open-thread history (read against the current scope above):
 
 ## Workstream Document Index
 
-- [PR52.1 Antigravity review brief](evidence/2026-11-17-cli-syntax/review-brief.md).
+- [PR52.1 Antigravity review brief](evidence/2026-11-17-cli-syntax/review-brief.md) and [round 1](evidence/2026-11-17-cli-syntax/round-1.md).
 
 - [CLI implementation boundary and inventory](2026-11-17-cli-syntax-implementation.md).
 
