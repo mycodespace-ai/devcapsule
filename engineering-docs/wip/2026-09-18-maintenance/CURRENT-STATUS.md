@@ -23,6 +23,11 @@ launched successfully with the repository's prescribed permission mode and
 reported `gemini-4-hydrogen` in its streaming init event. No launch exception is
 needed. The old Claude launch question is superseded, not a remaining blocker.
 
+[PR #52](https://github.com/mycodespace-ai/devcapsule/pull/52) is a draft against
+`release-0.3.1`. Its pre-PR unit session repeated the same 3374 passes and three
+local environment-dependent failures. The review brief is committed under
+`evidence/2026-11-17-cli-syntax/review-brief.md`.
+
 The three grammar/link choices in `cli-syntax-implementation` remain pending.
 Review the independent initial slice now: safe dependency-check help and complete
 kit installation. Its implementation PR targets `release-0.3.1` for RC4; the human
@@ -6197,6 +6202,8 @@ Earlier open-thread history (read against the current scope above):
   release documents and bug records.
 
 ## Workstream Document Index
+
+- [PR52.1 Antigravity review brief](evidence/2026-11-17-cli-syntax/review-brief.md).
 
 - [CLI implementation boundary and inventory](2026-11-17-cli-syntax-implementation.md).
 
