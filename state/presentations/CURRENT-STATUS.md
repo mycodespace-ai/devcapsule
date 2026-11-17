@@ -2,7 +2,7 @@
 
 Mnemonic: `presentations`
 Start date: 2026-11-16
-State: integrating 2026-11-17; automatic skill installation with bootstrap and wrap is implemented and locally validated; follow-up delivery targets release-0.3.1. PR #50 is merged into release at 757392b2; authoring PR #43 is in release and main.
+State: active 2026-11-17; owner-directed CLI syntax work order and independent review. Automatic skill installation remains delivered in PR #51 against release-0.3.1. No CLI refactor implementation has begun.
 Branch association: `ws-presentations/automatic-skill-install` from release `757392b2`; `ws-presentations/recorded-e2e-skill` merged through #50; `ws-presentations/0.3.1-authoring` merged through #43
 Branch prefix: `ws-presentations/`
 Integration target: `release-0.3.1`
@@ -11,6 +11,20 @@ Delivery method: pull request; records published on coordination
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
 ## Goal and agreed use case
+
+Owner extension, 2026-11-17: keep the CLI syntax cleanup in presentations.
+The accepted vocabulary, implementation boundary, and unresolved choices are in the
+[CLI work order](../../work-orders/2026-11-17-cli-syntax-and-discovery.md).
+The owner requested the document, an author reread, and Claude Fable 5.2 review.
+Implementation and release scope await the remaining decisions.
+The earlier six-question cleanup questionnaire was rejected; it is not adopted scope.
+
+Synchronization rechecked against fetched main `0baf70bd` and release `757392b2`.
+Only the workflow development-version stamp differs. Retain this release baseline.
+No mail waits, and no open bug is owned by presentations.
+Document-only review uses a separate same-workstream review checkout with read-only tools.
+No Python environment or test gate is needed in that checkout because it executes no code.
+This applies judgment to a document review outside the implementation PR review loop.
 
 Make the proven E2E recording and presentation capability available to LLM agents in other DevCapsule projects.
 Provide the existing Markdown instructions and supporting Python/Playwright apparatus without requiring a DevCapsule source clone.
@@ -143,11 +157,10 @@ The self-contained handoff names the exact paths and evidence.
 
 ## Planned next step
 
-Review the automatic skill installation follow-up on `ws-presentations/automatic-skill-install`
-against `release-0.3.1`; consult its live hosted checks before the human merge. PR #50 was already merged when this
-follow-up began; its merge tree matches the previous branch tip. The human
-merges the follow-up; maintenance handles propagation and rc4. The authored
-release version remains unchanged at 0.3.1.
+The author reread and Claude `claude-fable-5-2` review are complete.
+Resolve the motivated syntax and scope questions with the owner, then record answers before implementation.
+The automatic skill setup remains PR #51; consult its live state before integration work.
+Maintenance handles release propagation and tagging. This new cleanup has no assigned release yet.
 
 ## Validation and checkout state
 
@@ -191,6 +204,11 @@ Chromium check and the docs contract both passed again on the merged implementat
 
 ## Open Threads
 
+- CLI vocabulary is recorded in the work order; unresolved scope and compatibility choices await the owner.
+- Pending console document: `2026-11-17-cli-work-order-review` (compatibility, registration, skill resources, explicit project selection).
+- Claude review completed successfully; its assessment records compatibility, instance scope, skill resources, links, and selection concerns.
+- General links remain required; the reviewer's suggestion to limit them to presentations was not adopted.
+- The full documentation checkpoint gate has the same two inherited recursive Docker-group failures; 3373 unit tests and docs contract pass.
 - Implementation authorized; release target and reviewer settled.
 - PR #43 and its main propagation are complete. PR #50 is merged into release; automatic setup is the follow-up on `ws-presentations/automatic-skill-install`, awaiting human review.
 - Maintenance owns release propagation and tagging. Native agent selection remains unverified.
@@ -205,6 +223,9 @@ Chromium check and the docs contract both passed again on the merged implementat
 
 ## Workstream Document Index
 
+- [CLI syntax work order](../../work-orders/2026-11-17-cli-syntax-and-discovery.md): accepted owner decisions and remaining implementation choices.
+- [CLI work-order review brief](evidence/2026-11-17-cli-work-order-review-brief.md): requested Claude Fable 5.2 document review.
+- [CLI work-order review assessment](evidence/2026-11-17-cli-work-order-review.md): verified model, findings, author assessment, and validation.
 - [Validation record](2026-11-16-record-authoring-validation.md): installed-artifact and browser checks, counts and limits.
 - [Implementation PR draft](2026-11-16-record-pr-draft.md): description prepared for PR #43, targeting release 0.3.1.
 - [Round 1 brief](evidence/2026-11-16-review-round-1.md): accepted test-contract corrections and hand-off path clarification.
