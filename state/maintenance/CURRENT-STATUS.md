@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: ready 2026-11-17; owner selected maintenance and requested a new CLI syntax branch from the presentations checkout. Branch and reviewed work order are prepared; implementation has not started. Final 0.3.1 acceptance remains.
+State: blocked 2026-11-17 on owner answers for the CLI grammar and supported Claude review launch. Preliminary help/recording-kit changes are saved and focused tests pass. The complete work order and final 0.3.1 acceptance remain unfinished.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -15,6 +15,50 @@ Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-on
 Branch association: `ws-maintenance/cli-syntax`, created from presentations handoff db9721dd, carrying final CLI decisions af0d3616; `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## CLI implementation start — 2026-11-17
+
+The owner requested implementation with Pair Review by Claude Fable 5.2.
+[Implementation boundary and command inventory](2026-11-17-cli-syntax-implementation.md)
+record the release split and pending syntax choices. The first bounded edits add
+complete recording-kit installation and stop `pycharm check-runtime --help` from
+running diagnostics. They are not a completed implementation slice.
+
+Synchronization: canonical upstream/main is `0baf70bd`; the rules differ only
+in the version stamp and WORKFLOW-LOCAL is identical. Retain the owner-selected
+release baseline for the RC4 slice; synchronize the later broader slice with main.
+The local manifest still declares workflow `0.2.14.dev0` while WORKFLOW.md says
+`0.3.1`; this pre-existing mismatch is reported, not silently repaired. Both
+pre-existing `.devcapsule` edits are user state and excluded from our commits.
+The canonical coordination remote is `upstream`; an initial command using its
+`origin` default read stale pre-move records. All subsequent coordination commands
+explicitly select upstream. Mail is empty and a claim was made before editing.
+
+Claude's ordinary invocation now succeeds and reports `claude-fable-5-2`.
+The prescribed permission-bypass flag still refuses uid 0. A read-only launch
+exception was requested from the owner, as WORKFLOW-LOCAL requires. No review
+has run and no review acceptance is claimed. GitHub authentication passed.
+
+Validation: 29 focused authoring unit tests and 3 real-process CLI integration
+tests passed. The required full build, with `DEVCAPSULE_DIFF_BASE=upstream/main`,
+passed version, syntax, types (361 files) and conventions, then stopped with
+3374 passing unit tests and 3 failures: the two previously recorded gid-0
+recursive-orchestrator fixtures and `test_unmountable_staging_fails_loudly`,
+whose mount-backed home scratch does not satisfy its unmountable precondition.
+No affected product code appears in those failures. No full-gate pass is claimed;
+packaging and console checks were not reached. The separate docs contract passed
+for 249 pages. An initial build used the tool's stale origin/main default and
+reported two unrelated conventions breaches; using the canonical base cleared
+those. No tests or guards were waived.
+
+No PR or independent review exists yet. The recording-kit instruction migration,
+command removals, instance links, and all broader syntax work remain pending.
+The accepted public vocabulary is unchanged by this preliminary save point.
+
+The focused authoring tests pass: 29. The configured `/opt/devcapsule-gate`
+directory is absent and `/opt` is read-only; the permitted alternate scratch is
+`/home/devcapsule/skill-validation/pytest-cli-syntax`. Initial attempts with the
+missing scratch failed at fixture setup, before exercising product code.
 
 ## CLI work-order handoff — 2026-11-17
 
@@ -4715,10 +4759,12 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Owner-selected CLI branch setup is complete. On continuation, prepare the bounded
-implementation slices from the reviewed work order, preserving the RC4 versus
-post-0.3.1 scope split. Reassess synchronization and integration target first.
-The release-acceptance tasks below remain pending.
+On continuation, read the owner answers for `cli-syntax-implementation` in capsule
+state or chat and the separate review-launch decision. Record outcomes before
+removing the decision files. Finish the RC4 slice (recording instructions,
+presentations removal and instance links) and run the required gate and Claude
+Pair Review. Keep the broader syntax changes in a later main-targeted slice.
+No release number or tag is selected. The release-acceptance tasks below remain pending.
 
 Current, 2026-11-17: rc3 publication and download verification are complete.
 Resume final 0.3.1 acceptance from the release overview: host project-config
@@ -5572,6 +5618,13 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
+Current CLI slice: await the three grammar/link choices in the capsule decision
+page and the supported Claude launch form in chat. Ordinary Claude works; the
+required bypass flag still refuses root. No reviewer is running. Preserve the
+user's two `.devcapsule` edits. Scratch logs/inventory are reproducible; no
+transcript or tokened links belong in Git. The full work order remains incomplete.
+
+
 Owner returned this checkout to maintenance on 2026-11-17, explicitly requesting
 `ws-maintenance/cli-syntax` from the presentations branch. The work order and all
 final decisions are preserved. No questionnaire remains pending; no CLI code
@@ -6127,6 +6180,8 @@ Earlier open-thread history (read against the current scope above):
   release documents and bug records.
 
 ## Workstream Document Index
+
+- [CLI implementation boundary and inventory](2026-11-17-cli-syntax-implementation.md).
 
 - [CLI syntax and discovery work order](../../work-orders/2026-11-17-cli-syntax-and-discovery.md): owner-transferred cleanup, with completed author and Claude review linked from the order.
 
