@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-17; preparing owner-requested 0.3.1 rc3 on `release-0.3.1`; SSH proxy PR #47 is merged, presentations PR #43 remains open. Candidate is not tagged: release-to-main propagation must preserve main-only files and version, and preflight has known local test failures. See the current release overview for the remaining-work tally.
+State: active 2026-11-17; v0.3.1-rc3 tagged at release 918f9fc7 after verified main propagation through PR #49. Candidate build 44004959133 passed on retry; public assets, checksum, manifest and executable identity are verified. Final acceptance remains.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -12,9 +12,29 @@ Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `ws-maintenance/0.3.1-rc3-preflight` from release `bf4fa1f0`, integration-test corrections required by rc3, PR to `release-0.3.1`; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## RC3 publication — 2026-11-17
+
+The owner merged PR #49; fetched main `0baf70bd` contains release `918f9fc7`
+and preserves `0.3.2.dev0`, the main docs manifest and the three main-only
+records. Both presentations #43 and preflight correction #48 are merged.
+Returned to `release-0.3.1` and fast-forwarded from its own remote; no main
+merge into the release. Candidate gate passed with no unintegrated commits.
+Annotated tag `v0.3.1-rc3` pushed on the owner's instruction at `918f9fc7`.
+[Build 44004959133](https://github.com/mycodespace-ai/devcapsule/actions/runs/44004959133)
+attempt 1 passed source checks, then failed downloading Python metadata
+with GitHub API HTTP 403 rate limit exceeded. No assets were staged. The same
+workflow/tag was retried; attempt 2 passed (3370 unit tests; packaging
+integration 167 passed, 4 skipped). All three public assets were downloaded;
+checksum, manifest and executable identity match rc3 at 918f9fc7. See the
+release overview for the checksum and test-runs.json for evidence. This section supersedes
+the historical preparation below.
+Main PR final hosted checks passed. Local integration after presentations:
+158 passed, 13 skipped; the two local gid-0 unit failures remain disclosed.
+See the release overview for final acceptance obligations and the bug tally.
 
 ## RC3 preparation and accepted intake — 2026-11-17
 
@@ -2968,7 +2988,7 @@ begin the rewrite until project-management assigns it.
 
 ## Current State
 
-Current as of 2026-11-17: preparing rc3; see *RC3 preparation and accepted intake*
+Current as of 2026-11-17: rc3 published and download verified; see *RC3 publication*
 above and the release overview. The dated entries below are historical.
 
 **2026-10-28: VS Code as an IDE surface implemented, smoked and reviewed; PR #301 ready.**
@@ -4667,13 +4687,12 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Current, 2026-11-17: the integration corrections are validated; hand the PR
-from `ws-maintenance/0.3.1-rc3-preflight` to the human for merge into the release. Resolve the main-preservation integration route with the owner, prepare
-the main PR, and wait for the human merge. Verify the remote integration before
-tagging `v0.3.1-rc3`, then watch the candidate job and verify its downloaded
-assets. PR #43 remains required before final 0.3.1. The owner already requested
-rc3; do not ask for the same tag authorization again once its prerequisites
-are met. Historical steps below do not override this direction.
+Current, 2026-11-17: rc3 publication and download verification are complete.
+Resume final 0.3.1 acceptance from the release overview: host project-config
+refresh, all-component freshness sweep, outstanding scope rulings, candidate
+E2E and bug verification, then documentation and final acceptance. The owner
+has not authorized the final tag. Historical steps below do not override this
+direction.
 
 1. The network-node slice, on `ws-maintenance/0.3.0-network-node` from
    the release branch, a pull request into it with the reviewer loop;
@@ -5520,15 +5539,14 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-Current, 2026-11-17 (supersedes stale release/PR claims below): rc3 is not cut;
-the validated integration correction PR awaits the human merge into the
-release, then main propagation needs the preservation commit and human merge. The
-exception question remains pending. PR #43 is open; the rootless and website
-gitlink fixes are merged. Four 0.3.1 bug records are unresolved, including one
-blocking host-side project-configuration refresh. The release overview owns
-the tally, two outstanding release rulings and acceptance/publication tasks.
-All 18 PM intake answers are recorded; no questionnaire remains. Temporary
-patches and logs are reproducible; no credentials or tokened links are saved.
+Current, 2026-11-17 (supersedes stale release/PR claims below): rc3 is published
+and download-verified; PRs #43, #48 and #49 are merged. The preservation exception was
+authorized and main's version/documents verified. Four 0.3.1 bug records
+remain unresolved, including the blocking host-side project-configuration
+refresh. The release overview owns the tally, two outstanding release rulings
+and acceptance/publication tasks. All 18 PM intake answers are recorded; no
+questionnaire remains. Scratch logs are reproducible and are not acceptance
+of an E2E campaign; no credentials or tokened links are saved.
 
 - Blocking for 0.3.1, filed and closed 2026-11-15 (PR #38 merged into
   `release-0.3.1` at `2a3d6f61`): when `docker info` reports

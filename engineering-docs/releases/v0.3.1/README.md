@@ -1,6 +1,6 @@
 # DevCapsule 0.3.1 — Release Work
 
-Updated: 2026-11-17. Stage: **rc3 requested; preflight in progress, no rc3 tag or assets published. SSH proxy is merged into the release; presentations PR #43 remains open.**
+Updated: 2026-11-17. Stage: **rc3 published and downloaded assets verified. SSH proxy #47, presentations #43 and preflight correction #48 are merged and propagated to main through #49.**
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
 [Changelog since 0.3.0](changelog.md) ·
@@ -16,47 +16,30 @@ for resumption.
 
 ## RC3 preflight and remaining work — 2026-11-17
 
-Verified release tip `a464088d` (SSH proxy PR #47), main `dac6b9d4`
-(PR #42), and no `v0.3.1-rc3` release. Local receipt commit `579d0e6a`
-adds the eight maintenance mails, with no source changes. The owner requested
-rc3; no further tag permission is needed once its prerequisites pass.
+Tag `v0.3.1-rc3` points at release commit
+`918f9fc7239526109c639d40bab2bd8d51d0461a`. The owner merged
+[PR #49](https://github.com/mycodespace-ai/devcapsule/pull/49) into main at
+`0baf70bd6d02365b594cd73501c2ad338de9a50b`. Before the tag push, verified
+release ancestry in main and the candidate gate (`mainline`, no unintegrated
+commits). Main retains version `0.3.2.dev0`, its docs manifest and all three
+main-only documents. The owner authorized the preservation commit on the
+PR copy. The release stays at `0.3.1`; main was not merged into it.
 
-### Before rc3 can be published
+The preflight correction merged through #48. After presentations #43 merged,
+local integration passed with 158 passed and 13 skipped. Main PR #49's final
+hosted checks all passed. The local build still has two inherited gid-0 unit
+failures; those were disclosed, not waived. Syntax, types, conventions,
+smoke, PEX, documentation contract and web console checks passed separately.
 
-- **Correct the integration test's outdated Docker-call expectation.**
-  `nox -s tests` at `579d0e6a`: 3320 passed, two inherited gid-0 failures,
-  1 skipped, 191 deselected, 1 xfailed, 1 xpassed (89.42 s).
-  `nox -s integration`: 154 passed, 2 failed, 12 skipped (68.28 s), using
-  the locally rebuilt PEX. The print-command test forbids the read-only
-  Docker security-options query added by the rootless fix; that failure is
-  not limited to this capsule and would fail candidate CI. The filesystem
-  ownership test assumes uid 0 can chown to gid 1, which this restricted
-  user namespace cannot. The unit failures reject socket gid 0 in the
-  legacy recursive-orchestrator tests. None was waived or marked passed.
-  Correction prepared on `ws-maintenance/0.3.1-rc3-preflight` at `87c35bab`:
-  full integration now passes, **155 passed, 13 skipped** (61.68 s).
-  The newly skipped ownership case lacks its independently probed host
-  permission. The local build still stops at the same two legacy gid-0
-  unit failures; version, syntax, types (351 files) and conventions pass.
-  The human merge of the correction PR into the release remains.
-- **Propagate the release into main without undoing main-only work.**
-  A clean automatic merge would downgrade `0.3.2.dev0` to `0.3.1`, copy
-  the release-only docs manifest override and delete the November 13 blog,
-  November 8 Mac testing note and November 8 test-improvements work order.
-  A nine-file preservation patch is prepared; permission to put it on the
-  otherwise commit-free PR copy is pending under Release Policy rule 8.
-  The human merges the prepared main PR; verify canonical remote ancestry
-  and preserved content before tagging. Never merge main into the release.
-- After those prerequisites, tag the exact release commit, follow the
-  candidate workflow, download its three assets and verify checksum,
-  manifest and reported identity. A failed candidate is not a published or
-  accepted candidate. No candidate exception has been invented.
+The [candidate workflow](https://github.com/mycodespace-ai/devcapsule/actions/runs/44004959133)
+passed on attempt 2. The public prerelease assets were downloaded; checksum,
+manifest and executable identity all match the tag. Candidate E2E acceptance
+and the final release remain outstanding.
 
 ### Remaining before final 0.3.1
 
 | Work | Current evidence / next action |
 |---|---|
-| Presentations authoring delivery | [PR #43](https://github.com/mycodespace-ai/devcapsule/pull/43) is open against `release-0.3.1`, clean, reviewed, with all required hosted checks successful. Owner-directed 0.3.1 dependency; the human merge remains. It is not in the current release tree. |
 | One blocking bug: this repository's project configuration | Host-side `project init --regenerate` and `config check`, then commit the refreshed manifest/lock before final. The capsule cannot perform the supported host-only write. |
 | All-component freshness review | The owner's November 17 decision extends the review from three agent CLIs to every existing component, for this release too. Record upgraded with evidence, no update needed with reason, or a deferred-update bug targeted at the next release. The old Antigravity hold remains unresolved; the November 9 agent table is not the full sweep. |
 | Two release rulings | Published Mac/ARM executable scope; and compatibility-feed hosting. The configured website URL returned HTTP 404 again on November 17. Cache/built-in fallback works by contract, but it does not supply a live feed. Development draft binaries do not settle release scope. |
@@ -246,6 +229,27 @@ decision here, never a silent replacement.
   final tag; delivery verified.
 
 ## Candidates
+
+### RC3 — tagged 2026-11-17
+
+- Tag `v0.3.1-rc3` on `918f9fc7239526109c639d40bab2bd8d51d0461a`;
+  main propagation through PR #49 verified before pushing the tag.
+- [Build 44004959133](https://github.com/mycodespace-ai/devcapsule/actions/runs/44004959133)
+  attempt 1 passed 3370 unit tests (194 deselected, 1 xfailed, 1 xpassed)
+  and type checks over 360 files, then failed fetching Python standalone
+  release metadata with HTTP 403, GitHub API rate limit exceeded. No assets
+  were staged. Retried the same workflow and unchanged tag; attempt 2 passed: 3370 unit
+  tests, type checks over 360 files, and packaging integration **167 passed,
+  4 skipped** (104.51 s).
+- [Public prerelease](https://github.com/mycodespace-ai/devcapsule/releases/tag/v0.3.1-rc3)
+  verified non-draft with all three assets. Downloaded to
+  `/home/devcapsule/.cache/devcapsule-releases/v0.3.1-rc3`; SHA-256
+  `e45c30f79ed73fd02aeeb17045a9c71d305b7646811aa48035605024a21b07f8`.
+  Checksum file and manifest match. From an empty directory, the executable
+  reports `0.3.1rc3`, build `v0.3.1-rc3`, source `918f9fc7…`; the manifest
+  records `release-0.3.1` and mainline integration with no exceptions.
+  This verifies delivery, not an end-to-end capsule acceptance campaign.
+
 
 ### RC2 — tagged 2026-11-10
 

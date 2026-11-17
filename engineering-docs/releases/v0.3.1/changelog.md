@@ -6,10 +6,14 @@ new and what is fixed since 0.3.0. Records, workflow rules and the
 project's own housekeeping are left out on purpose. The adopter notes for
 the final release, `notes.md`, are written from this file.
 
-RC2 is published. RC3 preparation on 2026-11-17 includes the merged fixes
-below; no rc3 tag exists yet. Presentations PR #43 remains unmerged.
+RC3 was published on 2026-11-17 at `918f9fc7`; downloaded assets are verified.
+It includes the merged SSH proxy, presentations and fixes below.
 
 ## New
+
+- **Presentation authoring.** `devcapsule presentations guide` explains how
+  to record a scenario; `export` provides standalone Python helpers and an
+  example, and `hand-off` prints its console link. Merged through PR #43.
 
 - **GitHub SSH through the host agent.** An authorized capsule can use GitHub
   SSH through a narrow host-side proxy without copying the host's private keys
