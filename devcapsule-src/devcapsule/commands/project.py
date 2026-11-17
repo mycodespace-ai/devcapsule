@@ -411,7 +411,8 @@ class ProjectWrapCommand(Command):
     def run(cls, arguments: argparse.Namespace, context: object | None) -> int:
         from devcapsule.wrap import WrapRequest, wrap_project
         from importlib.resources import files
-        from devcapsule.presentation_authoring import install_project_skills
+        from importlib.metadata import version
+        from devcapsule.presentation_authoring import KIT_ASSETS, install_project_skills
         from devcapsule.platforms import Platform
         from devcapsule.resolution_matrix import MATRICES
         matrix = MATRICES[Platform.current()]
@@ -440,7 +441,8 @@ class ProjectWrapCommand(Command):
         )
         skills = install_project_skills(
             _project_context(context).target_path().expanduser().resolve(),
-            files("devcapsule.presentation_tools").joinpath("SKILL.md").read_bytes(),
+            {name: files("devcapsule.presentation_tools").joinpath(name).read_bytes() for name in KIT_ASSETS},
+            version=version("devcapsule"),
         )
         for path in skills.created:
             print(f"Installed skill: {path}; include it in the wrapper commit.")

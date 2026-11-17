@@ -64,6 +64,8 @@ class PycharmCheckRuntimeCommand(Command):
     # token untouched rather than modeling it here.
     @classmethod
     def invoke(cls, prog: str, argv: Sequence[str], context: object | None = None) -> int:
+        if "--help" in argv or "-h" in argv:
+            return super().invoke(prog, ["--help"], context)
         return run_script("docker4pycharm/check-runtime-deps.sh", list(argv))
 
 
