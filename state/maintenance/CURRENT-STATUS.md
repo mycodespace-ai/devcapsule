@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-17; v0.3.1-rc3 tagged at release 918f9fc7 after verified main propagation through PR #49. Candidate build 44004959133 passed on retry; public assets, checksum, manifest and executable identity are verified. Final acceptance remains.
+State: paused 2026-11-17 at owner direction to switch to presentations for the recorded-E2E skill targeting rc4. Rc3 publication and download verification are complete; final 0.3.1 acceptance remains.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -5538,6 +5538,10 @@ asset downloads verify publication; no credentialed Actions-run inspection is
 claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
+
+Owner switched this checkout to presentations on 2026-11-17 to implement the
+recorded-E2E skill and deliver its PR to release-0.3.1 for rc4. Maintenance
+resumes the release cycle after that handoff; no rc4 tag is cut by this switch.
 
 Current, 2026-11-17 (supersedes stale release/PR claims below): rc3 is published
 and download-verified; PRs #43, #48 and #49 are merged. The preservation exception was
