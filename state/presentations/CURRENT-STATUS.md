@@ -48,14 +48,34 @@ preserved in the mail receipt commit and will reach main through its owner.
 
 ### Skill implementation and validation
 
+Owner-requested direct-install follow-up, 2026-11-17: PR #50 is verified open
+against `release-0.3.1`. Fetched main and release; main still differs in workflow
+only by its next-cycle version. Retain this release baseline without merging main.
+The skill-file install command replaces manual staging and copying; no change
+to recorder behavior or automatic agent configuration is included.
+
+Direct-install validation: skill format and 24 focused authoring tests pass;
+13 real CLI/PEX integration tests pass (8.23 s), including installation into
+Codex and Claude directory layouts outside the source checkout and preservation
+of an existing customized skill. The full build's unit suite has 3370 passes,
+2 inherited recursive-orchestrator gid-0 failures, 1 skip, 196 deselections,
+1 xfail and 1 xpass (84.17 s). Syntax, mypy (360 files), conventions (0 breaches),
+smoke, PEX build/smoke, docs contract (249 pages) and webconsole (474 tests) pass.
+Native agent discovery and equivalent-wording invocation have not been exercised;
+no new recorded E2E is claimed. Logs are in `/home/devcapsule/skill-validation/install-*.log`.
+
 Maintenance handoff delivered on coordination at `06af6ff79bb7` as
 `2026-11-17-presentations-rc4-skill.md`; no switch back to maintenance is implied.
 
 The canonical skill is `devcapsule-src/devcapsule/presentation_tools/SKILL.md`.
 Package data and the existing export command include it beside the guide and
-helpers. Copy that file alone to a named skill folder in the adopter project's
-agent directory; no new CLI verb or workflow bootstrap is needed. The guide
-contains non-overwriting installation examples and a scenario invocation.
+helpers. Install that file directly with `devcapsule presentations install-skill
+<new-skill-directory>`. The owner requested this simplification after reviewing
+the manual export/copy steps. The command creates parent directories and refuses
+an existing destination; the agent still exports version-matched Python helpers
+at execution time. No workflow bootstrap is needed. The guide starts with
+installation, lists Codex/Antigravity/Claude paths, and documents an AGENTS.md
+fallback plus equivalent plain-English invocation.
 The repository recording guide and viewer portability table now describe the
 shipped kit rather than the obsolete source-only restriction.
 
