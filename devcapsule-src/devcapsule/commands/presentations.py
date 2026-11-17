@@ -12,7 +12,7 @@ from devcapsule.presentation_authoring import export_tools, presentation_link
 __all__ = ["COMMAND"]
 
 PACKAGE = "devcapsule.presentation_tools"
-ASSETS = ("__init__.py", "producer.py", "recording.py", "README.md", "example.py")
+ASSETS = ("__init__.py", "producer.py", "recording.py", "README.md", "example.py", "SKILL.md")
 
 
 class GuideCommand(Command):
@@ -27,7 +27,7 @@ class GuideCommand(Command):
 
 class ExportCommand(Command):
     name = "export"
-    help = "Export the instructions and standalone Python helpers to a new directory."
+    help = "Export the agent skill, instructions and standalone Python helpers to a new directory."
 
     @classmethod
     def configure(cls, parser: argparse.ArgumentParser) -> None:

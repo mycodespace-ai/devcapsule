@@ -2,7 +2,7 @@
 
 Mnemonic: `presentations`
 Start date: 2026-11-16
-State: active 2026-11-17; owner-directed recorded-E2E skill for rc4; authoring PR #43 is merged into release and main.
+State: integrating 2026-11-17; recorded-E2E skill implemented and locally validated for rc4; release PR and hosted checks pending. Authoring PR #43 is merged into release and main.
 Branch association: `ws-presentations/recorded-e2e-skill` from release `dbfba699`; `ws-presentations/0.3.1-authoring` merged through #43
 Branch prefix: `ws-presentations/`
 Integration target: `release-0.3.1`
@@ -46,6 +46,35 @@ maintenance owns release enforcement. The first enforcing release, list and pass
 criteria await design; this does not create a new 0.3.1 gate. Full work order is
 preserved in the mail receipt commit and will reach main through its owner.
 
+### Skill implementation and validation
+
+The canonical skill is `devcapsule-src/devcapsule/presentation_tools/SKILL.md`.
+Package data and the existing export command include it beside the guide and
+helpers. Copy that file alone to a named skill folder in the adopter project's
+agent directory; no new CLI verb or workflow bootstrap is needed. The guide
+contains non-overwriting installation examples and a scenario invocation.
+The repository recording guide and viewer portability table now describe the
+shipped kit rather than the obsolete source-only restriction.
+
+Skill-creator validation passes on both the source file and a copy exported by
+the rebuilt PEX into a separate scratch project. The 11 presentation CLI/PEX
+integration tests pass, including exact skill-byte delivery with cwd outside
+the repository. Syntax, mypy over 360 files and test conventions (0 breaches)
+pass. Smoke, PEX build, documentation contract (249 pages) and web console
+(474 tests) pass. Unit rerun with scratch at /var/tmp/skill-unit: 3367 passed, 2 failed,
+1 skipped, 194 deselected, 1 xfailed and 1 xpassed (86.86 s). Only the two
+previously known recursive-orchestrator gid-0 failures remain; the extra
+unmountable-path failure disappears outside the fixture's fake home mount. The initial unit run had 3366 passes and three failures: the two
+known gid-0 cases and a legacy test whose unmountable-path precondition does
+not hold for a basetemp under /home/devcapsule. No test was modified or waived.
+The initial conventions invocation used stale origin/main; rerunning with
+DEVCAPSULE_DIFF_BASE=upstream/release-0.3.1 passes.
+
+This validates instructions and artifact delivery; no fresh recorded E2E or
+agent discovery session is claimed. The existing recorder/viewer are unchanged.
+Scratch export, adopter copy and logs live at /home/devcapsule/skill-validation;
+they are disposable. No captured media, transcript or tokened link enters Git.
+
 ## Current state and authority (original authoring slice)
 
 Created at the owner's request after checking the live list, canonical mainline, open/archive directories and remote refs.
@@ -66,10 +95,9 @@ The self-contained handoff names the exact paths and evidence.
 
 ## Planned next step
 
-Implement the portable skill, export it with the installed PEX, document
-installation and invocation, validate the skill and packaged delivery, then open
-a PR against `release-0.3.1`. The human merges; maintenance handles propagation
-and rc4. Do not change the authored release version.
+Open the validated skill PR against `release-0.3.1` and check its hosted
+results. The human merges; maintenance handles propagation and rc4. The
+authored release version remains unchanged at 0.3.1.
 
 ## Validation and checkout state
 
@@ -96,7 +124,7 @@ Maintenance was notified by coordination mail of the owner-directed 0.3.1 depend
 No Docker image or capsule was launched. Temporary loopback application and console services were stopped.
 The local artifact is a development validation build, not a published release candidate.
 
-## Pair Review
+## Pair Review (original authoring slice)
 
 Antigravity `gemini-4-hydrogen-high` with `--effort high` reviewed in its own worktree.
 Conversation `861df986-5407-4636-8a5d-3a2d26da53fc`; initial invocation and `-c` correction round both exited 0.

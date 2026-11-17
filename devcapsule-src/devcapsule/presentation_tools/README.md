@@ -16,7 +16,7 @@ devcapsule presentations export /var/tmp/e2e-authoring
 ```
 
 The destination must be new. It contains `presentation_tools/` with this guide,
-the producer, recorder and a runnable example. Add the export directory to
+the producer, recorder, a runnable example and `SKILL.md`. Add the export directory to
 `PYTHONPATH` when running the project's driver. The helpers use only the Python
 standard library and the Playwright page you supply. They import no test harness.
 
@@ -28,6 +28,42 @@ on Linux. Locate the installed executable and pass its absolute path to the
 driver. A full system `ffmpeg` also works. Do not download browsers or change
 the capsule configuration silently. If the capability is missing, report it
 and use the project's normal configuration/relaunch procedure with the engineer.
+
+## Install the optional agent skill
+
+`SKILL.md` is the portable `devcapsule-recorded-e2e` skill. It tells the agent
+when to use this procedure and to read the guide from its installed executable.
+Copy just that file into a skill folder named `devcapsule-recorded-e2e` in your
+agent's supported location; it needs no adjacent Python files or source checkout.
+The agent exports the version-matched helpers when it runs a scenario.
+
+For Codex, from the adopter project's root after the export above:
+
+```sh
+mkdir -p .agents/skills
+mkdir .agents/skills/devcapsule-recorded-e2e &&
+  cp /var/tmp/e2e-authoring/presentation_tools/SKILL.md \
+    .agents/skills/devcapsule-recorded-e2e/SKILL.md
+```
+
+The second `mkdir` refuses an existing skill directory; review an installed copy
+before replacing it. Claude Code uses `.claude/skills/` instead. These are the
+[documented project skill locations](https://developers.openai.com/api/reference/cli#use-the-cli-from-a-coding-agent).
+For another agent, use its documented skill location, or ask it to read the
+exported `SKILL.md` directly. Start a new agent session after installation.
+The file can be committed as a project instruction under that project's rules.
+
+Then ask, for example:
+
+> Use the devcapsule-recorded-e2e skill to run the scenario in
+> tests/e2e/login.md, record it, verify the presentation and give me its link.
+
+No workflow bootstrap, workflow-version change or `WORKFLOW.md` replacement is
+needed. Agents without skill support can still read `devcapsule presentations
+guide`. The guide and helpers first shipped in 0.3.1rc3; skill export is the
+rc4 addition. If an older executable has no guide or exports no `SKILL.md`,
+upgrade through the normal host procedure and launch a new capsule before using
+it. A host executable replacement does not update a running capsule.
 
 ## Execute the engineer's scenario
 

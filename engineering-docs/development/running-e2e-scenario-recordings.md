@@ -300,38 +300,28 @@ captions and playback stopping at the selected step's boundary in a real browser
 
 ## 6. Asking an agent in another project
 
-The console viewer is reusable across projects. The authoring tools described in
-this guide are currently **source-repository tooling**, not installed by the PEX
-or workflow bootstrap. Provision this guide, the presentation contract and a
-pinned copy of the producer before expecting another project's agent to follow
-the same procedure. The source revision `d94973f8a289454a6899a80a35a26077f2df0b1b`
-contains the worked SSH example. Keep source and license attribution when bringing
-tools into another project.
+The installed executable supplies the portable authoring procedure through
+`devcapsule presentations guide` and the recorder, producer, example and agent
+skill through `devcapsule presentations export <new-directory>`. No DevCapsule
+source checkout or workflow-file upgrade is required. See the
+[skill installation instructions](../../devcapsule-src/devcapsule/presentation_tools/README.md#install-the-optional-agent-skill).
 
-`scenario_presentation.py` uses Python's standard library and can serve another
-project's recording harness. The IDE recorder has dependencies on the other
-`tests/e2e` modules and creates disposable smoke projects; do not present it as an
-installed, general-purpose application-test runner. The optional
-`browser-automation` component provides Playwright and browser binaries, not these
-DevCapsule-specific helpers. A project's existing E2E runner can supply its own
-video, screenshots and measured time boundaries to a compatible producer.
+Give the agent the scenario as an existing Markdown file or inline English:
 
-With those prerequisites understood, a developer can give an agent this brief:
+> Use the devcapsule-recorded-e2e skill to run **[scenario file or user journey
+> and acceptance criteria]** against our real application. Record the actions,
+> check the expected results, and retain each attempt under our E2E evidence
+> directory. Verify the presentation in our running DevCapsule console and
+> return the test outcome and its clickable link.
 
-> Create a recorded, step-by-step DevCapsule web-console presentation of
-> **[the user journey and acceptance criteria]**. First check the installed
-> recording tools and presentation authoring support; identify missing prerequisites
-> rather than inventing commands. Use the supplied DevCapsule authoring guide and
-> pinned presentation producer. Write the Markdown scenario with its goal, numbered
-> user actions, expected observations and captions. Drive the real application
-> through our E2E harness, verify the outcome independently, and retain screenshots
-> and measured video-time boundaries. Generate and validate `presentation.json`.
-> Save the complete run under `tests/e2e/evidence/<scenario>/<run>/` inside this
-> project's mount, outside clean-build output. Check that it appears in the running
-> console's Presentations page, play every step with its captions, and give me the
-> link. Keep authentication tokens out of saved documentation and Git.
+The skill reads the installed guide instead of duplicating it. Without skill
+support, ask the agent to read `devcapsule presentations guide` directly.
+The project still supplies application setup, test data and assertions; the
+agent adapts the portable example to those instructions. There is no universal
+command that executes arbitrary English scenarios without an authored driver.
 
-This is a task brief, not a claim that the current launcher supplies its
-prerequisites. A short prompt alone does not close the packaging gap. The
+The repository-specific IDE harness described above remains development tooling;
+it is not shipped as the general-purpose runner. The optional `browser-automation`
+capability provides Playwright and browser binaries. The
 [portability table](../../devcapsule-webconsole/PRESENTATIONS.md#use-in-projects-other-than-devcapsule)
-states what ships today and what still requires a supported authoring kit.
+distinguishes those tools from the recorder and viewer.

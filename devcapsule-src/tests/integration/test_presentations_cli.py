@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from importlib.resources import files
 
 import pytest
 
@@ -39,6 +40,9 @@ def test_guide_and_export_supply_an_importable_standalone_kit(tmp_path: Path) ->
     assert exported.returncode == 0, exported.stderr
     assert f"Presentation tools: {kit / 'presentation_tools'}" in exported.stdout
     assert (kit / "presentation_tools" / "README.md").read_text(encoding="utf-8") + "\n" == guide.stdout
+    assert (kit / "presentation_tools" / "SKILL.md").read_bytes() == (
+        files("devcapsule.presentation_tools").joinpath("SKILL.md").read_bytes()
+    )
 
     isolated = subprocess.run(
         [

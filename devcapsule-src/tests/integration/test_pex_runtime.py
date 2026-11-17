@@ -310,8 +310,11 @@ def test_built_pex_exports_standalone_presentation_tools(
     package = kit / "presentation_tools"
     assert (package / "README.md").read_text(encoding="utf-8") + "\n" == guide.stdout
     assert {path.name for path in package.iterdir()} == {
-        "__init__.py", "README.md", "example.py", "producer.py", "recording.py",
+        "__init__.py", "README.md", "example.py", "producer.py", "recording.py", "SKILL.md",
     }
+    assert (package / "SKILL.md").read_bytes() == (
+        files("devcapsule.presentation_tools").joinpath("SKILL.md").read_bytes()
+    ), "The executable must deliver the authored skill without a source checkout"
 
     isolated = subprocess.run(
         [
