@@ -13,6 +13,7 @@ from typing import Mapping
 from devcapsule.configuration.storage import (
     atomic_write,
 )
+from devcapsule.presentation_authoring import install_project_skills
 
 
 WORKFLOW_TYPES = frozenset({"single-stream", "multiple-streams"})
@@ -129,6 +130,10 @@ def bootstrap_project(
     updated: list[Path] = []
     refreshed: list[Path] = []
     preserved: list[Path] = []
+
+    skills = install_project_skills(root, files("devcapsule.presentation_tools").joinpath("SKILL.md").read_bytes())
+    created.extend(skills.created)
+    preserved.extend(skills.preserved)
 
     definition_written = False
     for relative, asset in DEFINITION_ASSETS.items():

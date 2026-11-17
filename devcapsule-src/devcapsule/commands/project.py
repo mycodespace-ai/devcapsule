@@ -410,6 +410,8 @@ class ProjectWrapCommand(Command):
     @classmethod
     def run(cls, arguments: argparse.Namespace, context: object | None) -> int:
         from devcapsule.wrap import WrapRequest, wrap_project
+        from importlib.resources import files
+        from devcapsule.presentation_authoring import install_project_skills
         from devcapsule.platforms import Platform
         from devcapsule.resolution_matrix import MATRICES
         matrix = MATRICES[Platform.current()]
@@ -436,6 +438,14 @@ class ProjectWrapCommand(Command):
                 allow_unverified=arguments.allow_unverified,
             )
         )
+        skills = install_project_skills(
+            _project_context(context).target_path().expanduser().resolve(),
+            files("devcapsule.presentation_tools").joinpath("SKILL.md").read_bytes(),
+        )
+        for path in skills.created:
+            print(f"Installed skill: {path}; include it in the wrapper commit.")
+        for path in skills.preserved:
+            print(f"Kept existing skill location: {path}")
         print(report.render())
         return 0
 

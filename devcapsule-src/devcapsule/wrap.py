@@ -294,7 +294,12 @@ def render_agents(manifest: Mapping[str, Any], sources: WrappedSources, origins:
                   "3. Build, test and run each source with its own tool, from its own directory, with the Java",
                   "   line named above selected first.",
                   "4. Changes to the wrapper itself (the manifest, these files) are ordinary commits here.",
-                  "5. A fresh clone of this wrapper needs `git submodule update --init` before anything else.", ""])
+                  "5. A fresh clone of this wrapper needs `git submodule update --init` before anything else.", "",
+                  "## Recorded end-user scenarios", "",
+                  "When asked to execute an end-user scenario and capture video or produce a recorded",
+                  "presentation, read `.agents/skills/devcapsule-recorded-e2e/SKILL.md` relative to this",
+                  "wrapper root and follow it. Recognize equivalent wording; the user need not name the skill.",
+                  "Keep the driver and recording evidence in the wrapper, outside the foreign sources.", ""])
     return "\n".join(lines)
 
 
