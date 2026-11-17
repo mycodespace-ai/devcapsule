@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-17; v0.3.1-rc3 tagged at release 918f9fc7 after verified main propagation through PR #49. Candidate build 44004959133 is running; publication and downloaded-asset verification pending.
+State: active 2026-11-17; v0.3.1-rc3 tagged at release 918f9fc7 after verified main propagation through PR #49. Candidate build 44004959133 passed on retry; public assets, checksum, manifest and executable identity are verified. Final acceptance remains.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -25,7 +25,13 @@ Returned to `release-0.3.1` and fast-forwarded from its own remote; no main
 merge into the release. Candidate gate passed with no unintegrated commits.
 Annotated tag `v0.3.1-rc3` pushed on the owner's instruction at `918f9fc7`.
 [Build 44004959133](https://github.com/mycodespace-ai/devcapsule/actions/runs/44004959133)
-is in progress. This section supersedes the historical preparation below.
+attempt 1 passed source checks, then failed downloading Python metadata
+with GitHub API HTTP 403 rate limit exceeded. No assets were staged. The same
+workflow/tag was retried; attempt 2 passed (3370 unit tests; packaging
+integration 167 passed, 4 skipped). All three public assets were downloaded;
+checksum, manifest and executable identity match rc3 at 918f9fc7. See the
+release overview for the checksum and test-runs.json for evidence. This section supersedes
+the historical preparation below.
 Main PR final hosted checks passed. Local integration after presentations:
 158 passed, 13 skipped; the two local gid-0 unit failures remain disclosed.
 See the release overview for final acceptance obligations and the bug tally.
@@ -2982,7 +2988,7 @@ begin the rewrite until project-management assigns it.
 
 ## Current State
 
-Current as of 2026-11-17: rc3 tagged, build running; see *RC3 publication*
+Current as of 2026-11-17: rc3 published and download verified; see *RC3 publication*
 above and the release overview. The dated entries below are historical.
 
 **2026-10-28: VS Code as an IDE surface implemented, smoked and reviewed; PR #301 ready.**
@@ -4681,11 +4687,12 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Current, 2026-11-17: follow rc3 build 44004959133, download the published
-assets and verify checksum, manifest and executable identity. Record results
-and publish maintenance state. Final 0.3.1 acceptance remains separate;
-consult the release overview for the remaining work. Historical steps below
-do not override this direction.
+Current, 2026-11-17: rc3 publication and download verification are complete.
+Resume final 0.3.1 acceptance from the release overview: host project-config
+refresh, all-component freshness sweep, outstanding scope rulings, candidate
+E2E and bug verification, then documentation and final acceptance. The owner
+has not authorized the final tag. Historical steps below do not override this
+direction.
 
 1. The network-node slice, on `ws-maintenance/0.3.0-network-node` from
    the release branch, a pull request into it with the reviewer loop;
@@ -5532,8 +5539,8 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-Current, 2026-11-17 (supersedes stale release/PR claims below): rc3 is tagged
-and building; PRs #43, #48 and #49 are merged. The preservation exception was
+Current, 2026-11-17 (supersedes stale release/PR claims below): rc3 is published
+and download-verified; PRs #43, #48 and #49 are merged. The preservation exception was
 authorized and main's version/documents verified. Four 0.3.1 bug records
 remain unresolved, including the blocking host-side project-configuration
 refresh. The release overview owns the tally, two outstanding release rulings
