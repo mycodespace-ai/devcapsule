@@ -2,7 +2,7 @@
 
 Mnemonic: `presentations`
 Start date: 2026-11-16
-State: active 2026-11-17; automatic skill installation with bootstrap and wrap is being validated for a follow-up PR. PR #50 is merged into release at 757392b2; authoring PR #43 is in release and main.
+State: integrating 2026-11-17; automatic skill installation with bootstrap and wrap is implemented and locally validated; follow-up delivery targets release-0.3.1. PR #50 is merged into release at 757392b2; authoring PR #43 is in release and main.
 Branch association: `ws-presentations/automatic-skill-install` from release `757392b2`; `ws-presentations/recorded-e2e-skill` merged through #50; `ws-presentations/0.3.1-authoring` merged through #43
 Branch prefix: `ws-presentations/`
 Integration target: `release-0.3.1`
@@ -60,6 +60,18 @@ instructions remain preserved by their existing rules. A new bootstrap index
 lists the installed files; existing indexes remain project-owned and untouched.
 No root workflow rule or version stamp changes. Continue the release baseline;
 main's only workflow difference remains its development-version stamp.
+
+Automatic-setup validation: 15 real CLI/PEX integration tests pass (9.44 s),
+including single- and multiple-stream bootstrap, custom skill preservation on
+repeat setup, and wrapping a real local Git repository without dirtying its
+foreign source. The full gate's unit suite has 3373 passes, 2 inherited
+recursive-orchestrator gid-0 failures, 1 skip, 198 deselections and 2 xfails
+(86.06 s). Syntax, types (360 files), conventions (0 breaches), smoke, PEX,
+docs contract (249 pages) and webconsole (474 tests) pass. No legacy test was
+changed; skill installation for wrap is composed by its CLI entry point.
+Native agent discovery and a fresh recording remain outside this validation.
+Logs are `/home/devcapsule/skill-validation/setup-*.log`.
+
 
 Owner-requested direct-install follow-up, 2026-11-17: PR #50 is verified open
 against `release-0.3.1`. Fetched main and release; main still differs in workflow
@@ -131,8 +143,8 @@ The self-contained handoff names the exact paths and evidence.
 
 ## Planned next step
 
-Validate and deliver automatic skill installation on `ws-presentations/automatic-skill-install`
-through a follow-up PR to `release-0.3.1`. PR #50 was already merged when this
+Review the automatic skill installation follow-up on `ws-presentations/automatic-skill-install`
+against `release-0.3.1`; consult its live hosted checks before the human merge. PR #50 was already merged when this
 follow-up began; its merge tree matches the previous branch tip. The human
 merges the follow-up; maintenance handles propagation and rc4. The authored
 release version remains unchanged at 0.3.1.
@@ -180,7 +192,7 @@ Chromium check and the docs contract both passed again on the merged implementat
 ## Open Threads
 
 - Implementation authorized; release target and reviewer settled.
-- PR #43 and its main propagation are complete. PR #50 is merged into release; automatic setup needs a follow-up PR.
+- PR #43 and its main propagation are complete. PR #50 is merged into release; automatic setup is the follow-up on `ws-presentations/automatic-skill-install`, awaiting human review.
 - Maintenance owns release propagation and tagging. Native agent selection remains unverified.
 - Future sample-project release-check support is acknowledged above; design criteria remain pending.
 - Preserve the recorded viewer acceptance and demonstrated external-project recording reuse.
