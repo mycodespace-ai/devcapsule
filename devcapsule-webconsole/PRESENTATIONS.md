@@ -155,7 +155,7 @@ skill is added for rc4.
 | Playwright and its browser runtime | Optional `browser-automation` capability. |
 | Agent recording instructions | `devcapsule presentations guide`. |
 | Standalone producer, recorder and Python example | `devcapsule presentations export <new-directory>`, under `presentation_tools/`. |
-| `devcapsule-recorded-e2e` skill | `SKILL.md` in that export; copy it to the agent's skill directory. No workflow-file update required. |
+| `devcapsule-recorded-e2e` skill | `devcapsule presentations install-skill <new-skill-directory>`. Also included in the export. No workflow-file update required. |
 | Project-specific application setup, actions and assertions | The adopter project's instructions and driver. |
 | This repository's IDE harness and replay scenarios | Repository development tooling; not required by the portable kit. |
 

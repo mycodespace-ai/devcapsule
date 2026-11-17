@@ -302,8 +302,10 @@ captions and playback stopping at the selected step's boundary in a real browser
 
 The installed executable supplies the portable authoring procedure through
 `devcapsule presentations guide` and the recorder, producer, example and agent
-skill through `devcapsule presentations export <new-directory>`. No DevCapsule
-source checkout or workflow-file upgrade is required. See the
+skill through `devcapsule presentations export <new-directory>`. To install only
+the skill, run `devcapsule presentations install-skill .agents/skills/devcapsule-recorded-e2e`
+from the adopter project's root (use `.claude/skills/` for Claude Code). No
+temporary export, DevCapsule source checkout or workflow-file upgrade is required. See the
 [skill installation instructions](../../devcapsule-src/devcapsule/presentation_tools/README.md#install-the-optional-agent-skill).
 
 Give the agent the scenario as an existing Markdown file or inline English:

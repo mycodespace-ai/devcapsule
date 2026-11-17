@@ -3,7 +3,42 @@ from pathlib import Path
 
 import pytest
 
-from devcapsule.presentation_authoring import export_tools, presentation_link
+from devcapsule.presentation_authoring import export_tools, install_skill, presentation_link
+
+
+def test_install_skill_creates_parents_and_preserves_content(tmp_path: Path) -> None:
+    """A fresh project receives only the supplied skill in the requested nested folder."""
+    destination = tmp_path / ".agents" / "skills" / "devcapsule-recorded-e2e"
+    content = b"---\nname: devcapsule-recorded-e2e\n---\nRead the installed guide.\n"
+
+    skill = install_skill(destination, content)
+
+    assert skill == destination / "SKILL.md"
+    assert {path.name: path.read_bytes() for path in destination.iterdir()} == {"SKILL.md": content}
+
+
+def test_install_skill_preserves_an_existing_installation(tmp_path: Path) -> None:
+    """Reinstallation refuses an existing directory and preserves the engineer's edits."""
+    skill = tmp_path / "SKILL.md"
+    skill.write_bytes(b"engineer's instructions")
+
+    with pytest.raises(FileExistsError):
+        install_skill(tmp_path, b"replacement")
+
+    assert skill.read_bytes() == b"engineer's instructions"
+
+
+def test_install_skill_refuses_a_symlink_destination(tmp_path: Path) -> None:
+    """A linked installation cannot redirect writes into another skill folder."""
+    target = tmp_path / "other-skill"
+    target.mkdir()
+    destination = tmp_path / "linked-skill"
+    destination.symlink_to(target, target_is_directory=True)
+
+    with pytest.raises(FileExistsError):
+        install_skill(destination, b"replacement")
+
+    assert list(target.iterdir()) == []
 
 
 def test_export_keeps_the_supplied_bytes(tmp_path: Path) -> None:

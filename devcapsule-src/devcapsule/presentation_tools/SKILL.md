@@ -1,6 +1,6 @@
 ---
 name: devcapsule-recorded-e2e
-description: Run a visual end-to-end scenario in a DevCapsule, record its execution, and return a verified web-console presentation. Use for a scenario supplied as Markdown or plain English, including requests to record an existing E2E test.
+description: Run a visual end-to-end scenario in a DevCapsule, record its execution, and return a verified web-console presentation. Use for a scenario supplied as Markdown or plain English, including requests to run an end-user scenario and record a presentation with videos of what happened.
 ---
 
 # Recorded E2E with DevCapsule
@@ -8,6 +8,7 @@ description: Run a visual end-to-end scenario in a DevCapsule, record its execut
 Deliver the requested test's outcome and a clickable presentation of what
 actually ran. Accept the engineer's existing Markdown or inline English;
 translate it into the project's driver without requiring a new input format.
+Recognize equivalent wording; the engineer need not say E2E or name this skill.
 
 ## Load the installed procedure
 

@@ -1,12 +1,20 @@
 """Export the portable authoring kit and form console links from explicit inputs.
 
-Public operations: ``export_tools`` and ``presentation_link``.
+Public operations: ``export_tools``, ``install_skill`` and ``presentation_link``.
 """
 from collections.abc import Mapping
 from pathlib import Path
 from urllib.parse import quote, urlencode, urlsplit, urlunsplit
 
-__all__ = ["export_tools", "presentation_link"]
+__all__ = ["export_tools", "install_skill", "presentation_link"]
+
+
+def install_skill(destination: Path, content: bytes) -> Path:
+    """Install the skill in a new folder without replacing an existing installation."""
+    destination.mkdir(parents=True, exist_ok=False)
+    skill = destination / "SKILL.md"
+    skill.write_bytes(content)
+    return skill
 
 
 def export_tools(destination: Path, assets: Mapping[str, bytes]) -> Path:

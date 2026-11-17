@@ -35,7 +35,9 @@ See a sample of a full graphical IDE running inside DevCapsule's isolated Docker
 To record an E2E scenario in your own project, ask your agent to run it with recording
 and presentation. `devcapsule presentations guide` provides the installed instructions;
 `devcapsule presentations export <new-directory>` supplies the Python/Playwright helpers
-and the optional `devcapsule-recorded-e2e` agent skill (`SKILL.md`).
+and the optional `devcapsule-recorded-e2e` agent skill (`SKILL.md`). Install the skill
+directly with `devcapsule presentations install-skill .agents/skills/devcapsule-recorded-e2e`
+(use `.claude/skills/` for Claude Code).
 See the [agent recording guide](devcapsule-src/devcapsule/presentation_tools/README.md).
 
 <!-- website:benefits -->

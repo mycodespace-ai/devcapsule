@@ -7,7 +7,7 @@ from typing import Mapping
 
 from devcapsule.commands.framework import Command, Group
 from devcapsule.compat import CliError
-from devcapsule.presentation_authoring import export_tools, presentation_link
+from devcapsule.presentation_authoring import export_tools, install_skill, presentation_link
 
 __all__ = ["COMMAND"]
 
@@ -41,6 +41,28 @@ class ExportCommand(Command):
         except (OSError, ValueError) as error:
             raise CliError(f"cannot export presentation tools: {error}") from error
         print(f"Presentation tools: {package}\nAgent instructions: {package / 'README.md'}")
+        return 0
+
+
+class InstallSkillCommand(Command):
+    name = "install-skill"
+    help = "Install the recorded-E2E skill directly into a new skill directory."
+
+    @classmethod
+    def configure(cls, parser: argparse.ArgumentParser) -> None:
+        parser.add_argument(
+            "directory", type=Path,
+            help="New skill folder, e.g. .agents/skills/devcapsule-recorded-e2e; existing paths are preserved.",
+        )
+
+    @classmethod
+    def run(cls, arguments: argparse.Namespace, context: object | None) -> int:
+        content = files(PACKAGE).joinpath("SKILL.md").read_bytes()
+        try:
+            skill = install_skill(arguments.directory, content)
+        except OSError as error:
+            raise CliError(f"cannot install recorded-E2E skill: {error}") from error
+        print(f"Installed skill: {skill}\nStart a new agent session to discover it.")
         return 0
 
 
@@ -83,7 +105,7 @@ class PresentationsCommand(Group):
 
     @classmethod
     def subcommands(cls) -> Mapping[str, type[Command] | type[Group]]:
-        return {command.name: command for command in (GuideCommand, ExportCommand, HandOffCommand)}
+        return {command.name: command for command in (GuideCommand, ExportCommand, InstallSkillCommand, HandOffCommand)}
 
 
 COMMAND = PresentationsCommand
