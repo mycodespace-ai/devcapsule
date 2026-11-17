@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: paused 2026-11-17 at owner direction to switch to presentations for the recorded-E2E skill targeting rc4. Rc3 publication and download verification are complete; final 0.3.1 acceptance remains.
+State: ready 2026-11-17; owner selected maintenance and requested a new CLI syntax branch from the presentations checkout. Branch and reviewed work order are prepared; implementation has not started. Final 0.3.1 acceptance remains.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -12,9 +12,37 @@ Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `ws-maintenance/cli-syntax`, created from presentations handoff db9721dd, carrying final CLI decisions af0d3616; `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## CLI work-order handoff — 2026-11-17
+
+The owner requested a maintenance branch from the current presentations checkout.
+Created `ws-maintenance/cli-syntax` from `db9721dd`, which preserves final decisions
+in `af0d3616` and pauses presentations. The reviewed
+[CLI work order](../../work-orders/2026-11-17-cli-syntax-and-discovery.md)
+now belongs to maintenance. No source, version or implementation behavior changed.
+The prior author reread and Claude Fable 5.2 assessment remain its review evidence.
+
+Synchronization judgment: preserve the requested branch baseline for this handoff.
+Compared with main `0baf70bd`, the workflow differs only in its release-version
+stamp; the local workflow is identical. Reassess synchronization and the target
+branch before an implementation slice. Do not merge main into a release branch.
+RC4 gets the help bug fix and presentations cleanup; broader CLI cleanup remains
+for the first release after 0.3.1, whose version has not been selected.
+
+Acknowledged the three presentations handoff notices received in `52154b3f`.
+PR #50 and #51 are merged into release (through `7ad956d4`); automatic setup
+supersedes the earlier manual/direct-install guidance. Release propagation,
+candidate validation and RC4 tagging remain maintenance tasks. No tag is cut
+by this branch setup. Native agent discovery remains unverified. The work order
+records the subsequent decision to install the full helper kit and remove the
+standalone presentations commands; that implementation is still pending.
+
+Validation is limited to branch ancestry, unchanged source, whitespace and the
+documentation contract for this records-only handoff. The prior full gate's two
+inherited gid-0 failures remain disclosed; no new full-gate success is claimed.
 
 ## RC3 publication — 2026-11-17
 
@@ -4687,6 +4715,11 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
+Owner-selected CLI branch setup is complete. On continuation, prepare the bounded
+implementation slices from the reviewed work order, preserving the RC4 versus
+post-0.3.1 scope split. Reassess synchronization and integration target first.
+The release-acceptance tasks below remain pending.
+
 Current, 2026-11-17: rc3 publication and download verification are complete.
 Resume final 0.3.1 acceptance from the release overview: host project-config
 refresh, all-component freshness sweep, outstanding scope rulings, candidate
@@ -5539,9 +5572,12 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-Owner switched this checkout to presentations on 2026-11-17 to implement the
-recorded-E2E skill and deliver its PR to release-0.3.1 for rc4. Maintenance
-resumes the release cycle after that handoff; no rc4 tag is cut by this switch.
+Owner returned this checkout to maintenance on 2026-11-17, explicitly requesting
+`ws-maintenance/cli-syntax` from the presentations branch. The work order and all
+final decisions are preserved. No questionnaire remains pending; no CLI code
+has changed. The three presentations notices are acknowledged, with automatic
+setup superseding older installation guidance. RC4 and final acceptance remain
+pending; no tag or release operation is implied by the branch setup.
 
 Current, 2026-11-17 (supersedes stale release/PR claims below): rc3 is published
 and download-verified; PRs #43, #48 and #49 are merged. The preservation exception was
@@ -6091,6 +6127,8 @@ Earlier open-thread history (read against the current scope above):
   release documents and bug records.
 
 ## Workstream Document Index
+
+- [CLI syntax and discovery work order](../../work-orders/2026-11-17-cli-syntax-and-discovery.md): owner-transferred cleanup, with completed author and Claude review linked from the order.
 
 - [PR #16 Pair Review brief (PR16.1)](evidence/2026-11-08-webconsole-delivery/review-brief.md), [D-0017](../../decisions/product/d-0017-launcher-delivers-web-console-package.md), and [0.3.1rc1 web console delivery bug](../../bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md): launcher-delivered web console slice (`ws-maintenance/webconsole-delivery`, stacked on PR #18).
 

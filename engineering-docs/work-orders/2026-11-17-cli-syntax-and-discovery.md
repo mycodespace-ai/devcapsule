@@ -1,7 +1,7 @@
 # Work Order: Simplify CLI Syntax And Help Discovery
 
 Date: 2026-11-17.
-Owner: presentations, by explicit product-owner direction.
+Owner: maintenance, transferred from presentations by explicit product-owner direction on 2026-11-17.
 Status: reviewed; all review-questionnaire decisions resolved by the owner; implementation not started.
 Release scope: RC4 gets the help bug fix and presentations cleanup; broader CLI cleanup follows 0.3.1.
 The exact next release number remains undecided.
@@ -16,7 +16,9 @@ Make the current project the default CLI context. Reduce the ordinary command li
 Use options for variations of an operation. Keep advanced operations discoverable.
 Preserve the implementation's behavior and storage model.
 
-The owner assigned this cleanup to presentations during an iterative CLI review.
+The owner assigned this cleanup to presentations during an iterative CLI review,
+then directed a maintenance branch from that checkout after PR #51 merged.
+The implementation branch is `ws-maintenance/cli-syntax`.
 This work order records those decisions. The original six-question questionnaire's structure was rejected,
 but the owner subsequently answered all six items at 2026-11-17T20:16:44Z.
 Chat decisions take precedence where they conflict with those older options.
@@ -276,9 +278,5 @@ Keep unaffected accepted decisions binding while disputed parts await the owner.
 
 ## Workstream and review
 
-The owner explicitly keeps this work in presentations; do not switch workstreams.
-The author must reread this order after writing it.
 The requested independent reviewer is Claude `fable-5.2` through the installed CLI.
 Verify and record the actual model reported by that session.
-Ask it to identify contradictions, missing mappings, and unnecessary vocabulary.
-Bring justified concerns back to the owner before making implementation changes.
