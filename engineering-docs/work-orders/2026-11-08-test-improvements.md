@@ -9,6 +9,17 @@ Requirements: none. This is a process and code-quality order; it changes no prod
 Supersedes nothing. It gives a home to the follow-ups queued in the maintenance status under
 *Unit-test conventions — 2026-11-03*: the measured refactor of the legacy test debt, module by module.
 
+## Scheduling Amendment, 2026-11-17
+
+The owner postponed registration and execution until the first release after
+0.3.1 has shipped, whether that release is 0.3.2 or 0.4.0. Project-management
+retains registration and reconciliation as the next task at that trigger.
+Preserve later owner rulings in WORKFLOW-LOCAL.md and account for maintenance's
+completed work before executing the older slices below. The selected comparison
+of fast integration checks joins the workstream then; it changes no gate now.
+The target remains main, never release-0.3.1. Current testing rules still apply.
+See the [November 17 outcomes](../wip/2026-08-09-project-management/coordination-backlog.md).
+
 ## Outcome
 
 Unit tests in this repository establish their preconditions by constructing inputs and calling one public

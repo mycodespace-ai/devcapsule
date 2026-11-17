@@ -7,6 +7,101 @@ its own release commitment. Older undecided entries gain no V1 commitment
 merely by appearing here. An assigned item is carried by its owning workstream;
 this list retains only the coordination obligation.
 
+## Decisions From The November 17 Intake Review
+
+Accepted by the product owner through the console at 2026-11-17T00:48:36Z.
+The following are recorded outcomes, not a copy of the questionnaire or answer
+file. Original intake text remains in Git at `9443bdc6`. The successor means the
+first release after 0.3.1, whether 0.3.2 or 0.4.0. Its upgrade obligation remains.
+Only original items 10 (website documentation check) and 14 (agent progress
+monitoring) remain undecided; their wording is being replaced on a new page.
+
+### 1. Component validation and the review before every release
+
+Component-upgrades owns a bounded per-component inventory of what automated checks can prove, the remaining human checks, and the minimum automation needed for the upgrade experience in the first release after 0.3.1. Full automation for every component is not a release condition. Component-catalog supplies component knowledge.
+
+The owner adds a standing rule for **every release**: review every existing component and record exactly one outcome: upgrade it; no update is needed, with a reason; or keep an open bug for the deferred update, targeted at the next version. Maintenance/the release driver owns the sweep and its release table. This extends the earlier agent-only review to the full component roster, including the current release's acceptance review. Do not turn an unsuccessful check into a claim that no update is needed. If the next version number is undecided, retain the explicit next-release obligation and bind the bug's exact target when the owner names that version; do not invent a version or silently lose the obligation. No hypothetical component bugs are filed without the sweep's findings.
+
+### 2. Init and configuration commands
+
+Retain the current model: init creates/completes the project, regeneration refreshes derived state and performs explicit format migration, and config commands make explicit shared/local edits. Reconcile old symptoms with current code, then reject ineffective flags or explain their real effect. This is wanted V1 work, not an additional release gate.
+
+The owner specifically requests further discussion when the component update workstream takes this up. Route the work to component-upgrades, with component-catalog support; bring the remaining command behavior choices to the owner before implementing them. The intake routing is decided; the detailed behavior is not.
+
+### 3. Readable component terminology
+
+Component-catalog owns a broader wanted V1 audit of current code and permanent guidance, including internal edge terminology. Preserve technical distinctions and frozen historical decisions; propose any schema changes separately. Base-family naming already exists, so establish the remaining gap rather than repeat an old rename. No release gate is added.
+
+### 4. Evidence from successful experiments
+
+Keep current manual evidence curation for the successor to 0.3.1. Component-upgrades retains the learning/submission channel and subsequent mandatory checks on matrix additions as wanted V1 tasks, revisited after that successor ships. Local successful experiments must not be silently promoted to general compatibility claims.
+
+### 5. A small adopter pilot and supporting article
+
+Project-management owns the audience, pilot size and support-capacity plan; website owns the accompanying draft. Prepare the plan for owner review after the successor upgrade release. This is a bounded supported pilot, not permission for broad recruitment. Invitations and publication wait for the owner's later approval. Refresh release/platform facts and avoid claiming measured benefits or undelivered upgrade behavior.
+
+### 6. Contributor guidance and obsolete release advice
+
+The 0.2.14 release advice is overtaken. User-docs checks the current contributor entry point and, if missing, writes a concise guide for selecting work, using an agent and submitting a pull request. Wanted after 0.3.1, with no release gate. Campaign material feeds the pilot/article plan from item 5; no duplicate campaign is created.
+
+### 7. Host launcher installation and recovery
+
+After 0.3.1 is delivered, project-management opens launcher-recovery for a separate bounded design and implementation slice. Target the first release after 0.3.1 as wanted work, not a gate. Cover identifiable host-side acquisition/selection and recovery when a capsule cannot start, with cold-restart and failed-transition evidence. Coordinate its rules with the compatibility effort; do not reopen the old 0.3.0 release decision. This accepted item is the reason to begin the future workstream.
+
+### 8. Whether selected integration tests should block a merge
+
+Assign test-improvements a bounded comparison of today's checks against fast integration tests selected according to the changed code, including time, resources and reliability. Bring the proposal to the owner before changing any check. Existing testing rules remain in force.
+
+Item 16 explicitly postpones registration/execution of test-improvements until the first release after 0.3.1 ships. Retain this task for that registration; do not start it early merely because this question selected a design. Reconcile later owner rules before comparing alternatives.
+
+### 9. Manual GitHub CLI setup
+
+User-docs owns a manual setup/sign-in recipe after 0.3.1; no packaged github-cli capability is selected. Explain the owner's required explicit license/terms acceptance before installation through this capsule's Miniconda-based route, then the gh installation and sign-in steps. Do not accept terms for the user.
+
+Scope that explanation to the chosen installation route. GitHub's official installation instructions also provide Linux packages and precompiled binaries without Miniconda: https://github.com/cli/cli/blob/trunk/docs/install_linux.md (checked 2026-11-17). Thus this is not a claim that gh intrinsically requires Miniconda or that a supported component is technically impossible. Preserve the manual-only product decision; changing installation methods is not part of this assignment. Verify the current provider wording when authoring the instructions.
+
+### 11. Minimum reader version in configuration files
+
+Retain the owner's requirement as wanted V1 work with the future compatibility workstream, after its support-policy design and the successor upgrade slice. Do not require its implementation for the successor release. Decide file coverage, conservative writer behavior and meaningful recovery for older readers when that work is scoped; already shipped clients cannot retroactively acquire new messages.
+
+### 12. A managed scratch directory
+
+After the successor upgrade slice, project-management opens capsule-storage for managed scratch with ephemeral and persistent modes, visible backing/lifecycle information and cleanup. Wanted V1 work, no release gate. Decide paths, default lifecycle and budget with the owner before implementation. The explicit persistent option is retained; this is a product feature, not merely this repository creating a test directory. This accepted item is the reason to begin the future workstream.
+
+### 13. Current sample capabilities and a sample-project release check
+
+Sample-projects verifies AI Learning against current Node minimums and project environment declarations, records what works and identifies concrete remaining gaps. This reconciliation is wanted after 0.3.1 and does not promise that an environment variable is hidden from an agent sharing the environment.
+
+The owner additionally orders a work item to create a release check backed by a maintained list of sample projects. Each new release runs their end-to-end scenarios, updates the sample projects as needed, and produces videos/presentations showing the capabilities exercised. Sample-projects owns the list, scenarios and project updates; presentations supplies recording/presentation support; maintenance integrates the check into release acceptance. The work order below defines the handoff. Creating the check is authorized; its first enforcing release, sample list and detailed pass criteria are to be settled in design, not silently invented here. It is not implemented or passed by this record.
+
+### 15. Test-session timing history
+
+Schedule the project-management design immediately after the first release following 0.3.1 is delivered. Reconcile the deferred test-improvements work first, then define a small mechanism that distinguishes preparation/build, execution and human acceptance time and retains enough context for useful comparisons. Keep existing logs meanwhile; no new service, capture mechanism or release check is authorized by this scheduling decision.
+
+### 16. When to open test-improvements
+
+Retain the existing work order but postpone execution and registration until the first release after 0.3.1 is delivered. Project-management owns that explicit trigger and the first reconciliation task: preserve later owner rules and identify what maintenance already completed. The work targets main, not release-0.3.1. Current test rules still apply. This schedule supersedes the earlier instruction to open immediately; it does not cancel the work.
+
+### 17. Compatibility policy and documentation
+
+After 0.3.1, project-management opens compatibility. Design the support window and recovery promise alongside the successor upgrade work, but do not make the complete compatibility policy/documentation/evidence package a gate for that successor. Delivery is wanted V1 work after the policy ruling. Preserve the owner's permission to drop compatibility with 0.2.14, 0.2.15 and earlier; no particular new support-window length is selected. Include item 11 at its later agreed position; coordinate with the separate launcher-recovery effort from item 7. This accepted item is the reason to begin the future workstream.
+
+### Order Of Project-Management Follow-Up
+
+- After 0.3.1: register compatibility and launcher-recovery; coordinate their
+  distinct scopes with component-upgrades. Existing workstreams can take their
+  delivered documentation/reconciliation items at the positions above.
+- After the successor upgrade slice: register capsule-storage for wanted V1 work.
+- After the successor release ships: register/reconcile test-improvements, retain
+  item 8 for it, then hold the timing-history design; bring the adopter-pilot plan
+  and article for owner review. Experimental-evidence automation is also revisited.
+- Track the new sample-project release-check work order through design, including
+  which release first enforces it. Do not silently add or remove that deadline.
+
+Future registrations are scheduled work, not already open workstreams. They
+require their ordinary branch/registration steps when their trigger is met.
+The sample-project work is [specified here](../../work-orders/2026-11-17-sample-project-release-gate.md).
+
 ## Accepted Work Retained After Intake Closure
 
 Confirmed by the owner, 2026-10-09. These entries preserve work from the 23

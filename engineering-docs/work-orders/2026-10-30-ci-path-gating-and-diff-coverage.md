@@ -65,7 +65,7 @@ Read against mainline `b026936b2d476b27d7d81c19670c5e3dc7915cdb`:
   verification, not merely skipping an existing PR job.
 - [Local workflow](../../WORKFLOW-LOCAL.md),
   [developer brief](../../DEVELOPING.md) and
-  [testing-policy intake](../wip/2026-08-09-project-management/intake/2026-10-10-capsule-webconsole-reconcile-testing-approach-with-practice.md):
+  [testing-policy intake](https://github.com/mycodespace-ai/devcapsule/blob/9443bdc69d15df7514e13e8e3ded2f3a8720dd51/engineering-docs/wip/2026-08-09-project-management/intake/2026-10-10-capsule-webconsole-reconcile-testing-approach-with-practice.md):
   the local build gate is broader than hosted unit testing. This order does
   not silently reconcile that policy difference.
 - [Ast-grep proposal](2026-10-29-ast-grep-guardrails.md): a separate draft, not

@@ -4,7 +4,7 @@ Mnemonic: `project-management`
 
 Start date: 2026-08-09
 
-State: active 2026-11-16; 17-item console questionnaire awaits owner; upgrade successor commitment retained
+State: active 2026-11-17; 15 intake decisions recorded and routed/scheduled; 2 rewritten questions await owner
 
 Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -22,6 +22,55 @@ Own project-wide priorities, sequencing, dependencies and lifecycle decisions.
 This reserved workstream remains open for the lifetime of multiple-stream mode.
 
 ## Current State
+
+### Fifteen decisions recorded; two rewritten questions, 2026-11-17
+
+The owner's console response of 2026-11-17T00:48:36Z decides 15 items. Their
+scope, routing, sequencing and note refinements are recorded in the
+[coordination backlog](coordination-backlog.md), November 17 section. Removed
+those 15 intake files in the same commit as their disposition entries. Original
+intake text remains at 9443bdc6. Only the website documentation check and agent
+progress-monitoring questions remain pending; they are rewritten in plain English.
+
+The owner added two obligations: review every component before every release,
+with upgraded/no-update-needed/open-next-release-bug outcomes; and create a
+sample-project release check with real end-to-end runs, project updates and
+videos/presentations. The release guide carries the review rule and the pending
+sample-check obligation. The [sample-project work order](../../work-orders/2026-11-17-sample-project-release-gate.md)
+assigns implementation/design work; it does not claim the check already exists
+or select its first enforcing release. Maintenance received both obligations.
+
+The init/config item is assigned to component-upgrades with component-catalog
+support, with further owner discussion before behavior changes. The owner chose
+manual gh documentation, and its Miniconda consent explanation must describe
+that installation route, not assert that gh has no other installation methods.
+
+Future workstreams are scheduled, not registered early: compatibility and
+launcher-recovery after 0.3.1; capsule-storage after the successor upgrade slice;
+test-improvements after the successor release. The selected integration-test
+comparison waits for test-improvements; timing-history design follows its
+reconciliation. The adopter pilot/article plan waits until after the successor
+upgrade release. No invitations or publication are authorized by that plan.
+
+Sent decisions to component-upgrades (6dce079afb48), component-catalog
+(29bb5a51c034), maintenance (b0c544148b62), website (3ea0dae53824), user-docs
+(7ee926005bd2), sample-projects (e86fdba50f8c), and presentations (9d2e979ee557).
+Recipients own acknowledgement and implementation at the recorded positions.
+This checkout remains on project-management; no product implementation starts.
+
+Follow-up questionnaire: `2026-11-17-two-intake-questions-plain-english`, in
+capsule state only. It contains original items 10 and 14; all other choices
+are already acted on as coordination decisions. Keep the original 17-item page
+and its answer while these two outcomes remain unresolved. The new page is the
+one to present; do not ask the owner to repeat the other 15 choices. Tokened
+links and raw questionnaire/answer files remain outside Git.
+
+Workflow status reports zero commits behind main and no definition change;
+no synchronization is needed. The owner-authorized document-only validation
+exception remains in force. The generic future-release targeting gap remains
+with workflow-improvements; where a deferred-update bug's exact next version
+is unknown, preserve the ordinal obligation until its target can be bound.
+
 
 ### Seventeen-item decision questionnaire, 2026-11-16
 
@@ -246,13 +295,26 @@ product and scope choices; neither is silently adopted or assigned a release.
 
 ## Planned Next Step
 
-Process the owner's answers to the 17-item console questionnaire. Record clear
-outcomes individually, deliver any work through coordination mail, and remove
-each decided intake in the same commit as its disposition. Continue discussion
-only for unanswered, ambiguous or explicitly discussion-marked items. Do not
-execute proposed scope or new release gates before the owner chooses them.
+Read answers to `2026-11-17-two-intake-questions-plain-english` and decide only
+the two remaining intake items. Record clear outcomes and route work without
+reconfirming settled choices. Preserve discussion requests as pending. Track
+the accepted tasks and future registration triggers in the coordination backlog;
+none of the 15 decided items needs the owner to answer again.
 
 ## Validation And Checkout State
+
+### Intake outcomes and rewritten questions, 2026-11-17
+
+Checked all local links in changed documents: no missing targets. Reviewed all
+15 dispositions against the selected options and qualifying notes. The live
+console serves exactly the two remaining intake items, unanswered; the standard
+builder and checker accept the new page. No answer was manufactured or submitted.
+A reference in the project-owned CI work order now links to the original intake
+at its immutable revision. Two maintenance-owned historical links need the same
+repair; a patch was delivered at coordination 2c5b25bb26cc, without editing those
+records here. Whitespace checks pass. No product code or environment changed;
+product tests were not rerun under the standing planning-validation exception.
+
 
 ### Questionnaire checkpoint, 2026-11-16
 
@@ -338,18 +400,27 @@ The owner's saved edits remain outside project-management commits:
 
 ## Open Threads
 
-- Awaiting the human: answers to the 17-item console questionnaire; the owner superseded the one-at-a-time presentation.
-- Successor upgrades are committed; detailed scope and acceptance remain to be agreed.
-- The release-relative workflow gap is pending with workflow-improvements; enforcement is procedural.
-- Presentations PR #43 awaits owner merge into release-0.3.1; Pair Review is done.
-- SSH proxy #47 is merged into the release; main propagation remains with maintenance.
-- Compatibility policy and test-improvements boundaries remain unresolved.
-- Seventeen intake items and three ideas remain pending; the first intake is acknowledged and routed.
-- Existing owner permission permits planning despite local Docker-group test failures.
-- No new service, container or environment was started. Retained evidence is ignored.
-- Deliberately not preserved: no transcript, tokened link or speculative design.
+- Awaiting the human: two rewritten console questions, website documentation
+  version checking and progress visibility for a separately running agent.
+- Fifteen choices are accepted and routed/scheduled; detailed design remains
+  where the chosen option or owner note explicitly required it.
+- Successor upgrades remain required. Compatibility's complete package is wanted
+  V1 work, not a newly imposed successor gate. Minimum-reader declarations follow
+  that policy and the successor upgrade slice.
+- The sample release check is ordered; sample list, pass criteria and first
+  enforcing release remain design choices. Every-component release review is
+  already a standing instruction to the release driver.
+- Future workstream registrations and timing/adopter tasks have explicit triggers
+  in the backlog. Do not start postponed work merely because its intake is closed.
+- The original questionnaire and answer are retained outside Git until the final
+  two outcomes are recorded; the new two-item page is the active handoff.
+- Three ideas remain untriaged. No new service, container or environment started.
+- Earlier PR delivery statements have not been reverified in this record-only
+  pass; maintenance still owns release-to-main propagation.
 
 ## Workstream Document Index
+
+- [Sample-project release check](../../work-orders/2026-11-17-sample-project-release-gate.md): owner-ordered scenarios, sample updates and video/presentation evidence.
 
 - [Upgrades in the first release after 0.3.1](2026-11-16-decision-upgrades-next-release.md): accepted scope obligation, concrete user problem and release checkpoints.
 
@@ -382,7 +453,7 @@ The owner's saved edits remain outside project-management commits:
 - [0.2.14 bug triage](../../releases/v0.2.14/bugs.md): release dispositions and next actions; canonical bug records remain linked.
 
 - [Prior coordination status](2026-09-22-record-prior-coordination-status.md): full historical handoff, decisions, open-thread context and external-state claims; read when reconciling a specific prior topic.
-- [Intake decisions](intake-dispositions.md): append-only outcomes; `intake/` contains 17 undecided items as of November 16; receipt is not a disposition.
+- [Intake decisions](intake-dispositions.md): append-only outcomes; `intake/` contains 2 undecided items as of November 17; receipt is not a disposition.
 
 - [Diagnostic print-command and run-image retirement](2026-09-21-design-editable-project-launch.md): accepted simplified contract and maintenance implementation scope.
 - [Design issue: V1 completeness and the WOW experience](2026-09-19-v1-wow-functionality-areas.md)

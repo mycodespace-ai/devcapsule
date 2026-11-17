@@ -62,8 +62,8 @@ the checkout-local environment described in the [developer environment](../../de
    and run `.venv/bin/python -m nox -s build` from `devcapsule-src`. Then
    reopen `main` with the next development version by a pull request, so
    `main` is ahead of every candidate (`WORKFLOW-LOCAL.md`, *Version
-   Scheme*; owner decision of 2026-10-18). Run the *Agent Freshness Review*
-   below and record its table in the release overview.
+   Scheme*; owner decision of 2026-10-18). Run the *Review Every Component*
+   and *Agent Freshness Review* below and record their results in the release overview.
 2. **Account for main and publish the first candidate.** Follow *Release Fixes
    And Main* and the current candidate gate below. Push the release branch;
    merge it into `main` by a pull request from a throwaway copy,
@@ -102,7 +102,8 @@ the checkout-local environment described in the [developer environment](../../de
    promotion script does not enforce it automatically.
    Run `prepare-promotion.py` as shown below with the
    accepted RC, preparation baseline, accepting operator, and evidence. Review
-   the generated record. Recheck the freshness review's vendor pointers; a
+   the generated record. Confirm every component has one of the three recorded
+   outcomes below and recheck the freshness review's vendor pointers; a
    version that appeared meanwhile gets an adopt-or-hold decision, never a
    silent replacement of the accepted candidate. For v0.2.11 the accepted candidate was **RC3**, not
    RC0 or a later workstream tip. Commit the record after the accepted candidate
@@ -180,6 +181,40 @@ obligations of the driving workstream, in the order the checklist meets them:
 The contract these follow is [the content–website contract, version 1](../../specifications/product/content-website-contract.md);
 the ideal structure of the documentation is in
 [the 2026-09-28 visitor-content work order](../../work-orders/2026-09-28-visitor-content-and-producer-migration.md).
+
+## Review Every Component
+
+Owner decision, 2026-11-17: before accepting **every release**, sweep the full
+roster of embedded/supported components, not only the agent CLIs. Record the
+component, current version, available version/source, check date, and exactly
+one outcome in the release overview:
+
+1. Upgraded for this release, with the relevant validation evidence.
+2. No update needed, with the reason.
+3. Update deferred, with an open bug targeted at the next release version.
+
+A failed or unavailable update check is not evidence that no update is needed;
+record the unresolved update work under outcome 3. A holdback needs a concrete
+bug, not an untracked promise. If the owner has not named the next version yet,
+retain the explicit next-release obligation in the release handoff and bind the
+bug's version target when that version is selected. Do not invent a target or
+let the obligation disappear when the version number changes. Topic 12.5 still
+governs bug fields and ownership. The release driver applies the sweep to the
+current release's remaining acceptance review; this record is not sweep evidence.
+
+The existing agent-specific validation below remains applicable. One table may
+serve both reviews if it covers every component and every required field.
+
+## Sample Projects As A Release Check — Work Ordered
+
+The owner ordered a maintained sample-project list, real end-to-end runs for
+new releases, sample updates and videos/presentations as acceptance evidence.
+The [work order](../../work-orders/2026-11-17-sample-project-release-gate.md)
+assigns sample-projects, presentations and maintenance their parts.
+The check is not implemented by this documentation change. Its first enforcing
+release and exact pass criteria must be settled in design, then entered in this
+checklist before it is claimed as a release gate. Keep its pending state visible;
+neither invent a successful run nor silently drop the owner's requirement.
 
 ## Agent Freshness Review
 
