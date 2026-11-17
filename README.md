@@ -32,6 +32,11 @@ default. You decide what additional access to grant.
 
 See a sample of a full graphical IDE running inside DevCapsule's isolated Docker container. More scenario illustrations coming soon.
 
+To record an E2E scenario in your own project, ask your agent to run it with recording
+and presentation. `devcapsule presentations guide` provides the installed instructions;
+`devcapsule presentations export <new-directory>` supplies the Python/Playwright helpers.
+See the [agent recording guide](devcapsule-src/devcapsule/presentation_tools/README.md).
+
 <!-- website:benefits -->
 ## Why switch to DevCapsule?
 
