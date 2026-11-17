@@ -65,6 +65,17 @@ This document review required no reviewer Python environment or implementation r
 
 ## Corrections made after review
 
+Subsequent owner-question verification corrected the compatibility premise:
+`scripts/build-pex.sh` bundles the console application in the PEX, and materialization installs it
+ahead of the base-image fallback under D-0017. The base supplies its interpreter and dependencies.
+The CLI and console callers can migrate together without a base-image rebuild for this syntax change.
+The reviewer's base-only delivery claim, repeated initially by the author, was incorrect.
+Old generated strings still exist outside the CLI adapter boundary; their disposition remains relevant.
+
+The owner later answered the original six-question questionnaire, at 2026-11-17T20:16:44Z.
+The work order records all six outcomes with explicit chat decisions taking precedence.
+This selects `--project` and narrow RC4 scope; it does not answer the separate review questionnaire.
+
 The order now names the CLI framework boundary and retains existing hidden runtime helpers.
 It states that global configuration bypasses project discovery and preserves existing access rules.
 It rejects compound `--set-state` operations and records the detailed-JSON proposal explicitly.

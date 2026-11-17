@@ -16,8 +16,11 @@ Owner extension, 2026-11-17: keep the CLI syntax cleanup in presentations.
 The accepted vocabulary, implementation boundary, and unresolved choices are in the
 [CLI work order](../../work-orders/2026-11-17-cli-syntax-and-discovery.md).
 The owner requested the document, an author reread, and Claude Fable 5.2 review.
-Implementation and release scope await the remaining decisions.
-The earlier six-question cleanup questionnaire was rejected; it is not adopted scope.
+Implementation awaits the remaining review decisions.
+The original six-question questionnaire was answered at 2026-11-17T20:16:44Z; outcomes are recorded in the work order.
+Explicit chat renames override its older keep-command-paths option.
+RC4 gets the help bug fix and presentations cleanup; broader CLI cleanup follows 0.3.1.
+`--project` is selected, with selector aliases retained; exact placement remains proposed.
 
 Synchronization rechecked against fetched main `0baf70bd` and release `757392b2`.
 Only the workflow development-version stamp differs. Retain this release baseline.
@@ -160,7 +163,7 @@ The self-contained handoff names the exact paths and evidence.
 The author reread and Claude `claude-fable-5-2` review are complete.
 Resolve the motivated syntax and scope questions with the owner, then record answers before implementation.
 The automatic skill setup remains PR #51; consult its live state before integration work.
-Maintenance handles release propagation and tagging. This new cleanup has no assigned release yet.
+Maintenance handles release propagation and tagging. The broader cleanup targets the first release after 0.3.1.
 
 ## Validation and checkout state
 
@@ -206,6 +209,9 @@ Chromium check and the docs contract both passed again on the merged implementat
 
 - CLI vocabulary is recorded in the work order; unresolved scope and compatibility choices await the owner.
 - Pending console document: `2026-11-17-cli-work-order-review` (compatibility, registration, skill resources, explicit project selection).
+- Original questionnaire outcomes are recorded; the review page remains unanswered. Chat answers take precedence.
+- Console code is PEX-bundled under D-0017; correct the earlier base-only compatibility premise when deciding aliases.
+- Base-requirement enforcement evidence was mailed to project-management at `5e07a10cf47a`; scheduling is with that workstream.
 - Claude review completed successfully; its assessment records compatibility, instance scope, skill resources, links, and selection concerns.
 - General links remain required; the reviewer's suggestion to limit them to presentations was not adopted.
 - The full documentation checkpoint gate has the same two inherited recursive Docker-group failures; 3373 unit tests and docs contract pass.

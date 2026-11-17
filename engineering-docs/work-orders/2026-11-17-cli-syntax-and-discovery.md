@@ -3,7 +3,8 @@
 Date: 2026-11-17.
 Owner: presentations, by explicit product-owner direction.
 Status: owner decisions recorded; review and remaining decisions precede implementation.
-Release target: not decided for this refactor. Do not infer RC4 scope from the earlier skill work.
+Release scope: RC4 gets the help bug fix and presentations cleanup; broader CLI cleanup follows 0.3.1.
+The exact next release number remains undecided.
 
 Author reread and Claude `claude-fable-5-2` review completed on 2026-11-17.
 See the [review assessment](../wip/2026-11-16-presentations/evidence/2026-11-17-cli-work-order-review.md).
@@ -16,9 +17,21 @@ Use options for variations of an operation. Keep advanced operations discoverabl
 Preserve the implementation's behavior and storage model.
 
 The owner assigned this cleanup to presentations during an iterative CLI review.
-This work order records those decisions. It does not adopt the earlier six-question questionnaire.
-That questionnaire was rejected as a way to structure the discussion.
-Unanswered suggestions from it are not requirements.
+This work order records those decisions. The original six-question questionnaire's structure was rejected,
+but the owner subsequently answered all six items at 2026-11-17T20:16:44Z.
+Chat decisions take precedence where they conflict with those older options.
+The separate four-question review page remains unanswered.
+
+### Recorded questionnaire outcomes
+
+- Remove the separate skill-install command, consistent with the later removal of the presentations group.
+- Group help by purpose. The older option to keep command paths does not override the explicit chat renames.
+- Explain and group configuration operations; do not add an unrequested hierarchy for project and personal settings.
+- Standardize project selection on `--project`, retaining existing selector aliases.
+  This does not settle compatibility aliases for every renamed command or the selector's exact placement.
+- Rewrite help across the command tree with short summaries, meaningful arguments, examples, and discoverable operations.
+- RC4 gets the help bug fix and presentations cleanup. Broader changes belong to the first release after 0.3.1.
+  Do not interpret this as permission to implement the entire proposed layout for RC4.
 
 ## Evidence and existing contracts
 
@@ -97,7 +110,7 @@ All examples below have the `devcapsule` prefix.
 | Old syntax | New syntax or disposition |
 | --- | --- |
 | `project <command> ...` | `<command> ...`, subject to the more specific mappings below |
-| `project --path DIR ...` | Explicit project selection remains supported; spelling and placement need a decision |
+| `project --path DIR ...` | Use `--project DIR`; retain existing selector aliases; exact placement remains proposed |
 | `home ...` | `config -g ...` or `config --global ...`; map individual operations before implementation |
 | `bootstrap project` | `workflow bootstrap` |
 | `project config ...` | `config ...` |
@@ -188,7 +201,7 @@ Ask for a specific decision if preserving the complete workflow crosses the impl
 
 These are not adopted solutions. Present concrete alternatives with reasons after review.
 
-1. How does a command select another project, and where does that option appear?
+1. `--project DIR` is selected by the questionnaire; should its canonical placement be before the command?
 2. Does `instance` permit host-side checkout registration, or does that operation need another disposition?
    The requested move cannot silently remove an existing capability.
 3. Which individual global and instance operations keep subcommands, and which become modifiers?
@@ -198,10 +211,12 @@ These are not adopted solutions. Present concrete alternatives with reasons afte
    Is a bounded implementation exception required for general links?
 6. What happens to old CLI paths, JSON contracts, runtime invocations, and generated command suggestions?
    A hidden compatibility path, migration error, or immediate removal are different product choices.
-   The shipped console invokes old paths and can outlive the launcher version.
+   The shipped console invokes old paths, but its application code travels in the PEX under D-0017.
+   CLI and console callers can therefore change together without a base rebuild for syntax-only changes.
+   The earlier claim of ordinary console/CLI version skew from base-only delivery was incorrect.
    Remedy strings and generated guidance also exist outside the CLI adapter layer.
    Retaining aliases avoids immediate breakage but does not update those visible strings.
-7. Which release receives this refactor? Does it gate RC4 or a later release?
+7. RC4 scope is narrow and broader cleanup follows 0.3.1. Set the exact next release number when scheduling.
 
 Review may resolve editorial ambiguity within accepted decisions.
 Review cannot adopt product choices or enlarge the implementation boundary.
