@@ -2,12 +2,18 @@
 import argparse
 import os
 from pathlib import Path
-from urllib.parse import quote, unquote, urlencode, urlsplit, urlunsplit
+from urllib.parse import SplitResult, quote, unquote, urlencode, urlsplit, urlunsplit
 
 from devcapsule.commands.framework import Command
 from devcapsule.compat import CliError
 
 __all__ = ["COMMAND", "content_link"]
+
+
+def _origin_key(parsed: SplitResult) -> tuple[str, str | None, int]:
+    """Return ``(scheme, hostname, port)`` using the scheme default only when omitted."""
+    port = (443 if parsed.scheme == "https" else 80) if parsed.port is None else parsed.port
+    return (parsed.scheme, parsed.hostname, port)
 
 
 def content_link(value: str, *, project: Path, cwd: Path, console_url: str, token: str) -> str:
@@ -18,7 +24,7 @@ def content_link(value: str, *, project: Path, cwd: Path, console_url: str, toke
             or origin.scheme not in ("http", "https") or not origin.hostname
             or origin.username is not None or origin.password is not None):
         raise ValueError("the current capsule must supply an HTTP(S) console URL")
-    origin_key = (origin.scheme, origin.hostname, origin.port or (443 if origin.scheme == "https" else 80))
+    origin_key = _origin_key(origin)
     target = urlsplit(value)
     fragment = ""
     if target.scheme or target.netloc:
@@ -26,8 +32,7 @@ def content_link(value: str, *, project: Path, cwd: Path, console_url: str, toke
                 or target.username is not None or target.password is not None
                 or any(ch.isspace() or ch == "\\" for ch in value)):
             raise ValueError("supply a URL on the current console origin")
-        target_key = (target.scheme, target.hostname, target.port or (443 if target.scheme == "https" else 80))
-        if target_key != origin_key:
+        if _origin_key(target) != origin_key:
             raise ValueError("URL must use the current console origin")
         parts = unquote(target.path).split("/")
         if len(parts) < 2 or parts[1] not in ("files", "records", "presentations"):

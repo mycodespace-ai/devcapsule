@@ -61,6 +61,49 @@ def test_current_console_urls_retain_viewer_fragment_and_replace_token(tmp_path:
     assert link == f"http://localhost/{route}/notes.md?token=fresh-token#section-2"
 
 
+@pytest.mark.parametrize(
+    ("console_url", "target_url", "expected_prefix"),
+    [
+        ("http://localhost", "http://localhost:80/files/notes.md", "http://localhost"),
+        ("http://localhost:80", "http://localhost/files/notes.md", "http://localhost:80"),
+        ("https://localhost", "https://localhost:443/files/notes.md", "https://localhost"),
+        ("https://localhost:443", "https://localhost/files/notes.md", "https://localhost:443"),
+    ],
+)
+def test_omitted_and_explicit_default_ports_are_equivalent(
+    tmp_path: Path, console_url: str, target_url: str, expected_prefix: str,
+) -> None:
+    """Omitted and explicit scheme-default ports (80/443) match as the same origin."""
+    (tmp_path / "notes.md").write_text("hi", encoding="utf-8")
+
+    link = content_link(target_url, project=tmp_path, cwd=tmp_path, console_url=console_url, token="run-token")
+
+    assert link == f"{expected_prefix}/files/notes.md?token=run-token"
+
+
+@pytest.mark.parametrize(
+    ("console_url", "target_url"),
+    [
+        ("http://localhost", "http://localhost:0/files/notes.md"),
+        ("http://localhost:80", "http://localhost:0/files/notes.md"),
+        ("http://localhost:0", "http://localhost/files/notes.md"),
+        ("http://localhost:0", "http://localhost:80/files/notes.md"),
+        ("https://localhost", "https://localhost:0/files/notes.md"),
+        ("https://localhost:443", "https://localhost:0/files/notes.md"),
+        ("https://localhost:0", "https://localhost/files/notes.md"),
+        ("https://localhost:0", "https://localhost:443/files/notes.md"),
+    ],
+)
+def test_explicit_zero_port_is_rejected_against_omitted_or_default_port(
+    tmp_path: Path, console_url: str, target_url: str,
+) -> None:
+    """Explicit port 0 never matches an omitted or scheme-default port in either direction."""
+    (tmp_path / "notes.md").write_text("hi", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="current console origin"):
+        content_link(target_url, project=tmp_path, cwd=tmp_path, console_url=console_url, token="run-token")
+
+
 def test_empty_token_omits_query_parameter(tmp_path: Path) -> None:
     """An empty token omits the query string so the browser session cookie applies."""
     link = content_link(
