@@ -246,6 +246,16 @@ def test_filesystem_applies_distinct_user_and_group_ids_to_new_directories(tmp_p
         gid = groups[0]
     else:
         pytest.skip("distinct uid/gid ownership needs root or a supplementary group different from the uid")
+    # A root UID in a restricted user namespace need not have CAP_CHOWN.
+    # Establish the host precondition independently of prepare_filesystem.
+    probe = tmp_path / "ownership-precondition"
+    probe.touch()
+    try:
+        os.chown(probe, uid, gid)
+    except PermissionError:
+        pytest.skip("this environment cannot assign the distinct uid/gid required by the test")
+    finally:
+        probe.unlink()
     existing = tmp_path.stat()
     program = """
 import sys

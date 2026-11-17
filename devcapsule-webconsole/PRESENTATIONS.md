@@ -19,6 +19,28 @@ to them. It writes nothing.
 
 ## Finding the presentations
 
+The content root is the console's **mounted project directory**, not a fixed
+presentation asset directory and not the host's whole filesystem. A URL such as
+`/presentations/website/_site/assets/presentations/todo-fastapi-postgres-react`
+means that exact folder relative to the project root. The website build is one
+possible source of content; it is not required for a console presentation.
+
+In this repository the relevant locations are:
+
+| Location relative to the project root | Purpose |
+| --- | --- |
+| `devcapsule-src/tests/e2e/evidence/<scenario-id>/` | Local recorded runs, ignored by Git and preserved across clean builds. A run subdirectory is also discovered. |
+| `devcapsule-webconsole/resources/presentations/` | Retained sample media for developing the console; not bundled in its distribution. |
+| `website/_site/assets/presentations/` | Generated website assets, when a website build is present in this checkout. |
+| `devcapsule-src/tests/e2e/scripts/` | Authored scenario text; these Markdown files alone are not presentations. |
+
+A recording in another worktree outside the mounted project is not discovered.
+Keep its complete presentation folder under this mount to make it available;
+linking to an outside directory does not work because discovery and file serving
+refuse symbolic links. Git tracking is not required. Writing a valid
+`presentation.json` beside the media and reloading **Presentations** is enough:
+there is no registration command, website build or console restart to perform.
+
 `GET /api/project/presentations` answers
 `{"folders": ["path/of/a/folder", …], "complete": true}`: the folders below
 the project root that hold a regular file named `presentation.json`, sorted.
@@ -89,14 +111,66 @@ the contract is refused whole, and the page names every breach.
 
 ## Where the document comes from
 
-Nobody writes it by hand. A replay of a recorded scenario writes it beside
-the recording: `devcapsule-src/tests/e2e/scenario_presentation.py` takes the
+Generation and discovery are separate. The console only reads existing files;
+opening **Presentations** does not turn a video into a presentation.
+
+| Recording mode | Generates `presentation.json`? |
+| --- | --- |
+| Scripted scenario replay with a `script` and numbered actions | Yes, after successful video encoding, from the script and measured frame counts. |
+| Replay without a `script` | No; it produces a recording only. |
+| Interactive `serve` / `ctl` | No, even when a scenario names a script; this path does not call the presentation producer. |
+| Ordinary E2E or IDE smoke run | No general presentation-generation guarantee. |
+
+Use the shared producer instead of assembling the generated JSON by hand.
+`devcapsule-src/tests/e2e/scenario_presentation.py` takes the
 overview and the steps from the scenario's script, the captions from the
 scenario's actions, and the times from the count of frames the recorder had
 taken after each action. What a scenario's author provides is described in
 [running scenario recordings](../engineering-docs/development/running-e2e-scenario-recordings.md),
 section 5. Any other producer may write the document; the contract above is
 all the page knows.
+
+An existing interactive recording needs authored step text and retained frame
+boundaries before it can be presented. The action log alone has no timestamps.
+The [SSH proxy showcase procedure](../engineering-docs/wip/2026-11-16-github-auth/evidence/showcase.md)
+gives a concrete producer for the retained run, with chapter timings tied to its
+movie checksum. It adds metadata to the original recording without rerunning Git
+or changing the movie. This is not automatic interactive-mode support.
+
+## Use in projects other than DevCapsule
+
+The viewer works for any mounted project on a launcher that carries these console
+pages. It does not require this repository's layout, Nox sessions or website. Put
+the complete media folder and valid `presentation.json` inside that project's
+mount and reload **Presentations**. Markdown alone is not a presentation: it still
+needs recorded media, screenshots and timings in the generated document.
+
+The authoring experience is not yet shipped with that viewer. The 2026-11-16 audit
+of the merged development PEX found:
+
+| Support | Available to an ordinary project from that PEX? |
+| --- | --- |
+| Console discovery, slide rendering, captions and segment playback | Yes; the HTML, JavaScript and CSS are in the embedded console bundle. |
+| Playwright and its browser runtime | Optional through `browser-automation`; this supplies browser tools, not the scenario recorder or presentation generator. |
+| `tests/e2e/scenario_presentation.py` | No; this standard-library Python producer is repository development tooling, excluded from the PEX. |
+| `tests/e2e/scenario_recorder.py` and its supporting modules | No; they belong to this repository's IDE test harness. |
+| This contract, the authoring guide and scenario scripts/templates | No; they are repository documents, not installed authoring resources. |
+| Presentation instructions in bootstrapped agent files | No; the inspected packaged workflow files do not point an agent to the authoring tools. |
+| A supported presentation authoring command | No; the inspected CLI offers no presentation init/record/build/validate command. |
+
+The generator can be obtained from a pinned source checkout and used with another
+project's own recording harness. The full IDE recorder initializes disposable
+DevCapsule smoke projects; it is not a command that records any application's tests
+in place. Copying that recorder alone omits its supporting modules. The SSH
+showcase producer is deliberately specific to its retained run and is not a
+generic authoring kit.
+
+For an agent to do this with little setup, a future delivery needs a discoverable
+Markdown guide and templates, a supported producer/validator, recording adapters
+that retain timing metadata, and an installed-artifact acceptance test in an
+unrelated project without this source checkout. This is an identified delivery
+gap, not functionality supplied by the current PEX. See the
+[agent prompt and current prerequisites](../engineering-docs/development/running-e2e-scenario-recordings.md#6-asking-an-agent-in-another-project).
 
 ## What the page does
 

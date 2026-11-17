@@ -41,3 +41,12 @@ undispositioned, or listed below, meaning resolved. Never both, never neither.
 
 | `2026-10-30-project-management-user-docs-0-3-0-cli-alignment.md` | 2026-10-30 | acknowledged | Accepted for immediate 0.3.0 execution across five `<= 10`-file Pair Review batches (`Antigravity` + `Codex / gpt-6-astra`) on `release-0.3.0`: file-by-file 0.3.0 CLI alignment, full 0.3.0 authoring of all 12 `status: planned` stubs, and human-English prose cleanup; PR #316 verified on `main` at `ebab228a`. |
 | `2026-11-10-project-management-console-video-does-not-play-from-files.md` | 2026-11-16 | acknowledged | Acknowledged; the bug record is on `release-0.3.1` with `status: fixed` and `target: 0.3.1` after PR #35 (`6ff6bf18`), awaiting browser verification before closure. |
+
+| `2026-11-16-github-auth-release-delivery.md` | 2026-11-17 | acknowledged | PR #47 merged; preserve main development version, manifest and three main-only documents during propagation; two inherited unit failures remain disclosed. |
+| `2026-11-16-github-auth-rootless-propagation.md` | 2026-11-17 | acknowledged | Superseded by completed rootless propagation through PR #42 to main; preserve owner-verified release closure. |
+| `2026-11-16-presentations-authoring-for-0-3-1.md` | 2026-11-17 | acknowledged | Accepted 0.3.1 dependency; PR #43 awaits human merge; no duplicate implementation. |
+| `2026-11-16-presentations-reviewed-authoring-pr-43.md` | 2026-11-17 | acknowledged | Reviewed deliverable accepted for the release; verified PR #43 open with successful checks on 2026-11-17. |
+| `2026-11-16-project-management-upgrades-next-release.md` | 2026-11-17 | acknowledged | Mandatory first release after 0.3.1 (0.3.2 or 0.4.0); retain next-cut obligation; not a 0.3.1 gate. |
+| `2026-11-16-release-merge-validation.md` | 2026-11-17 | acknowledged | Accepted known failures into release validation follow-up; fresh rc3 preflight recorded in release overview and test-run record. |
+| `2026-11-17-project-management-disposed-intake-links.md` | 2026-11-17 | acknowledged | Applied the two immutable historical-link repairs without changing bug status. |
+| `2026-11-17-project-management-maintenance-intake-decisions.md` | 2026-11-17 | acknowledged | Every-release all-component sweep accepted, including 0.3.1 acceptance; deferred upgrades require next-release bugs. Sample-project release gate accepted for later design; first enforcing release remains undecided. Full work order retained at receipt commit 579d0e6a. |

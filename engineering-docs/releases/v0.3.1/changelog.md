@@ -6,9 +6,19 @@ new and what is fixed since 0.3.0. Records, workflow rules and the
 project's own housekeeping are left out on purpose. The adopter notes for
 the final release, `notes.md`, are written from this file.
 
-No candidate is tagged yet; the cut is 2026-11-07 at `31e8fec7` on `main`.
+RC2 is published. RC3 preparation on 2026-11-17 includes the merged fixes
+below; no rc3 tag exists yet. Presentations PR #43 is merged.
 
 ## New
+
+- **Presentation and recording tools for adopter agents.** The launcher packages
+  the authoring kit so agents in other repositories can create and export
+  narrated scenario presentations. Merged through PR #43.
+
+- **GitHub SSH through the host agent.** An authorized capsule can use GitHub
+  SSH through a narrow host-side proxy without copying the host's private keys
+  into the capsule. Merged through PR #47; the Git guide describes setup and
+  the containment boundary.
 
 - **Apple Silicon Macs, experimental.** The launcher runs natively on an
   M-series Mac against Docker Desktop, built from source as the macOS guide
@@ -75,6 +85,14 @@ No candidate is tagged yet; the cut is 2026-11-07 at `31e8fec7` on `main`.
   retaining all prior pins so existing locks remain valid.
 
 ## Fixed
+
+- **Rootless Docker launch identity.** The launcher uses the container's root
+  identity when Docker reports rootless mode, avoiding inaccessible mounted
+  launcher settings and cache paths. Non-rootless behavior stays unchanged;
+  the owner verified the rootless fix before candidate packaging.
+- **Video playback from Files.** Recordings open in the console's media player
+  instead of navigating to a raw response whose policy prevents playback.
+  Candidate-level browser verification remains before bug closure.
 
 - **Codex version and compatibility checks answer again.** `NpmChannel.check()`
   requests the npm registry's abbreviated install metadata

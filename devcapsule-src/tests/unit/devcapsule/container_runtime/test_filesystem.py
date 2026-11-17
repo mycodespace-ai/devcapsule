@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 import stat
 
+import pytest
+
 from devcapsule.components.pycharm import runtime_template as pycharm_runtime_template
 from devcapsule.container_runtime.contract import Identity, RuntimePlan
 from devcapsule.container_runtime.filesystem import (
@@ -93,10 +95,11 @@ def test_create_directories_returns_nothing_when_every_directory_exists(tmp_path
     assert create_directories(filesystem) == ()
 
 
-def test_prepare_filesystem_creates_the_directories_for_a_caller_that_is_not_root(tmp_path: Path) -> None:
-    """For a caller that is not root, ``prepare_filesystem`` creates the plan's directories without failing on an owner it may not set."""
+@pytest.mark.parametrize("user", [CapsuleUser(DEVELOPER, caller_uid=1000), CapsuleUser(Identity(0, 0, "root"), caller_uid=0)])
+def test_prepare_filesystem_creates_the_directories_without_an_owner_change(tmp_path: Path, user: CapsuleUser) -> None:
+    """An unchanged caller identity creates the directories without requiring chown capabilities."""
     filesystem = filesystem_under(tmp_path)
 
-    prepare_filesystem(filesystem, CapsuleUser(DEVELOPER, caller_uid=1000))
+    prepare_filesystem(filesystem, user)
 
     assert all(Path(directory).is_dir() for directory in filesystem.directories)

@@ -1,0 +1,15 @@
+{
+  "date": "2026-11-16",
+  "pex_sha256": "af7fa02ca2c2737f3a1678226341312682b71cfdd37eb892f29a42ad5c31b78c",
+  "source_merge": "7fc77f24df45135770160c35f193c9abb78cd9c0",
+  "viewer_assets": [
+    "devcapsule_webconsole/static/presentation.css",
+    "devcapsule_webconsole/static/presentation.html",
+    "devcapsule_webconsole/static/presentation.js"
+  ],
+  "authoring_resources_in_archive": [],
+  "e2e_files_in_archive": 0,
+  "bootstrap_document_count": 16,
+  "bootstrap_authoring_references": [],
+  "method": "Read the delivered PEX and its nested console bundle; inspect package inclusion, bootstrap assets, CLI help and browser-automation component source. No new environment or container was created."
+}

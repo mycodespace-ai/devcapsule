@@ -228,7 +228,7 @@ checkout to maintenance or reopen component-catalog's frozen implementation scop
 - [Recommended-base choice and override visibility](../../wip/2026-08-09-project-management/intake/2026-09-14-contained-display-config-offers-the-recommended-base.md).
 - [Listing by the project's configured schema](../../wip/2026-08-09-project-management/intake/2026-09-13-contained-display-config-list-renders-by-configured-schema.md).
 - [Upgrade experience as a V1 feature](../../wip/2026-08-09-project-management/intake/2026-09-03-component-catalog-upgrade-experience-as-a-v1-feature.md).
-- [Init/regenerate versus config semantics](../../wip/2026-08-09-project-management/intake/2026-09-06-component-catalog-init-regenerate-versus-config-semantics.md).
+- [Init/regenerate versus config semantics](https://github.com/mycodespace-ai/devcapsule/blob/9443bdc69d15df7514e13e8e3ded2f3a8720dd51/engineering-docs/wip/2026-08-09-project-management/intake/2026-09-06-component-catalog-init-regenerate-versus-config-semantics.md).
 - [Earlier Hoare-standard remediation directive](../../archive/2026-08-06-recursive-e2e/CURRENT-STATUS.md) (directed item 3, deferred beyond v027).
 - [Client-upgrade compatibility requirement](../../requirements/devcapsule/r-compat-001-client-upgrades-require-no-user-action.md).
 - [Earlier closed resolution-refusal bug](2026-09-03-resolution-refusal-names-only-the-last-base-and-no-remedy.md): related pattern, different failure; its recorded closure is not reversed by this incident.

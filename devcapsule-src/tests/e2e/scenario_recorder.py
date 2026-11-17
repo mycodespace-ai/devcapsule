@@ -656,18 +656,25 @@ def serve_interactive_controller(
     executable: Path,
     spec: ScenarioSpec,
     evidence: Path,
+    *,
+    surface: IdeSurface | None = None,
+    timeout: float = 1800.0,
 ) -> None:
     """Start an interactive E2E IDE session and HTTP controller for live agent takeover.
 
     ``controller.json`` under ``evidence`` names the port once the IDE is ready; a stale
     copy from an earlier run is removed first, so a waiting ``ctl`` never dials a dead port.
+    A caller may supply scenario-specific needs and consents through ``surface``.
+    The interactive phase has an overall deadline, including time between commands.
     """
     from playwright.sync_api import sync_playwright  # type: ignore[import-not-found,unused-ignore]
 
     evidence.mkdir(parents=True, exist_ok=True)
     (evidence / "controller.json").unlink(missing_ok=True)
     os.environ["DEVCAPSULE_SMOKE_COMPONENT_BROWSER"] = "1"
-    surface: IdeSurface = next(s for s in SURFACES if s.name == spec.surface)
+    surface = surface or next(s for s in SURFACES if s.name == spec.surface)
+    if surface.name != spec.surface:
+        raise DriverError("Scenario and launch surface must agree")
     recorder = BurstFrameRecorder(evidence / "video-frames")
     action_log: list[dict[str, Any]] = []
     step_counter = 0
@@ -714,8 +721,11 @@ def serve_interactive_controller(
                 print(f"CONTROLLER_READY port={port} project_path={session.project_path}", flush=True)
 
                 stopped = False
+                deadline = time.monotonic() + timeout
                 try:
                     while not stopped:
+                        if time.monotonic() >= deadline:
+                            raise DriverError("Interactive scenario deadline expired")
                         item = queue.take()
                         if item is None:
                             time.sleep(0.05)
