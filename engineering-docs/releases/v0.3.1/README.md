@@ -46,7 +46,7 @@ rc3; no further tag permission is needed once its prerequisites pass.
   The owner approved a preservation commit on the otherwise commit-free
   PR copy under Release Policy rule 8. `4PR-6-release-0.3.1` preserves
   main at `0.3.2.dev0`, retaining the new presentation package-data setting.
-  The human merges the prepared main PR; verify canonical remote ancestry
+  The human merges [main PR #49](https://github.com/mycodespace-ai/devcapsule/pull/49); verify canonical remote ancestry
   and preserved content before tagging. Never merge main into the release.
 - After those prerequisites, tag the exact release commit, follow the
   candidate workflow, download its three assets and verify checksum,

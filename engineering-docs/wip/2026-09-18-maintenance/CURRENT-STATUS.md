@@ -4,9 +4,9 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: integrating 2026-11-17; preparing `4PR-6-release-0.3.1` for main from release `918f9fc7`, including merged SSH proxy #47, presentations #43 and preflight correction #48. Owner approved the preservation-commit exception; main stays at 0.3.2.dev0. Rc3 remains untagged pending the human main merge and remote verification.
+State: integrating 2026-11-17; PR #49 from `4PR-6-release-0.3.1` awaits the human merge to main from release `918f9fc7`, including merged SSH proxy #47, presentations #43 and preflight correction #48. Owner approved the preservation-commit exception; main stays at 0.3.2.dev0. Rc3 remains untagged pending the human main merge and remote verification.
 
-Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
+Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
 Integration target: `main`
 
@@ -34,7 +34,8 @@ including both workflow stamps, while retaining the presentation package-data
 addition to pyproject.toml. It preserves main's docs manifest, the three
 main-only documents and their blog/index entries. Release source and runtime
 changes, including SSH proxy and presentation tools, otherwise stay intact.
-The copy's main-target PR must pass hosted checks and be merged by the human.
+[PR #49](https://github.com/mycodespace-ai/devcapsule/pull/49) targets main;
+inspect its hosted checks before the human merge.
 Then fetch, verify main ancestry and contents, return to the release branch,
 and tag the release commit as rc3 under the owner's existing authorization.
 Never tag the integration copy or main's merge tip.
@@ -4699,8 +4700,9 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Current, 2026-11-17: `4PR-6-release-0.3.1` is validated for its main PR with
-the approved preservation commit. Verify hosted checks and await the human merge. Fetch
+Current, 2026-11-17: PR #49 from `4PR-6-release-0.3.1` carries the validated
+main propagation and approved preservation commit. Verify hosted checks and
+await the human merge. Fetch
 and verify main contains release `918f9fc7` with version `0.3.2.dev0` and its
 main-only documents intact. Then return to `release-0.3.1` and cut rc3 from
 the release commit, still version `0.3.1`. Both #43 and #48 are merged. Rc3
