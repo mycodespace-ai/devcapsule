@@ -12,17 +12,16 @@ Recognize equivalent wording; the engineer need not say E2E or name this skill.
 
 ## Load the installed procedure
 
-Run `devcapsule version --json` and `devcapsule presentations guide`. Follow
-that installed guide for the recorder API, evidence layout, playback checks
-and hand-off. It is the version-matched procedure; this skill is its entry point.
-Use the project's installed command name if it differs from `devcapsule`.
+Read `presentation_tools/README.md` beside this `SKILL.md`, and check
+`kit-version.json` for the installed kit's version. Run `devcapsule version --json`
+to identify the current executable. Follow the local guide for the recorder API,
+evidence layout, playback checks and hand-off. Use the project's installed
+command name if it differs from `devcapsule`.
 
-If the command or guide is unavailable, report the installed version and the
-missing authoring support. The portable guide and helpers first shipped in
-0.3.1rc3. An upgrade requires the engineer's normal host-side installation
-and a new capsule launch; changing the host executable does not upgrade an
-already-running capsule. Do not substitute an invented command or a source
-checkout requirement. Installing this skill requires no workflow-file upgrade.
+If the guide or helpers are missing, report the incomplete installation. Follow
+the guide's migration instructions; do not overwrite customized files or invent
+an export command. Upgrading the host executable does not upgrade a running
+capsule; a new capsule launch uses the installed host version.
 
 ## Apply it to this project
 
@@ -32,10 +31,10 @@ checkout requirement. Installing this skill requires no workflow-file upgrade.
 - Check the available browser automation, encoder and console environment as
   the guide describes. Use existing capabilities; do not silently download
   browsers, change project configuration or launch additional capsules.
-- Export the installed helpers to a new scratch directory with
-  `devcapsule presentations export <new-directory>`. Adapt the exported
-  example to the project's existing E2E setup and teardown. This command
-  supplies tools; it does not run the scenario itself.
+- Use `presentation_tools/` beside this skill. Add this skill directory to
+  `PYTHONPATH` for the driver, and adapt `presentation_tools/example.py` to the
+  project's existing E2E setup and teardown. Setup installs tools; it does not
+  run the scenario itself.
 - Keep each attempt in a new, visible directory beneath the console's project
   root, preferably the project's existing evidence location. Keep recordings
   outside disposable build output. Respect the project's retention policy;
@@ -48,7 +47,7 @@ checkout requirement. Installing this skill requires no workflow-file upgrade.
 
 Check the driver's exit status and `scenario-result.json`, then verify the
 presentation in the running console, including chapter playback. Use
-`devcapsule presentations hand-off <evidence-directory> --project <console-project-root>`
+`devcapsule instance --get-link "$DEVCAPSULE_CONSOLE_URL/presentations/<project-relative-evidence-path>"`
 to obtain the link. Follow the guide's path and console-environment rules.
 
 Report passed, failed or incomplete; identify failed and unexecuted steps and

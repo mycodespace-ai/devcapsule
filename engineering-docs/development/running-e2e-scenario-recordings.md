@@ -1,10 +1,9 @@
 # Running E2E Scenario Recordings From A Shell With Nox
 
-For another project, use the shipped `devcapsule presentations guide` and
-`devcapsule presentations export <new-directory>` commands. The
-[portable kit](../../devcapsule-src/devcapsule/presentation_tools/README.md)
-contains the shared producer and Playwright helper without this repository's
-IDE harness. This document covers the repository-specific replay commands.
+For another project, use the recording skill and `presentation_tools/` directory
+installed by workflow bootstrap or project wrapping. The
+[portable guide](../../devcapsule-src/devcapsule/presentation_tools/README.md)
+describes the installed resources and console links.
 
 [Development](README.md) · [End-to-end tests](e2e-tests.md) · [Implementation note](../implementation-notes/devcapsule/2026-10-21-e2e-scenario-video-recorder.md)
 
@@ -300,14 +299,10 @@ captions and playback stopping at the selected step's boundary in a real browser
 
 ## 6. Asking an agent in another project
 
-The installed executable supplies the portable authoring procedure through
-`devcapsule presentations guide` and the recorder, producer, example and agent
-skill through `devcapsule presentations export <new-directory>`. Workflow bootstrap
-and project wrapping install the skill automatically in the project or wrapper
-for Codex/Antigravity and Claude Code. For projects using neither setup path, run `devcapsule presentations install-skill .agents/skills/devcapsule-recorded-e2e`
-from the adopter project's root (use `.claude/skills/` for Claude Code). No
-temporary export, DevCapsule source checkout or workflow-file upgrade is required. See the
-[skill installation instructions](../../devcapsule-src/devcapsule/presentation_tools/README.md#install-the-optional-agent-skill).
+Workflow bootstrap and project wrapping install the complete portable recording
+kit beside the skill for Codex/Antigravity and Claude Code. Existing customized
+kits are preserved. See the [setup and migration instructions](../../devcapsule-src/devcapsule/presentation_tools/README.md#install-the-optional-agent-skill).
+No export command or DevCapsule source checkout is required.
 
 Give the agent the scenario as an existing Markdown file or inline English:
 
@@ -318,7 +313,7 @@ Give the agent the scenario as an existing Markdown file or inline English:
 > return the test outcome and its clickable link.
 
 The skill reads the installed guide instead of duplicating it. Without skill
-support, ask the agent to read `devcapsule presentations guide` directly.
+support, ask the agent to read the installed `presentation_tools/README.md` directly.
 The project still supplies application setup, test data and assertions; the
 agent adapts the portable example to those instructions. There is no universal
 command that executes arbitrary English scenarios without an authored driver.

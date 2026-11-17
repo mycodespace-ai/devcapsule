@@ -20,7 +20,7 @@ Antigravity `gemini-4-hydrogen` reviewed it in PR53; accepted after one correcti
 round at `d0f2e8bb`, merged into the implementation branch at `ec38720d`.
 The review added staged installation with real partial-write cleanup coverage
 and blank-version validation. It preserved existing symlink behavior.
-Presentation-command removal and instruction migration still await the link choice.
+Presentation-command removal and instruction migration proceed with the answered link choice.
 
 ## Production boundary
 
@@ -45,14 +45,20 @@ Reachability evidence must name any legacy PyCharm module proposed for deletion.
 No domain behavior, report schema, console route, configuration layout, defaults,
 consent or access rule changes are authorized.
 
-## Decisions pending
+## Decisions adopted
 
-The owner has been asked through the capsule decision page and chat:
-root-only `--project` placement; retention of existing global/instance verbs;
-and automatic viewer choice for file paths versus Files-only path links.
-These are the work order's explicit stopping points. No answer is presumed.
-Plain configuration JSON remains unchanged; the proposed detailed envelope is
-`configuration` plus `information`, each holding its existing report document.
+The owner answered on 2026-11-17 at 23:19:31 UTC: prefix-only `--project`, retain
+existing global/instance verbs, and Files-only filesystem path links. Absolute
+current-console URLs choose an existing content viewer. This is CLI rewiring;
+no server routes, viewer inference or domain changes are needed. Detailed JSON
+will keep the existing documents under `configuration` and `information`.
+
+Remaining RC4 production boundary: remove `commands/presentations.py`, add
+`commands/instance.py` to format existing content routes using current capsule
+inputs, and migrate `presentation_tools/SKILL.md` and `README.md`. Other changes
+are affected tests and current documentation. Existing authoring operations stay
+unchanged. Notifications/decisions and the prefix selector move with the broader
+post-0.3.1 grammar, not this RC4 slice.
 
 ## Command inventory
 

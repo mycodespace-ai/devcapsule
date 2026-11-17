@@ -220,6 +220,20 @@ Do not add a replacement export command or hidden legacy aliases.
 Define migration guidance for previously installed skills that invoke deleted commands.
 Preserve the existing protection of user-customized files; do not silently overwrite them during migration.
 
+## Implementation choices answered — 2026-11-17
+
+The owner answered `cli-syntax-implementation` at 23:19:31 UTC:
+
+- `--project DIR` belongs before the command only, in the broader CLI slice.
+- Retain `config -g show`, `default NAME VALUE`, `trust list/accept/withdraw`,
+  and the `instance notifications` and `instance decisions` verbs.
+- Filesystem paths always select the existing `/files` route. An absolute URL
+  on the current console origin may explicitly select `/files`, `/records`, or
+  `/presentations`. Reject external URLs and project-escaping paths. Add no route
+  or serving behavior. Keep the implementation a bounded CLI rewiring.
+
+These answers settle items 1–3 below; the release split is unchanged.
+
 ## Open decisions and stopping points
 
 These are not adopted solutions. Present concrete alternatives with reasons after review.

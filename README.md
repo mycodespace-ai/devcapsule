@@ -33,11 +33,11 @@ default. You decide what additional access to grant.
 See a sample of a full graphical IDE running inside DevCapsule's isolated Docker container. More scenario illustrations coming soon.
 
 To record an E2E scenario in your own project, ask your agent to run it with recording
-and presentation. `devcapsule presentations guide` provides the installed instructions;
-`devcapsule presentations export <new-directory>` supplies the Python/Playwright helpers
-and the `devcapsule-recorded-e2e` agent skill (`SKILL.md`). Workflow bootstrap and
-project wrapping install the skill automatically for Codex, Antigravity and Claude Code.
-Other projects can use `devcapsule presentations install-skill <new-skill-directory>`.
+and presentation. Workflow bootstrap and project wrapping install the
+`devcapsule-recorded-e2e` skill, its instructions and complete Python/Playwright
+helper directory automatically for Codex, Antigravity and Claude Code. The kit
+records its version and preserves existing installations, including customizations.
+Use `devcapsule instance --get-link` inside the capsule for a console content link.
 See the [agent recording guide](devcapsule-src/devcapsule/presentation_tools/README.md).
 
 <!-- website:benefits -->
