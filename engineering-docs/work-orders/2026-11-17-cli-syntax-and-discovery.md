@@ -2,7 +2,7 @@
 
 Date: 2026-11-17.
 Owner: maintenance, transferred from presentations by explicit product-owner direction on 2026-11-17.
-Status: implementation in progress in PR #52; the initial help/recording-kit review is merged through #53. All implementation choices are answered; the completed RC4 scope is under review. Broader CLI changes remain scheduled after 0.3.1.
+Status: RC4 scope implemented and reviewed in PR #52, with review PRs #53 and #54 merged into it; awaiting owner integration. All implementation choices are answered. Broader CLI changes remain scheduled after 0.3.1.
 Release scope: RC4 gets the help bug fix and presentations cleanup; broader CLI cleanup follows 0.3.1.
 The exact next release number remains undecided.
 

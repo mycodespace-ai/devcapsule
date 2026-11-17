@@ -20,7 +20,11 @@ Antigravity `gemini-4-hydrogen` reviewed it in PR53; accepted after one correcti
 round at `d0f2e8bb`, merged into the implementation branch at `ec38720d`.
 The review added staged installation with real partial-write cleanup coverage
 and blank-version validation. It preserved existing symlink behavior.
-Presentation-command removal and instruction migration proceed with the answered link choice.
+The remaining RC4 presentation removal, instance-link adapter and installed-kit
+instruction migration are implemented in the same PR. Review PR54 was accepted
+at `7e95e2d5` after one correction round, merged at `40ae058b`. It added direct
+formatter coverage, defensive project-root normalization and exact port equality.
+The owner still merges PR52 into the release; broader syntax follows 0.3.1.
 
 ## Production boundary
 
