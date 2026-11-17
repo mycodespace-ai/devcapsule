@@ -88,6 +88,14 @@ Suggested spellings for global settings remain proposals rather than editorial f
 
 ## Validation and retained state
 
+Subsequent owner decisions resolve the review questionnaire:
+no old command aliases; delete legacy PyCharm code rendered unused by removing its command group;
+move registration to `config --register NAME`; install the full recording kit alongside the skill.
+The owner expressly accepts the bounded resource-installation exception.
+Update callers with the new syntax while preserving behavior and JSON contracts.
+These chat decisions override the reviewer's hidden-alias recommendation.
+All outcomes are recorded in the work order before retiring the console question document.
+
 Only work-order, index, and selected workstream records changed. No implementation files changed.
 Work-order relative links resolve. `nox -s docs-contract` passes for 249 pages.
 The required local build reached 3373 passing unit tests and the same two inherited recursive Docker-group failures.
@@ -96,4 +104,4 @@ Syntax, version, types, and conventions passed before that stop; the full build 
 No new tests, containers, or environments were provisioned for this documentation change.
 Raw CLI review and gate logs remain disposable under `/home/devcapsule/skill-validation/cli-work-order-*`.
 The review checkout contains only disposable copies of the work order and brief on its review branch.
-No records-only PR was opened. Owner decisions remain pending before implementation.
+No records-only PR was opened. The review decisions are resolved; implementation has not begun.
