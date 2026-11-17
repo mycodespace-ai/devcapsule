@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: blocked 2026-11-17 on owner answers for the CLI grammar and supported Claude review launch. Preliminary help/recording-kit changes are saved and focused tests pass. The complete work order and final 0.3.1 acceptance remain unfinished.
+State: active 2026-11-17; owner selected Antigravity gemini-4-hydrogen as the Pair Review partner. Reviewing the initial CLI help/recording-kit slice; three grammar/link choices remain pending. The complete work order and final 0.3.1 acceptance remain unfinished.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -15,6 +15,23 @@ Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-on
 Branch association: `ws-maintenance/cli-syntax`, created from presentations handoff db9721dd, carrying final CLI decisions af0d3616; `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## CLI Pair Review resumed — 2026-11-17
+
+The owner replaced Claude with Antigravity `gemini-4-hydrogen`. The exact model
+launched successfully with the repository's prescribed permission mode and
+reported `gemini-4-hydrogen` in its streaming init event. No launch exception is
+needed. The old Claude launch question is superseded, not a remaining blocker.
+
+The three grammar/link choices in `cli-syntax-implementation` remain pending.
+Review the independent initial slice now: safe dependency-check help and complete
+kit installation. Its implementation PR targets `release-0.3.1` for RC4; the human
+merges. Other work-order commands and instruction migration remain unfinished.
+Fetched main and release have the same workflow rules; main differs only by the
+version stamp. Retain the release baseline for this slice. Mail is empty and a
+fresh claim names Antigravity. The reviewer has its own worktree and virtualenv at
+`/home/devcapsule/worktrees/maintenance-review` on `ws-maintenance/cli-syntax-review`.
+Use writable home scratch because `/opt` is read-only. No container is launched.
 
 ## CLI implementation start — 2026-11-17
 
@@ -4760,9 +4777,9 @@ launch was taken into intake and committed. No source was changed.
 ## Planned Next Step
 
 On continuation, read the owner answers for `cli-syntax-implementation` in capsule
-state or chat and the separate review-launch decision. Record outcomes before
+state or chat (the reviewer selection is now Antigravity). Record outcomes before
 removing the decision files. Finish the RC4 slice (recording instructions,
-presentations removal and instance links) and run the required gate and Claude
+presentations removal and instance links) and run the required gate and Antigravity
 Pair Review. Keep the broader syntax changes in a later main-targeted slice.
 No release number or tag is selected. The release-acceptance tasks below remain pending.
 
@@ -5619,8 +5636,8 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 ## Open Threads
 
 Current CLI slice: await the three grammar/link choices in the capsule decision
-page and the supported Claude launch form in chat. Ordinary Claude works; the
-required bypass flag still refuses root. No reviewer is running. Preserve the
+page. The owner selected Antigravity gemini-4-hydrogen; its prescribed launch
+mode works. Review the independent initial help/kit slice now. Preserve the
 user's two `.devcapsule` edits. Scratch logs/inventory are reproducible; no
 transcript or tokened links belong in Git. The full work order remains incomplete.
 

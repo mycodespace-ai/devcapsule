@@ -278,5 +278,7 @@ Keep unaffected accepted decisions binding while disputed parts await the owner.
 
 ## Workstream and review
 
-The requested independent reviewer is Claude `fable-5.2` through the installed CLI.
-Verify and record the actual model reported by that session.
+The owner changed the implementation review partner to Antigravity
+`gemini-4-hydrogen` on 2026-11-17, replacing Claude. Use the installed CLI.
+Verify and record the actual model reported by that session. The earlier
+Claude work-order review remains historical evidence.

@@ -188,3 +188,11 @@ migration is not finished. Pending owner answers remain in capsule state.
 Claude Fable 5.2 responds normally; the prescribed bypass flag refuses root.
 The requested exception is a read-only reviewer, with fixes applied by the
 implementor and sent back for re-review. No exception has been presumed.
+
+## Review partner change
+
+The owner selected Antigravity `gemini-4-hydrogen` in place of Claude. Its
+prescribed launch succeeds and reports that exact model. The Claude launch
+exception question is superseded. Run Pair Review on the independent initial
+help/kit slice while the three syntax choices await the owner. This first PR
+targets `release-0.3.1`; it does not declare the full RC4 cleanup complete.
