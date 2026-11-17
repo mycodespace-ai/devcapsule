@@ -13,8 +13,8 @@ Accepted by the product owner through the console at 2026-11-17T00:48:36Z.
 The following are recorded outcomes, not a copy of the questionnaire or answer
 file. Original intake text remains in Git at `9443bdc6`. The successor means the
 first release after 0.3.1, whether 0.3.2 or 0.4.0. Its upgrade obligation remains.
-Only original items 10 (website documentation check) and 14 (agent progress
-monitoring) remain undecided; their wording is being replaced on a new page.
+Original items 10 and 14 were decided in the rewritten questionnaire at
+2026-11-17T01:17:38Z; their outcomes follow. No intake item remains undecided.
 
 ### 1. Component validation and the review before every release
 
@@ -85,6 +85,20 @@ Retain the existing work order but postpone execution and registration until the
 ### 17. Compatibility policy and documentation
 
 After 0.3.1, project-management opens compatibility. Design the support window and recovery promise alongside the successor upgrade work, but do not make the complete compatibility policy/documentation/evidence package a gate for that successor. Delivery is wanted V1 work after the policy ruling. Preserve the owner's permission to drop compatibility with 0.2.14, 0.2.15 and earlier; no particular new support-window length is selected. Include item 11 at its later agreed position; coordinate with the separate launcher-recovery effort from item 7. This accepted item is the reason to begin the future workstream.
+
+### 10. Finish the website documentation version-check fix
+
+The owner chose to finish and document the existing fix, after 0.3.1. Website
+verifies that release documentation builds and that both repositories describe
+the version-declaration rule consistently, repairs remaining discrepancies and
+closes the task. No checker redesign or new 0.3.1 gate is selected.
+
+### 14. Keep chat progress updates; do not build agent supervision
+
+Keep the main agent watching the separately running partner and reporting useful
+progress in chat. Workflow-improvements reconciles any missing generic guidance.
+The proposed DevCapsule launch/tracking command, Agents page and inactivity
+notifications are dropped; no agent-supervision workstream is opened.
 
 ### Order Of Project-Management Follow-Up
 

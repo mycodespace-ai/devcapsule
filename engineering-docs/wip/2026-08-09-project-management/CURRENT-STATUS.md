@@ -4,7 +4,7 @@ Mnemonic: `project-management`
 
 Start date: 2026-08-09
 
-State: active 2026-11-17; 15 intake decisions recorded and routed/scheduled; 2 rewritten questions await owner
+State: paused 2026-11-17; all 18 reviewed intake items decided; owner switches to maintenance to cut 0.3.1 rc3
 
 Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -22,6 +22,24 @@ Own project-wide priorities, sequencing, dependencies and lifecycle decisions.
 This reserved workstream remains open for the lifetime of multiple-stream mode.
 
 ## Current State
+
+### Intake review complete; switch to rc3, 2026-11-17
+
+The owner answered the final two questions at 2026-11-17T01:17:38Z: finish the
+existing website documentation-check fix after 0.3.1, and retain chat progress
+updates without building product agent-supervision features. Delivered those
+outcomes to website and workflow-improvements; the backlog and disposition log
+record them. Intake and mailbox are empty. All 18 original items are decided,
+including the upgrade commitment decided before the 17-question page.
+
+The owner now asks to cut 0.3.1 rc3 and tally remaining release work. Pause this
+workstream deliberately and switch the clean checkout to maintenance's
+release-0.3.1 branch. The current canonical release tip is a464088d; SSH proxy
+is merged, presentations PR #43 is still open, and main is dac6b9d4. These are
+freshly fetched/read facts, not a claim that candidate prerequisites are met.
+No project-management questionnaire remains pending. The two question/answer
+pairs may be removed from capsule state after this outcome commit is durable.
+
 
 ### Fifteen decisions recorded; two rewritten questions, 2026-11-17
 
@@ -295,11 +313,9 @@ product and scope choices; neither is silently adopted or assigned a release.
 
 ## Planned Next Step
 
-Read answers to `2026-11-17-two-intake-questions-plain-english` and decide only
-the two remaining intake items. Record clear outcomes and route work without
-reconfirming settled choices. Preserve discussion requests as pending. Track
-the accepted tasks and future registration triggers in the coordination backlog;
-none of the 15 decided items needs the owner to answer again.
+On owner-directed resumption, follow the accepted backlog and its release
+triggers; no intake question remains. Current owner direction selects maintenance
+for rc3 preparation and a tally of remaining 0.3.1 work.
 
 ## Validation And Checkout State
 
@@ -400,23 +416,16 @@ The owner's saved edits remain outside project-management commits:
 
 ## Open Threads
 
-- Awaiting the human: two rewritten console questions, website documentation
-  version checking and progress visibility for a separately running agent.
-- Fifteen choices are accepted and routed/scheduled; detailed design remains
-  where the chosen option or owner note explicitly required it.
-- Successor upgrades remain required. Compatibility's complete package is wanted
-  V1 work, not a newly imposed successor gate. Minimum-reader declarations follow
-  that policy and the successor upgrade slice.
-- The sample release check is ordered; sample list, pass criteria and first
-  enforcing release remain design choices. Every-component release review is
-  already a standing instruction to the release driver.
-- Future workstream registrations and timing/adopter tasks have explicit triggers
-  in the backlog. Do not start postponed work merely because its intake is closed.
-- The original questionnaire and answer are retained outside Git until the final
-  two outcomes are recorded; the new two-item page is the active handoff.
+- No unanswered intake decision remains; all original 18 items are dispositioned.
+- The successor upgrade commitment and all November 17 notes remain binding.
+- Future registrations, timing design and adopter planning wait for their
+  recorded triggers; detailed designs remain where the owner reserved them.
+- The sample release-check work is assigned, not implemented; its initial list,
+  pass criteria and first enforcing release remain to be designed.
 - Three ideas remain untriaged. No new service, container or environment started.
-- Earlier PR delivery statements have not been reverified in this record-only
-  pass; maintenance still owns release-to-main propagation.
+- Two historical intake-link corrections were delivered to maintenance as a patch.
+- Deliberately not preserved in Git: questionnaire/answer JSON, tokened URLs or
+  a transcript. The decisions are retained in the normal backlog and logs.
 
 ## Workstream Document Index
 
@@ -453,7 +462,7 @@ The owner's saved edits remain outside project-management commits:
 - [0.2.14 bug triage](../../releases/v0.2.14/bugs.md): release dispositions and next actions; canonical bug records remain linked.
 
 - [Prior coordination status](2026-09-22-record-prior-coordination-status.md): full historical handoff, decisions, open-thread context and external-state claims; read when reconciling a specific prior topic.
-- [Intake decisions](intake-dispositions.md): append-only outcomes; `intake/` contains 2 undecided items as of November 17; receipt is not a disposition.
+- [Intake decisions](intake-dispositions.md): append-only outcomes; `intake/` is empty as of November 17; receipt is not a disposition.
 
 - [Diagnostic print-command and run-image retirement](2026-09-21-design-editable-project-launch.md): accepted simplified contract and maintenance implementation scope.
 - [Design issue: V1 completeness and the WOW experience](2026-09-19-v1-wow-functionality-areas.md)
