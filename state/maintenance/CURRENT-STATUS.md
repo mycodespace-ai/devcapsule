@@ -4,55 +4,31 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: integrating 2026-11-17; PR #49 from `4PR-6-release-0.3.1` awaits the human merge to main from release `918f9fc7`, including merged SSH proxy #47, presentations #43 and preflight correction #48. Owner approved the preservation-commit exception; main stays at 0.3.2.dev0. Rc3 remains untagged pending the human main merge and remote verification.
+State: active 2026-11-17; v0.3.1-rc3 tagged at release 918f9fc7 after verified main propagation through PR #49. Candidate build 44004959133 is running; publication and downloaded-asset verification pending.
 
-Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
+Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
 Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `4PR-6-release-0.3.1` from release `918f9fc7`, main-integration copy with owner-authorized preservation commit; `ws-maintenance/0.3.1-rc3-preflight` from release `bf4fa1f0`, integration-test corrections merged through PR #48 at `918f9fc7`; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
-## Main propagation with version preservation — 2026-11-17
+## RC3 publication — 2026-11-17
 
-The owner approved the requested exception to Release Policy rule 8:
-"Yes, please prepare the push of changes to main without changing main's
-version." The integration copy may carry the preservation commit; this does
-not authorize an agent merge into main or a change to release version 0.3.1.
-
-Fetched canonical refs: main `dac6b9d4`, release `918f9fc7`. Both presentations
-PR #43 (`c8b56a07`) and integration correction PR #48 (`918f9fc7`) are merged.
-The release tip is the parent of `4PR-6-release-0.3.1`; no main synchronization
-is performed on the release branch. Main's workflow text differs only in its
-version; retain the existing definition, not a workflow refresh.
-
-The integration copy preserves `0.3.2.dev0` with the supported bump command,
-including both workflow stamps, while retaining the presentation package-data
-addition to pyproject.toml. It preserves main's docs manifest, the three
-main-only documents and their blog/index entries. Release source and runtime
-changes, including SSH proxy and presentation tools, otherwise stay intact.
-[PR #49](https://github.com/mycodespace-ai/devcapsule/pull/49) targets main;
-inspect its hosted checks before the human merge.
-Then fetch, verify main ancestry and contents, return to the release branch,
-and tag the release commit as rc3 under the owner's existing authorization.
-Never tag the integration copy or main's merge tip.
-
-Pre-push validation of the integration copy: clean prospective main merge
-produces exactly the branch tree; main version/stamps, manifest and all three
-preserved documents match main, and presentation package data and index entries
-are present. Required local build: version and syntax pass, mypy 360 files,
-conventions 0 breaches; unit suite 3367 passed, two inherited gid-0 failures,
-1 skipped, 194 deselected, 1 xfailed, 1 xpassed. Full local build is not green.
-The remaining sessions pass: CLI/PEX smoke, docs contract 251 pages (devel
-0.3.2.dev0), console 474 tests. Integration retry against the rebuilt PEX:
-158 passed, 13 skipped in 62.11 s. The first integration attempt exhausted
-/var/tmp; /opt was read-only; neither failed setup run counts as validation.
-The successful run used verified writable disk-backed /home/devcapsule/rc3i.
-Logs are disposable scratch under /var/tmp/rc3-main. No containers launched.
-The main PR's hosted checks must pass; the two local failures stay disclosed.
+The owner merged PR #49; fetched main `0baf70bd` contains release `918f9fc7`
+and preserves `0.3.2.dev0`, the main docs manifest and the three main-only
+records. Both presentations #43 and preflight correction #48 are merged.
+Returned to `release-0.3.1` and fast-forwarded from its own remote; no main
+merge into the release. Candidate gate passed with no unintegrated commits.
+Annotated tag `v0.3.1-rc3` pushed on the owner's instruction at `918f9fc7`.
+[Build 44004959133](https://github.com/mycodespace-ai/devcapsule/actions/runs/44004959133)
+is in progress. This section supersedes the historical preparation below.
+Main PR final hosted checks passed. Local integration after presentations:
+158 passed, 13 skipped; the two local gid-0 unit failures remain disclosed.
+See the release overview for final acceptance obligations and the bug tally.
 
 ## RC3 preparation and accepted intake — 2026-11-17
 
@@ -68,8 +44,8 @@ build passes version/syntax, mypy (351 files), conventions (0 breaches), then
 stops with 3320 passing unit tests and the same two inherited gid-0 failures
 (1 skipped, 191 deselected, 1 xfailed, 1 xpassed, 87.12 s). Later build steps
 were not reached in this run. No product behavior or legacy unit test is changed. This does not waive the
-two rootless-local legacy unit failures. Delivered through PR #48, now merged
-into the release at `918f9fc7`; its hosted checks passed.
+two rootless-local legacy unit failures. Deliver through a PR into the release;
+the human merges before main propagation and the candidate tag.
 
 The owner completed all 18 project-management intake decisions, then selected
 maintenance to cut rc3 and tally the work left for 0.3.1. Project-management is
@@ -86,13 +62,18 @@ Current release facts and remaining work are maintained in
 `tests/test_recursive_orchestrator.py`; 1 skipped, 191 deselected, 1 xfailed,
 1 xpassed. The full output is reproducible scratch at
 `/var/tmp/rc3-preflight/unit.log`, not release acceptance evidence. PR #47's
-hosted checks passed; PR #43 also passed hosted checks and is now merged.
+hosted checks passed; PR #43 is open, clean and its hosted checks passed.
 
-The main-preservation constraint is implemented on the integration copy under
-the explicit owner exception recorded above. The earlier scratch patch is
-superseded: presentations added package-data settings since it was prepared,
-so restoring the old whole pyproject.toml would discard shipped functionality.
-Only its authored version was changed by the bump command.
+An automatic merge into main would reset its three version declarations,
+add the release-only `docs/versions.yaml` override and delete three main-only
+documents. A nine-file preservation patch is prepared outside Git at
+`/var/tmp/rc3-preflight/main-preservation.patch`; no ref or tag points at it.
+It restores main's `0.3.2.dev0`, documentation manifest, blog audit, Mac testing
+note, test-improvements work order, and their index entries, retaining the
+SSH proxy additions. The owner was asked whether the main PR copy may carry
+this preservation commit: Release Policy rule 8 otherwise says to commit
+nothing to that copy. No exception has been presumed. The human still merges.
+Regenerate the patch against current refs if either moves.
 
 Eight mails were received at `579d0e6a`; their full bodies remain in that
 commit. All are acknowledged in the disposition log with these obligations:
@@ -101,7 +82,7 @@ commit. All are acknowledged in the disposition log with these obligations:
   release. The earlier rootless propagation request is satisfied by PR #42
   on main and PR #38/#39 on the release; preserve the owner's closure.
 - Presentations PR #43 is an owner-directed 0.3.1 dependency, reviewed and
-  merged at `c8b56a07`. Maintenance integrates the delivered slice;
+  awaiting the human merge. Maintenance integrates the delivered slice;
   it does not duplicate presentations implementation.
 - The upgrade experience is mandatory in the first release after 0.3.1,
   whether called 0.3.2 or 0.4.0. Carry this obligation into the next cut;
@@ -3001,7 +2982,7 @@ begin the rewrite until project-management assigns it.
 
 ## Current State
 
-Current as of 2026-11-17: preparing rc3; see *RC3 preparation and accepted intake*
+Current as of 2026-11-17: rc3 tagged, build running; see *RC3 publication*
 above and the release overview. The dated entries below are historical.
 
 **2026-10-28: VS Code as an IDE surface implemented, smoked and reviewed; PR #301 ready.**
@@ -4700,14 +4681,11 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Current, 2026-11-17: PR #49 from `4PR-6-release-0.3.1` carries the validated
-main propagation and approved preservation commit. Verify hosted checks and
-await the human merge. Fetch
-and verify main contains release `918f9fc7` with version `0.3.2.dev0` and its
-main-only documents intact. Then return to `release-0.3.1` and cut rc3 from
-the release commit, still version `0.3.1`. Both #43 and #48 are merged. Rc3
-is already authorized; no repeat tag question is needed. Historical steps
-below do not override this direction.
+Current, 2026-11-17: follow rc3 build 44004959133, download the published
+assets and verify checksum, manifest and executable identity. Record results
+and publish maintenance state. Final 0.3.1 acceptance remains separate;
+consult the release overview for the remaining work. Historical steps below
+do not override this direction.
 
 1. The network-node slice, on `ws-maintenance/0.3.0-network-node` from
    the release branch, a pull request into it with the reviewer loop;
@@ -5554,15 +5532,14 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-Current, 2026-11-17 (supersedes stale release/PR claims below): rc3 is not cut.
-The owner approved the main-preservation commit; `4PR-6-release-0.3.1` is the
-main PR copy. Its human merge and remote verification are the next dependency.
-PRs #43 and #48 are merged. Four 0.3.1 bug records remain unresolved, including
-one blocking host-side project-configuration refresh. The release overview
-owns the tally, two release rulings and acceptance/publication tasks. The two
-inherited gid-0 legacy unit failures remain disclosed. All 18 PM intake answers
-are recorded. Scratch patches/logs are reproducible; credentials and tokened
-links are not preserved.
+Current, 2026-11-17 (supersedes stale release/PR claims below): rc3 is tagged
+and building; PRs #43, #48 and #49 are merged. The preservation exception was
+authorized and main's version/documents verified. Four 0.3.1 bug records
+remain unresolved, including the blocking host-side project-configuration
+refresh. The release overview owns the tally, two outstanding release rulings
+and acceptance/publication tasks. All 18 PM intake answers are recorded; no
+questionnaire remains. Scratch logs are reproducible and are not acceptance
+of an E2E campaign; no credentials or tokened links are saved.
 
 - Blocking for 0.3.1, filed and closed 2026-11-15 (PR #38 merged into
   `release-0.3.1` at `2a3d6f61`): when `docker info` reports
