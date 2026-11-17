@@ -2,8 +2,8 @@
 
 Mnemonic: `presentations`
 Start date: 2026-11-16
-State: integrating 2026-11-17; recorded-E2E skill implemented and locally validated for rc4; PR #50 awaits the human merge; consult its live hosted checks. Authoring PR #43 is merged into release and main.
-Branch association: `ws-presentations/recorded-e2e-skill` from release `dbfba699`; `ws-presentations/0.3.1-authoring` merged through #43
+State: active 2026-11-17; automatic skill installation with bootstrap and wrap is being validated for a follow-up PR. PR #50 is merged into release at 757392b2; authoring PR #43 is in release and main.
+Branch association: `ws-presentations/automatic-skill-install` from release `757392b2`; `ws-presentations/recorded-e2e-skill` merged through #50; `ws-presentations/0.3.1-authoring` merged through #43
 Branch prefix: `ws-presentations/`
 Integration target: `release-0.3.1`
 Delivery method: pull request; records published on coordination
@@ -32,7 +32,8 @@ at release `c8b56a07` and propagated to main by #49 (`0baf70bd`); rc3 shipped it
 This slice packages a portable skill with the existing authoring kit. It reads
 `devcapsule presentations guide` rather than duplicating the recording procedure,
 checks prerequisites and returns the real test outcome with a verified console
-presentation. No workflow bootstrap/update, recorder redesign or viewer change.
+presentation. The owner subsequently directed automatic skill installation with workflow bootstrap
+and wrapping. Recorder and viewer behavior remain unchanged.
 
 Start from release `dbfba699`, with maintenance's completed rc3 records. Main's
 workflow difference is only the development-version stamp; retain the release
@@ -47,6 +48,18 @@ criteria await design; this does not create a new 0.3.1 gate. Full work order is
 preserved in the mail receipt commit and will reach main through its owner.
 
 ### Skill implementation and validation
+
+Owner-requested automatic setup follow-up, 2026-11-17: workflow bootstrap and
+project wrapping now install the packaged skill in both `.agents/skills/` and
+`.claude/skills/`, without a separate command. Wrapper-owned skills, drivers and
+evidence stay outside foreign sources. Repeated setup preserves existing skill
+folders and skips linked locations; the explicit installer remains available
+for projects using neither setup path. The generic AGENTS.md asset and generated
+wrapper guidance point to the canonical project skill. Existing project-owned
+instructions remain preserved by their existing rules. A new bootstrap index
+lists the installed files; existing indexes remain project-owned and untouched.
+No root workflow rule or version stamp changes. Continue the release baseline;
+main's only workflow difference remains its development-version stamp.
 
 Owner-requested direct-install follow-up, 2026-11-17: PR #50 is verified open
 against `release-0.3.1`. Fetched main and release; main still differs in workflow
@@ -118,9 +131,11 @@ The self-contained handoff names the exact paths and evidence.
 
 ## Planned next step
 
-Review [PR #50](https://github.com/mycodespace-ai/devcapsule/pull/50),
-targeting `release-0.3.1`; consult its live hosted checks before the human merge. The human merges; maintenance handles propagation and rc4. The
-authored release version remains unchanged at 0.3.1.
+Validate and deliver automatic skill installation on `ws-presentations/automatic-skill-install`
+through a follow-up PR to `release-0.3.1`. PR #50 was already merged when this
+follow-up began; its merge tree matches the previous branch tip. The human
+merges the follow-up; maintenance handles propagation and rc4. The authored
+release version remains unchanged at 0.3.1.
 
 ## Validation and checkout state
 
@@ -165,8 +180,8 @@ Chromium check and the docs contract both passed again on the merged implementat
 ## Open Threads
 
 - Implementation authorized; release target and reviewer settled.
-- PR #43 and its main propagation are verified complete. PR #50 is the current delivery for rc4; human merge remains.
-- Hosted CI status lives on PR #50; recheck it on resumption. Maintenance owns release propagation and tagging.
+- PR #43 and its main propagation are complete. PR #50 is merged into release; automatic setup needs a follow-up PR.
+- Maintenance owns release propagation and tagging. Native agent selection remains unverified.
 - Future sample-project release-check support is acknowledged above; design criteria remain pending.
 - Preserve the recorded viewer acceptance and demonstrated external-project recording reuse.
 - Local full gate still fails on the known recursive Docker-group test; no unrelated fixture fix is included.
