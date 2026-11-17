@@ -184,20 +184,3 @@ def test_project_install_rejects_blank_version(tmp_path: Path, version: str) -> 
     with pytest.raises(ValueError, match="non-empty version"):
         install_project_skills(tmp_path, kit(), version=version)
     assert list(tmp_path.iterdir()) == []
-
-
-def test_project_install_succeeds_through_symlinked_project_root(tmp_path: Path) -> None:
-    """A symlinked project root still receives both kits when its skill parents are not symlinks."""
-    real_project = tmp_path / "real"
-    real_project.mkdir()
-    linked_project = tmp_path / "linked"
-    linked_project.symlink_to(real_project, target_is_directory=True)
-
-    report = install_project_skills(linked_project, kit(), version="test-build")
-
-    assert report.created == (
-        Path(".agents/skills/devcapsule-recorded-e2e/SKILL.md"),
-        Path(".claude/skills/devcapsule-recorded-e2e/SKILL.md"),
-    )
-    assert report.preserved == ()
-    assert all((real_project / path).is_file() for path in report.created)

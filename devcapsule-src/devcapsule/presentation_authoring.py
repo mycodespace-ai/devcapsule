@@ -38,10 +38,7 @@ def install_project_skills(project: Path, assets: Mapping[str, bytes], *, versio
         destination = project / relative
         # Do not follow a project's shared skill-directory symlink and write
         # outside this project; its owner manages that location independently.
-        # Exclude Path(".") so a symlinked project root still receives its own kits.
-        if destination.exists() or any(
-            (project / part).is_symlink() for part in (relative, *relative.parents) if part != Path(".")
-        ):
+        if destination.exists() or any((project / part).is_symlink() for part in (relative, *relative.parents)):
             preserved.append(relative)
             continue
         destination.parent.mkdir(parents=True, exist_ok=True)
