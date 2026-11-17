@@ -2,7 +2,7 @@
 
 Mnemonic: `presentations`
 Start date: 2026-11-16
-State: active 2026-11-17; owner-directed CLI syntax work order and independent review. Automatic skill installation remains delivered in PR #51 against release-0.3.1. No CLI refactor implementation has begun.
+State: paused 2026-11-17 at owner direction to create a maintenance branch from this checkout for the CLI work order. PR #51 is merged into release-0.3.1 at 7ad956d4. Final CLI decisions are preserved in af0d3616; no CLI implementation has begun.
 Branch association: `ws-presentations/automatic-skill-install` from release `757392b2`; `ws-presentations/recorded-e2e-skill` merged through #50; `ws-presentations/0.3.1-authoring` merged through #43
 Branch prefix: `ws-presentations/`
 Integration target: `release-0.3.1`
@@ -12,7 +12,7 @@ Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
 ## Goal and agreed use case
 
-Owner extension, 2026-11-17: keep the CLI syntax cleanup in presentations.
+Owner handoff, 2026-11-17: the CLI cleanup was scoped and reviewed in presentations; the owner now directs a branch from this checkout under maintenance.
 The accepted vocabulary, implementation boundary, and unresolved choices are in the
 [CLI work order](../../work-orders/2026-11-17-cli-syntax-and-discovery.md).
 The owner requested the document, an author reread, and Claude Fable 5.2 review.
@@ -163,8 +163,8 @@ The self-contained handoff names the exact paths and evidence.
 ## Planned next step
 
 The author reread and Claude `claude-fable-5-2` review are complete.
-Review decisions are complete and recorded. Prepare the bounded implementation slices under the work order when directed.
-The automatic skill setup remains PR #51; consult its live state before integration work.
+Review decisions are complete and recorded. The owner transfers the work order to maintenance on a new branch from this checkout.
+PR #51 is merged into release at 7ad956d4 through c5071fb9; final decisions in af0d3616 travel with the new maintenance branch.
 Maintenance handles release propagation and tagging. The broader cleanup targets the first release after 0.3.1.
 
 ## Validation and checkout state
@@ -209,6 +209,8 @@ Chromium check and the docs contract both passed again on the merged implementat
 
 ## Open Threads
 
+- Owner-directed handoff to maintenance preserves the work order and all final decisions; no questionnaire answer remains pending.
+
 - CLI vocabulary and all questionnaire outcomes are recorded in the work order; chat answers take precedence.
 - No old aliases; remove unused legacy PyCharm code; use `config --register NAME`; install the full recording kit with the skill.
 - Review questionnaire is resolved and retired after recording outcomes. No CLI implementation changes have been made.
@@ -218,7 +220,7 @@ Chromium check and the docs contract both passed again on the merged implementat
 - General links remain required; the reviewer's suggestion to limit them to presentations was not adopted.
 - The full documentation checkpoint gate has the same two inherited recursive Docker-group failures; 3373 unit tests and docs contract pass.
 - Implementation authorized; release target and reviewer settled.
-- PR #43 and its main propagation are complete. PR #50 is merged into release; automatic setup is the follow-up on `ws-presentations/automatic-skill-install`, awaiting human review.
+- PR #43 and its main propagation are complete. PR #50 and automatic setup PR #51 are merged into release; release propagation and tagging remain with maintenance.
 - Maintenance owns release propagation and tagging. Native agent selection remains unverified.
 - Future sample-project release-check support is acknowledged above; design criteria remain pending.
 - Preserve the recorded viewer acceptance and demonstrated external-project recording reuse.
