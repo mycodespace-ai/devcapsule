@@ -35,7 +35,12 @@ passes version/syntax, types over 362 files and conventions, then records 3376
 unit passes and the same three environment failures. Focused integration initially
 passed 28 cases; additional origin checks and the full packaging/integration suite
 are running. The committed RC4 brief starts a second bounded review cycle of the
-still-open PR52; this keeps the complete RC4 delivery in one implementation PR
+still-open PR52. Review PR54 at `fe0d2563` adds helper normalization and 24
+formatter unit cases; reviewer has 3400 unit passes, 32 focused integration
+passes, 191 integration passes/13 skips and 474 console passes. The implementor
+requested round 1 for exact origin-port comparison: explicit port 0 must not
+be treated as omitted. Reviewer docs-contract was skipped; implementor verified
+249 pages. All applicable hosted checks on `45c133dd` pass. This keeps the complete RC4 delivery in one implementation PR
 rather than duplicating its pending release merge.
 
 ## CLI initial slice reviewed — 2026-11-17
@@ -6276,7 +6281,7 @@ Earlier open-thread history (read against the current scope above):
 
 ## Workstream Document Index
 
-- [RC4 presentation rewiring review brief](evidence/2026-11-17-cli-syntax/rc4-review-brief.md).
+- [RC4 presentation rewiring review brief](evidence/2026-11-17-cli-syntax/rc4-review-brief.md) and [round 1](evidence/2026-11-17-cli-syntax/rc4-round-1.md).
 - [PR52.1 Antigravity review brief](evidence/2026-11-17-cli-syntax/review-brief.md) and [round 1](evidence/2026-11-17-cli-syntax/round-1.md).
 
 - [CLI implementation boundary and inventory](2026-11-17-cli-syntax-implementation.md).

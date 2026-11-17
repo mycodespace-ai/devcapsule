@@ -73,13 +73,13 @@ Removed names have no compatibility aliases. Rows marked pending are proposals.
 | `bootstrap` | `workflow bootstrap` | move |
 | `bootstrap project` | `workflow bootstrap` | move |
 | `github-ssh` | `github-ssh` | retain hidden |
-| `home` | `config -g` | move; verb choice pending |
-| `home show` | `config -g show` | move; verb choice pending |
-| `home trust` | `config -g trust` | move; verb choice pending |
-| `home trust list` | `config -g trust list` | move; verb choice pending |
-| `home trust accept` | `config -g trust accept` | move; verb choice pending |
-| `home trust withdraw` | `config -g trust withdraw` | move; verb choice pending |
-| `home default` | `config -g default` | move; verb choice pending |
+| `home` | `config -g` | move; retain existing verbs |
+| `home show` | `config -g show` | move; retain existing verbs |
+| `home trust` | `config -g trust` | move; retain existing verbs |
+| `home trust list` | `config -g trust list` | move; retain existing verbs |
+| `home trust accept` | `config -g trust accept` | move; retain existing verbs |
+| `home trust withdraw` | `config -g trust withdraw` | move; retain existing verbs |
+| `home default` | `config -g default` | move; retain existing verbs |
 | `host-open` | `host-open` | retain hidden |
 | `images` | `images` | retain |
 | `images list` | `images list` | retain |
@@ -88,21 +88,21 @@ Removed names have no compatibility aliases. Rows marked pending are proposals.
 | `presentations guide` | `installed recording kit` | remove command |
 | `presentations export` | `installed recording kit` | remove command |
 | `presentations install-skill` | `installed recording kit` | remove command |
-| `presentations hand-off` | `instance --get-link PATH-OR-URL` | move; route choice pending |
+| `presentations hand-off` | `instance --get-link PATH-OR-URL` | move; paths use Files, current-console URLs select viewer |
 | `project` | `top-level command tree` | remove group |
 | `project info` | `config show --detailed` | compose existing reports |
 | `project diagnose` | `diagnose` | move |
 | `project list` | `list` | move |
 | `project init` | `init` | move |
 | `project wrap` | `init --wrap URL` | move |
-| `project checkout` | `instance` | move; verb choice pending |
+| `project checkout` | `instance` | move; retain existing verbs |
 | `project checkout register` | `config --register NAME` | move |
-| `project checkout notifications` | `instance notifications` | move; verb choice pending |
-| `project checkout notifications list` | `instance notifications list` | move; verb choice pending |
-| `project checkout notifications post` | `instance notifications post` | move; verb choice pending |
-| `project checkout notifications read` | `instance notifications read` | move; verb choice pending |
-| `project checkout notifications dismiss` | `instance notifications dismiss` | move; verb choice pending |
-| `project checkout decisions` | `instance decisions` | move; verb choice pending |
+| `project checkout notifications` | `instance notifications` | move; retain existing verbs |
+| `project checkout notifications list` | `instance notifications list` | move; retain existing verbs |
+| `project checkout notifications post` | `instance notifications post` | move; retain existing verbs |
+| `project checkout notifications read` | `instance notifications read` | move; retain existing verbs |
+| `project checkout notifications dismiss` | `instance notifications dismiss` | move; retain existing verbs |
+| `project checkout decisions` | `instance decisions` | move; retain existing verbs |
 | `project config` | `config` | move |
 | `project config show` | `config show` | move |
 | `project config list` | `config list` | move; currently hidden, check alias/retirement before retaining |
