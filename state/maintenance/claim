@@ -1,5 +1,5 @@
 who: Costin Cozianu
-branch: ws-maintenance/graphviz-031
-slice: Graphviz component for 0.3.1 on ws-maintenance/graphviz-031; concurrent CLI pair remains on ws-maintenance/cli-syntax
-since: 2026-11-17T23:47:38+00:00
-expires: 2026-11-18T11:47:38+00:00
+branch: ws-maintenance/cli-docs
+slice: Align current documentation with merged RC4 CLI; Antigravity pair review
+since: 2026-11-17T23:58:16+00:00
+expires: 2026-11-18T11:58:16+00:00
