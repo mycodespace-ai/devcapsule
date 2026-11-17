@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-17; implementation choices answered; finishing the RC4 presentation CLI rewiring with Antigravity gemini-4-hydrogen Pair Review. PR52 remains open; its hosted checks pass.
+State: paused 2026-11-17; RC4 help/presentation CLI cleanup implemented and reviewed in PR52, awaiting owner release integration. All syntax choices are answered. Broader CLI migration remains the post-0.3.1 phase; release acceptance remains unfinished.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -15,6 +15,48 @@ Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-on
 Branch association: `ws-maintenance/cli-syntax`, created from presentations handoff db9721dd, carrying final CLI decisions af0d3616; `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+## RC4 CLI cleanup ready for owner integration — 2026-11-17
+
+[PR52](https://github.com/mycodespace-ai/devcapsule/pull/52) completes the work
+order's RC4 help and presentation cleanup. It fixes dependency-check help,
+installs the complete versioned recording kit, removes the public presentations
+commands without aliases, and adds `instance --get-link PATH-OR-URL` using the
+current capsule's existing Files/Records/Presentations routes. Paths always use
+Files; URLs explicitly select a viewer on the current console origin. Installed
+instructions and current guides use local resources and explain manual migration
+of older customized skills. No serving/routing or other domain behavior changed.
+
+Antigravity `gemini-4-hydrogen` reviewed both portions. Initial review PR53 merged
+at `ec38720d`. Final RC4 review [PR54](https://github.com/mycodespace-ai/devcapsule/pull/54)
+was accepted at `7e95e2d5` after one revision round and merged at `40ae058b`.
+The implementor [assessed the final diff](https://github.com/mycodespace-ai/devcapsule/pull/54#issuecomment-6964288424).
+It adds formatter coverage and defensive root normalization; the round corrects
+explicit port 0 versus omitted/default port equality. Eight regressions failed
+before the correction and pass afterward; explicit default 80/443 equivalence
+is retained. No unimplemented reviewer proposal remains. The first RC4 invocation
+could not read stdin; the same session resumed using the committed brief's path.
+All invocations reported the selected model and exited 0.
+
+On the merged tree, version/syntax, types (362 files) and conventions pass.
+Full gate: 3412 unit passes, 1 skipped, 227 deselected, 2 xfailed and the same
+three known environment failures: mount-backed scratch in unmountable-staging
+and two Docker gid-zero fixtures. No full-gate pass is claimed. Final focused
+integration passes all 32 cases. Separate PEX build/smoke, CLI smoke, docs contract
+(249 pages) and web console (474 tests, types over 9 files) pass. Built-executable
+probes verify Files-only paths, explicit Records URLs, external-origin refusal,
+help/discovery and all four removed presentation paths.
+The full integration suite before the narrow port correction passed 191 tests
+with 13 skips; reviewer focused checks after it passed 36 formatter and 32 CLI
+integration cases. Reviewer docs-contract was skipped for its uninitialized
+website; the implementor independently checked 249 pages. Hosted checks on
+`45c133dd` passed; the merge head's checks remain to be reverified.
+
+The owner merges PR52 into `release-0.3.1`. No release tag, image, container,
+recording or native agent-discovery acceptance was produced. Mail is empty.
+Preserve the user's two `.devcapsule` edits. Decision outcomes are recorded in
+the work order; raw answers and tokened links remain outside Git. Publish the
+pause and release the claim after committing this record.
 
 ## CLI choices answered and RC4 resumed — 2026-11-17
 
@@ -35,7 +77,12 @@ passes version/syntax, types over 362 files and conventions, then records 3376
 unit passes and the same three environment failures. Focused integration initially
 passed 28 cases; additional origin checks and the full packaging/integration suite
 are running. The committed RC4 brief starts a second bounded review cycle of the
-still-open PR52; this keeps the complete RC4 delivery in one implementation PR
+still-open PR52. Review PR54 at `fe0d2563` adds helper normalization and 24
+formatter unit cases; reviewer has 3400 unit passes, 32 focused integration
+passes, 191 integration passes/13 skips and 474 console passes. The implementor
+requested round 1 for exact origin-port comparison: explicit port 0 must not
+be treated as omitted. Reviewer docs-contract was skipped; implementor verified
+249 pages. All applicable hosted checks on `45c133dd` pass. This keeps the complete RC4 delivery in one implementation PR
 rather than duplicating its pending release merge.
 
 ## CLI initial slice reviewed — 2026-11-17
@@ -4852,11 +4899,13 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Complete the RC4 presentation rewiring review with Antigravity gemini-4-hydrogen,
-resolve findings, rerun the required gate and hand PR52 to the owner. Answers are
-recorded in the work order; no syntax/link questionnaire remains pending. Keep
-broader syntax changes in the later main-targeted slice after 0.3.1. No next
-release number or tag is selected. Release-acceptance tasks below remain pending.
+Verify PR52's final hosted checks and the owner's merge into `release-0.3.1`.
+Continue RC4/release acceptance from the release overview when directed. After
+0.3.1, synchronize the workstream branch with main and implement the broader CLI
+mapping, prefix selector, global/instance verbs, detailed reports, advanced help,
+consumer migration and unused PyCharm removal under a separate implementation
+PR and Antigravity Pair Review. The owner has not selected the next release number
+or authorized a release tag. No syntax/link choice remains pending.
 
 Current, 2026-11-17: rc3 publication and download verification are complete.
 Resume final 0.3.1 acceptance from the release overview: host project-config
@@ -5710,14 +5759,15 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-Current CLI slice: PR53 is merged into PR52; the initial hosted gate passes.
-Owner answers are recorded: prefix-only `--project`, retained global/instance
-verbs, Files-only filesystem links. The remaining RC4 adapter/instructions change
-is being reviewed separately in the same implementation PR. No product choice
-remains pending. The owner merges PR52 into `release-0.3.1`; broader CLI migration
-belongs after 0.3.1. Preserve the user's two `.devcapsule` edits. Scratch logs are
-reproducible; no transcript, raw decision answers or tokened links belong in Git.
-The full work order remains incomplete until its broader slice is implemented.
+Current CLI slice: PR52 contains the completed RC4 scope; reviews PR53 and
+PR54 are merged into it. Await the owner's release merge and reverify hosted
+checks before integration. The broader syntax implementation is deliberately
+left for after 0.3.1, following the work order's release split; it is not complete.
+All choices are adopted: prefix-only `--project`, retained global/instance verbs,
+Files-only paths with explicit current-console URLs for other content viewers.
+No reviewer proposal or product questionnaire remains unresolved. Preserve the
+user's two `.devcapsule` edits. Scratch logs are reproducible; raw answers,
+transcripts and tokened links are deliberately not preserved in Git.
 
 
 Owner returned this checkout to maintenance on 2026-11-17, explicitly requesting
@@ -6276,7 +6326,7 @@ Earlier open-thread history (read against the current scope above):
 
 ## Workstream Document Index
 
-- [RC4 presentation rewiring review brief](evidence/2026-11-17-cli-syntax/rc4-review-brief.md).
+- [RC4 presentation rewiring review brief](evidence/2026-11-17-cli-syntax/rc4-review-brief.md) and [round 1](evidence/2026-11-17-cli-syntax/rc4-round-1.md).
 - [PR52.1 Antigravity review brief](evidence/2026-11-17-cli-syntax/review-brief.md) and [round 1](evidence/2026-11-17-cli-syntax/round-1.md).
 
 - [CLI implementation boundary and inventory](2026-11-17-cli-syntax-implementation.md).
