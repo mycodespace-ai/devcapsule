@@ -1,6 +1,6 @@
 # DevCapsule 0.3.1 — Release Work
 
-Updated: 2026-11-10. Stage: **candidate 2 (`v0.3.1-rc2` on `be0140ca`) published and verified; all three 0.3.1 release bugs closed (Eclipse libsoup on rc1; launcher-delivered web console `D-0017` and Codex npm abbreviated metadata on rc2 + `component-status` feed); Codex `0.167.0` and Claude Code `2.1.321` shipped in `embedded-33`; two rulings open**.
+Updated: 2026-11-17. Stage: **rc3 requested; preflight in progress, no rc3 tag or assets published. SSH proxy is merged into the release; presentations PR #43 remains open.**
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
 [Changelog since 0.3.0](changelog.md) ·
@@ -13,6 +13,61 @@ Update this file as decisions and evidence arrive. Chat highlights changes
 and questions; the bug records remain authoritative for individual status,
 ownership and technical evidence; the maintenance status file links here
 for resumption.
+
+## RC3 preflight and remaining work — 2026-11-17
+
+Verified release tip `a464088d` (SSH proxy PR #47), main `dac6b9d4`
+(PR #42), and no `v0.3.1-rc3` release. Local receipt commit `579d0e6a`
+adds the eight maintenance mails, with no source changes. The owner requested
+rc3; no further tag permission is needed once its prerequisites pass.
+
+### Before rc3 can be published
+
+- **Correct the integration test's outdated Docker-call expectation.**
+  `nox -s tests` at `579d0e6a`: 3320 passed, two inherited gid-0 failures,
+  1 skipped, 191 deselected, 1 xfailed, 1 xpassed (89.42 s).
+  `nox -s integration`: 154 passed, 2 failed, 12 skipped (68.28 s), using
+  the locally rebuilt PEX. The print-command test forbids the read-only
+  Docker security-options query added by the rootless fix; that failure is
+  not limited to this capsule and would fail candidate CI. The filesystem
+  ownership test assumes uid 0 can chown to gid 1, which this restricted
+  user namespace cannot. The unit failures reject socket gid 0 in the
+  legacy recursive-orchestrator tests. None was waived or marked passed.
+- **Propagate the release into main without undoing main-only work.**
+  A clean automatic merge would downgrade `0.3.2.dev0` to `0.3.1`, copy
+  the release-only docs manifest override and delete the November 13 blog,
+  November 8 Mac testing note and November 8 test-improvements work order.
+  A nine-file preservation patch is prepared; permission to put it on the
+  otherwise commit-free PR copy is pending under Release Policy rule 8.
+  The human merges the prepared main PR; verify canonical remote ancestry
+  and preserved content before tagging. Never merge main into the release.
+- After those prerequisites, tag the exact release commit, follow the
+  candidate workflow, download its three assets and verify checksum,
+  manifest and reported identity. A failed candidate is not a published or
+  accepted candidate. No candidate exception has been invented.
+
+### Remaining before final 0.3.1
+
+| Work | Current evidence / next action |
+|---|---|
+| Presentations authoring delivery | [PR #43](https://github.com/mycodespace-ai/devcapsule/pull/43) is open against `release-0.3.1`, clean, reviewed, with all required hosted checks successful. Owner-directed 0.3.1 dependency; the human merge remains. It is not in the current release tree. |
+| One blocking bug: this repository's project configuration | Host-side `project init --regenerate` and `config check`, then commit the refreshed manifest/lock before final. The capsule cannot perform the supported host-only write. |
+| All-component freshness review | The owner's November 17 decision extends the review from three agent CLIs to every existing component, for this release too. Record upgraded with evidence, no update needed with reason, or a deferred-update bug targeted at the next release. The old Antigravity hold remains unresolved; the November 9 agent table is not the full sweep. |
+| Two release rulings | Published Mac/ARM executable scope; and compatibility-feed hosting. The configured website URL returned HTTP 404 again on November 17. Cache/built-in fallback works by contract, but it does not supply a live feed. Development draft binaries do not settle release scope. |
+| Candidate acceptance and bug verification | Resolve the outstanding validation findings; test downloaded candidate bytes, including at least one actual E2E with checksum and selection rationale in `test-runs.json`. Verify the fixed Files-page video behavior in Chrome on a shipped executable before closing that record. Earlier local PEX/feature tests do not substitute for candidate acceptance. |
+| Two remaining test-work records | Release-dependent fixtures is confirmed/minor and explicitly not a candidate gate; its target needs reconciliation with the cut's exclusion. Markdown-only gate routing is fixing/major: hosted route/guard merged via #25, local routing and docs-scan debt remain. Do not claim either closed. |
+| Documentation and publication | Write `notes.md` with the rendered E2E section, promote the documented version and `docs-0.3.1`, validate documentation, obtain final acceptance, publish/verify final assets, and perform the website candidate/production handoff. |
+
+**Bug tally:** nine records target 0.3.1: five closed and four unresolved
+(one confirmed/blocking, one fixing/major, one confirmed/minor, one
+fixed/untriaged awaiting verification). The table in [bugs.md](bugs.md)
+contains all nine. Feature PRs, scope decisions and publication tasks are
+additional work, not extra bugs.
+
+**Not 0.3.1 blockers:** the full upgrade experience is committed to the first
+release after 0.3.1, whether 0.3.2 or 0.4.0. Sample-project release-gate work
+is accepted, but its first enforcing release and criteria remain undecided.
+The completed intake questionnaire does not create 18 new 0.3.1 tasks.
 
 ## Headline
 

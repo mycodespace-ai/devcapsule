@@ -458,7 +458,7 @@ The following are outside the implemented V1 correction and remain explicit:
   defaults are adopted architecture without a complete implemented interface.
 - The missing-platform-lock consumer experience and the exact project/local
   mutation boundary of regeneration retain the project-artifact ownership defined by the
-  [earlier owner-accepted interim behavior](../../wip/2026-08-09-project-management/intake/2026-09-06-component-catalog-init-regenerate-versus-config-semantics.md).
+  [earlier owner-accepted interim behavior](https://github.com/mycodespace-ai/devcapsule/blob/9443bdc69d15df7514e13e8e3ded2f3a8720dd51/engineering-docs/wip/2026-08-09-project-management/intake/2026-09-06-component-catalog-init-regenerate-versus-config-semantics.md).
   The owner's instruction to implement this contract supersedes the part that
   conflated reading an existing recommendation with local consent.
 - Identity relocation, fully specified retention/restore semantics and the
