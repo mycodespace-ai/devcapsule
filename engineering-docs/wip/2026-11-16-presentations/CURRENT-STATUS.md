@@ -2,8 +2,8 @@
 
 Mnemonic: `presentations`
 Start date: 2026-11-16
-State: paused; Pair Review complete; PR #43 awaits owner merge to release 0.3.1
-Branch association: `ws-presentations/0.3.1-authoring`
+State: active 2026-11-17; owner-directed recorded-E2E skill for rc4; authoring PR #43 is merged into release and main.
+Branch association: `ws-presentations/recorded-e2e-skill` from release `dbfba699`; `ws-presentations/0.3.1-authoring` merged through #43
 Branch prefix: `ws-presentations/`
 Integration target: `release-0.3.1`
 Delivery method: pull request; records published on coordination
@@ -24,7 +24,29 @@ The agent reads the scenario, executes the E2E test, records it and creates the 
 When finished, it reports the result and returns a link the engineer opens in that project's DevCapsule web console.
 The engineer does not need to point it at this repository or reconstruct the recording process.
 
-## Current state and authority
+## Recorded-E2E skill — 2026-11-17
+
+The owner requested a skill inside this project and a PR for rc4, then explicitly
+switched this checkout from maintenance to presentations. Prior PR #43 is merged
+at release `c8b56a07` and propagated to main by #49 (`0baf70bd`); rc3 shipped it.
+This slice packages a portable skill with the existing authoring kit. It reads
+`devcapsule presentations guide` rather than duplicating the recording procedure,
+checks prerequisites and returns the real test outcome with a verified console
+presentation. No workflow bootstrap/update, recorder redesign or viewer change.
+
+Start from release `dbfba699`, with maintenance's completed rc3 records. Main's
+workflow difference is only the development-version stamp; retain the release
+baseline and do not merge main into this release-targeted slice. The definition
+and local workflow were read. No open bug is owned by presentations.
+
+Accepted project-management mail `2026-11-17-project-management-presentations-intake-decisions.md`:
+provide recording/presentation support for the future sample-project release
+check, after this skill slice. Sample-projects owns scenarios and project updates;
+maintenance owns release enforcement. The first enforcing release, list and pass
+criteria await design; this does not create a new 0.3.1 gate. Full work order is
+preserved in the mail receipt commit and will reach main through its owner.
+
+## Current state and authority (original authoring slice)
 
 Created at the owner's request after checking the live list, canonical mainline, open/archive directories and remote refs.
 No standalone presentations workstream existed. The earlier `ws-capsule-webconsole/presentations` slice is merged.
@@ -44,12 +66,10 @@ The self-contained handoff names the exact paths and evidence.
 
 ## Planned next step
 
-The scoped implementation and Pair Review are complete. The owner merges
-[PR #43](https://github.com/mycodespace-ai/devcapsule/pull/43) into `release-0.3.1`.
-Consult the PR's live hosted checks before merging. Only the human merges the release target.
-After the owner reports the merge, fetch upstream and verify the release contains this tree.
-Maintenance owns carrying the release to main; do not conclude this workstream before main contains it.
-Do not restart a viewer redesign, audience study or general process invention.
+Implement the portable skill, export it with the installed PEX, document
+installation and invocation, validate the skill and packaged delivery, then open
+a PR against `release-0.3.1`. The human merges; maintenance handles propagation
+and rc4. Do not change the authored release version.
 
 ## Validation and checkout state
 
@@ -94,7 +114,8 @@ Chromium check and the docs contract both passed again on the merged implementat
 ## Open Threads
 
 - Implementation authorized; release target and reviewer settled.
-- PR #43 awaits owner merge to release-0.3.1, followed by maintenance's release-to-main integration.
+- PR #43 and its main propagation are verified complete. The skill PR is the current delivery.
+- Future sample-project release-check support is acknowledged above; design criteria remain pending.
 - Preserve the recorded viewer acceptance and demonstrated external-project recording reuse.
 - Local full gate still fails on the known recursive Docker-group test; no unrelated fixture fix is included.
 - Automated checks establish the kit and existing viewer contract, not a second human acceptance of presentation quality.
