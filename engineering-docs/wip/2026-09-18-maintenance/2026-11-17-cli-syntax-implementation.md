@@ -15,6 +15,13 @@ Baseline: `010813be`, `ws-maintenance/cli-syntax`. Implementation started 2026-1
 Each slice gets its own implementation PR and Pair Review; only the owner merges
 into the release or main. No release tagging or container launch is implied.
 
+The initial help/kit slice is delivered in [PR52](https://github.com/mycodespace-ai/devcapsule/pull/52).
+Antigravity `gemini-4-hydrogen` reviewed it in PR53; accepted after one correction
+round at `d0f2e8bb`, merged into the implementation branch at `ec38720d`.
+The review added staged installation with real partial-write cleanup coverage
+and blank-version validation. It preserved existing symlink behavior.
+Presentation-command removal and instruction migration still await the link choice.
+
 ## Production boundary
 
 The preliminary help/installation edits are confined to
