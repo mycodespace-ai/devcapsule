@@ -90,13 +90,15 @@ def test_built_pex_exposes_recursive_preflight_help(built_pex: Path, environment
     assert "--keep-on-failure" in run_help.stdout
 
 
+@pytest.mark.parametrize("mode", ["single-stream", "multiple-streams"])
 def test_built_pex_bootstraps_packaged_workflow(
-    built_pex: Path, tmp_path: Path, environment: dict[str, str],
+    built_pex: Path, tmp_path: Path, environment: dict[str, str], mode: str,
 ) -> None:
-    """``bootstrap`` in an empty directory writes the workflow definition that the package carries, byte for
-    byte, and a status file of a single-stream project."""
+    """Bootstrap installs the packaged workflow and both skill copies; reruns preserve user edits."""
     project = tmp_path / "adopter"
     project.mkdir()
+    (project / ".devcapsule").mkdir()
+    (project / ".devcapsule/devcapsule.toml").write_text(f'workflow-type = "{mode}"\n', encoding="utf-8")
 
     completed = subprocess.run(
         [str(built_pex), "bootstrap"],
@@ -116,9 +118,64 @@ def test_built_pex_bootstraps_packaged_workflow(
     assert (project / "WORKFLOW.md").read_text(
         encoding="utf-8"
     ) == packaged_workflow
-    assert "Workflow type: `single-stream`" in (
-        project / "CURRENT-STATUS.md"
-    ).read_text(encoding="utf-8")
+    status = (project / "CURRENT-STATUS.md").read_bytes()
+    expected = files("devcapsule.presentation_tools").joinpath("SKILL.md").read_bytes()
+    for agent in (".agents", ".claude"):
+        relative = f"{agent}/skills/devcapsule-recorded-e2e/SKILL.md"
+        skill = project / relative
+        assert skill.read_bytes() == expected
+        assert relative in (project / "index.md").read_text(encoding="utf-8")
+        skill.write_bytes(b"customized skill")
+    (project / "AGENTS.md").write_bytes(b"customized instructions")
+    repeated = subprocess.run(
+        [str(built_pex), "bootstrap"], cwd=project, env=environment,
+        text=True, capture_output=True, check=False,
+    )
+    assert repeated.returncode == 0, repeated.stderr
+    assert (project / "CURRENT-STATUS.md").read_bytes() == status
+    assert (project / "WORKFLOW.md").read_text(encoding="utf-8") == packaged_workflow
+    assert (project / "AGENTS.md").read_bytes() == b"customized instructions"
+    for agent in (".agents", ".claude"):
+        assert (project / agent / "skills/devcapsule-recorded-e2e/SKILL.md").read_bytes() == b"customized skill"
+
+
+def test_built_pex_wrap_installs_skills_outside_foreign_source(
+    built_pex: Path, tmp_path: Path, environment: dict[str, str],
+) -> None:
+    """Wrapping a local repository supplies both skills in the wrapper and leaves foreign source clean."""
+    environment = {**environment, "GIT_ALLOW_PROTOCOL": "file", "GIT_CONFIG_GLOBAL": os.devnull,
+                   "GIT_CONFIG_SYSTEM": os.devnull}
+    source = tmp_path / "foreign"
+    source.mkdir()
+    (source / "README.md").write_text("# Foreign source\n", encoding="utf-8")
+    project = tmp_path / "wrapper"
+    project.mkdir()
+
+    def git(directory: Path, *arguments: str) -> str:
+        return subprocess.run(
+            ["git", "-C", str(directory), *arguments], env=environment,
+            text=True, capture_output=True, check=True,
+        ).stdout
+
+    git(source, "init", "--quiet")
+    git(source, "add", "README.md")
+    git(source, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test", "commit", "-qm", "Seed")
+    git(project, "init", "--quiet")
+    command = [str(built_pex), "project", "--path", str(project), "wrap", str(source),
+               "--creator", "mailto:fixture@example.test", "--ide", "none"]
+    wrapped = subprocess.run(command, cwd=tmp_path, env=environment, text=True, capture_output=True, check=False)
+    assert wrapped.returncode == 0, wrapped.stderr
+    expected = files("devcapsule.presentation_tools").joinpath("SKILL.md").read_bytes()
+    for agent in (".agents", ".claude"):
+        skill = project / agent / "skills/devcapsule-recorded-e2e/SKILL.md"
+        assert skill.read_bytes() == expected
+        assert not (project / "foreign" / agent).exists()
+        skill.write_bytes(b"customized skill")
+    repeated = subprocess.run(command, cwd=tmp_path, env=environment, text=True, capture_output=True, check=False)
+    assert repeated.returncode == 0, repeated.stderr
+    for agent in (".agents", ".claude"):
+        assert (project / agent / "skills/devcapsule-recorded-e2e/SKILL.md").read_bytes() == b"customized skill"
+    assert git(project / "foreign", "status", "--porcelain") == ""
 
 
 def test_built_pex_exposes_recursive_host_public_interface(built_pex: Path, environment: dict[str, str]) -> None:

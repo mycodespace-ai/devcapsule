@@ -1,5 +1,15 @@
 # Agent Instructions
 
+## Recorded end-user scenarios
+
+When asked to execute an end-user scenario and capture video or produce a
+recorded presentation, read `.agents/skills/devcapsule-recorded-e2e/SKILL.md`
+relative to the project root and follow it. Recognize equivalent wording;
+the user need not say E2E or name the skill. Workflow bootstrap installs this
+skill and a copy in `.claude/skills/` for Claude Code.
+
+## Project workflow
+
 Before starting work, read `README.md`, then read the `[workflow]` table in
 `.devcapsule/devcapsule.toml`: `definition` names the workflow, `version` the
 DevCapsule release the project's `WORKFLOW.md` came from, and `mode` is

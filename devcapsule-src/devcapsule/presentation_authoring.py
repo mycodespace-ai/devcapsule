@@ -1,12 +1,40 @@
 """Export the portable authoring kit and form console links from explicit inputs.
 
-Public operations: ``export_tools``, ``install_skill`` and ``presentation_link``.
+Public operations: kit export, direct and project skill installation, and console links.
 """
 from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import quote, urlencode, urlsplit, urlunsplit
 
-__all__ = ["export_tools", "install_skill", "presentation_link"]
+__all__ = ["export_tools", "install_skill", "install_project_skills", "SkillInstallReport", "presentation_link"]
+
+PROJECT_SKILL_DIRECTORIES = (
+    Path(".agents/skills/devcapsule-recorded-e2e"),
+    Path(".claude/skills/devcapsule-recorded-e2e"),
+)
+
+
+@dataclass(frozen=True)
+class SkillInstallReport:
+    created: tuple[Path, ...]
+    preserved: tuple[Path, ...]
+
+
+def install_project_skills(project: Path, content: bytes) -> SkillInstallReport:
+    """Supply both agent discovery locations, preserving existing skill folders."""
+    created: list[Path] = []
+    preserved: list[Path] = []
+    for relative in PROJECT_SKILL_DIRECTORIES:
+        destination = project / relative
+        # Do not follow a project's shared skill-directory symlink and write
+        # outside this project; its owner manages that location independently.
+        if destination.exists() or any((project / part).is_symlink() for part in (relative, *relative.parents)):
+            preserved.append(relative)
+            continue
+        install_skill(destination, content)
+        created.append(relative / "SKILL.md")
+    return SkillInstallReport(tuple(created), tuple(preserved))
 
 
 def install_skill(destination: Path, content: bytes) -> Path:

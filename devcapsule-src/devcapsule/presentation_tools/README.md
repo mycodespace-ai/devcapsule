@@ -8,7 +8,22 @@ result and a link to the recorded presentation in their DevCapsule web console.
 
 ## Install the optional agent skill
 
-From the adopter project's root, install directly from the DevCapsule executable:
+`devcapsule bootstrap` installs this skill with the workflow files.
+`devcapsule project wrap` installs it in the wrapper repository, outside the
+foreign source. Both supply `.agents/skills/devcapsule-recorded-e2e/SKILL.md`
+for Codex/Antigravity and `.claude/skills/devcapsule-recorded-e2e/SKILL.md` for
+Claude Code. No separate installation command is needed. Start a new agent
+session after project setup, then ask it to run your scenario.
+
+Re-running bootstrap or wrap adds missing skill folders and preserves existing
+ones, including customized skills. A symlinked skill location is left under
+its owner's control. Bootstrap does not require `--refresh-workflow-definition`
+to add missing skills and does not replace existing workflow files by default.
+Keep the installed skill files in the project or wrapper repository under its
+normal commit policy so other contributors receive them.
+
+For projects that do not use workflow bootstrap or wrapping, or to choose a
+custom skill location, install directly from the executable:
 
 ```sh
 devcapsule presentations install-skill .agents/skills/devcapsule-recorded-e2e
@@ -63,8 +78,8 @@ An instruction to read a file does not register a native slash command.
 
 No workflow bootstrap, workflow-version change or `WORKFLOW.md` replacement is
 needed. Agents without skill support can still read `devcapsule presentations
-guide`. The guide and helpers first shipped in 0.3.1rc3; skill export and direct
-installation are rc4 additions. Upgrade an older executable through the normal
+guide`. The guide and helpers first shipped in 0.3.1rc3; skill export, direct installation and
+automatic installation with bootstrap/wrap are rc4 additions. Upgrade an older executable through the normal
 host procedure and launch a new capsule before using them. A host executable
 replacement does not update a running capsule.
 

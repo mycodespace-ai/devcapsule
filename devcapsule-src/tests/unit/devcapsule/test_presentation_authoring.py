@@ -3,7 +3,48 @@ from pathlib import Path
 
 import pytest
 
-from devcapsule.presentation_authoring import export_tools, install_skill, presentation_link
+from devcapsule.presentation_authoring import export_tools, install_project_skills, install_skill, presentation_link
+
+
+def test_project_install_supplies_both_discovery_locations(tmp_path: Path) -> None:
+    """Project setup supplies the same skill for Codex/Antigravity and Claude Code."""
+    report = install_project_skills(tmp_path, b"packaged instructions")
+
+    expected = (
+        Path(".agents/skills/devcapsule-recorded-e2e/SKILL.md"),
+        Path(".claude/skills/devcapsule-recorded-e2e/SKILL.md"),
+    )
+    assert report.created == expected
+    assert report.preserved == ()
+    assert all((tmp_path / path).read_bytes() == b"packaged instructions" for path in expected)
+
+
+def test_project_install_preserves_custom_skill_and_adds_missing_copy(tmp_path: Path) -> None:
+    """An existing customized skill is kept while the other agent receives its missing copy."""
+    existing = Path(".agents/skills/devcapsule-recorded-e2e")
+    (tmp_path / existing).mkdir(parents=True)
+    skill = tmp_path / existing / "SKILL.md"
+    skill.write_bytes(b"local instructions")
+
+    report = install_project_skills(tmp_path, b"packaged instructions")
+
+    assert report.preserved == (existing,)
+    assert report.created == (Path(".claude/skills/devcapsule-recorded-e2e/SKILL.md"),)
+    assert skill.read_bytes() == b"local instructions"
+
+
+def test_project_install_preserves_linked_skill_root(tmp_path: Path) -> None:
+    """Automatic setup never writes into a shared skills location outside the project."""
+    project = tmp_path / "project"
+    project.mkdir()
+    shared = tmp_path / "shared"
+    shared.mkdir()
+    (project / ".agents").symlink_to(shared, target_is_directory=True)
+
+    report = install_project_skills(project, b"packaged instructions")
+
+    assert report.preserved == (Path(".agents/skills/devcapsule-recorded-e2e"),)
+    assert list(shared.iterdir()) == []
 
 
 def test_install_skill_creates_parents_and_preserves_content(tmp_path: Path) -> None:

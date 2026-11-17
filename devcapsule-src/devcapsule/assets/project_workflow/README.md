@@ -40,3 +40,12 @@ The 0.3.1 packaged workflow gains the pile of ideas the same way: its own
 heading, *Pile Of Ideas*, with the rules of root topic 12.13, the glossary
 entry, the directory's role, and one sentence under the reserved
 `project-management` workstream.
+
+Bootstrap also installs the recorded-E2E skill from `devcapsule.presentation_tools`
+into `.agents/skills/devcapsule-recorded-e2e/` and
+`.claude/skills/devcapsule-recorded-e2e/`. These are project support files, not
+workflow definitions: existing skill folders are preserved even when the user
+refreshes the workflow definition. The packaged AGENTS.md points to the shared
+procedure; it does not duplicate the recorder instructions. A newly generated
+index includes the installed skill files; an existing project-owned index is
+preserved under the normal bootstrap rule.
