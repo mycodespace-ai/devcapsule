@@ -145,32 +145,25 @@ the complete media folder and valid `presentation.json` inside that project's
 mount and reload **Presentations**. Markdown alone is not a presentation: it still
 needs recorded media, screenshots and timings in the generated document.
 
-The authoring experience is not yet shipped with that viewer. The 2026-11-16 audit
-of the merged development PEX found:
+The launcher also ships the portable authoring kit. The earlier source-only
+limitation was closed by the authoring delivery in 0.3.1rc3; the optional agent
+skill is added for rc4.
 
-| Support | Available to an ordinary project from that PEX? |
+| Support | Delivery |
 | --- | --- |
-| Console discovery, slide rendering, captions and segment playback | Yes; the HTML, JavaScript and CSS are in the embedded console bundle. |
-| Playwright and its browser runtime | Optional through `browser-automation`; this supplies browser tools, not the scenario recorder or presentation generator. |
-| `tests/e2e/scenario_presentation.py` | No; this standard-library Python producer is repository development tooling, excluded from the PEX. |
-| `tests/e2e/scenario_recorder.py` and its supporting modules | No; they belong to this repository's IDE test harness. |
-| This contract, the authoring guide and scenario scripts/templates | No; they are repository documents, not installed authoring resources. |
-| Presentation instructions in bootstrapped agent files | No; the inspected packaged workflow files do not point an agent to the authoring tools. |
-| A supported presentation authoring command | No; the inspected CLI offers no presentation init/record/build/validate command. |
+| Console discovery, slides, captions and segment playback | Embedded console bundle. |
+| Playwright and its browser runtime | Optional `browser-automation` capability. |
+| Agent recording instructions | `devcapsule presentations guide`. |
+| Standalone producer, recorder and Python example | `devcapsule presentations export <new-directory>`, under `presentation_tools/`. |
+| `devcapsule-recorded-e2e` skill | `devcapsule presentations install-skill <new-skill-directory>`. Also included in the export. No workflow-file update required. |
+| Project-specific application setup, actions and assertions | The adopter project's instructions and driver. |
+| This repository's IDE harness and replay scenarios | Repository development tooling; not required by the portable kit. |
 
-The generator can be obtained from a pinned source checkout and used with another
-project's own recording harness. The full IDE recorder initializes disposable
-DevCapsule smoke projects; it is not a command that records any application's tests
-in place. Copying that recorder alone omits its supporting modules. The SSH
-showcase producer is deliberately specific to its retained run and is not a
-generic authoring kit.
-
-For an agent to do this with little setup, a future delivery needs a discoverable
-Markdown guide and templates, a supported producer/validator, recording adapters
-that retain timing metadata, and an installed-artifact acceptance test in an
-unrelated project without this source checkout. This is an identified delivery
-gap, not functionality supplied by the current PEX. See the
-[agent prompt and current prerequisites](../engineering-docs/development/running-e2e-scenario-recordings.md#6-asking-an-agent-in-another-project).
+The exported helpers retain real recording timing and generate the existing
+`presentation.json` contract. They do not provision applications or turn every
+E2E invocation into a presentation automatically. See the
+[installed authoring guide](../devcapsule-src/devcapsule/presentation_tools/README.md)
+and [agent invocation](../engineering-docs/development/running-e2e-scenario-recordings.md#6-asking-an-agent-in-another-project).
 
 ## What the page does
 

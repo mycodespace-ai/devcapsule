@@ -45,6 +45,7 @@ status file; internal WIP/archive documents use the local index in that status.
 - [Integration tests](engineering-docs/development/integration-tests.md)
 - [End-to-end tests](engineering-docs/development/e2e-tests.md)
 - [Packaged agent instructions for E2E recording and presentation](devcapsule-src/devcapsule/presentation_tools/README.md)
+- [Recorded-E2E agent skill](devcapsule-src/devcapsule/presentation_tools/SKILL.md)
 - [Running E2E scenario recordings from a shell with nox](engineering-docs/development/running-e2e-scenario-recordings.md)
 - [Web console presentations: discovery, storage and generation](devcapsule-webconsole/PRESENTATIONS.md)
 - [E2E scenario script: GitHub SSH through the host proxy](devcapsule-src/tests/e2e/scripts/github-ssh-proxy.md)

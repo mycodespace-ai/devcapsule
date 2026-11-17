@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from importlib.resources import files
 
 import pytest
 
@@ -39,6 +40,9 @@ def test_guide_and_export_supply_an_importable_standalone_kit(tmp_path: Path) ->
     assert exported.returncode == 0, exported.stderr
     assert f"Presentation tools: {kit / 'presentation_tools'}" in exported.stdout
     assert (kit / "presentation_tools" / "README.md").read_text(encoding="utf-8") + "\n" == guide.stdout
+    assert (kit / "presentation_tools" / "SKILL.md").read_bytes() == (
+        files("devcapsule.presentation_tools").joinpath("SKILL.md").read_bytes()
+    )
 
     isolated = subprocess.run(
         [
@@ -60,6 +64,21 @@ def test_guide_and_export_supply_an_importable_standalone_kit(tmp_path: Path) ->
     refused = _run_presentations(tmp_path, "export", str(kit))
     assert refused.returncode == 2
     assert "cannot export presentation tools" in refused.stderr
+
+
+def test_install_skill_needs_no_export_and_refuses_reinstallation(tmp_path: Path) -> None:
+    """A real CLI installs into a project-relative path and preserves a customized skill on retry."""
+    directory = ".agents/skills/devcapsule-recorded-e2e"
+    installed = _run_presentations(tmp_path, "install-skill", directory)
+    assert installed.returncode == 0, installed.stderr
+    skill = tmp_path / directory / "SKILL.md"
+    assert skill.read_bytes() == files("devcapsule.presentation_tools").joinpath("SKILL.md").read_bytes()
+
+    skill.write_text("local changes", encoding="utf-8")
+    refused = _run_presentations(tmp_path, "install-skill", directory)
+    assert refused.returncode == 2
+    assert "cannot install recorded-E2E skill" in refused.stderr
+    assert skill.read_text(encoding="utf-8") == "local changes"
 
 
 def test_hand_off_reads_environment_and_handles_token_states(tmp_path: Path) -> None:

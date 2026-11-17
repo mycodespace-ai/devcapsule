@@ -6,6 +6,68 @@ Read it yourself; do not require the engineer to translate it into a schema.
 Execute the requested test, check its observations, and give the engineer the
 result and a link to the recorded presentation in their DevCapsule web console.
 
+## Install the optional agent skill
+
+From the adopter project's root, install directly from the DevCapsule executable:
+
+```sh
+devcapsule presentations install-skill .agents/skills/devcapsule-recorded-e2e
+```
+
+This creates the parent directories and writes `SKILL.md` into the new skill
+folder. It refuses an existing destination, preserving any customized skill;
+review and move an existing installation before installing its replacement.
+There is no temporary export or manual copy step.
+
+Choose the destination your agent discovers:
+
+| Agent | Project skill directory |
+| --- | --- |
+| Codex | `.agents/skills/devcapsule-recorded-e2e` |
+| Antigravity | `.agents/skills/devcapsule-recorded-e2e` |
+| Claude Code | `.claude/skills/devcapsule-recorded-e2e` |
+
+For Claude Code, use the same command with the `.claude/skills/` destination.
+These paths follow the [official OpenAI documentation](https://developers.openai.com/api/reference/cli#use-the-cli-from-a-coding-agent),
+[Antigravity documentation](https://antigravity.google/docs/skills), and
+[Claude Code documentation](https://code.claude.com/docs/en/skills).
+Start a new agent session after installation. The file can be committed as a
+project instruction under that project's rules.
+
+The skill needs only `SKILL.md`. When running a scenario, the agent exports the
+Python helpers from the installed executable, so they match that executable's
+version. The install command does not run a test or configure browser automation.
+
+Then ask, for example:
+
+> Run the end-user scenario in tests/e2e/login.md and record a presentation
+> with videos of what happened.
+
+You can also explicitly ask to use `devcapsule-recorded-e2e`. Equivalent wording
+should select the same procedure; an exact phrase or the skill name is not required.
+
+For agents that do not discover the chosen directory, put this instruction in
+`AGENTS.md` (adjust the path if you chose another location):
+
+```markdown
+When the user asks to execute an end-user scenario and capture video or produce
+a recorded presentation, read and follow
+`.agents/skills/devcapsule-recorded-e2e/SKILL.md` relative to the project root.
+Apply this instruction to equivalent wording; the user need not name the skill.
+```
+
+Ensure the agent reads that instruction file. For Claude Code installations
+that do not load it, import it with `@AGENTS.md` in the project's `CLAUDE.md`, as
+[Claude's documentation describes](https://code.claude.com/docs/en/memory#share-one-file-with-other-coding-tools).
+An instruction to read a file does not register a native slash command.
+
+No workflow bootstrap, workflow-version change or `WORKFLOW.md` replacement is
+needed. Agents without skill support can still read `devcapsule presentations
+guide`. The guide and helpers first shipped in 0.3.1rc3; skill export and direct
+installation are rc4 additions. Upgrade an older executable through the normal
+host procedure and launch a new capsule before using them. A host executable
+replacement does not update a running capsule.
+
 ## Get the tools
 
 `devcapsule presentations guide` prints this guide from the installed executable.
@@ -16,7 +78,7 @@ devcapsule presentations export /var/tmp/e2e-authoring
 ```
 
 The destination must be new. It contains `presentation_tools/` with this guide,
-the producer, recorder and a runnable example. Add the export directory to
+the producer, recorder, a runnable example and `SKILL.md`. Add the export directory to
 `PYTHONPATH` when running the project's driver. The helpers use only the Python
 standard library and the Playwright page you supply. They import no test harness.
 
