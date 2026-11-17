@@ -33,6 +33,12 @@ rc3; no further tag permission is needed once its prerequisites pass.
   ownership test assumes uid 0 can chown to gid 1, which this restricted
   user namespace cannot. The unit failures reject socket gid 0 in the
   legacy recursive-orchestrator tests. None was waived or marked passed.
+  Correction prepared on `ws-maintenance/0.3.1-rc3-preflight` at `87c35bab`:
+  full integration now passes, **155 passed, 13 skipped** (61.68 s).
+  The newly skipped ownership case lacks its independently probed host
+  permission. The local build still stops at the same two legacy gid-0
+  unit failures; version, syntax, types (351 files) and conventions pass.
+  The human merge of the correction PR into the release remains.
 - **Propagate the release into main without undoing main-only work.**
   A clean automatic merge would downgrade `0.3.2.dev0` to `0.3.1`, copy
   the release-only docs manifest override and delete the November 13 blog,

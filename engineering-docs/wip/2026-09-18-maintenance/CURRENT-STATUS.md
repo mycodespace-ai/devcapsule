@@ -24,7 +24,12 @@ and still refuses every modifying Docker command; its assertions require
 image inspection and allow that identity read. The filesystem integration
 test checks its required distinct-group chown capability on a separate probe
 before calling the product, skipping only when the host lacks that permission.
-No product behavior or legacy unit test is changed. This does not waive the
+Validation on `87c35bab`: full `nox -s integration` passes (155 passed,
+13 skipped, 61.68 s); focused files 4 passed, 10 skipped. The required local
+build passes version/syntax, mypy (351 files), conventions (0 breaches), then
+stops with 3320 passing unit tests and the same two inherited gid-0 failures
+(1 skipped, 191 deselected, 1 xfailed, 1 xpassed, 87.12 s). Later build steps
+were not reached in this run. No product behavior or legacy unit test is changed. This does not waive the
 two rootless-local legacy unit failures. Deliver through a PR into the release;
 the human merges before main propagation and the candidate tag.
 
@@ -4662,8 +4667,8 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Current, 2026-11-17: validate and deliver the two integration-test corrections
-on `ws-maintenance/0.3.1-rc3-preflight` to the release for the human merge. Resolve the main-preservation integration route with the owner, prepare
+Current, 2026-11-17: the integration corrections are validated; hand the PR
+from `ws-maintenance/0.3.1-rc3-preflight` to the human for merge into the release. Resolve the main-preservation integration route with the owner, prepare
 the main PR, and wait for the human merge. Verify the remote integration before
 tagging `v0.3.1-rc3`, then watch the candidate job and verify its downloaded
 assets. PR #43 remains required before final 0.3.1. The owner already requested
@@ -5516,7 +5521,8 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 ## Open Threads
 
 Current, 2026-11-17 (supersedes stale release/PR claims below): rc3 is not cut;
-main propagation needs the preservation commit and the human merge. The
+the validated integration correction PR awaits the human merge into the
+release, then main propagation needs the preservation commit and human merge. The
 exception question remains pending. PR #43 is open; the rootless and website
 gitlink fixes are merged. Four 0.3.1 bug records are unresolved, including one
 blocking host-side project-configuration refresh. The release overview owns
