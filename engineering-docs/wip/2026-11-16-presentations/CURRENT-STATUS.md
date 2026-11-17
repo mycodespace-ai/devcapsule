@@ -2,7 +2,7 @@
 
 Mnemonic: `presentations`
 Start date: 2026-11-16
-State: integrating 2026-11-17; recorded-E2E skill implemented and locally validated for rc4; release PR and hosted checks pending. Authoring PR #43 is merged into release and main.
+State: integrating 2026-11-17; recorded-E2E skill implemented and locally validated for rc4; PR #50 awaits the human merge; consult its live hosted checks. Authoring PR #43 is merged into release and main.
 Branch association: `ws-presentations/recorded-e2e-skill` from release `dbfba699`; `ws-presentations/0.3.1-authoring` merged through #43
 Branch prefix: `ws-presentations/`
 Integration target: `release-0.3.1`
@@ -47,6 +47,9 @@ criteria await design; this does not create a new 0.3.1 gate. Full work order is
 preserved in the mail receipt commit and will reach main through its owner.
 
 ### Skill implementation and validation
+
+Maintenance handoff delivered on coordination at `06af6ff79bb7` as
+`2026-11-17-presentations-rc4-skill.md`; no switch back to maintenance is implied.
 
 The canonical skill is `devcapsule-src/devcapsule/presentation_tools/SKILL.md`.
 Package data and the existing export command include it beside the guide and
@@ -95,8 +98,8 @@ The self-contained handoff names the exact paths and evidence.
 
 ## Planned next step
 
-Open the validated skill PR against `release-0.3.1` and check its hosted
-results. The human merges; maintenance handles propagation and rc4. The
+Review [PR #50](https://github.com/mycodespace-ai/devcapsule/pull/50),
+targeting `release-0.3.1`; consult its live hosted checks before the human merge. The human merges; maintenance handles propagation and rc4. The
 authored release version remains unchanged at 0.3.1.
 
 ## Validation and checkout state
@@ -142,7 +145,8 @@ Chromium check and the docs contract both passed again on the merged implementat
 ## Open Threads
 
 - Implementation authorized; release target and reviewer settled.
-- PR #43 and its main propagation are verified complete. The skill PR is the current delivery.
+- PR #43 and its main propagation are verified complete. PR #50 is the current delivery for rc4; human merge remains.
+- Hosted CI status lives on PR #50; recheck it on resumption. Maintenance owns release propagation and tagging.
 - Future sample-project release-check support is acknowledged above; design criteria remain pending.
 - Preserve the recorded viewer acceptance and demonstrated external-project recording reuse.
 - Local full gate still fails on the known recursive Docker-group test; no unrelated fixture fix is included.
