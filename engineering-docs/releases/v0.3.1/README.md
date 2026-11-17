@@ -1,6 +1,6 @@
 # DevCapsule 0.3.1 — Release Work
 
-Updated: 2026-11-17. Stage: **rc3 requested; preflight in progress, no rc3 tag or assets published. SSH proxy is merged into the release; presentations PR #43 remains open.**
+Updated: 2026-11-17. Stage: **rc3 requested; preflight in progress, no rc3 tag or assets published. SSH proxy #47, presentations #43 and preflight correction #48 are merged. Main propagation with preservation is prepared for the human merge.**
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
 [Changelog since 0.3.0](changelog.md) ·
@@ -16,7 +16,7 @@ for resumption.
 
 ## RC3 preflight and remaining work — 2026-11-17
 
-Verified release tip `a464088d` (SSH proxy PR #47), main `dac6b9d4`
+Verified release tip `918f9fc7` (PRs #43 and #48 now merged), main `dac6b9d4`
 (PR #42), and no `v0.3.1-rc3` release. Local receipt commit `579d0e6a`
 adds the eight maintenance mails, with no source changes. The owner requested
 rc3; no further tag permission is needed once its prerequisites pass.
@@ -38,13 +38,14 @@ rc3; no further tag permission is needed once its prerequisites pass.
   The newly skipped ownership case lacks its independently probed host
   permission. The local build still stops at the same two legacy gid-0
   unit failures; version, syntax, types (351 files) and conventions pass.
-  The human merge of the correction PR into the release remains.
+  Correction PR #48 is merged at `918f9fc7`, with hosted checks green.
 - **Propagate the release into main without undoing main-only work.**
   A clean automatic merge would downgrade `0.3.2.dev0` to `0.3.1`, copy
   the release-only docs manifest override and delete the November 13 blog,
   November 8 Mac testing note and November 8 test-improvements work order.
-  A nine-file preservation patch is prepared; permission to put it on the
-  otherwise commit-free PR copy is pending under Release Policy rule 8.
+  The owner approved a preservation commit on the otherwise commit-free
+  PR copy under Release Policy rule 8. `4PR-6-release-0.3.1` preserves
+  main at `0.3.2.dev0`, retaining the new presentation package-data setting.
   The human merges the prepared main PR; verify canonical remote ancestry
   and preserved content before tagging. Never merge main into the release.
 - After those prerequisites, tag the exact release commit, follow the
@@ -56,7 +57,7 @@ rc3; no further tag permission is needed once its prerequisites pass.
 
 | Work | Current evidence / next action |
 |---|---|
-| Presentations authoring delivery | [PR #43](https://github.com/mycodespace-ai/devcapsule/pull/43) is open against `release-0.3.1`, clean, reviewed, with all required hosted checks successful. Owner-directed 0.3.1 dependency; the human merge remains. It is not in the current release tree. |
+| Presentations authoring delivery | **Done:** [PR #43](https://github.com/mycodespace-ai/devcapsule/pull/43) merged at `c8b56a07` with hosted checks green; included in release `918f9fc7` and the main propagation PR. |
 | One blocking bug: this repository's project configuration | Host-side `project init --regenerate` and `config check`, then commit the refreshed manifest/lock before final. The capsule cannot perform the supported host-only write. |
 | All-component freshness review | The owner's November 17 decision extends the review from three agent CLIs to every existing component, for this release too. Record upgraded with evidence, no update needed with reason, or a deferred-update bug targeted at the next release. The old Antigravity hold remains unresolved; the November 9 agent table is not the full sweep. |
 | Two release rulings | Published Mac/ARM executable scope; and compatibility-feed hosting. The configured website URL returned HTTP 404 again on November 17. Cache/built-in fallback works by contract, but it does not supply a live feed. Development draft binaries do not settle release scope. |

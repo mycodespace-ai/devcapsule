@@ -108,6 +108,7 @@ status file; internal WIP/archive documents use the local index in that status.
 - [Capability configuration: implementation and test correctness](engineering-docs/implementation-notes/devcapsule/2026-10-06-configuration-correctness.md)
 - [Capability configuration: persistent selection versus execution projection](engineering-docs/implementation-notes/devcapsule/2026-10-08-configuration-composition-correctness.md)
 - [Scenario-driven E2E IDE controller and pause-free WebM video recorder](engineering-docs/implementation-notes/devcapsule/2026-10-21-e2e-scenario-video-recorder.md)
+- [Testing the macOS launcher on cloud Mac hardware, and the alternatives](engineering-docs/implementation-notes/devcapsule/2026-11-08-testing-the-macos-launcher-on-cloud-mac-hardware.md)
 - [Eclipse Java component and recorded smoke validation](engineering-docs/implementation-notes/devcapsule/2026-10-04-eclipse-validation.md)
 - [Linux .NET SDK and Rider validation](engineering-docs/implementation-notes/devcapsule/2026-10-04-dotnet-rider-validation.md)
 - [IntelliJ, Playwright and graphical smoke validation](engineering-docs/implementation-notes/devcapsule/2026-10-04-intellij-playwright-validation.md)
@@ -149,6 +150,7 @@ status file; internal WIP/archive documents use the local index in that status.
 
 ## Work Orders
 
+- [Test improvements: declared public surfaces, no patching of project modules, the discovery module first](engineering-docs/work-orders/2026-11-08-test-improvements.md)
 - [Wrapped projects: a foreign repository as a submodule, three commands](engineering-docs/work-orders/2026-11-02-wrapped-projects.md)
 - [0.3.0 user documentation CLI alignment, full stub authoring, and prose review — maintenance, 0.3.0](engineering-docs/work-orders/2026-10-30-user-docs-0-3-0-cli-alignment.md)
 - [CI path gating and advisory diff coverage — maintenance, 0.3.0](engineering-docs/work-orders/2026-10-30-ci-path-gating-and-diff-coverage.md)
@@ -250,6 +252,7 @@ status file; internal WIP/archive documents use the local index in that status.
 
 ## Development Blog
 
+- [Thirteen hours, thirty-five tests. Part 1: the AI's audit](engineering-docs/blog/2026-11-13-thirteen-hours-thirty-five-tests.md) — Claude's unedited audit of its own pull request against stricter test standards: the ledger, what got worse, where the rules are wrong, and why LLMs wrote tests the other way; Part 2 to follow.
 - [Diagnosing a capsule from both sides](engineering-docs/blog/2026-10-28-diagnosing-a-capsule-from-both-sides.md) — probing a live browser desktop from outside and inside a nested PyCharm capsule, with embedded recording; draft for owner review.
 - [An AI takes our IDEs for a test drive](engineering-docs/blog/2026-10-04-an-ai-takes-intellij-for-a-test-drive.md) — shared AI graphical tests across IntelliJ, Rider and Eclipse, the .NET build, and three original recordings; draft for owner review.
 - [The workflow explains itself](engineering-docs/blog/2026-10-03-the-workflow-explains-itself.md) — preamble, information model, merge rule, and a bug filed against ourselves; draft for owner review.

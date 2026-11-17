@@ -7,9 +7,13 @@ project's own housekeeping are left out on purpose. The adopter notes for
 the final release, `notes.md`, are written from this file.
 
 RC2 is published. RC3 preparation on 2026-11-17 includes the merged fixes
-below; no rc3 tag exists yet. Presentations PR #43 remains unmerged.
+below; no rc3 tag exists yet. Presentations PR #43 is merged.
 
 ## New
+
+- **Presentation and recording tools for adopter agents.** The launcher packages
+  the authoring kit so agents in other repositories can create and export
+  narrated scenario presentations. Merged through PR #43.
 
 - **GitHub SSH through the host agent.** An authorized capsule can use GitHub
   SSH through a narrow host-side proxy without copying the host's private keys
