@@ -1,0 +1,5 @@
+who: Costin Cozianu
+branch: ws-maintenance/recursive-test-fixture
+slice: Repair explicit Docker socket group in two recursive dry-run test fixtures
+since: 2026-11-18T00:18:15+00:00
+expires: 2026-11-18T12:18:15+00:00
