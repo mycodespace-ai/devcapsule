@@ -112,9 +112,24 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
+      # Public checkout without persisting credentials: actions/checkout runs
+      # `git submodule foreach`, which fails fatally when `persist-credentials`
+      # is false because `website` is a raw gitlink with no .gitmodules entry.
+      - name: Check out the repository commit without persisting credentials
+        id: checkout-candidate
+        shell: bash
+        env:
+          REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}.git
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          git -c init.defaultBranch=main init -q .
+          if git remote get-url origin >/dev/null 2>&1; then
+            git remote set-url origin "$REPOSITORY_URL"
+          else
+            git remote add origin "$REPOSITORY_URL"
+          fi
+          git fetch --no-tags --depth=1 origin "$TARGET_SHA"
+          git checkout --detach --force FETCH_HEAD
       - name: Fetch the pinned website implementation
         id: fetch-website
         shell: bash
