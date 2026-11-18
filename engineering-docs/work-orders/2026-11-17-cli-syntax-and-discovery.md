@@ -2,7 +2,7 @@
 
 Date: 2026-11-17.
 Owner: maintenance, transferred from presentations by explicit product-owner direction on 2026-11-17.
-Status: RC4 scope implemented and reviewed in PR #52, with review PRs #53 and #54 merged into it; merged into `release-0.3.1` at `3a5aea22` on 2026-11-17. Documentation follow-up is in progress. All implementation choices are answered. Broader CLI changes remain scheduled after 0.3.1.
+Status: RC4 scope implemented and reviewed in PR #52, with review PRs #53 and #54 merged into it; merged into `release-0.3.1` at `3a5aea22` on 2026-11-17. Documentation follow-up is reviewed in PR #55, awaiting owner integration. All implementation choices are answered. Broader CLI changes remain scheduled after 0.3.1.
 Release scope: RC4 gets the help bug fix and presentations cleanup; broader CLI cleanup follows 0.3.1.
 The exact next release number remains undecided.
 
