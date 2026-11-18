@@ -80,7 +80,7 @@ At the start of the next session, the incoming agent or developer reads [`CURREN
 ### Not a fit, or not yet
 
 - You only need a shell for your agent. Its built-in sandbox may already
-  cover your needs. [Compare DevCapsule with other agent environments](engineering-docs/blog/2026-10-18-where-devcapsule-sits.md).
+  cover your needs. [Compare DevCapsule with other agent environments (November 2026)](engineering-docs/blog/2026-11-18-comparing-agent-environments.md).
 - Your isolation requirements call for a separate virtual machine. DevCapsule
   uses Docker containers.
 - On Apple Silicon, the [macOS launcher](docs/platforms/macos.md) is an
@@ -142,16 +142,11 @@ in a repository of your own.
 <!-- website:comparison -->
 ### But is it really needed?
 
-There are good alternatives, and for some people one of them is the better
-choice.
+If you already have an editor and just need a sandbox for shell commands,
+your agent’s built-in sandbox may be enough. DevCapsule is useful when you
+want the IDE and debugger to run inside Docker alongside the agent.
 
-- **An agent's built-in sandbox** can be enough if you want to restrict shell commands while keeping your current editor and toolchain.
-- **Docker Sandboxes** runs local agents in microVMs. Editors such as VS Code and Cursor can connect over SSH. [Docker editor integrations](https://docs.docker.com/ai/sandboxes/integrations/)
-- **JetBrains Air** lets you delegate tasks from an IntelliJ-based IDE using a local session, a temporary worktree or the cloud. The standalone Air app also offers a Docker mode. [JetBrains' guide to Air environments](https://support.jetbrains.com/hc/en-us/articles/40066588393746-How-to-run-an-agent-in-Docker-on-Air-plugin)
-
-Choose DevCapsule when you want the desktop IDE itself, its debugger and the
-agent to run together inside Docker. DevCapsule is open source and needs no
-DevCapsule account. [Read the October 2026 competitive comparison](engineering-docs/blog/2026-10-18-where-devcapsule-sits.md).
+[Read the November 2026 competitive comparison](engineering-docs/blog/2026-11-18-comparing-agent-environments.md).
 
 <!-- website:contribute -->
 ## Contribute
