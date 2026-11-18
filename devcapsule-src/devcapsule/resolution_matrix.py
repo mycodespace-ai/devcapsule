@@ -58,6 +58,7 @@ from devcapsule.configuration.capabilities import meets_minimum, requirement
 from devcapsule.platforms import Platform
 from devcapsule.components.catalog import COMPONENTS
 from devcapsule.components.playwright_pin import PIN as PLAYWRIGHT_PIN
+from devcapsule.components.xfce_terminal_pin import AMD64 as XFCE_TERMINAL_AMD64
 from devcapsule.components.eclipse_native_pin import PACKAGES as ECLIPSE_NATIVE_PACKAGES
 from devcapsule.components.linux_arm64_pins import COMPONENT_LOCK_TABLES as LINUX_ARM64_LOCK_TABLES
 from devcapsule.configuration.file_formats import (
@@ -82,7 +83,7 @@ class ResolutionError(ProjectConfigurationError):
     """
 
 
-_MATRIX_VERSION = "embedded-33"
+_MATRIX_VERSION = "embedded-34"
 
 
 # --------------------------------------------------------------------------
@@ -1478,6 +1479,7 @@ _LINUX_AMD64_MATRIX = ResolutionMatrix(
     components={
         "pycharm": (_PYCHARM_2026_2_0_1, _PYCHARM_2026_2_4),
         "intellij": (_INTELLIJ_2026_2_3, _INTELLIJ_2026_2_4),
+        "xfce4-terminal": (_ComponentPin("xfce4-terminal", "1.1.3", XFCE_TERMINAL_AMD64),),
         "eclipse": (_ECLIPSE_2026_09,),
         "rider": (_RIDER_2026_2_3_1, _RIDER_2026_2_4),
         "dotnet-sdk": (_DOTNET_SDK_10_0_401,),
@@ -1571,6 +1573,8 @@ _LINUX_AMD64_MATRIX = ResolutionMatrix(
             "interactive "
             "provider acceptance awaits the downloaded candidate",
         ),
+        _VerifiedEdge("xfce4-terminal", "1.1.3", _BASE_FAMILY_UBUNTU_24_04,
+                      "Noble recipe-11 terminal window, tab shells and session exit checked on linux-amd64."),
         _VerifiedEdge("eclipse", "2026-09-R", _BASE_FAMILY_UBUNTU_24_04,
                       "Codex/gpt-6-astra noVNC saved-edit smoke passed on v0.2.12-rc5; 2026-10-04 run 20261004T090121Z-ea0a5b; child Playwright browser, WebKitGTK and persistent home configuration verified"),
         _VerifiedEdge("dotnet-sdk", "10.0.401", _BASE_FAMILY_UBUNTU_24_04,
@@ -1736,6 +1740,7 @@ _LINUX_AMD64_MATRIX = ResolutionMatrix(
     capability_table={
         "python-ide": Capability(("pycharm",), ide=True),
         "java-ide": Capability(("intellij",), ide=True),
+        "xfce4-terminal": Capability(("xfce4-terminal",), ide=True),
         "eclipse-ide": Capability(("eclipse",), ide=True),
         "dotnet-ide": Capability(("rider",), ide=True),
         "frontend-ide": Capability(("codium", "vscode"), ide=True),
@@ -1755,6 +1760,7 @@ _LINUX_AMD64_MATRIX = ResolutionMatrix(
     # The materialization recipe follows the selected surface: each surface
     # family unpacks and fixes up its installation differently.
     materialization={
+        "xfce4-terminal": {"recipe": "xfce4-terminal-deb", "recipe-version": "1"},
         "eclipse": {"recipe": "eclipse-local-materialization", "recipe-version": "3"},
         "rider": {"recipe": "jetbrains-local-materialization", "recipe-version": "1"},
         "intellij": {"recipe": "jetbrains-local-materialization", "recipe-version": "1"},

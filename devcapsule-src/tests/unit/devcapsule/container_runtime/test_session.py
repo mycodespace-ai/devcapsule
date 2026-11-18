@@ -151,6 +151,20 @@ def test_launch_of_a_vscode_surface_is_its_command_alone(tmp_path: Path) -> None
     assert launch.files == {} and launch.environment == {}
 
 
+def test_terminal_launch_owns_its_window_in_the_checkout(tmp_path: Path) -> None:
+    """The session supervises a maximized independent terminal and preserves a checkout path with spaces."""
+    document = {
+        **vscode_document(tmp_path), "project_path": "/workspace/project with spaces",
+        "component": {"id": "xfce4-terminal", "adapter": "xfce4-terminal", "configuration": {}},
+        "state_slots": [],
+    }
+    session = session_of(document, image_without_console(tmp_path))
+    assert session.launch.command == (
+        "/usr/bin/xfce4-terminal", "--disable-server", "--maximize",
+        "--working-directory", "/workspace/project with spaces",
+    )
+
+
 def test_launch_of_an_eclipse_surface_is_the_command_its_adapter_plans(tmp_path: Path) -> None:
     """For an Eclipse component, ``launch`` is the command of the Eclipse adapter, with no file and no variable."""
     plan = RuntimePlan.for_component(

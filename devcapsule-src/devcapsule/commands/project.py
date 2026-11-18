@@ -368,7 +368,7 @@ class ProjectInitCommand(Command):
 
 def _add_owner_options(parser: argparse.ArgumentParser) -> None:
     """The options ``init`` and ``wrap`` share: the owner's own checkout, the project's identity, the matrix escape."""
-    parser.add_argument("--ide", metavar="IDE", help="Your IDE for this checkout: python-ide, frontend-ide, vscode-ide, java-ide, eclipse-ide or dotnet-ide; component names such as pycharm or vscode also work.")
+    parser.add_argument("--ide", metavar="IDE", help="Your IDE for this checkout: python-ide, frontend-ide, vscode-ide, java-ide, eclipse-ide, dotnet-ide or xfce4-terminal; component names such as pycharm or vscode also work.")
     parser.add_argument("--with", dest="capabilities", action="append", default=[], metavar="CAPABILITY",
                         help="Add a capability for your checkout. Repeatable.")
     parser.add_argument("--name", dest="project_name", help="Project display name.")
@@ -1704,7 +1704,7 @@ def _replace_selection(root: Path, selected: tuple[str, ...], without: tuple[str
 class ConfigIdeCommand(Command):
     name = "ide"
     capsule_access: ClassVar[CapsuleAccess] = CapsuleAccess.MUTATES
-    help = "Choose this checkout's IDE: python-ide, frontend-ide, vscode-ide, java-ide, eclipse-ide or dotnet-ide."
+    help = "Choose this checkout's IDE: python-ide, frontend-ide, vscode-ide, java-ide, eclipse-ide, dotnet-ide or xfce4-terminal."
 
     @classmethod
     def configure(cls, parser: argparse.ArgumentParser) -> None:
@@ -2123,7 +2123,7 @@ class ProjectRunCommand(Command):
 
     @classmethod
     def configure(cls, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("--ide", metavar="IDE", help="The IDE for this launch: python-ide, frontend-ide, vscode-ide, java-ide, eclipse-ide or dotnet-ide.")
+        parser.add_argument("--ide", metavar="IDE", help="The IDE for this launch: python-ide, frontend-ide, vscode-ide, java-ide, eclipse-ide, dotnet-ide or xfce4-terminal.")
         parser.add_argument("--with", dest="with_capabilities", action="append", default=[], metavar="CAPABILITY", help="Add a capability for this launch; repeatable.")
         parser.add_argument("--use", action="append", default=[], metavar="CAPABILITY=COMPONENT", help="Choose a provider for this launch; repeatable.")
         _retired_option(parser, "--agent", "devcapsule project run --with CAPABILITY")
