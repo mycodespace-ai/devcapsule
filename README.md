@@ -3,46 +3,53 @@
 [![Tests](https://github.com/mycodespace-ai/devcapsule/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/mycodespace-ai/devcapsule/actions/workflows/tests.yml)
 [![Coverage](https://raw.githubusercontent.com/mycodespace-ai/devcapsule/badges/coverage.svg)](https://github.com/mycodespace-ai/devcapsule/actions/workflows/tests.yml)
 
-<!-- website:social title="DevCapsule: let your coding agent work, keep your workstation yours" description="Run Claude Code, Codex, or Antigravity without approving every routine step. Share one persistent container with a full IDE on Linux or Windows via WSL2, while host files stay outside by default." -->
+<!-- website:social title="DevCapsule: your coding agent, IDE and tools in one container" description="Run your coding agent and desktop IDE in the same Docker workspace. Set a breakpoint in the code your agent just tested, with the same files and tools." -->
 
 <!-- website:hero -->
-## Let your coding agent work. Keep your workstation yours.
+## Your coding agent, your IDE and your tools in one container
 
-Run Claude Code, Codex, or Antigravity without approving every routine
-step. DevCapsule brings your agent, a full IDE, and your project's tools
-together in one persistent container on your own computer.
-**[Start here: open your first workspace](docs/getting-started/first-session.md)**
-on Linux x86-64; on Windows, [read the WSL2 notes first](docs/platforms/windows-wsl2.md).
+Your project brings its development environment with it. When a test fails,
+set a breakpoint in the code your agent just ran. PyCharm,
+IntelliJ IDEA, Rider, Eclipse, VS Code or VSCodium opens on the same project
+files, with the same compilers and test runners.
 
-Your host home directory, SSH keys, and desktop session stay outside by
-default. You decide what additional access to grant.
+The capsule runs on your own computer. It shares the project checkout.
+Your host home directory, SSH keys and desktop session stay outside by default.
+
+For a project configured with DevCapsule, clone the repository and run
+`devcapsule project run`. On your first launch, review the project's requests
+and choose any local settings it needs.
+
+**[Try the fifteen-minute walkthrough](docs/getting-started/first-session.md)**
+on Linux x86-64. You can try it without an AI account. On Windows, [read the WSL2 notes first](docs/platforms/windows-wsl2.md).
 
 **The environment your agent tests in is the one you debug in.**
 
 - PyCharm
 - IntelliJ IDEA
-- Eclipse
 - Rider
+- Eclipse
+- VS Code
 - VSCodium
 
 <!-- website:demo -->
-### Watch a real session inside a capsule
+### Watch a recorded IDE session
 
 [![Eclipse IDE in the Debug perspective inside a DevCapsule container, paused at a breakpoint in HelloTime.java with live Variables and Console output](engineering-docs/blog/assets/2026-10-21-eclipse-debug/eclipse-hello-time-debug-poster.png)](engineering-docs/blog/assets/2026-10-21-eclipse-debug/eclipse-hello-time-debug.webm)
 
-See a sample of a full graphical IDE running inside DevCapsule's isolated Docker container. More scenario illustrations coming soon.
+Eclipse inside a capsule, stopped at a breakpoint, recorded as it ran.
 
-To record an E2E scenario in your own project, ask your agent to run it with recording
-and presentation. `devcapsule presentations guide` provides the installed instructions;
-`devcapsule presentations export <new-directory>` supplies the Python/Playwright helpers.
-See the [agent recording guide](devcapsule-src/devcapsule/presentation_tools/README.md).
+Ask your agent to run a scenario from a Markdown file or describe the steps in
+plain English. It can record the session so you can replay it step by step in
+the capsule's web console. See the [agent recording guide](devcapsule-src/devcapsule/presentation_tools/README.md).
 
 <!-- website:benefits -->
-## Why switch to DevCapsule?
+## What you get
 
-- **Give agents room to work.** Run Claude Code, Codex, or the Antigravity CLI without approving every routine command, behind a container boundary where your host home directory stays outside by default and extra mounts are explicit opt-ins. [What the capsule can touch](docs/containment/the-boundary.md)
-- **Inspect and debug in the same environment.** Open PyCharm, IntelliJ IDEA, Eclipse, Rider, or VSCodium on the same workspace and toolchain the agent used—edit, run tests, inspect results, debug, or take over directly. [Your first session](docs/getting-started/first-session.md)
-- **Come back ready to continue.** Stop for an hour or a month. Persistent container state, IDE settings, agent sign-ins, and file-based [workstream records](docs/collaboration/working-in-workstreams.md) let you or the next agent resume without rebuilding context from chat history. [Sessions](docs/sessions/start-stop-reconnect.md)
+- **Let the agent run routine commands.** In a fresh managed setup, Claude Code, Codex and the Antigravity CLI can edit, build and test without asking you to approve each command. [What the capsule can touch](docs/containment/the-boundary.md)
+- **Debug what the agent ran.** Set a breakpoint in the failing test, in a full IDE, on the build the agent just made. [Run, debug and test](docs/everyday-development/run-debug-test.md)
+- **Choose what the project can reach.** Review requests for host access when you open the checkout. For GitHub pushes, an optional proxy can use your host credentials while your SSH key stays on your computer. [Granting and withdrawing access](docs/containment/granting-and-withdrawing.md)
+- **Keep your setup between sessions.** Your project files, IDE settings and plugins, and tools installed under `~/xtras` survive a container rebuild. [What persists](docs/sessions/what-persists.md)
 
 <!-- website:continuity -->
 ## Pick up where the last session stopped
@@ -61,55 +68,90 @@ At the start of the next session, the incoming agent or developer reads [`CURREN
 
 ### Good fit today
 
-- You develop on Linux x86-64, or on Windows through WSL2, with Docker and
-  Git already on your command line.
-- You run one or more coding agents on real projects and want them fast
-  without giving them your home directory.
+- You work on Linux x86-64, or on Windows through WSL2, with Docker and Git
+  installed.
+- You use a JetBrains IDE, Eclipse or VS Code, and want to use the debugger
+  on code your agent has changed.
+- You run agents on real projects and want to leave them alone without
+  handing them your home directory.
 - You like knowing exactly what a tool can touch, and you would rather read
   a bug record than guess.
 
-### Not yet
+### Not a fit, or not yet
 
-- macOS: the executable is Linux-only and a port has not been started.
-- ARM: not covered by this release.
+- You only need a shell for your agent. Its built-in sandbox may already
+  cover your needs.
+- Your isolation requirements call for a separate virtual machine. DevCapsule
+  uses Docker containers.
+- On Apple Silicon, the [macOS launcher](docs/platforms/macos.md) is an
+  experimental source build for Docker Desktop.
 - A polished experience: this is pre-V1. Expect edges, and expect every edge
   to have a file.
 
 <!-- website:dogfood -->
-DevCapsule is developed inside DevCapsule, by one person and several agents,
-and the journal is the transcript. **We DO eat our own dog food.**
+DevCapsule is built inside DevCapsule, by one person and several agents, and
+the journal is the record of it. **We DO eat our own dog food.**
 
 <!-- website:why -->
 ## Why DevCapsule?
 
-A coding agent is most useful when it can edit files, run tests, and invoke project tools without stopping for permission at every command—and when you can step into that exact same environment with a full IDE whenever judgment, debugging, or inspection is needed.
+Before leaving an agent to work, you want to know what it can reach. When
+you come back, you want to inspect what it did. DevCapsule lets you do both
+in one workspace.
 
-### 1. Give agents room to work without risking your host
+### 1. You choose what the agent can reach
 
-DevCapsule runs major coding agents (Claude Code, Codex, and the Antigravity CLI) inside an isolated container workspace. Let them edit files, run test suites, and use project tools at full speed without approving every routine step.
+The agent can write to your project checkout and the capsule's own persistent
+directories. Your host home, SSH keys and browser profiles stay outside by
+default. You can use Git to review changes to tracked files.
 
-**Why is that safe?** Only your project checkout is mounted by default. Your host `$HOME`, SSH keys, browser profiles, and desktop session stay outside the capsule unless you explicitly grant access—and you can withdraw extra access when it is no longer needed. If an agent makes a mess of the workspace, Git is right there to inspect or revert it.
+A project can request additional access such as host networking, the Docker
+socket or development `sudo`. You review those requests for your own checkout
+and can withdraw a grant later.
 
-### 2. Inspect and debug in the same environment
+### 2. You check the work with real tools
 
-Terminal output and diffs are not always enough. When a test fails or a design needs closer inspection, you should not have to reproduce the container's toolchain on your host laptop first.
+Open the failing test in the capsule IDE, rerun it with the debugger and
+inspect the variables at the breakpoint. The IDE uses the same files,
+compilers and runtimes as the agent.
 
-Inside the same capsule, open a full IDE—PyCharm, IntelliJ IDEA, Eclipse, Rider, or VSCodium—sharing the exact files, compilers, runtimes, and test runners your agent just used. Set breakpoints, inspect variables, review diffs, or write code directly with zero per-project setup drift.
+The IDE, its plugins and its language servers run inside the capsule too.
+They use the same mounts and access grants as the agent.
 
-### 3. Come back ready to continue—and keep the fun
+### 3. The work is still there next time
 
-Switch tasks, change agents, or put a project aside for weeks—then return with both your container state (IDE layout, plugins, agent sign-ins, installed tools) and your engineering context preserved in versioned repository files.
+The capsule keeps IDE settings and plugins in persistent directories.
+Tools you install under `~/xtras` survive too. Packages added to the container filesystem disappear when it is removed.
+The project keeps a different kind of history. Its status, decisions and next
+step are written to files in the repository, where you or another agent can
+pick up the work.
 
-Your AI helps with the minutiae: running checks, tracking requirements, recording design decisions, and keeping the next step explicit. You keep the judgment; AI helps with the bookkeeping.
+### 4. The setup page becomes a file
 
-**Less environment friction. More satisfaction in what you build.**
+Many projects, open-source ones especially, carry a long document on how to
+set up a development environment: which JDK, which Python, which IDE
+plugins, which order. It goes stale, and every newcomer pays for it again.
+
+A DevCapsule project commits its requirements in `.devcapsule/devcapsule.toml`
+and pins the environment in a platform lock. A new contributor can clone the
+project and run `devcapsule project run`, then review the checkout's settings
+and choose an IDE when the project leaves that choice open. For an upstream
+project without a manifest, `devcapsule project wrap` keeps the configuration
+in a repository of your own.
 
 <!-- website:comparison -->
 ### But is it really needed?
 
-Others solve parts of this; we tried them and found they fell a bit short of
-our expectations. We’re building the combination we want—and using
-DevCapsule to build DevCapsule. [See the detailed comparison](engineering-docs/design-notes/devcapsule/competitive-comparison.md).
+There are good alternatives, and for some people one of them is the better
+choice.
+
+- **An agent's built-in sandbox** can be enough if you want to restrict shell commands while keeping your current editor and toolchain.
+- **Docker Sandboxes** runs local agents in microVMs. Editors such as VS Code and Cursor can connect over SSH. [Docker editor integrations](https://docs.docker.com/ai/sandboxes/integrations/)
+- **JetBrains Air** lets you delegate tasks from an IntelliJ-based IDE using a local session, a temporary worktree or the cloud. The standalone Air app also offers a Docker mode. [JetBrains' guide to Air environments](https://support.jetbrains.com/hc/en-us/articles/40066588393746-How-to-run-an-agent-in-Docker-on-Air-plugin)
+
+Choose DevCapsule when you want the desktop IDE itself, its debugger and the
+agent to run together inside Docker. DevCapsule is open source and needs no
+DevCapsule account. [See the detailed comparison](engineering-docs/design-notes/devcapsule/competitive-comparison.md).
 
 <!-- website:contribute -->
 ## Contribute
