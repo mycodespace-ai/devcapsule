@@ -1,3 +1,5 @@
+"""Recursive preparation against real filesystem staging and Unix socket ownership."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -18,12 +20,13 @@ from devcapsule.recursive_dogfood import (
     recursive_e2e_launch_environment,
     require_recursive_e2e_project,
 )
+from devcapsule.recursive_host import HostContextError, HostDaemonLaunchContext, RecursiveStagingArea
 from devcapsule.recursive_orchestrator import (
     RecursiveE2EError,
     prepare_recursive_e2e_dry_run,
 )
 
-pytestmark = pytest.mark.legacy
+pytestmark = pytest.mark.integration
 
 
 @dataclass
@@ -115,6 +118,7 @@ def environment(fixture: RecursiveFixture) -> dict[str, str]:
 
 
 def test_recursive_project_identity_uses_packaging_metadata(tmp_path: Path) -> None:
+    """Only DevCapsule metadata identifies the checkout, including from its source directory."""
     project = tmp_path / "project"
     distribution_root = project / "devcapsule-src"
     distribution_root.mkdir(parents=True)
@@ -132,6 +136,7 @@ def test_recursive_project_identity_uses_packaging_metadata(tmp_path: Path) -> N
 def test_normal_project_launch_derives_only_a_downgradable_readiness_marker(
     recursive_fixture: RecursiveFixture,
 ) -> None:
+    """Readiness requires this checkout, host Docker access and no explicit opt-out."""
     enabled = recursive_e2e_launch_environment(
         recursive_fixture.project,
         docker_daemon="host-socket",
@@ -157,6 +162,7 @@ def test_normal_project_launch_derives_only_a_downgradable_readiness_marker(
 def test_public_dry_run_is_unique_redacted_and_cleans_owned_staging(
     recursive_fixture: RecursiveFixture,
 ) -> None:
+    """Independent preparations redact host paths and remove their owned staging directories."""
     first = prepare_recursive_e2e_dry_run(
         recursive_fixture.report,
         checkout=recursive_fixture.project,
@@ -186,10 +192,11 @@ def test_public_dry_run_is_unique_redacted_and_cleans_owned_staging(
 def test_public_dry_run_cleans_after_preparation_failure(
     recursive_fixture: RecursiveFixture,
 ) -> None:
+    """An oversized Xauthority file fails preparation and removes the owned workspace."""
     recursive_fixture.xauthority.write_bytes(b"x" * (1024 * 1024 + 1))
     run_id = "d" * 32
 
-    with pytest.raises(RecursiveE2EError, match="preparation failed"):
+    with pytest.raises(RecursiveE2EError, match="Xauthority material exceeds the 1 MiB staging limit"):
         prepare_recursive_e2e_dry_run(
             recursive_fixture.report,
             checkout=recursive_fixture.project,
@@ -210,10 +217,11 @@ def test_public_dry_run_cleans_after_preparation_failure(
 def test_keep_on_failure_preserves_only_the_owned_run(
     recursive_fixture: RecursiveFixture,
 ) -> None:
+    """An oversized Xauthority file preserves the named workspace only when requested."""
     recursive_fixture.xauthority.write_bytes(b"x" * (1024 * 1024 + 1))
     run_id = "e" * 32
 
-    with pytest.raises(RecursiveE2EError, match="preserved owned workspace") as failure:
+    with pytest.raises(RecursiveE2EError, match="Xauthority material exceeds the 1 MiB staging limit.*preserved owned workspace") as failure:
         prepare_recursive_e2e_dry_run(
             recursive_fixture.report,
             checkout=recursive_fixture.project,
@@ -270,3 +278,50 @@ def test_contained_display_dry_run_forwards_no_host_x11(
     assert "xauthority" not in result.staged_launch.by_name()
     assert not [bind for bind in result.bind_mounts if bind.destination == "/tmp/.X11-unix"]
     assert result.cleanup_complete is True
+
+
+def staging_context(fixture: RecursiveFixture) -> HostDaemonLaunchContext:
+    return HostDaemonLaunchContext.for_recursive_dogfood(
+        fixture.report,
+        persistent_home=fixture.home,
+        project=fixture.project,
+        runtime_plan=fixture.runtime_plan,
+        docker_socket=fixture.docker_socket,
+        x11_socket_directory=None,
+        xauthority=None,
+        state_paths=(),
+    )
+
+
+@pytest.mark.parametrize("docker_gid", [0, 998, 1000])
+def test_staged_groups_accept_zero_without_duplicate_entries(
+    recursive_fixture: RecursiveFixture, docker_gid: int,
+) -> None:
+    """Zero, distinct and primary Docker groups grant membership with one entry per GID."""
+    fixture = recursive_fixture
+    plan = RuntimePlan.from_file(fixture.runtime_plan)
+    with RecursiveStagingArea(staging_context(fixture), "f" * 32) as staging:
+        staging.prepare_launch_files(
+            plan, xauthority=None, host_docker_gid=docker_gid, shadow_last_change=21000,
+        )
+        rows = [line.split(":") for line in (staging.staging_root / "group").read_text().splitlines()]
+        gids = [int(row[2]) for row in rows]
+        assert len(gids) == len(set(gids))
+        group = next(row for row in rows if int(row[2]) == docker_gid)
+        if docker_gid != plan.identity.gid:
+            assert plan.identity.user in group[3].split(",")
+        assert next(row for row in rows if row[0] == "root")[2] == "0"
+
+
+@pytest.mark.parametrize("docker_gid", [-1, True, 1.5])
+def test_staging_rejects_invalid_docker_group(
+    recursive_fixture: RecursiveFixture, docker_gid: int,
+) -> None:
+    """Accepting group zero does not admit negative, boolean or fractional group IDs."""
+    fixture = recursive_fixture
+    with RecursiveStagingArea(staging_context(fixture), "f" * 32) as staging:
+        with pytest.raises(HostContextError, match="host Docker group ID must be a non-negative integer"):
+            staging.prepare_launch_files(
+                RuntimePlan.from_file(fixture.runtime_plan),
+                xauthority=None, host_docker_gid=docker_gid, shadow_last_change=21000,
+            )

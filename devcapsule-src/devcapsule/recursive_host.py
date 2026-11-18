@@ -442,7 +442,10 @@ class RecursiveStagingArea:
         user = _account_name(identity.user, "runtime user")
         if identity.uid <= 0 or identity.gid <= 0:
             raise HostContextError("recursive successor identity must be unprivileged")
-        _positive_id(host_docker_gid, "host Docker group ID")
+        # A rootless daemon maps its host user's group to 0 in the capsule;
+        # Docker Desktop can also expose a group-0 socket. Both are valid.
+        if isinstance(host_docker_gid, bool) or not isinstance(host_docker_gid, int) or host_docker_gid < 0:
+            raise HostContextError("host Docker group ID must be a non-negative integer")
         if sudo_gid is not None:
             _positive_id(sudo_gid, "development-sudo group ID")
 
@@ -477,8 +480,9 @@ class RecursiveStagingArea:
             )
         )
 
-        groups = ["root:x:0:", f"{user}:x:{identity.gid}:"]
-        if host_docker_gid != identity.gid:
+        root_members = user if host_docker_gid == 0 else ""
+        groups = [f"root:x:0:{root_members}", f"{user}:x:{identity.gid}:"]
+        if host_docker_gid not in (0, identity.gid):
             groups.append(f"host-docker:x:{host_docker_gid}:{user}")
         if sudo_gid is not None:
             groups.append(f"ide-sudo:x:{sudo_gid}:{user}")
