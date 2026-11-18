@@ -87,8 +87,8 @@ The component is separate from personal tools in `/opt/xtras`: its source and
 platform dependencies travel in the project lock and are acquired on each
 developer's host. The final image contains `/opt/graphviz`; its build headers,
 package-manager changes and source stay in the isolated build stage.
-An architecture without recorded rendering acceptance requires the existing
-`--unverified` option and records that limitation in its lock.
+Both Linux amd64 and arm64 capsule platforms have recorded build and rendering
+acceptance. Linux arm64 capsules launched from macOS use the same component.
 
 ### Other capability edits
 

@@ -1,5 +1,5 @@
 {
-  "checked-at": "2026-11-18T00:07:15.974706+00:00",
+  "checked-at": "2026-11-18T00:27:11.533240+00:00",
   "platform": "linux-amd64",
   "base": "docker.io/mycodespaceai/devcapsule-base@sha256:d7047ced8556cd35964fcc058a1101cf2b5b202f7a5daa2fdd434dcda5ed82c9",
   "graphviz": "16.1.1",
@@ -21,7 +21,7 @@
     {
       "engine": "dot",
       "format": "pdf",
-      "bytes": 6497
+      "bytes": 6499
     },
     {
       "engine": "neato",
@@ -33,5 +33,7 @@
       "format": "svg",
       "bytes": 1461
     }
-  ]
+  ],
+  "workflow-run": "https://github.com/mycodespace-ai/devcapsule/actions/runs/44207529778",
+  "source-revision": "9b94f6c10e6db2fabc90efc53d60f8282e224e2d"
 }

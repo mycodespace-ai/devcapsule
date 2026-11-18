@@ -222,7 +222,7 @@ def test_generated_lock_passes_the_real_loaders(tmp_path: Path) -> None:
 def test_graphviz_is_an_additive_catalog_capability_on_both_platforms() -> None:
     """Both shipped matrices offer Graphviz alongside an independently selected IDE."""
     for platform, matrix in MATRICES.items():
-        formation = matrix.resolve(["frontend-ide", "graphviz"], allow_unverified=True)
+        formation = matrix.resolve(["frontend-ide", "graphviz"])
         lock = tomllib.loads(formation.render_lock())
         assert lock["platform"] == platform.value
         assert lock["components"]["interactive-surface"] == "codium"

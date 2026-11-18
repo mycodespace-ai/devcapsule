@@ -10,8 +10,15 @@ RC3 was published on 2026-11-17 at `918f9fc7`; downloaded assets are verified.
 It includes the merged SSH proxy and initial presentations support.
 The recording-kit, link-command and runtime-help changes below merged after RC3, through
 PRs #50–#52, for the next candidate; they are not in the RC3 executable.
+Graphviz is also added after RC3 through PR #56 for the next candidate.
 
 ## New
+
+- **Graphviz diagrams.** Require or offer the `graphviz` capability to supply
+  Graphviz 16.1.1 under `/opt/graphviz`, independently of the selected IDE.
+  Its pinned source and platform dependencies build offline; `dot`, `neato`,
+  `sfdp` and the other packaged tools are on PATH. SVG, PNG and PDF output are
+  included. See [Graphviz setup](../../../docs/configuration/capabilities.md#graphviz-diagrams).
 
 - **Recorded scenarios with an agent.** `devcapsule bootstrap project` and
   `devcapsule project wrap` install the complete versioned recording kit in

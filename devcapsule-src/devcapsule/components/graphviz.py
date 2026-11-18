@@ -78,7 +78,7 @@ class GraphvizComponent(ComponentDefinition):
             result.append(LockedArtifactDeclaration(
                 self.id, str(metadata["version"]), str(item["url"]), str(item["sha256"]),
                 f"{PREFIX}/.build/{filename}", artifact_format="file", permissions=0o644,
-                environment=(("PATH", f"{PREFIX}/bin:${{PATH}}"),),
+                environment=((("PATH", f"{PREFIX}/bin:${{PATH}}"),) if name == "source" else ()),
             ))
         return tuple(result)
 

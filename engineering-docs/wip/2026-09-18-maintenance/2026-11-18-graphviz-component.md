@@ -7,8 +7,10 @@ Requirements: R-TOOLS-001, R-PRODUCT-001, R-CONFIG-001, R-UPGRADE-001.
 The owner requested Graphviz as a component available to projects everywhere,
 then selected `maintenance-031` on 2026-11-17. The local Conda installation
 from the earlier misunderstanding does not deliver this requirement.
-`ws-maintenance/graphviz-031` starts from release `7ad956d4`; its delivery target
-is `release-0.3.1`. The concurrent CLI pair owns its own branch and review.
+`ws-maintenance/graphviz-031` starts from release `7ad956d4` and merges release
+`3a5aea22` (CLI PR52) and `5fcd1684` (documentation PR55). Its delivery target
+is `release-0.3.1` through [PR56](https://github.com/mycodespace-ai/devcapsule/pull/56).
+The concurrent recursive-test fixture pair owns its own branch and review.
 
 ## Implementation
 
@@ -46,30 +48,38 @@ inputs; catalog snapshots and real loader checks moved to integration.
 ## Validation
 
 - Offline amd64 source build on the exact pinned recipe-11 base passed.
-  [Machine-readable report](evidence/graphviz-0.3.1/linux-amd64.json).
+  [Machine-readable amd64 report](evidence/graphviz-0.3.1/linux-amd64.json).
   Its final image renders DOT to SVG, PNG and PDF as uid/gid 1000:1000,
   plus `neato` and `sfdp` to SVG, without a mounted personal installation.
   `/opt/graphviz/.build` is absent.
 - New component/discovery/grouped-copy checks and the existing materialization
   tests pass. The moved catalog and loader integration tests pass: 24 cases.
   Real CLI require/offer initialization passes: two cases on the native host.
-- The pre-synchronization full gate passes: 3,376 unit tests, two expected
-  failures, 474 web-console tests, types, conventions, CLI/PEX smoke and
+- The full gate on the combined release tree passes: 3,417 unit tests, 474
+  web-console tests, types (368 files), conventions, CLI/PEX smoke and the
   documentation contract. Test conventions report 97 remaining legacy files,
-  1,277 legacy tests and zero breaches.
+  1,277 legacy tests and zero breaches. The built PEX also initializes an
+  isolated project requiring Graphviz without an experimental flag.
 - Live Graphviz discovery reports 16.1.1 available with no newer candidate.
-- `.github/workflows/graphviz-component.yml` builds and renders on native
-  amd64 and arm64 runners. Native arm64 evidence is pending; the matrix does
-  not yet claim that platform verified for Graphviz.
+- Native amd64 and arm64 build/render jobs pass in
+  [Actions run 44207529778](https://github.com/mycodespace-ai/devcapsule/actions/runs/44207529778)
+  on source `9b94f6c1`. The [arm64 report](evidence/graphviz-0.3.1/linux-arm64.json)
+  names its exact base, source checksum, non-root identity and all five renders.
+  Both matrices now admit Graphviz without `--unverified`. Hosted Python and
+  website checks passed in run `44207529935`.
+- PATH is contributed once per component, so composing Graphviz with agent
+  components does not repeat its prefix for every build dependency.
 
 ## Remaining delivery
 
-Merge the newly advanced release tip carrying CLI PR52, validate that combined
-tree and open the feature PR into `release-0.3.1`. Record native arm64 CI
-evidence before adding its verified matrix edge. The human merges the feature
-PR. Main propagation, candidate production and downloaded-candidate acceptance
+PR56 targets `release-0.3.1`; the human merges. Final-head CI is rechecked after
+recording the native arm64 edge. No scope or implementation choice is pending.
+Main propagation, candidate production and downloaded-candidate acceptance
 remain release-driver work; this component validation is not candidate acceptance.
 
-The checkout's original configuration is preserved in the named stash and
-`.git/graphviz-031-preservation.json`; the website branch and commit are retained.
-No transcript, tokened decision URL or capsule decision JSON belongs in Git.
+The owner's original configuration remains preserved by the named stash and
+`.git/graphviz-031-preservation.json`, outside feature commits. Its original
+bytes are restored after source delivery. The website branch and commit are
+retained. The mistaken local Conda installation and only its own command links
+were removed after the scope correction; its explicit package export remains
+available for recovery. No personal installation was used by native CI.

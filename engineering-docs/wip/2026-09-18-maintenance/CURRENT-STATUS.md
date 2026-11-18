@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-18; Graphviz PR56 for 0.3.1 on ws-maintenance/graphviz-031, native arm64 evidence pending; concurrent recursive-test fixture repair remains separate.
+State: active 2026-11-18; Graphviz PR56 ready for owner review into release-0.3.1, with native amd64/arm64 validation; concurrent recursive-test fixture work remains active.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -17,44 +17,53 @@ Branch association: `ws-maintenance/graphviz-031`, Graphviz PR56 synchronized wi
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
 
-## Graphviz component for 0.3.1 — 2026-11-17
+## Graphviz component delivered in PR56 — 2026-11-18
 
 Requirements: R-TOOLS-001, R-PRODUCT-001, R-CONFIG-001, R-UPGRADE-001.
 
-The owner clarified that Graphviz is a selectable component for all capsules,
-then chose `maintenance-031` in chat. This explicitly authorizes the workstream
-switch and adds the feature to the 0.3.1 cycle. Created
-`ws-maintenance/graphviz-031` from fetched release `7ad956d4`, independently of
-the active CLI branch. Main's workflow differs only in its development-version
-stamp; retain the release baseline and do not merge main into the release.
-The existing next step was final acceptance after the CLI/presentation slice;
-this owner-selected component is an additional release slice.
+The owner selected `maintenance-031` after clarifying that Graphviz must be a
+selectable component for all capsules. [PR56](https://github.com/mycodespace-ai/devcapsule/pull/56)
+targets `release-0.3.1` from `ws-maintenance/graphviz-031`. This branch starts
+at release `7ad956d4` and merges CLI PR52 (`3a5aea22`) and documentation PR55
+(`5fcd1684`). Only overlapping records needed mechanical reconciliation; the
+release's CLI/doc history and Graphviz's record were both retained. No main
+merge into a release branch, workflow refresh, tag or publication occurred.
 
-Graphviz 16.1.1 is built from checksum-verified upstream source on both capsule
-platforms, using pinned offline Ubuntu build dependencies. The new trusted
-component build recipe exports only `/opt/graphviz`. Update discovery reports
-stable upstream source releases; it never changes a lock or installation.
-Implementation and local validation are complete. The full build gate passes: 3,376 unit tests, 474 console tests, types, conventions, CLI/PEX smoke and documentation. Real CLI require/offer initialization passes on the native platform; the matrix/catalog integration cases pass for both platforms. The final offline amd64 image renders SVG, PNG and PDF as uid/gid 1000:1000, with neato and sfdp also exercised. GTS is explicitly pinned for default sfdp triangulation. Native arm64 rendering acceptance is still pending in the new two-platform CI workflow. No release tag or publication is authorized by this work.
+Graphviz 16.1.1 is built offline from checksum-pinned upstream source and Ubuntu
+build dependencies, exporting `/opt/graphviz` and its command PATH. GTS supplies
+default sfdp triangulation; required runtime libraries and licenses are exported,
+build inputs and package-manager changes are not. The matrix is embedded-34.
+The freshness backend has a stable-release probe. Native amd64 and arm64
+build/render CI passes in Actions run `44207529778`, with durable reports in
+`evidence/graphviz-0.3.1/`. Both platforms are admitted without --unverified.
 
-The prior checkout's two local `.devcapsule` files are preserved in the stash
-named `graphviz-031-preserve-project-config`; recovery refs and file hashes are
-in `.git/graphviz-031-preservation.json`. They remain outside feature commits.
-The website remains on its original styling branch and commit, unmodified.
-The local Graphviz Conda installation is not the component implementation.
+The final local full gate passes: 3,417 unit tests, 474 console tests, types
+(368 files), conventions (97 remaining legacy files, 1,277 legacy tests, zero
+breaches), CLI/PEX smoke and documentation. Twenty-six focused integration
+cases pass; the built PEX initializes a project requiring Graphviz. The required
+legacy matrix-test retirement separates synthetic decisions from catalog/file
+integration checks. Final-head hosted checks are verified before handoff.
 
-Coordination limitation: the tool stores one claim per workstream even when
-separate checkouts handle independent maintenance slices. This claim explicitly
-names the concurrent CLI pair so its work is not mistaken for abandoned work.
-The CLI pair retains its delivery and review tasks; this branch owns Graphviz.
-No maintenance mail was waiting at session start. The existing workflow
-manifest/definition version mismatch is retained; no configuration refresh is
-part of this feature.
+Planned next step in this checkout: owner review and merge of PR56 into the
+release, then release-driver propagation to main and candidate acceptance.
+No product choice or implementation work remains for this component. This does
+not waive the remaining 0.3.1 gates or conclude maintenance. The concurrent
+pair's `ws-maintenance/recursive-test-fixture` work remains separate.
 
-Synchronized with release `5fcd1684` carrying CLI PR52 and documentation PR55. The merge resolves record-only overlap by retaining the release's CLI history and this Graphviz section. Planned next step: validate the combined tree and deliver a PR into release-0.3.1 for the owner's merge. Record native arm64 CI rendering before claiming that platform verified. Preserve the concurrent CLI documentation work and the release driver's final acceptance obligations.
+The original two user configuration files are preserved in stash
+`graphviz-031-preserve-project-config`, with hashes and refs in
+`.git/graphviz-031-preservation.json`, outside source commits. Their original
+bytes are restored after source delivery. The website's original branch and
+commit remain untouched. The mistaken local Graphviz Conda install and its
+37 own command links were removed; neither was used for component validation.
+The routing choice is recorded here and in R-TOOLS-001, so its capsule decision
+page was retired. No transcript or tokened URL is retained in Git.
 
+Coordination: the tool stores one claim per workstream; the concurrent pair's
+current fixture claim must not be cleared by this checkout. Live publication
+preserves the other pair's status along with this component handoff. This
+limitation is handed to workflow-improvements without changing its code.
 
-
-CLI documentation PR55 is merged. The concurrent pair now claims `ws-maintenance/recursive-test-fixture` for two explicit Docker socket-group fixtures. Graphviz does not resume or replace that work.
 
 ## CLI documentation follow-up — 2026-11-18
 

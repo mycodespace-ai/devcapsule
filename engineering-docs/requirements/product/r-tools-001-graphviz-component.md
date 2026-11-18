@@ -3,7 +3,7 @@ id: R-TOOLS-001
 title: Graphviz as a selectable capsule component
 type: requirement
 kind: concrete-requirement
-status: accepted
+status: repo-validated
 priority: gating
 target: 0.3.1
 source_of_truth: repo

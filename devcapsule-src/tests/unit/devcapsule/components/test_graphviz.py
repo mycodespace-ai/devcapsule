@@ -33,7 +33,7 @@ def test_artifacts_preserve_pins_and_keep_build_inputs_under_the_component(platf
         (x["url"], x["sha256"]) for x in metadata["artifacts"].values()
     }
     assert all(x.artifact_format == "file" for x in declarations)
-    assert all(("PATH", "/opt/graphviz/bin:${PATH}") in x.environment for x in declarations)
+    assert [entry for x in declarations for entry in x.environment] == [("PATH", "/opt/graphviz/bin:${PATH}")]
 
 
 @pytest.mark.parametrize("field,value", [

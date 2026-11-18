@@ -1848,6 +1848,12 @@ _LINUX_ARM64_MATRIX = ResolutionMatrix(
         for component, pins in _LINUX_AMD64_MATRIX._components.items()
     },
     edges=(
+        _VerifiedEdge(
+            "graphviz", "16.1.1", _BASE_FAMILY_UBUNTU_24_04,
+            "native arm64 offline source build and uid/gid 1000:1000 dot SVG/PNG/PDF, "
+            "neato SVG and sfdp SVG rendering passed on the pinned recipe-11 base, "
+            "2026-11-18; GitHub Actions run 44207529778; durable report in maintenance evidence",
+        ),
         # Native IDE smokes on Apple Silicon (Docker Desktop 29.3.1) against
         # the arm64 recipe-11 base above, run on the local image before its
         # push. They establish the IDE only: Playwright and the .NET SDK rode

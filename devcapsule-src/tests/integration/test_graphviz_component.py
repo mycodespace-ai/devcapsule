@@ -24,7 +24,7 @@ def test_a_project_can_declare_graphviz_on_its_native_capsule_platform(
     project.mkdir()
     platform = Platform.current()
     expected = tomllib.loads(MATRICES[platform].resolve(
-        ["frontend-ide", "graphviz"], allow_unverified=True,
+        ["frontend-ide", "graphviz"],
     ).render_lock())
     environment = {"PATH": os.defpath, "HOME": str(tmp_path / "home"),
                    "DEVCAPSULE_CONFIG_HOME": str(tmp_path / "configuration")}
@@ -36,7 +36,7 @@ def test_a_project_can_declare_graphviz_on_its_native_capsule_platform(
     result = subprocess.run(
         [sys.executable, "-m", "devcapsule", "project", "--path", str(project), "init",
          "--creator", "https://example.test/graphviz", "--ide", "frontend-ide",
-         declaration, "graphviz", "--platform", platform.value, "--unverified",
+         declaration, "graphviz", "--platform", platform.value,
          "--authorize", "base-image", expected["base"]["reference"]],
         env=environment, cwd=project, text=True, capture_output=True, timeout=30,
     )
