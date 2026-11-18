@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-18; owner-requested documentation audit after PR52 merged into release-0.3.1. Broader CLI implementation remains after 0.3.1.
+State: paused 2026-11-18; CLI documentation audit delivered in PR55 to release-0.3.1; Antigravity accepted bab6ec85 without edits. Owner merge remains. Broader CLI implementation remains after 0.3.1.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -18,26 +18,39 @@ Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
 ## CLI documentation follow-up — 2026-11-18
 
-The owner merged PR52 at `3a5aea22`, verified by SSH fetch and GitHub state,
-and requested a documentation audit. Work continues in maintenance on
-`ws-maintenance/cli-docs`, forked from that release revision. Main synchronization
-waits: workflow rules are identical, only the development-version stamp differs.
-This follows the existing RC4 release-baseline exception. Mail and intake are empty.
-The claim covers docs and Antigravity Pair Review. Preserve both user configuration edits.
+[PR55](https://github.com/mycodespace-ai/devcapsule/pull/55) aligns current guides
+with the RC4 CLI merged through PR52 at `3a5aea22`, verified by SSH fetch.
+It covers the CLI reference, console links, installed recording kits and migration,
+bootstrap/wrapper guides and specification, and upcoming release changelog.
+Contributor examples now use current configuration, memory, IDE and Docker-argument
+commands. Current project/home grammar remains; the broader migration is after 0.3.1.
+No production source or tests changed. Both user `.devcapsule` edits are preserved.
 
-The audit compares current guides with merged command adapters and help.
-It repairs the fixed-help warning, missing recording-kit and content-link guidance,
-retired contributor examples, bootstrap specification, and upcoming release changelog.
-Historical candidate evidence and other workstreams' records remain historical.
-The public project/home grammar still applies; proposed post-0.3.1 commands are not available.
+Antigravity `gemini-4-hydrogen` accepted `bab6ec85` without edits or a round.
+No empty review PR was opened. The implementor posted the assessment on PR55.
+The exact model was confirmed in the streaming init event; the detached run exited 0.
+Its independent gate repeated 3412 passes and the same three local fixture failures;
+its docs contract was skipped because the website checkout is absent.
+The existing [bootstrap help mismatch](../../bugs/devcapsule/2026-11-18-bootstrap-help-wrong-default-project.md)
+is recorded for maintenance. No documentation finding remains outstanding.
 
-Validation before review: 93 visible help pages passed outside a project/capsule,
-with no scratch writes. Docs contract passed 249 pages. Website build passed
-253 HTML pages and 20,978 local links/assets/anchors. Required build passed
-version, syntax, types and conventions, then repeated the three known fixture
-failures: 3412 passed, 1 skipped, 227 deselected, 1 xfailed, 1 xpassed.
-Separate remaining gate phases and focused integration are running.
-No product source or tests changed. No release acceptance is claimed.
+Implementor validation: 93 visible help pages outside a project/capsule, with no
+scratch writes; 51 shell blocks parse. Docs contract: 249 pages. Website build:
+253 HTML pages and 20,978 local links/assets/anchors passed. Full build passed
+version, syntax, mypy (362 files) and conventions. Unit result: 3412 passed,
+3 known fixture failures, 1 skipped, 227 deselected, 1 xfailed, 1 xpassed.
+Failures are mount-backed scratch in unmountable-staging and two gid-zero
+recursive fixtures. No full-gate pass is claimed. Separate smoke, PEX,
+docs-contract and webconsole passed (474 console tests, types over 9 files).
+Focused CLI integration: 32 passed. No native discovery/playback or release
+acceptance is established. Hosted source-commit website and Python jobs pass;
+reverify final-head checks before merge. Final pre-push unit validation repeats
+the same counts and failures; final docs contract and website build pass.
+
+Synchronization remains deferred for this RC4 follow-up: main's workflow rules
+are identical, only its development-version stamp differs. The slice stays on
+`ws-maintenance/cli-docs` from release `3a5aea22`; no release ref was synchronized.
+Mail and intake are empty at handoff. Publish the pause and release the claim.
 
 ## RC4 CLI cleanup ready for owner integration — 2026-11-17
 
@@ -4922,10 +4935,11 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Finish the current CLI documentation audit, validate the examples and docs contract,
-and deliver a documentation PR to `release-0.3.1` with Antigravity `gemini-4-hydrogen`
-Pair Review. PR52's merge is verified at `3a5aea22`. No release tag is authorized.
-The broader CLI mapping remains after 0.3.1 under the existing work order.
+Verify final hosted checks and the owner's PR55 merge into `release-0.3.1`.
+Resume candidate and main propagation from the release overview when directed.
+No release tag is authorized. After 0.3.1, synchronize with main and implement
+the broader CLI work order, including the recorded bootstrap-help correction.
+No product choice remains pending for the adopted syntax.
 
 Current, 2026-11-17: rc3 publication and download verification are complete.
 Resume final 0.3.1 acceptance from the release overview: host project-config
@@ -5779,15 +5793,13 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-Current CLI slice: PR52 contains the completed RC4 scope; reviews PR53 and
-PR54 are merged into it. Await the owner's release merge and reverify hosted
-checks before integration. The broader syntax implementation is deliberately
-left for after 0.3.1, following the work order's release split; it is not complete.
-All choices are adopted: prefix-only `--project`, retained global/instance verbs,
-Files-only paths with explicit current-console URLs for other content viewers.
-No reviewer proposal or product questionnaire remains unresolved. Preserve the
-user's two `.devcapsule` edits. Scratch logs are reproducible; raw answers,
-transcripts and tokened links are deliberately not preserved in Git.
+Awaiting the owner: merge PR55 after final hosted checks. PR52 is already merged
+into release at `3a5aea22`; release-to-main propagation and acceptance remain.
+Antigravity accepted the documentation without edits. The bootstrap help default
+mismatch is a filed maintenance bug; no documentation review finding is unresolved.
+The broader CLI refactor remains after 0.3.1, with all prior product choices adopted.
+Preserve both user `.devcapsule` edits. Scratch logs and site output are reproducible;
+raw decision answers, transcripts and tokened links are deliberately outside Git.
 
 
 Owner returned this checkout to maintenance on 2026-11-17, explicitly requesting
