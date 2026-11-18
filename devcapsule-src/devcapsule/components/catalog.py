@@ -10,6 +10,7 @@ from devcapsule.components.claude_code import DEFINITION as CLAUDE_CODE
 from devcapsule.components.codex import DEFINITION as CODEX
 from devcapsule.components.codium import DEFINITION as CODIUM
 from devcapsule.components.dotnet_sdk import DEFINITION as DOTNET_SDK
+from devcapsule.components.graphviz import DEFINITION as GRAPHVIZ
 from devcapsule.components.rider import DEFINITION as RIDER
 from devcapsule.components.intellij import DEFINITION as INTELLIJ
 from devcapsule.components.eclipse import DEFINITION as ECLIPSE
@@ -48,6 +49,7 @@ COMPONENTS: dict[str, ComponentDefinition] = {
     POSTGRESQL_CLIENT.id: POSTGRESQL_CLIENT,
     PLAYWRIGHT.id: PLAYWRIGHT,
     DOTNET_SDK.id: DOTNET_SDK,
+    GRAPHVIZ.id: GRAPHVIZ,
 }
 
 

@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: paused 2026-11-17 at owner direction to switch to presentations for the recorded-E2E skill targeting rc4. Rc3 publication and download verification are complete; final 0.3.1 acceptance remains.
+State: active 2026-11-17; Graphviz component for 0.3.1 on ws-maintenance/graphviz-031 in this checkout; the concurrent CLI pair continues independently on ws-maintenance/cli-syntax.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -12,9 +12,258 @@ Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `ws-maintenance/graphviz-031` from release `7ad956d4`, owner-selected Graphviz component for 0.3.1;  `ws-maintenance/cli-syntax`, created from presentations handoff db9721dd, carrying final CLI decisions af0d3616; `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+
+## Graphviz component for 0.3.1 — 2026-11-17
+
+Requirements: R-TOOLS-001, R-PRODUCT-001, R-CONFIG-001, R-UPGRADE-001.
+
+The owner clarified that Graphviz is a selectable component for all capsules,
+then chose `maintenance-031` in chat. This explicitly authorizes the workstream
+switch and adds the feature to the 0.3.1 cycle. Created
+`ws-maintenance/graphviz-031` from fetched release `7ad956d4`, independently of
+the active CLI branch. Main's workflow differs only in its development-version
+stamp; retain the release baseline and do not merge main into the release.
+The existing next step was final acceptance after the CLI/presentation slice;
+this owner-selected component is an additional release slice.
+
+Graphviz 16.1.1 is built from checksum-verified upstream source on both capsule
+platforms, using pinned offline Ubuntu build dependencies. The new trusted
+component build recipe exports only `/opt/graphviz`. Update discovery reports
+stable upstream source releases; it never changes a lock or installation.
+Implementation and local validation are complete. The full build gate passes: 3,376 unit tests, 474 console tests, types, conventions, CLI/PEX smoke and documentation. Real CLI require/offer initialization passes on the native platform; the matrix/catalog integration cases pass for both platforms. The final offline amd64 image renders SVG, PNG and PDF as uid/gid 1000:1000, with neato and sfdp also exercised. GTS is explicitly pinned for default sfdp triangulation. Native arm64 rendering acceptance is still pending in the new two-platform CI workflow. No release tag or publication is authorized by this work.
+
+The prior checkout's two local `.devcapsule` files are preserved in the stash
+named `graphviz-031-preserve-project-config`; recovery refs and file hashes are
+in `.git/graphviz-031-preservation.json`. They remain outside feature commits.
+The website remains on its original styling branch and commit, unmodified.
+The local Graphviz Conda installation is not the component implementation.
+
+Coordination limitation: the tool stores one claim per workstream even when
+separate checkouts handle independent maintenance slices. This claim explicitly
+names the concurrent CLI pair so its work is not mistaken for abandoned work.
+The CLI pair retains its delivery and review tasks; this branch owns Graphviz.
+No maintenance mail was waiting at session start. The existing workflow
+manifest/definition version mismatch is retained; no configuration refresh is
+part of this feature.
+
+Planned next step in this checkout: merge the newly advanced release tip (CLI PR52), validate the combined tree, and deliver a PR into release-0.3.1 for the owner's merge. Record native arm64 CI rendering before claiming that platform verified. Preserve the concurrent CLI documentation work and the release driver's final acceptance obligations.
+
+
+## RC4 CLI cleanup ready for owner integration — 2026-11-17
+
+[PR52](https://github.com/mycodespace-ai/devcapsule/pull/52) completes the work
+order's RC4 help and presentation cleanup. It fixes dependency-check help,
+installs the complete versioned recording kit, removes the public presentations
+commands without aliases, and adds `instance --get-link PATH-OR-URL` using the
+current capsule's existing Files/Records/Presentations routes. Paths always use
+Files; URLs explicitly select a viewer on the current console origin. Installed
+instructions and current guides use local resources and explain manual migration
+of older customized skills. No serving/routing or other domain behavior changed.
+
+Antigravity `gemini-4-hydrogen` reviewed both portions. Initial review PR53 merged
+at `ec38720d`. Final RC4 review [PR54](https://github.com/mycodespace-ai/devcapsule/pull/54)
+was accepted at `7e95e2d5` after one revision round and merged at `40ae058b`.
+The implementor [assessed the final diff](https://github.com/mycodespace-ai/devcapsule/pull/54#issuecomment-6964288424).
+It adds formatter coverage and defensive root normalization; the round corrects
+explicit port 0 versus omitted/default port equality. Eight regressions failed
+before the correction and pass afterward; explicit default 80/443 equivalence
+is retained. No unimplemented reviewer proposal remains. The first RC4 invocation
+could not read stdin; the same session resumed using the committed brief's path.
+All invocations reported the selected model and exited 0.
+
+On the merged tree, version/syntax, types (362 files) and conventions pass.
+Full gate: 3412 unit passes, 1 skipped, 227 deselected, 2 xfailed and the same
+three known environment failures: mount-backed scratch in unmountable-staging
+and two Docker gid-zero fixtures. No full-gate pass is claimed. Final focused
+integration passes all 32 cases. Separate PEX build/smoke, CLI smoke, docs contract
+(249 pages) and web console (474 tests, types over 9 files) pass. Built-executable
+probes verify Files-only paths, explicit Records URLs, external-origin refusal,
+help/discovery and all four removed presentation paths.
+The full integration suite before the narrow port correction passed 191 tests
+with 13 skips; reviewer focused checks after it passed 36 formatter and 32 CLI
+integration cases. Reviewer docs-contract was skipped for its uninitialized
+website; the implementor independently checked 249 pages. Hosted checks on
+`45c133dd` passed; the merge head's checks remain to be reverified.
+
+The owner merges PR52 into `release-0.3.1`. No release tag, image, container,
+recording or native agent-discovery acceptance was produced. Mail is empty.
+Preserve the user's two `.devcapsule` edits. Decision outcomes are recorded in
+the work order; raw answers and tokened links remain outside Git. Publish the
+pause and release the claim after committing this record.
+
+## CLI choices answered and RC4 resumed — 2026-11-17
+
+Owner answers at 23:19:31 UTC select prefix-only `--project`, retained global
+and instance verbs, and Files-only filesystem links. Current-console URLs can
+select existing content viewers. Recorded in the work order and implementation
+boundary. No product choice remains pending for this implementation. Preserve
+the RC4/post-0.3.1 release split; the owner emphasized CLI rewiring, not new
+serving behavior. PR52 is still open, with all applicable hosted checks passing.
+Retain the release baseline: main's workflow difference is only its version stamp.
+Mail is empty and the implementation claim is renewed.
+
+RC4 implementation removes the presentations group, adds current-capsule
+`instance --get-link` formatting existing content routes, and migrates installed
+instructions and current guides. The new module is the only production Python
+addition; no domain/console-serving behavior changes. The pre-review full build
+passes version/syntax, types over 362 files and conventions, then records 3376
+unit passes and the same three environment failures. Focused integration initially
+passed 28 cases; additional origin checks and the full packaging/integration suite
+are running. The committed RC4 brief starts a second bounded review cycle of the
+still-open PR52. Review PR54 at `fe0d2563` adds helper normalization and 24
+formatter unit cases; reviewer has 3400 unit passes, 32 focused integration
+passes, 191 integration passes/13 skips and 474 console passes. The implementor
+requested round 1 for exact origin-port comparison: explicit port 0 must not
+be treated as omitted. Reviewer docs-contract was skipped; implementor verified
+249 pages. All applicable hosted checks on `45c133dd` pass. This keeps the complete RC4 delivery in one implementation PR
+rather than duplicating its pending release merge.
+
+## CLI initial slice reviewed — 2026-11-17
+
+[PR53](https://github.com/mycodespace-ai/devcapsule/pull/53) was accepted at
+`d0f2e8bb` after one correction round and merged into the implementation branch
+at `ec38720d`. Antigravity's launch and continuation both reported the requested
+`gemini-4-hydrogen`, used the same conversation, streamed events and exited 0.
+The reviewer fixed partial installations with sibling staging and rejects blank
+version provenance. Round 1 reverted the unrelated symlink-root behavior change
+and added an actual child-process EFBIG regression: it failed with direct writes
+and passed with staging. No unimplemented review proposal remains; the original
+syntax/link decisions remain pending.
+
+The implementor read the final three-file diff and posted the
+[acceptance assessment](https://github.com/mycodespace-ai/devcapsule/pull/53#issuecomment-6963537095).
+[PR52](https://github.com/mycodespace-ai/devcapsule/pull/52) targets `release-0.3.1`
+and contains only the initial help/kit slice. Only the owner merges that PR.
+Presentation command removal, instruction migration and general links are still
+unfinished; the broader syntax changes belong after 0.3.1.
+
+Post-merge validation on `ec38720d`: version/syntax, mypy (361 files) and test
+conventions pass; 3376 unit tests pass, with 1 skipped, 202 deselected, 1 xfailed,
+1 xpassed and the same three environment-dependent legacy failures (two Docker
+gid-zero fixtures and mount-backed scratch in the unmountable-staging fixture).
+All four focused CLI integration tests pass. Separate `smoke`, `pex`,
+`docs-contract` (249 pages) and `webconsole` (474 tests, types over 9 files) sessions
+pass. The built `devcapsule-local.pex` prints both help forms outside a project
+without project writes and installs byte-identical packaged helpers, instructions
+and 0.3.1 provenance in both skill locations. Hosted Python validation on the
+review merge is still running at this checkpoint. No full-gate pass or release
+acceptance is claimed; native agent discovery and running-console playback are
+not established by these checks.
+
+Preserve the user's two `.devcapsule` edits. No image, capsule or release tag was
+created. Mail was empty; release the claim and publish this pause. The capsule
+decision document remains pending; tokened
+links and scratch logs are deliberately not preserved in Git.
+
+## CLI review round 1 — 2026-11-17
+
+Antigravity `gemini-4-hydrogen` completed its first review with exit 0 and opened
+[PR53](https://github.com/mycodespace-ai/devcapsule/pull/53) at `5f6017c2`.
+It stages helper installation, rejects blank provenance, and changes symlinked
+root behavior. Reviewer checks: 32 focused unit and 3 integration passes; full
+gate stopped with 3377 unit passes and the same three local fixture failures.
+The implementor read the diff and requested round 1: retain staging and blank
+version validation, revert the unrelated symlink-root behavior change, and add
+an actual write-failure regression for staging. No review merge yet. Briefs are
+kept in `evidence/2026-11-17-cli-syntax/`. Three syntax choices remain pending.
+
+## CLI Pair Review resumed — 2026-11-17
+
+The owner replaced Claude with Antigravity `gemini-4-hydrogen`. The exact model
+launched successfully with the repository's prescribed permission mode and
+reported `gemini-4-hydrogen` in its streaming init event. No launch exception is
+needed. The old Claude launch question is superseded, not a remaining blocker.
+
+[PR #52](https://github.com/mycodespace-ai/devcapsule/pull/52) is a draft against
+`release-0.3.1`. Its pre-PR unit session repeated the same 3374 passes and three
+local environment-dependent failures. The review brief is committed under
+`evidence/2026-11-17-cli-syntax/review-brief.md`.
+
+The three grammar/link choices in `cli-syntax-implementation` remain pending.
+Review the independent initial slice now: safe dependency-check help and complete
+kit installation. Its implementation PR targets `release-0.3.1` for RC4; the human
+merges. Other work-order commands and instruction migration remain unfinished.
+Fetched main and release have the same workflow rules; main differs only by the
+version stamp. Retain the release baseline for this slice. Mail is empty and a
+fresh claim names Antigravity. The reviewer has its own worktree and virtualenv at
+`/home/devcapsule/worktrees/maintenance-review` on `ws-maintenance/cli-syntax-review`.
+Use writable home scratch because `/opt` is read-only. No container is launched.
+
+## CLI implementation start — 2026-11-17
+
+The owner requested implementation with Pair Review by Claude Fable 5.2.
+[Implementation boundary and command inventory](2026-11-17-cli-syntax-implementation.md)
+record the release split and pending syntax choices. The first bounded edits add
+complete recording-kit installation and stop `pycharm check-runtime --help` from
+running diagnostics. They are not a completed implementation slice.
+
+Synchronization: canonical upstream/main is `0baf70bd`; the rules differ only
+in the version stamp and WORKFLOW-LOCAL is identical. Retain the owner-selected
+release baseline for the RC4 slice; synchronize the later broader slice with main.
+The local manifest still declares workflow `0.2.14.dev0` while WORKFLOW.md says
+`0.3.1`; this pre-existing mismatch is reported, not silently repaired. Both
+pre-existing `.devcapsule` edits are user state and excluded from our commits.
+The canonical coordination remote is `upstream`; an initial command using its
+`origin` default read stale pre-move records. All subsequent coordination commands
+explicitly select upstream. Mail is empty and a claim was made before editing.
+
+Claude's ordinary invocation now succeeds and reports `claude-fable-5-2`.
+The prescribed permission-bypass flag still refuses uid 0. A read-only launch
+exception was requested from the owner, as WORKFLOW-LOCAL requires. No review
+has run and no review acceptance is claimed. GitHub authentication passed.
+
+Validation: 29 focused authoring unit tests and 3 real-process CLI integration
+tests passed. The required full build, with `DEVCAPSULE_DIFF_BASE=upstream/main`,
+passed version, syntax, types (361 files) and conventions, then stopped with
+3374 passing unit tests and 3 failures: the two previously recorded gid-0
+recursive-orchestrator fixtures and `test_unmountable_staging_fails_loudly`,
+whose mount-backed home scratch does not satisfy its unmountable precondition.
+No affected product code appears in those failures. No full-gate pass is claimed;
+packaging and console checks were not reached. The separate docs contract passed
+for 249 pages. An initial build used the tool's stale origin/main default and
+reported two unrelated conventions breaches; using the canonical base cleared
+those. No tests or guards were waived.
+
+No PR or independent review exists yet. The recording-kit instruction migration,
+command removals, instance links, and all broader syntax work remain pending.
+The accepted public vocabulary is unchanged by this preliminary save point.
+
+The focused authoring tests pass: 29. The configured `/opt/devcapsule-gate`
+directory is absent and `/opt` is read-only; the permitted alternate scratch is
+`/home/devcapsule/skill-validation/pytest-cli-syntax`. Initial attempts with the
+missing scratch failed at fixture setup, before exercising product code.
+
+## CLI work-order handoff — 2026-11-17
+
+The owner requested a maintenance branch from the current presentations checkout.
+Created `ws-maintenance/cli-syntax` from `db9721dd`, which preserves final decisions
+in `af0d3616` and pauses presentations. The reviewed
+[CLI work order](../../work-orders/2026-11-17-cli-syntax-and-discovery.md)
+now belongs to maintenance. No source, version or implementation behavior changed.
+The prior author reread and Claude Fable 5.2 assessment remain its review evidence.
+
+Synchronization judgment: preserve the requested branch baseline for this handoff.
+Compared with main `0baf70bd`, the workflow differs only in its release-version
+stamp; the local workflow is identical. Reassess synchronization and the target
+branch before an implementation slice. Do not merge main into a release branch.
+RC4 gets the help bug fix and presentations cleanup; broader CLI cleanup remains
+for the first release after 0.3.1, whose version has not been selected.
+
+Acknowledged the three presentations handoff notices received in `52154b3f`.
+PR #50 and #51 are merged into release (through `7ad956d4`); automatic setup
+supersedes the earlier manual/direct-install guidance. Release propagation,
+candidate validation and RC4 tagging remain maintenance tasks. No tag is cut
+by this branch setup. Native agent discovery remains unverified. The work order
+records the subsequent decision to install the full helper kit and remove the
+standalone presentations commands; that implementation is still pending.
+
+Validation is limited to branch ancestry, unchanged source, whitespace and the
+documentation contract for this records-only handoff. The prior full gate's two
+inherited gid-0 failures remain disclosed; no new full-gate success is claimed.
 
 ## RC3 publication — 2026-11-17
 
@@ -4687,6 +4936,14 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
+Verify PR52's final hosted checks and the owner's merge into `release-0.3.1`.
+Continue RC4/release acceptance from the release overview when directed. After
+0.3.1, synchronize the workstream branch with main and implement the broader CLI
+mapping, prefix selector, global/instance verbs, detailed reports, advanced help,
+consumer migration and unused PyCharm removal under a separate implementation
+PR and Antigravity Pair Review. The owner has not selected the next release number
+or authorized a release tag. No syntax/link choice remains pending.
+
 Current, 2026-11-17: rc3 publication and download verification are complete.
 Resume final 0.3.1 acceptance from the release overview: host project-config
 refresh, all-component freshness sweep, outstanding scope rulings, candidate
@@ -5539,9 +5796,23 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-Owner switched this checkout to presentations on 2026-11-17 to implement the
-recorded-E2E skill and deliver its PR to release-0.3.1 for rc4. Maintenance
-resumes the release cycle after that handoff; no rc4 tag is cut by this switch.
+Current CLI slice: PR52 contains the completed RC4 scope; reviews PR53 and
+PR54 are merged into it. Await the owner's release merge and reverify hosted
+checks before integration. The broader syntax implementation is deliberately
+left for after 0.3.1, following the work order's release split; it is not complete.
+All choices are adopted: prefix-only `--project`, retained global/instance verbs,
+Files-only paths with explicit current-console URLs for other content viewers.
+No reviewer proposal or product questionnaire remains unresolved. Preserve the
+user's two `.devcapsule` edits. Scratch logs are reproducible; raw answers,
+transcripts and tokened links are deliberately not preserved in Git.
+
+
+Owner returned this checkout to maintenance on 2026-11-17, explicitly requesting
+`ws-maintenance/cli-syntax` from the presentations branch. The work order and all
+final decisions are preserved. No questionnaire remains pending; no CLI code
+has changed. The three presentations notices are acknowledged, with automatic
+setup superseding older installation guidance. RC4 and final acceptance remain
+pending; no tag or release operation is implied by the branch setup.
 
 Current, 2026-11-17 (supersedes stale release/PR claims below): rc3 is published
 and download-verified; PRs #43, #48 and #49 are merged. The preservation exception was
@@ -6091,6 +6362,16 @@ Earlier open-thread history (read against the current scope above):
   release documents and bug records.
 
 ## Workstream Document Index
+
+- [Graphviz component implementation and validation](2026-11-18-graphviz-component.md): R-TOOLS-001, source-build design, pinned dependencies and per-platform rendering evidence.
+
+
+- [RC4 presentation rewiring review brief](evidence/2026-11-17-cli-syntax/rc4-review-brief.md) and [round 1](evidence/2026-11-17-cli-syntax/rc4-round-1.md).
+- [PR52.1 Antigravity review brief](evidence/2026-11-17-cli-syntax/review-brief.md) and [round 1](evidence/2026-11-17-cli-syntax/round-1.md).
+
+- [CLI implementation boundary and inventory](2026-11-17-cli-syntax-implementation.md).
+
+- [CLI syntax and discovery work order](../../work-orders/2026-11-17-cli-syntax-and-discovery.md): owner-transferred cleanup, with completed author and Claude review linked from the order.
 
 - [PR #16 Pair Review brief (PR16.1)](evidence/2026-11-08-webconsole-delivery/review-brief.md), [D-0017](../../decisions/product/d-0017-launcher-delivers-web-console-package.md), and [0.3.1rc1 web console delivery bug](../../bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md): launcher-delivered web console slice (`ws-maintenance/webconsole-delivery`, stacked on PR #18).
 

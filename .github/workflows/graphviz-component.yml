@@ -1,0 +1,70 @@
+name: Graphviz component
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - devcapsule-src/devcapsule/components/graphviz*.py
+      - devcapsule-src/devcapsule/components/interface.py
+      - devcapsule-src/devcapsule/components/catalog.py
+      - devcapsule-src/devcapsule/materialization.py
+      - devcapsule-src/devcapsule/resolution_matrix.py
+      - devcapsule-src/devcapsule/images/build.py
+      - devcapsule-src/scripts/graphviz-component-smoke.py
+      - .github/workflows/graphviz-component.yml
+  push:
+    branches: [main, release-0.3.1]
+    paths:
+      - devcapsule-src/devcapsule/components/graphviz*.py
+      - devcapsule-src/devcapsule/components/interface.py
+      - devcapsule-src/devcapsule/components/catalog.py
+      - devcapsule-src/devcapsule/materialization.py
+      - devcapsule-src/devcapsule/resolution_matrix.py
+      - devcapsule-src/devcapsule/images/build.py
+      - devcapsule-src/scripts/graphviz-component-smoke.py
+      - .github/workflows/graphviz-component.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: graphviz-component-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    name: Graphviz ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-amd64
+            runner: ubuntu-24.04
+          - platform: linux-arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install the source CLI's dependencies
+        run: |
+          python -m pip install -r devcapsule-src/requirements.txt
+          python -m pip install -e devcapsule-src --no-deps
+      - uses: actions/cache@v4
+        with:
+          path: .cache/graphviz
+          key: graphviz-${{ matrix.platform }}-${{ hashFiles('devcapsule-src/devcapsule/components/graphviz_pin.py') }}
+      - name: Build offline and render in the native capsule platform
+        run: >-
+          python devcapsule-src/scripts/graphviz-component-smoke.py
+          --platform ${{ matrix.platform }}
+          --cache .cache/graphviz
+          --report graphviz-${{ matrix.platform }}.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: graphviz-${{ matrix.platform }}
+          path: graphviz-${{ matrix.platform }}.json
+          if-no-files-found: error

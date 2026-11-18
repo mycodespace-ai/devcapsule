@@ -1,0 +1,37 @@
+{
+  "checked-at": "2026-11-18T00:07:15.974706+00:00",
+  "platform": "linux-amd64",
+  "base": "docker.io/mycodespaceai/devcapsule-base@sha256:d7047ced8556cd35964fcc058a1101cf2b5b202f7a5daa2fdd434dcda5ed82c9",
+  "graphviz": "16.1.1",
+  "identity": "dot - graphviz version 16.1.1 (20261108.1752)",
+  "source-sha256": "42806c79271e286028b9422c7016b0368ad86beb381aa46d1d8c720f69ce3fc7",
+  "offline-build": true,
+  "runtime-user": "1000:1000",
+  "renders": [
+    {
+      "engine": "dot",
+      "format": "svg",
+      "bytes": 1454
+    },
+    {
+      "engine": "dot",
+      "format": "png",
+      "bytes": 4167
+    },
+    {
+      "engine": "dot",
+      "format": "pdf",
+      "bytes": 6497
+    },
+    {
+      "engine": "neato",
+      "format": "svg",
+      "bytes": 1499
+    },
+    {
+      "engine": "sfdp",
+      "format": "svg",
+      "bytes": 1461
+    }
+  ]
+}

@@ -10,8 +10,39 @@ from unittest.mock import patch
 import pytest
 
 from devcapsule.compat import CliError
-from devcapsule.images.build import BuildxImageBuilder, DirectoryComponent, ImageBuildSpec
+from devcapsule.images.build import (
+    BuildxImageBuilder, DirectoryComponent, FileComponent, FileGroupComponent,
+    ImageBuildSpec, render_build_context,
+)
 from devcapsule.platforms import Platform
+
+
+def test_grouped_inputs_copy_in_one_layer_and_keep_their_permissions(tmp_path: Path) -> None:
+    """Many build inputs stage in one copy, preserving contents and explicit modes."""
+    source = tmp_path / "source"
+    source.write_bytes(b"verified artifact")
+    spec = ImageBuildSpec("result:test", "base:test", (FileGroupComponent((
+        FileComponent(source, "/opt/tool/.build/source.tar.gz", 0o644),
+        FileComponent(source, "/opt/tool/.build/dependency.deb", 0o600),
+    )),))
+    context = tmp_path / "context"
+    rendered = render_build_context(spec.build_plan(), context)
+    dockerfile = rendered.dockerfile.read_text()
+    assert dockerfile.count("COPY ") == 1
+    tree = context / "file-group-0/opt/tool/.build"
+    assert (tree / "source.tar.gz").read_bytes() == (tree / "dependency.deb").read_bytes() == b"verified artifact"
+    assert (tree / "source.tar.gz").stat().st_mode & 0o777 == 0o644
+    assert (tree / "dependency.deb").stat().st_mode & 0o777 == 0o600
+
+
+@pytest.mark.parametrize("destination", ["/../escape", "/"])
+def test_grouped_inputs_refuse_destinations_outside_the_staged_tree(tmp_path: Path, destination: str) -> None:
+    """A grouped file cannot escape its build-context directory or overwrite its root."""
+    source = tmp_path / "source"
+    source.write_bytes(b"input")
+    spec = ImageBuildSpec("result:test", "base:test", (FileGroupComponent((FileComponent(source, destination),)),))
+    with pytest.raises(CliError, match="Invalid or repeated"):
+        render_build_context(spec.build_plan(), tmp_path / "context")
 
 
 def test_buildx_builder_reuses_one_context_root_and_attaches_named_contexts(tmp_path: Path) -> None:

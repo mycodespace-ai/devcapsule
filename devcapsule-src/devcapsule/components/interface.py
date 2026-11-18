@@ -63,6 +63,18 @@ class AcquisitionContract:
 
 
 @dataclass(frozen=True)
+class ComponentBuildRecipe:
+    """Trusted offline installation commands and the paths exported from their build stage.
+
+    Inputs are checksum-pinned artifacts. Build-only sources and dependencies
+    remain in the isolated contribution stage, outside the exported paths.
+    """
+
+    commands: tuple[tuple[str, ...], ...]
+    exports: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class LockedArtifactDeclaration:
     """One lock-pinned artifact contribution to a local environment image.
 
@@ -133,6 +145,14 @@ class ComponentDefinition(ABC):
     def required_components(self) -> tuple[str, ...]:
         """Other catalog components required for this component to function."""
         return ()
+
+    def build_recipe(self, version: str, platform: str) -> ComponentBuildRecipe | None:
+        """Optional trusted offline build after this component's artifacts are copied.
+
+        The recipe runs in this component's contribution stage. Only its
+        explicit exports enter the final environment image.
+        """
+        return None
 
     def acquisition(self) -> AcquisitionContract | None:
         """The vendor acquisition this component requires, if any.

@@ -38,7 +38,7 @@ def test_browser_contribution_installs_only_verified_wheels_offline(tmp_path: Pa
     artifacts = PLAYWRIGHT.locked_artifacts(PIN, "linux-amd64")
     assert len(artifacts) == 7
     assert all(len(item.sha256) == 64 for item in artifacts)
-    contributions = _ancillary_contributions(tuple((tmp_path / str(i), item) for i, item in enumerate(artifacts)), ())
+    contributions = _ancillary_contributions(tuple((tmp_path / str(i), item) for i, item in enumerate(artifacts)), (), platform="linux-amd64")
     assert contributions[0].exports == ("/opt/playwright",)
     text = repr(contributions)
     assert "--no-index --no-deps" in text
