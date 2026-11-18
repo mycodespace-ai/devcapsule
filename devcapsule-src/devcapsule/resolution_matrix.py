@@ -1482,7 +1482,8 @@ _LINUX_AMD64_MATRIX = ResolutionMatrix(
         "eclipse": (_ECLIPSE_2026_09,),
         "rider": (_RIDER_2026_2_3_1, _RIDER_2026_2_4),
         "dotnet-sdk": (_DOTNET_SDK_10_0_401,),
-        "graphviz": (_ComponentPin("graphviz", "16.1.1", GRAPHVIZ_PINS["linux-amd64"]),),
+        "graphviz": (_ComponentPin("graphviz", str(GRAPHVIZ_PINS["linux-amd64"]["version"]),
+                                   GRAPHVIZ_PINS["linux-amd64"]),),
         "playwright": (_ComponentPin("playwright", str(PLAYWRIGHT_PIN["version"]), PLAYWRIGHT_PIN),),
         "codium": (_CODIUM_1_126_04524, _CODIUM_1_143_17232),
         "vscode": (_VSCODE_1_143_1, _VSCODE_1_144_0),
@@ -1827,7 +1828,11 @@ def _on_linux_arm64(pin: _ComponentPin) -> _ComponentPin:
     version added without one fails here rather than at a user's launch.
     """
 
-    table = (GRAPHVIZ_PINS["linux-arm64"] if pin.component_id == "graphviz"
+    # Graphviz keeps both platforms' tables in one reviewed pin file. Match the
+    # version as the shared tables do, so that a later amd64 version cannot
+    # silently carry this version's arm64 artifacts.
+    graphviz = GRAPHVIZ_PINS["linux-arm64"]
+    table = (graphviz if (pin.component_id, pin.version) == ("graphviz", graphviz["version"])
              else LINUX_ARM64_LOCK_TABLES.get((pin.component_id, pin.version)))
     if table is None and pin.lock_table.get("delivery-policy") == "base-image":
         return pin

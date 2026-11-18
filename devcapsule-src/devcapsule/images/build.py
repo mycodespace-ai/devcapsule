@@ -384,8 +384,8 @@ def _render_stage(
         copy_index += 1
 
     for group_index, group in enumerate(plan.file_groups):
-        name = f"{prefix}file-group-{group_index}"
-        root = context_root / name
+        group_name = f"{prefix}file-group-{group_index}"
+        root = context_root / group_name
         root.mkdir()
         seen: set[str] = set()
         for item in group:
@@ -398,7 +398,13 @@ def _render_stage(
             shutil.copy2(item.source, target)
             if item.permissions is not None:
                 target.chmod(item.permissions)
-        dockerfile_lines.append(f"COPY {name}/ /")
+        # COPY creates each missing image directory with the mode it has in
+        # the context, and a contribution export carries that mode into the
+        # final image. Fix the mode here so the launching user's umask never
+        # decides whether the capsule user can enter an exported directory.
+        for directory in (root, *(path for path in root.rglob("*") if path.is_dir())):
+            directory.chmod(0o755)
+        dockerfile_lines.append(f"COPY {group_name}/ /")
 
     for copy in plan.image_copies:
         source = normalize_container_path(copy.source)
