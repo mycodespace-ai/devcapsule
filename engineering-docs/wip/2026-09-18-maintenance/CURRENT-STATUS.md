@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: paused 2026-11-18; CLI documentation audit delivered in PR55 to release-0.3.1; Antigravity accepted bab6ec85 without edits. Owner merge remains. Broader CLI implementation remains after 0.3.1.
+State: paused 2026-11-18; recursive dry-run fix PR57 is accepted by Antigravity and ready for owner merge into release-0.3.1. Concurrent Graphviz PR56 remains ready for owner merge.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -12,9 +12,105 @@ Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `ws-maintenance/cli-docs`, documentation follow-up from release `3a5aea22`; `ws-maintenance/cli-syntax`, created from presentations handoff db9721dd, carrying final CLI decisions af0d3616; `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `ws-maintenance/graphviz-031`, Graphviz PR56 synchronized with release `5fcd1684`;  `ws-maintenance/recursive-test-fixture`, from release `5fcd1684`; `ws-maintenance/cli-docs`, documentation follow-up from release `3a5aea22`; `ws-maintenance/cli-syntax`, created from presentations handoff db9721dd, carrying final CLI decisions af0d3616; `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
+
+
+## Graphviz component delivered in PR56 — 2026-11-18
+
+Requirements: R-TOOLS-001, R-PRODUCT-001, R-CONFIG-001, R-UPGRADE-001.
+
+The owner selected `maintenance-031` after clarifying that Graphviz must be a
+selectable component for all capsules. [PR56](https://github.com/mycodespace-ai/devcapsule/pull/56)
+targets `release-0.3.1` from `ws-maintenance/graphviz-031`. This branch starts
+at release `7ad956d4` and merges CLI PR52 (`3a5aea22`) and documentation PR55
+(`5fcd1684`). Only overlapping records needed mechanical reconciliation; the
+release's CLI/doc history and Graphviz's record were both retained. No main
+merge into a release branch, workflow refresh, tag or publication occurred.
+
+Graphviz 16.1.1 is built offline from checksum-pinned upstream source and Ubuntu
+build dependencies, exporting `/opt/graphviz` and its command PATH. GTS supplies
+default sfdp triangulation; required runtime libraries and licenses are exported,
+build inputs and package-manager changes are not. The matrix is embedded-34.
+The freshness backend has a stable-release probe. Native amd64 and arm64
+build/render CI passes in Actions run `44207529778`, with durable reports in
+`evidence/graphviz-0.3.1/`. Both platforms are admitted without --unverified.
+
+The final local full gate passes: 3,417 unit tests, 474 console tests, types
+(368 files), conventions (97 remaining legacy files, 1,277 legacy tests, zero
+breaches), CLI/PEX smoke and documentation. Twenty-six focused integration
+cases pass; the built PEX initializes a project requiring Graphviz. The required
+legacy matrix-test retirement separates synthetic decisions from catalog/file
+integration checks. Final code-head hosted checks pass at `0ee93d84`: native rendering run `44209697362` and Python/website run `44209697433`.
+
+Planned next step in this checkout: owner review and merge of PR56 into the
+release, then release-driver propagation to main and candidate acceptance.
+No product choice or implementation work remains for this component. This does
+not waive the remaining 0.3.1 gates or conclude maintenance. The concurrent
+pair's `ws-maintenance/recursive-test-fixture` work remains separate.
+
+The original two user configuration files are preserved in stash
+`graphviz-031-preserve-project-config`, with hashes and refs in
+`.git/graphviz-031-preservation.json`, outside source commits. Their original
+bytes were restored and hash-verified after source delivery. The shipped runtime
+passes its offline configuration-contract check; host launch permissions and
+downloads are not claimed by that check. The website's original branch and
+commit remain untouched. The mistaken local Graphviz Conda install and its
+37 own command links were removed; neither was used for component validation.
+The routing choice is recorded here and in R-TOOLS-001, so its capsule decision
+page was retired. No transcript or tokened URL is retained in Git.
+
+Coordination: the tool stores one claim per workstream; the concurrent pair's
+current fixture claim must not be cleared by this checkout. Live publication
+preserves the other pair's status along with this component handoff. This
+limitation was handed to workflow-improvements at coordination `a6fd5bf232ec`
+without changing its code. No maintenance mail was waiting at pause.
+
+
+
+## Recursive test failure follow-up — 2026-11-18
+
+The owner authorized accepting Docker group 0 and moving the failing checks to
+integration. The real socket here has gid 0; namespace gid 0 maps to host gid
+1000. The successor launcher already handles rootless identity 0:0. The older
+dry-run staging code's blanket positive Docker-group requirement was stale.
+A disposable source probe reproduced two failures unchanged and two passes
+when only that rejection was removed; no test assertion was skipped.
+
+The fix accepts non-negative integer Docker groups, rejects booleans and
+fractional IDs, and uses the existing root group for gid 0 rather than emitting
+a duplicate group ID. The separate successor identity and sudo-group contracts
+are unchanged. This does not claim rootless identity support for the old dry-run
+command: its positive runtime UID/GID guard remains outside this narrow slice.
+
+The whole six-test legacy orchestration file is retired into integration, as
+Unit Tests rule 5 requires complete retirement. These checks compose real
+packaging metadata, sockets, file staging and cleanup. All six behaviors remain;
+the failure tests now require the intended oversized-Xauthority error. Six
+parameter cases additionally cover zero, distinct and primary Docker groups,
+unique group entries, and invalid IDs. Focused integration: 12 passed.
+
+Branch: `ws-maintenance/recursive-test-fixture`, from release `5fcd1684`.
+Main's only workflow difference is its development-version stamp; the touched
+source/test files have no main/release difference. Retain the release baseline
+under the existing release-fix arrangement.
+[PR57](https://github.com/mycodespace-ai/devcapsule/pull/57) targets the release;
+the owner merges. No release/main merge, tag or E2E launch is claimed. Full gate passed: 3,409 unit passes, 1 skipped, 239 deselected, 1 xfailed and
+1 existing xpassed; mypy 362 files, conventions zero breaches, CLI/PEX smoke,
+docs contract and 474 console tests passed. Twelve focused integration cases
+passed separately. Antigravity `gemini-4-hydrogen` accepted `9eca39f0` without edits or a round.
+Its independent gate passed with the same unit/console counts and 12 integration
+passes; docs contract skipped only in its uninitialized website checkout. The
+implementor independently passed that check. No review PR or unimplemented
+proposal remains. Streaming init confirmed the model; the detached reviewer
+exited 0, conversation `586ff691-4744-4b9f-80de-013841edf6be`, under the
+[review brief](evidence/2026-11-18-recursive-group/review-brief.md).
+[Bug record](../../bugs/devcapsule/2026-11-18-recursive-dry-run-rejects-docker-group-zero.md). The initial gate could not create its
+scratch under read-only /opt; use writable scratch, without changing permissions.
+Preserve the user's two `.devcapsule` edits. The published Graphviz handoff is
+retained verbatim above; this checkout does not change that slice's source/state.
+
 
 ## CLI documentation follow-up — 2026-11-18
 
@@ -4935,11 +5031,10 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Verify final hosted checks and the owner's PR55 merge into `release-0.3.1`.
-Resume candidate and main propagation from the release overview when directed.
-No release tag is authorized. After 0.3.1, synchronize with main and implement
-the broader CLI work order, including the recorded bootstrap-help correction.
-No product choice remains pending for the adopted syntax.
+Owner review and merge of accepted recursive dry-run fix PR57 into the release.
+After merge, verify the remote tree and handle main propagation. Concurrent Graphviz
+PR56 remains with the owner. Main propagation and candidate acceptance remain
+release-driver work; no tag is authorized.
 
 Current, 2026-11-17: rc3 publication and download verification are complete.
 Resume final 0.3.1 acceptance from the release overview: host project-config
@@ -5793,13 +5888,13 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-Awaiting the owner: merge PR55 after final hosted checks. PR52 is already merged
-into release at `3a5aea22`; release-to-main propagation and acceptance remain.
-Antigravity accepted the documentation without edits. The bootstrap help default
-mismatch is a filed maintenance bug; no documentation review finding is unresolved.
-The broader CLI refactor remains after 0.3.1, with all prior product choices adopted.
-Preserve both user `.devcapsule` edits. Scratch logs and site output are reproducible;
-raw decision answers, transcripts and tokened links are deliberately outside Git.
+Awaiting the owner: merge accepted PR57; no test-disposition question remains.
+Accepting group 0 and integration migration were authorized. Graphviz PR56 is independently
+ready for owner merge. Weighed: supplying a positive fixture group would hide a
+real unsupported assumption, so it was rejected. The old dry-run runtime
+identity guard remains outside this Docker-group fix; the working successor
+launcher has its separate rootless support. Deliberately not preserved: scratch
+probes and raw transcripts. Preserve both user configuration edits.
 
 
 Owner returned this checkout to maintenance on 2026-11-17, explicitly requesting
@@ -6357,6 +6452,9 @@ Earlier open-thread history (read against the current scope above):
   release documents and bug records.
 
 ## Workstream Document Index
+
+- [Graphviz component implementation and validation](2026-11-18-graphviz-component.md): R-TOOLS-001, offline source build, native amd64/arm64 evidence and PR56 delivery.
+
 
 - [CLI documentation review brief](evidence/2026-11-18-cli-docs/review-brief.md): follow-up after PR52.
 
