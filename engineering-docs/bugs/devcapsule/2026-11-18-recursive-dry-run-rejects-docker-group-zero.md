@@ -27,7 +27,9 @@ without the positive Docker-group guard passed both. The corrected integration
 module passes 12 cases, including explicit gid 0/998/1000 and rejection of
 negative, boolean and fractional IDs. No socket chown, skip or xfail is needed.
 
-Delivery is on `ws-maintenance/recursive-test-fixture` for `release-0.3.1`.
+Delivery: [PR57](https://github.com/mycodespace-ai/devcapsule/pull/57), accepted
+by Antigravity `gemini-4-hydrogen` at `9eca39f0`, awaits owner release merge.
+Both pairs passed 3,409 unit and 474 console tests plus the 12 integration cases.
 Main has the same affected implementation. Main propagation remains pending
 release integration; a release-only merge does not close that disposition.
 The old dry-run command's separate positive runtime UID/GID restriction is

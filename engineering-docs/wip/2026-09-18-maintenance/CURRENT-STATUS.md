@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-18; recursive dry-run gid-zero fix and integration migration in validation on ws-maintenance/recursive-test-fixture. Concurrent Graphviz PR56 remains ready for owner merge.
+State: paused 2026-11-18; recursive dry-run fix PR57 is accepted by Antigravity and ready for owner merge into release-0.3.1. Concurrent Graphviz PR56 remains ready for owner merge.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -94,10 +94,17 @@ unique group entries, and invalid IDs. Focused integration: 12 passed.
 Branch: `ws-maintenance/recursive-test-fixture`, from release `5fcd1684`.
 Main's only workflow difference is its development-version stamp; the touched
 source/test files have no main/release difference. Retain the release baseline
-under the existing release-fix arrangement. Full gate passed: 3,409 unit passes, 1 skipped, 239 deselected, 1 xfailed and
+under the existing release-fix arrangement.
+[PR57](https://github.com/mycodespace-ai/devcapsule/pull/57) targets the release;
+the owner merges. No release/main merge, tag or E2E launch is claimed. Full gate passed: 3,409 unit passes, 1 skipped, 239 deselected, 1 xfailed and
 1 existing xpassed; mypy 362 files, conventions zero breaches, CLI/PEX smoke,
 docs contract and 474 console tests passed. Twelve focused integration cases
-passed separately. Antigravity `gemini-4-hydrogen` Pair Review is next, under the
+passed separately. Antigravity `gemini-4-hydrogen` accepted `9eca39f0` without edits or a round.
+Its independent gate passed with the same unit/console counts and 12 integration
+passes; docs contract skipped only in its uninitialized website checkout. The
+implementor independently passed that check. No review PR or unimplemented
+proposal remains. Streaming init confirmed the model; the detached reviewer
+exited 0, conversation `586ff691-4744-4b9f-80de-013841edf6be`, under the
 [review brief](evidence/2026-11-18-recursive-group/review-brief.md).
 [Bug record](../../bugs/devcapsule/2026-11-18-recursive-dry-run-rejects-docker-group-zero.md). The initial gate could not create its
 scratch under read-only /opt; use writable scratch, without changing permissions.
@@ -5024,8 +5031,8 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Finish validation and Pair Review of the recursive dry-run gid-zero fix, then
-hand the implementation PR to the owner for release merge. Concurrent Graphviz
+Owner review and merge of accepted recursive dry-run fix PR57 into the release.
+After merge, verify the remote tree and handle main propagation. Concurrent Graphviz
 PR56 remains with the owner. Main propagation and candidate acceptance remain
 release-driver work; no tag is authorized.
 
@@ -5881,8 +5888,8 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-Awaiting the owner: no test-disposition question remains; accepting group 0 and
-integration migration were explicitly authorized. Graphviz PR56 is independently
+Awaiting the owner: merge accepted PR57; no test-disposition question remains.
+Accepting group 0 and integration migration were authorized. Graphviz PR56 is independently
 ready for owner merge. Weighed: supplying a positive fixture group would hide a
 real unsupported assumption, so it was rejected. The old dry-run runtime
 identity guard remains outside this Docker-group fix; the working successor
