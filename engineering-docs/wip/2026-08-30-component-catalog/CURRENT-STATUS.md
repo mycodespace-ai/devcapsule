@@ -4,9 +4,9 @@ Mnemonic: `component-catalog`
 
 Start date: 2026-08-30
 
-State: integrating the Xfce Terminal component for owner review, 2026-11-18
+State: integrating the Xfce Terminal component through PR #60, 2026-11-18
 
-Definition read: WORKFLOW.md@a8062953ba89, WORKFLOW-LOCAL.md@9bc049624f48
+Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
 Branch association: `ws-component-catalog/xfce4-terminal`
 
@@ -262,10 +262,20 @@ No release or website publishing.
 
 ## Planned Next Step
 
-Review and integrate the Xfce Terminal pull request. The existing rollback,
+Review and integrate [PR #60](https://github.com/mycodespace-ai/devcapsule/pull/60). The existing rollback,
 pin recovery and proposal-export questions remain in Open Threads.
 
 ## Validation And External State
+
+- Xfce Terminal, 2026-11-18. The packaged CLI initialized and ran a fresh
+  amd64 checkout against the published recipe-11 base. Playwright opened a
+  second tab, checked separate shell PIDs and the project path in both,
+  saved a file with Vim and closed both shells. The launcher returned zero.
+  The recording and screenshot are under
+  `devcapsule-src/tests/e2e/evidence/xfce4-terminal-tabs/`. Switching an
+  existing PyCharm checkout to the terminal retained its Codex capability.
+  The build and web console suites, docs contract and resolution-loader
+  integration check passed. The release owner has the PR for review.
 
 - Codex acceptance recheck at `522f239`: the three independent PR-review
   counterexamples pass. Full `nox -s build` passed with 1,257 passing unit
