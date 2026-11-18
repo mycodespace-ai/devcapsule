@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-17; Graphviz component for 0.3.1 on ws-maintenance/graphviz-031 in this checkout; the concurrent CLI pair continues independently on ws-maintenance/cli-syntax.
+State: active 2026-11-18; Graphviz for 0.3.1 on ws-maintenance/graphviz-031; concurrent CLI documentation pair continues on ws-maintenance/cli-docs after CLI PR52 merged.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -12,7 +12,7 @@ Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `ws-maintenance/graphviz-031` from release `7ad956d4`, owner-selected Graphviz component for 0.3.1;  `ws-maintenance/cli-syntax`, created from presentations handoff db9721dd, carrying final CLI decisions af0d3616; `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `ws-maintenance/graphviz-031`, Graphviz from release `7ad956d4`, synchronized with release `3a5aea22`; `ws-maintenance/cli-docs`, concurrent documentation follow-up;  `ws-maintenance/cli-syntax`, created from presentations handoff db9721dd, carrying final CLI decisions af0d3616; `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
@@ -50,8 +50,11 @@ No maintenance mail was waiting at session start. The existing workflow
 manifest/definition version mismatch is retained; no configuration refresh is
 part of this feature.
 
-Planned next step in this checkout: merge the newly advanced release tip (CLI PR52), validate the combined tree, and deliver a PR into release-0.3.1 for the owner's merge. Record native arm64 CI rendering before claiming that platform verified. Preserve the concurrent CLI documentation work and the release driver's final acceptance obligations.
+Synchronized with release `3a5aea22` carrying CLI PR52. The merge resolves record-only overlap by retaining the release's CLI history and this Graphviz section. Planned next step: validate the combined tree and deliver a PR into release-0.3.1 for the owner's merge. Record native arm64 CI rendering before claiming that platform verified. Preserve the concurrent CLI documentation work and the release driver's final acceptance obligations.
 
+
+
+The concurrent pair now works on `ws-maintenance/cli-docs`, as published on coordination. Its documentation audit and Antigravity review remain separate; Graphviz does not resume or replace that work.
 
 ## RC4 CLI cleanup ready for owner integration — 2026-11-17
 
@@ -6363,7 +6366,7 @@ Earlier open-thread history (read against the current scope above):
 
 ## Workstream Document Index
 
-- [Graphviz component implementation and validation](2026-11-18-graphviz-component.md): R-TOOLS-001, source-build design, pinned dependencies and per-platform rendering evidence.
+- [Graphviz component implementation and validation](2026-11-18-graphviz-component.md): R-TOOLS-001, source-build design and per-platform rendering evidence.
 
 
 - [RC4 presentation rewiring review brief](evidence/2026-11-17-cli-syntax/rc4-review-brief.md) and [round 1](evidence/2026-11-17-cli-syntax/rc4-round-1.md).

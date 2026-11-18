@@ -22,36 +22,20 @@ to add missing skills and does not replace existing workflow files by default.
 Keep the installed skill files in the project or wrapper repository under its
 normal commit policy so other contributors receive them.
 
-For projects that do not use workflow bootstrap or wrapping, or to choose a
-custom skill location, install directly from the executable:
+Each new skill directory contains `SKILL.md`, `kit-version.json`, and
+`presentation_tools/` with this guide, the producer, recorder and example.
+No export or separate skill-install command is needed. Setup does not run a test
+or configure browser automation.
 
-```sh
-devcapsule presentations install-skill .agents/skills/devcapsule-recorded-e2e
-```
+### Migrate an older installed skill
 
-This creates the parent directories and writes `SKILL.md` into the new skill
-folder. It refuses an existing destination, preserving any customized skill;
-review and move an existing installation before installing its replacement.
-There is no temporary export or manual copy step.
-
-Choose the destination your agent discovers:
-
-| Agent | Project skill directory |
-| --- | --- |
-| Codex | `.agents/skills/devcapsule-recorded-e2e` |
-| Antigravity | `.agents/skills/devcapsule-recorded-e2e` |
-| Claude Code | `.claude/skills/devcapsule-recorded-e2e` |
-
-For Claude Code, use the same command with the `.claude/skills/` destination.
-These paths follow the [official OpenAI documentation](https://developers.openai.com/api/reference/cli#use-the-cli-from-a-coding-agent),
-[Antigravity documentation](https://antigravity.google/docs/skills), and
-[Claude Code documentation](https://code.claude.com/docs/en/skills).
-Start a new agent session after installation. The file can be committed as a
-project instruction under that project's rules.
-
-The skill needs only `SKILL.md`. When running a scenario, the agent exports the
-Python helpers from the installed executable, so they match that executable's
-version. The install command does not run a test or configure browser automation.
+Older skills may refer to removed presentation commands or contain only
+`SKILL.md`. Setup deliberately preserves them. Review and move the existing
+`devcapsule-recorded-e2e` directory to a backup outside the agent discovery
+folders, rerun `devcapsule bootstrap`, then reconcile any custom instructions
+with the newly installed kit. Do this for each discovery location you use.
+Do not overwrite or delete customizations automatically. Bootstrap leaves the
+existing workflow definition unchanged unless explicitly asked to refresh it.
 
 Then ask, for example:
 
@@ -76,26 +60,24 @@ that do not load it, import it with `@AGENTS.md` in the project's `CLAUDE.md`, a
 [Claude's documentation describes](https://code.claude.com/docs/en/memory#share-one-file-with-other-coding-tools).
 An instruction to read a file does not register a native slash command.
 
-No workflow bootstrap, workflow-version change or `WORKFLOW.md` replacement is
-needed. Agents without skill support can still read `devcapsule presentations
-guide`. The guide and helpers first shipped in 0.3.1rc3; skill export, direct installation and
-automatic installation with bootstrap/wrap are rc4 additions. Upgrade an older executable through the normal
-host procedure and launch a new capsule before using them. A host executable
-replacement does not update a running capsule.
+Agents without skill discovery can read the installed `SKILL.md` directly.
+Upgrade an older executable through the normal host procedure and launch a new
+capsule before using the new link command. Replacing the host executable does
+not update a running capsule.
 
 ## Get the tools
 
-`devcapsule presentations guide` prints this guide from the installed executable.
-No DevCapsule source checkout is needed. Export the supporting Python package:
+Use `presentation_tools/` beside the installed `SKILL.md`. No DevCapsule source
+checkout is needed. Add the skill directory to `PYTHONPATH` when running the
+project's driver, for example:
 
 ```sh
-devcapsule presentations export /var/tmp/e2e-authoring
+export PYTHONPATH="$PROJECT_PATH/.agents/skills/devcapsule-recorded-e2e${PYTHONPATH:+:$PYTHONPATH}"
 ```
 
-The destination must be new. It contains `presentation_tools/` with this guide,
-the producer, recorder, a runnable example and `SKILL.md`. Add the export directory to
-`PYTHONPATH` when running the project's driver. The helpers use only the Python
-standard library and the Playwright page you supply. They import no test harness.
+Use `.claude/skills/devcapsule-recorded-e2e` for that installation. The helpers use
+only the Python standard library and the Playwright page you supply; they import
+no test harness. `kit-version.json` records their packaged version.
 
 Use the capsule's `browser-automation` capability, supplied by the `playwright`
 component. Its interpreter is `$DEVCAPSULE_PLAYWRIGHT_PYTHON`, normally
@@ -111,7 +93,7 @@ and use the project's normal configuration/relaunch procedure with the engineer.
 1. Read the supplied scenario and the project's run/test instructions. Identify
    the real application URL, required data, actions and observable assertions.
    Ask only about a missing decision that prevents executing the test.
-2. Export the tools. Adapt `presentation_tools/example.py` into a driver in the
+2. Use the installed tools. Adapt `presentation_tools/example.py` into a driver in the
    project's normal E2E location. Translate the English into `Script` and
    `ScriptStep` values in that driver. The engineer's Markdown stays unchanged.
 3. Use ordinary synchronous Playwright operations for this project's UI. A
@@ -158,23 +140,27 @@ avoid committing recordings or captured secrets automatically.
 Print the engineer's link with the installed CLI:
 
 ```sh
-devcapsule presentations hand-off evidence/login-success/run-001 --project "$PROJECT_PATH"
+devcapsule instance --get-link "$DEVCAPSULE_CONSOLE_URL/presentations/evidence/login-success/run-001"
 ```
 
-Run this from the console project root: a relative evidence folder resolves
-from the current working directory, and `--project` supplies the console root
-used to form the relative link. It uses `$DEVCAPSULE_CONSOLE_URL` and the
-mounted console token; `--console-url` and `--token-file` supply explicit values. Keep tokened links in chat only, never
-in a source file, log or committed record. If no token can be read, the link
-requires a browser session that already opened the console. If there is no
-console URL, report that missing environment input rather than inventing a URL.
+Use a URL on the current console origin to select the presentation viewer.
+Percent-encode special characters in the project-relative evidence path (for
+example spaces as `%20` and `#` as `%23`). For a general file or directory, pass
+its path instead: `devcapsule instance --get-link evidence/login-success/run-001`
+opens Files. Relative filesystem paths resolve from the current working directory.
+The command runs in the capsule and uses its `PROJECT_PATH`,
+`DEVCAPSULE_CONSOLE_URL` and mounted token. External URLs and content outside the
+project are refused. No new serving route is introduced.
+Keep tokened links in chat only, never in a source file, log or committed record.
+Without a readable token, the link requires an existing browser console session.
+If the console environment is missing, report it rather than inventing a URL.
 
 Finish the response with the test outcome, any limitation, and the clickable
 presentation link. The engineer should not need to reconstruct a path themselves.
 
 ## Existing replay scripts
 
-The exported `producer` also supports the existing structured replay format:
+The installed `producer` also supports the existing structured replay format:
 `parse_script`, `plan_presentation`, `PresentationPlan.timed` and
 `write_presentation`. `plan_for_scenario(scenario, root)` reads the scenario's
 script relative to the supplied project directory. This adapter is for agents
