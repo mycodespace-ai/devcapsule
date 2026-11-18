@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-18; Graphviz for 0.3.1 on ws-maintenance/graphviz-031; concurrent CLI documentation pair continues on ws-maintenance/cli-docs after CLI PR52 merged.
+State: active 2026-11-18; Graphviz PR56 for 0.3.1 on ws-maintenance/graphviz-031, native arm64 evidence pending; concurrent recursive-test fixture repair remains separate.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -12,7 +12,7 @@ Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
-Branch association: `ws-maintenance/graphviz-031`, Graphviz from release `7ad956d4`, synchronized with release `3a5aea22`; `ws-maintenance/cli-docs`, concurrent documentation follow-up;  `ws-maintenance/cli-syntax`, created from presentations handoff db9721dd, carrying final CLI decisions af0d3616; `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
+Branch association: `ws-maintenance/graphviz-031`, Graphviz PR56 synchronized with release `5fcd1684`; `ws-maintenance/recursive-test-fixture`, concurrent fixture repair;  `ws-maintenance/cli-docs`, documentation follow-up from release `3a5aea22`; `ws-maintenance/cli-syntax`, created from presentations handoff db9721dd, carrying final CLI decisions af0d3616; `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
@@ -50,11 +50,47 @@ No maintenance mail was waiting at session start. The existing workflow
 manifest/definition version mismatch is retained; no configuration refresh is
 part of this feature.
 
-Synchronized with release `3a5aea22` carrying CLI PR52. The merge resolves record-only overlap by retaining the release's CLI history and this Graphviz section. Planned next step: validate the combined tree and deliver a PR into release-0.3.1 for the owner's merge. Record native arm64 CI rendering before claiming that platform verified. Preserve the concurrent CLI documentation work and the release driver's final acceptance obligations.
+Synchronized with release `5fcd1684` carrying CLI PR52 and documentation PR55. The merge resolves record-only overlap by retaining the release's CLI history and this Graphviz section. Planned next step: validate the combined tree and deliver a PR into release-0.3.1 for the owner's merge. Record native arm64 CI rendering before claiming that platform verified. Preserve the concurrent CLI documentation work and the release driver's final acceptance obligations.
 
 
 
-The concurrent pair now works on `ws-maintenance/cli-docs`, as published on coordination. Its documentation audit and Antigravity review remain separate; Graphviz does not resume or replace that work.
+CLI documentation PR55 is merged. The concurrent pair now claims `ws-maintenance/recursive-test-fixture` for two explicit Docker socket-group fixtures. Graphviz does not resume or replace that work.
+
+## CLI documentation follow-up — 2026-11-18
+
+[PR55](https://github.com/mycodespace-ai/devcapsule/pull/55) aligns current guides
+with the RC4 CLI merged through PR52 at `3a5aea22`, verified by SSH fetch.
+It covers the CLI reference, console links, installed recording kits and migration,
+bootstrap/wrapper guides and specification, and upcoming release changelog.
+Contributor examples now use current configuration, memory, IDE and Docker-argument
+commands. Current project/home grammar remains; the broader migration is after 0.3.1.
+No production source or tests changed. Both user `.devcapsule` edits are preserved.
+
+Antigravity `gemini-4-hydrogen` accepted `bab6ec85` without edits or a round.
+No empty review PR was opened. The implementor posted the assessment on PR55.
+The exact model was confirmed in the streaming init event; the detached run exited 0.
+Its independent gate repeated 3412 passes and the same three local fixture failures;
+its docs contract was skipped because the website checkout is absent.
+The existing [bootstrap help mismatch](../../bugs/devcapsule/2026-11-18-bootstrap-help-wrong-default-project.md)
+is recorded for maintenance. No documentation finding remains outstanding.
+
+Implementor validation: 93 visible help pages outside a project/capsule, with no
+scratch writes; 51 shell blocks parse. Docs contract: 249 pages. Website build:
+253 HTML pages and 20,978 local links/assets/anchors passed. Full build passed
+version, syntax, mypy (362 files) and conventions. Unit result: 3412 passed,
+3 known fixture failures, 1 skipped, 227 deselected, 1 xfailed, 1 xpassed.
+Failures are mount-backed scratch in unmountable-staging and two gid-zero
+recursive fixtures. No full-gate pass is claimed. Separate smoke, PEX,
+docs-contract and webconsole passed (474 console tests, types over 9 files).
+Focused CLI integration: 32 passed. No native discovery/playback or release
+acceptance is established. Hosted source-commit website and Python jobs pass;
+reverify final-head checks before merge. Final pre-push unit validation repeats
+the same counts and failures; final docs contract and website build pass.
+
+Synchronization remains deferred for this RC4 follow-up: main's workflow rules
+are identical, only its development-version stamp differs. The slice stays on
+`ws-maintenance/cli-docs` from release `3a5aea22`; no release ref was synchronized.
+Mail and intake are empty at handoff. Publish the pause and release the claim.
 
 ## RC4 CLI cleanup ready for owner integration — 2026-11-17
 
@@ -4939,13 +4975,11 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Verify PR52's final hosted checks and the owner's merge into `release-0.3.1`.
-Continue RC4/release acceptance from the release overview when directed. After
-0.3.1, synchronize the workstream branch with main and implement the broader CLI
-mapping, prefix selector, global/instance verbs, detailed reports, advanced help,
-consumer migration and unused PyCharm removal under a separate implementation
-PR and Antigravity Pair Review. The owner has not selected the next release number
-or authorized a release tag. No syntax/link choice remains pending.
+Verify final hosted checks and the owner's PR55 merge into `release-0.3.1`.
+Resume candidate and main propagation from the release overview when directed.
+No release tag is authorized. After 0.3.1, synchronize with main and implement
+the broader CLI work order, including the recorded bootstrap-help correction.
+No product choice remains pending for the adopted syntax.
 
 Current, 2026-11-17: rc3 publication and download verification are complete.
 Resume final 0.3.1 acceptance from the release overview: host project-config
@@ -5799,15 +5833,13 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-Current CLI slice: PR52 contains the completed RC4 scope; reviews PR53 and
-PR54 are merged into it. Await the owner's release merge and reverify hosted
-checks before integration. The broader syntax implementation is deliberately
-left for after 0.3.1, following the work order's release split; it is not complete.
-All choices are adopted: prefix-only `--project`, retained global/instance verbs,
-Files-only paths with explicit current-console URLs for other content viewers.
-No reviewer proposal or product questionnaire remains unresolved. Preserve the
-user's two `.devcapsule` edits. Scratch logs are reproducible; raw answers,
-transcripts and tokened links are deliberately not preserved in Git.
+Awaiting the owner: merge PR55 after final hosted checks. PR52 is already merged
+into release at `3a5aea22`; release-to-main propagation and acceptance remain.
+Antigravity accepted the documentation without edits. The bootstrap help default
+mismatch is a filed maintenance bug; no documentation review finding is unresolved.
+The broader CLI refactor remains after 0.3.1, with all prior product choices adopted.
+Preserve both user `.devcapsule` edits. Scratch logs and site output are reproducible;
+raw decision answers, transcripts and tokened links are deliberately outside Git.
 
 
 Owner returned this checkout to maintenance on 2026-11-17, explicitly requesting
@@ -6368,6 +6400,8 @@ Earlier open-thread history (read against the current scope above):
 
 - [Graphviz component implementation and validation](2026-11-18-graphviz-component.md): R-TOOLS-001, source-build design and per-platform rendering evidence.
 
+
+- [CLI documentation review brief](evidence/2026-11-18-cli-docs/review-brief.md): follow-up after PR52.
 
 - [RC4 presentation rewiring review brief](evidence/2026-11-17-cli-syntax/rc4-review-brief.md) and [round 1](evidence/2026-11-17-cli-syntax/rc4-round-1.md).
 - [PR52.1 Antigravity review brief](evidence/2026-11-17-cli-syntax/review-brief.md) and [round 1](evidence/2026-11-17-cli-syntax/round-1.md).
