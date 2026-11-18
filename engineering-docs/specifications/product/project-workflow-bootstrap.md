@@ -38,8 +38,9 @@ and WIP records are an instance, not reusable defaults.
 ## Installation Contract
 
 `devcapsule bootstrap [--project DIR]` and its explicit
-`devcapsule bootstrap project [--project DIR]` form read `workflow-type` from
-`.devcapsule/devcapsule.toml`; a missing field means `single-stream`. Any value
+`devcapsule bootstrap project [--project DIR]` form read `[workflow].mode` from
+`.devcapsule/devcapsule.toml`, falling back to the older `workflow-type` field.
+An absent mode means `single-stream`. Any value
 other than `single-stream` or `multiple-streams` fails before files are written.
 Without `--project`, both forms use the process's current directory and do not
 redirect through an ambient container `PROJECT_PATH`.
@@ -55,8 +56,21 @@ The command:
    newly created single-stream `CURRENT-STATUS.md` without deleting the README
    section;
 5. initializes the two reserved workstreams, `project-management` and
-   `maintenance`, when multiple-streams mode lacks them; and
-6. appends only missing standard development ignore entries.
+   `maintenance`, when multiple-streams mode lacks them;
+6. appends only missing standard development ignore entries; and
+7. installs missing complete recording skill kits in
+   `.agents/skills/devcapsule-recorded-e2e/` and
+   `.claude/skills/devcapsule-recorded-e2e/`.
+
+Each kit contains `SKILL.md`, `kit-version.json` with the supplying package
+version, and `presentation_tools/` with the guide, producer, recorder, and example.
+An existing skill directory or symlinked destination/parent is preserved.
+A new kit is staged beside its destination before publication; a failed write
+does not leave a partial kit at that destination. The two locations are installed
+independently. Setup does not execute tests or provision browser automation.
+`project wrap` installs the same kits in its wrapper repository.
+See the [installed guide](../../../devcapsule-src/devcapsule/presentation_tools/README.md)
+for manual migration of an older customized kit.
 
 Running bootstrap again is idempotent. It must reuse the existing immutable
 start date of each reserved workstream and must not create a second instance
@@ -74,7 +88,7 @@ Existing definition files are preserved by default because `AGENTS.md` may
 contain project-specific additions. The explicit
 `--refresh-workflow-definition` option replaces only `AGENTS.md` and
 `WORKFLOW.md` with the packaged definition. It never replaces project state,
-requirements, the documentation index, or workstream records.
+requirements, the documentation index, workstream records, or existing skill kits.
 
 ## Distribution And Verification
 

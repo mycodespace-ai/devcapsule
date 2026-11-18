@@ -1,13 +1,13 @@
 ---
 description: The command tree of the devcapsule launcher, with one line of intent per command and usage for init, run and config.
 weight: 1
-updated: 2026-11-04
+updated: 2026-11-18
 ---
 # Command reference
 
 Run `devcapsule COMMAND --help` on any command below to see its full argument
-and option list. One exception: `devcapsule pycharm check-runtime` runs its
-checks even when given `--help`.
+and option list. Help, including `devcapsule pycharm check-runtime --help`,
+prints usage without running the operation.
 
 `devcapsule project` commands discover the project from the current directory.
 To target another directory, pass `--path` before the subcommand:
@@ -242,6 +242,31 @@ Each command below follows `devcapsule project`:
 
 See [Component upgrades](../updates/component-upgrades.md) for version-set workflows.
 
+## `devcapsule instance`
+
+```text
+devcapsule instance --get-link PATH-OR-URL
+```
+
+Run inside the current capsule to print a link to existing project content.
+A filesystem path, relative to the current directory or absolute, always selects
+Files. An absolute URL on this capsule's console origin can select `/files/`,
+`/records/`, or `/presentations/`. The command formats a link; it does not create
+content, open a browser, or check presentation playback.
+
+```bash
+devcapsule instance --get-link README.md
+devcapsule instance --get-link "$DEVCAPSULE_CONSOLE_URL/records/README.md"
+devcapsule instance --get-link "$DEVCAPSULE_CONSOLE_URL/presentations/tests/e2e/evidence/login"
+```
+
+The targets must exist inside the mounted project. Hidden paths, `node_modules`,
+escaping symlinks, URLs with credentials, and other console origins are refused.
+URL paths are relative to the project root; percent-encode spaces in URLs.
+The command adds the current run token. If it cannot read the token, it prints
+a notice and a tokenless link requiring an existing browser session. Keep tokened
+links in chat, outside Git and saved reports. See [console content links](../sessions/web-console.md#link-to-project-content).
+
 ## Retired spellings
 
 Retired commands such as `config list`, `config resolve`, `config need`,
@@ -251,6 +276,10 @@ and print their replacements. Retired `init`/`run` flags do the same.
 absent; use `devcapsule home default` and `devcapsule home trust` instead.
 `project config capabilities --recover` remains available solely to repair an
 interrupted manifest/lock write.
+
+The `presentations` command group has been removed, without aliases. Workflow
+bootstrap and `project wrap` install the recording helpers with the skill;
+`instance --get-link` supplies content links. See [recording with an agent](../working-with-ai/instructions-for-agents.md#record-a-scenario).
 
 <a id="home-and-development-commands"></a>
 
@@ -263,7 +292,7 @@ Each command below follows `devcapsule`:
 | `version [--json]` | Print the launcher version, package version, and source revision provenance. |
 | `images build --type {base,environment} ...` | Build a curated base image, for the capsule platform `--platform` names, or materialize a project environment image. |
 | `images list [--include-legacy]` | List DevCapsule base and environment images in the local Docker store. |
-| `bootstrap [--refresh-workflow-definition] project` | Install or refresh DevCapsule workflow files and initialize project status records. |
+| `bootstrap project [--project DIR] [--refresh-workflow-definition]` | Install workflow files, project status records, and missing recording skill kits; refresh only reusable definitions when requested. |
 | `workflow brief` | Print the active workstream summary, live claims, waiting mail, sync distance, and validation commands. |
 | `workflow status` | Show published state across all open workstreams on the coordination branch. |
 | `workflow claim [--hours N \| --release] [SLICE]` | Publish or release an advisory work claim on the coordination branch. |

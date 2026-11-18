@@ -3,7 +3,7 @@ description: How several people and agents work on one repository with workstrea
 aliases:
   - /docs/guides/working-in-workstreams/
 weight: 1
-updated: 2026-10-30
+updated: 2026-11-18
 ---
 # Work in workstreams with humans and agents
 
@@ -19,6 +19,18 @@ capsule or on the host—on the `ws-<name>/...` branch of the workstream you are
 working in (or pass `--project PROJECT_PATH` and `--workstream NAME`
 on subcommands that select one workstream, such as `brief` or `claim`).
 Every command works identically for a person and for an agent.
+
+## Install the workflow in a project
+
+At the repository root, run `devcapsule bootstrap project`. To name a directory
+explicitly, use `devcapsule bootstrap project --project /path/to/project`.
+Existing files are preserved; `--refresh-workflow-definition` replaces the
+reusable `AGENTS.md` and `WORKFLOW.md` only, preserving project records.
+
+Bootstrap also installs missing recording skill kits for Codex, Antigravity,
+and Claude Code. Existing kits are preserved even during definition refresh.
+See [recording with an agent](../working-with-ai/instructions-for-agents.md#record-a-scenario)
+for their locations and the migration procedure.
 
 ## The idea in one paragraph
 

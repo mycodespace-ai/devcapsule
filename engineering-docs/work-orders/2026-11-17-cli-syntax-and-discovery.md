@@ -2,7 +2,7 @@
 
 Date: 2026-11-17.
 Owner: maintenance, transferred from presentations by explicit product-owner direction on 2026-11-17.
-Status: RC4 scope implemented and reviewed in PR #52, with review PRs #53 and #54 merged into it; awaiting owner integration. All implementation choices are answered. Broader CLI changes remain scheduled after 0.3.1.
+Status: RC4 scope implemented and reviewed in PR #52, with review PRs #53 and #54 merged into it; merged into `release-0.3.1` at `3a5aea22` on 2026-11-17. Documentation follow-up is in progress. All implementation choices are answered. Broader CLI changes remain scheduled after 0.3.1.
 Release scope: RC4 gets the help bug fix and presentations cleanup; broader CLI cleanup follows 0.3.1.
 The exact next release number remains undecided.
 
@@ -63,7 +63,8 @@ These decisions supersede the reviewer's suggestions to retain hidden old comman
   The second adds software, environment, and persistence information.
 - Existing adapters are under `devcapsule-src/devcapsule/commands/`.
   The skill is `devcapsule-src/devcapsule/presentation_tools/SKILL.md`.
-  It currently calls `presentations guide`, `export`, and `hand-off`.
+  At the reviewed baseline it called `presentations guide`, `export`, and `hand-off`;
+  PR #52 replaced those calls with local kit instructions and `instance --get-link`.
 - Relevant requirements: [configuration](../requirements/product/r-config-001-conservative-writers-tolerant-readers.md),
   [wrapped projects](../requirements/product/r-wrap-001-wrapped-projects.md),
   [web console](../requirements/product/r-console-001-capsule-web-console.md),
