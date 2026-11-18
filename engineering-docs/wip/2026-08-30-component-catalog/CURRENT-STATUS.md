@@ -4,11 +4,11 @@ Mnemonic: `component-catalog`
 
 Start date: 2026-08-30
 
-State: paused 2026-10-08; PR #171 merged into the workstream branch and PR #170 merged into `main` (`6ae1a01`); the IntelliJ slice is on `main` and nothing is in flight; the pair moves to project-management
+State: integrating the Xfce Terminal component for owner review, 2026-11-18
 
 Definition read: WORKFLOW.md@a8062953ba89, WORKFLOW-LOCAL.md@9bc049624f48
 
-Branch association: `ws-component-catalog/intellij-idea`
+Branch association: `ws-component-catalog/xfce4-terminal`
 
 Integration target: `main`
 
@@ -34,6 +34,18 @@ workstream-specific capability profiles. New/changed code coverage must exceed
 No release or website publishing.
 
 ## Current State
+
+- 2026-11-18. The owner selected Xfce Terminal as a tabbed desktop IDE with
+  the exact configuration value `xfce4-terminal`. The fresh branch started
+  at `deffc8fe`, the accepted mainline, so it needed no synchronization.
+- Accepted project-management's GitHub CLI component for the backlog after
+  the terminal. Its scope includes pinned acquisition, persistence and secret
+  binding for authentication, and a read-only API smoke.
+- Accepted the V1 assignments. Support component-upgrades with the bounded
+  validation inventory and its init/config review. Maintain the plain-language
+  catalogue terminology audit. The release driver owns the per-release component
+  sweep. Continue manual evidence curation through the successor to 0.3.1.
+  Component-upgrades owns the later evidence submission and automation work.
 
 - 2026-10-08, after the pause: the owner merged
   [PR #171](https://github.com/ccozianu/devcapsule/pull/171) into
@@ -250,13 +262,8 @@ No release or website publishing.
 
 ## Planned Next Step
 
-The IntelliJ slice is integrated and nothing is in flight. On resumption, start
-the next slice on a fresh sub-branch from `main`, and first bring the owner the
-product questions the #171 review deferred: rollback composition (`versions
-rollback` re-persists an execution snapshot), command-only recovery from a
-corrupt local pins document, and `versions proposal` exporting the effective
-lock. The Playwright record closes only on the owner's confirmed `project run`.
-Do not migrate self-hosting configuration or replace the launcher.
+Review and integrate the Xfce Terminal pull request. The existing rollback,
+pin recovery and proposal-export questions remain in Open Threads.
 
 ## Validation And External State
 
@@ -385,6 +392,9 @@ Do not migrate self-hosting configuration or replace the launcher.
   and the successful final-gate follow-up by mail. No unrelated fix was committed.
 
 ## Open Threads
+
+- The amd64 graphical smoke covers separate shell tabs, working directory
+  and shutdown. ARM64 has pinned packages and awaits a native desktop smoke.
 
 - #171 and #170 are merged, checked on 2026-10-08 after the pause; the GitHub
   merge records are the integration evidence. No request to Fable or Codex is
