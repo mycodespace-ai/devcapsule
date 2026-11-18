@@ -235,19 +235,15 @@ def test_real_diff_cover_output_yields_an_annotation_for_the_unexecuted_changed_
     assert report["total_percent_covered"] < 85
 
 
-@pytest.mark.parametrize(("workflow_path", "job"), [
-    (_WORKFLOW, "docs-build"),
-    (_WEBSITE_WORKFLOW, "build"),
-    (_WEBSITE_WORKFLOW, "candidate"),
-])
-def test_website_workflows_instantiate_a_raw_website_gitlink_recursively(
-    tmp_path: Path, workflow_path: Path, job: str,
-) -> None:
-    """Precondition: a parent checkout whose ``website`` entry is a raw gitlink with no
-    ``.gitmodules`` mapping, pointing at a non-tip commit of ``devcapsule-website`` that itself
-    declares a nested submodule over SSH. Action: run the job's ``fetch-website`` step under
-    bash. Postcondition: ``website`` is checked out at the exact gitlink commit, its nested
-    submodule is materialized recursively, and both checkouts report clean ``git status``."""
+def _run_git(env: dict[str, str], *arguments: str, cwd: Path) -> str:
+    """Run git with the isolated test environment and return trimmed stdout."""
+    return subprocess.run(arguments, cwd=cwd, env=env, text=True, capture_output=True, check=True).stdout.strip()
+
+
+def _create_raw_website_gitlink_fixtures(
+    tmp_path: Path,
+) -> tuple[dict[str, str], Path, Path, Path, Path, str, str]:
+    """Create local git origins modeling a raw ``website`` gitlink with a nested SSH submodule."""
     gitconfig = tmp_path / "gitconfig"
     env = {
         "PATH": os.environ["PATH"],
@@ -261,51 +257,68 @@ def test_website_workflows_instantiate_a_raw_website_gitlink_recursively(
         "GIT_COMMITTER_EMAIL": "test@example.invalid",
     }
 
-    def git(*arguments: str, cwd: Path = tmp_path) -> str:
-        return subprocess.run(arguments, cwd=cwd, env=env, text=True, capture_output=True, check=True).stdout.strip()
-
     nested_origin = tmp_path / "nested.git"
     nested_origin.mkdir()
-    git("git", "init", "-q", "-b", "main", cwd=nested_origin)
+    _run_git(env, "git", "init", "-q", "-b", "main", cwd=nested_origin)
     (nested_origin / "nested.txt").write_text("nested\n", encoding="utf-8")
-    git("git", "add", "nested.txt", cwd=nested_origin)
-    git("git", "commit", "-q", "-m", "nested", cwd=nested_origin)
-    nested_sha = git("git", "rev-parse", "HEAD", cwd=nested_origin)
+    _run_git(env, "git", "add", "nested.txt", cwd=nested_origin)
+    _run_git(env, "git", "commit", "-q", "-m", "nested", cwd=nested_origin)
+    nested_sha = _run_git(env, "git", "rev-parse", "HEAD", cwd=nested_origin)
 
     website_origin = tmp_path / "website.git"
     website_origin.mkdir()
-    git("git", "init", "-q", "-b", "main", cwd=website_origin)
-    git("git", "config", "uploadpack.allowReachableSHA1InWant", "true", cwd=website_origin)
+    _run_git(env, "git", "init", "-q", "-b", "main", cwd=website_origin)
+    _run_git(env, "git", "config", "uploadpack.allowReachableSHA1InWant", "true", cwd=website_origin)
     (website_origin / "package.json").write_text('{"name":"devcapsule-website"}\n', encoding="utf-8")
     (website_origin / ".gitmodules").write_text(
         '[submodule "sub"]\n\tpath = sub\n\turl = git@github.com:mycodespace-ai/nested.git\n',
         encoding="utf-8",
     )
-    git("git", "update-index", "--add", "--cacheinfo", f"160000,{nested_sha},sub", cwd=website_origin)
-    git("git", "add", "package.json", ".gitmodules", cwd=website_origin)
-    git("git", "commit", "-q", "-m", "pinned website", cwd=website_origin)
-    pinned_website_sha = git("git", "rev-parse", "HEAD", cwd=website_origin)
+    _run_git(env, "git", "update-index", "--add", "--cacheinfo", f"160000,{nested_sha},sub", cwd=website_origin)
+    _run_git(env, "git", "add", "package.json", ".gitmodules", cwd=website_origin)
+    _run_git(env, "git", "commit", "-q", "-m", "pinned website", cwd=website_origin)
+    pinned_website_sha = _run_git(env, "git", "rev-parse", "HEAD", cwd=website_origin)
     (website_origin / "package.json").write_text('{"name":"newer-unpinned"}\n', encoding="utf-8")
-    git("git", "add", "package.json", cwd=website_origin)
-    git("git", "commit", "-q", "-m", "advance main past pin", cwd=website_origin)
+    _run_git(env, "git", "add", "package.json", cwd=website_origin)
+    _run_git(env, "git", "commit", "-q", "-m", "advance main past pin", cwd=website_origin)
 
     parent_origin = tmp_path / "parent.git"
     parent_origin.mkdir()
-    git("git", "init", "-q", "-b", "main", cwd=parent_origin)
+    _run_git(env, "git", "init", "-q", "-b", "main", cwd=parent_origin)
+    _run_git(env, "git", "config", "uploadpack.allowReachableSHA1InWant", "true", cwd=parent_origin)
     (parent_origin / ".gitmodules").write_text("", encoding="utf-8")
     (parent_origin / "README.md").write_text("# DevCapsule\n", encoding="utf-8")
-    git("git", "update-index", "--add", "--cacheinfo", f"160000,{pinned_website_sha},website", cwd=parent_origin)
-    git("git", "add", ".gitmodules", "README.md", cwd=parent_origin)
-    git("git", "commit", "-q", "-m", "raw website gitlink", cwd=parent_origin)
-    git("git", "branch", "docs-0.3.0", cwd=parent_origin)
+    _run_git(env, "git", "update-index", "--add", "--cacheinfo", f"160000,{pinned_website_sha},website", cwd=parent_origin)
+    _run_git(env, "git", "add", ".gitmodules", "README.md", cwd=parent_origin)
+    _run_git(env, "git", "commit", "-q", "-m", "raw website gitlink", cwd=parent_origin)
+    parent_sha = _run_git(env, "git", "rev-parse", "HEAD", cwd=parent_origin)
+    _run_git(env, "git", "branch", "docs-0.3.0", cwd=parent_origin)
+
+    _run_git(env, "git", "config", "--file", str(gitconfig), "protocol.file.allow", "always", cwd=tmp_path)
+    for prefix in ("https://github.com/mycodespace-ai/", "git@github.com:mycodespace-ai/"):
+        _run_git(env, "git", "config", "--file", str(gitconfig), "--add", f"url.{website_origin}.insteadOf", f"{prefix}devcapsule-website.git", cwd=tmp_path)
+        _run_git(env, "git", "config", "--file", str(gitconfig), "--add", f"url.{nested_origin}.insteadOf", f"{prefix}nested.git", cwd=tmp_path)
+
+    return env, gitconfig, parent_origin, website_origin, nested_origin, parent_sha, pinned_website_sha
+
+
+@pytest.mark.parametrize(("workflow_path", "job"), [
+    (_WORKFLOW, "docs-build"),
+    (_WEBSITE_WORKFLOW, "build"),
+    (_WEBSITE_WORKFLOW, "candidate"),
+])
+def test_website_workflows_instantiate_a_raw_website_gitlink_recursively(
+    tmp_path: Path, workflow_path: Path, job: str,
+) -> None:
+    """Precondition: a parent checkout whose ``website`` entry is a raw gitlink with no
+    ``.gitmodules`` mapping, pointing at a non-tip commit of ``devcapsule-website`` that itself
+    declares a nested submodule over SSH. Action: run the job's ``fetch-website`` step under
+    bash. Postcondition: ``website`` is checked out at the exact gitlink commit, its nested
+    submodule is materialized recursively, and both checkouts report clean ``git status``."""
+    env, _, parent_origin, _, _, _, pinned_website_sha = _create_raw_website_gitlink_fixtures(tmp_path)
 
     checkout = tmp_path / "checkout"
-    git("git", "clone", "-q", str(parent_origin), str(checkout))
-
-    git("git", "config", "--file", str(gitconfig), "protocol.file.allow", "always")
-    for prefix in ("https://github.com/mycodespace-ai/", "git@github.com:mycodespace-ai/"):
-        git("git", "config", "--file", str(gitconfig), "--add", f"url.{website_origin}.insteadOf", f"{prefix}devcapsule-website.git")
-        git("git", "config", "--file", str(gitconfig), "--add", f"url.{nested_origin}.insteadOf", f"{prefix}nested.git")
+    _run_git(env, "git", "clone", "-q", str(parent_origin), str(checkout), cwd=tmp_path)
 
     step = _job_step(workflow_path, job, "fetch-website")
     subprocess.run(
@@ -317,7 +330,53 @@ def test_website_workflows_instantiate_a_raw_website_gitlink_recursively(
         check=True,
     )
 
-    assert git("git", "rev-parse", "HEAD", cwd=checkout / "website") == pinned_website_sha
+    assert _run_git(env, "git", "rev-parse", "HEAD", cwd=checkout / "website") == pinned_website_sha
     assert (checkout / "website" / "sub" / "nested.txt").read_text(encoding="utf-8") == "nested\n"
-    assert git("git", "status", "--porcelain", "--untracked-files=normal", cwd=checkout) == ""
-    assert git("git", "status", "--porcelain", "--untracked-files=normal", cwd=checkout / "website") == ""
+    assert _run_git(env, "git", "status", "--porcelain", "--untracked-files=normal", cwd=checkout) == ""
+    assert _run_git(env, "git", "status", "--porcelain", "--untracked-files=normal", cwd=checkout / "website") == ""
+
+
+def test_website_candidate_checks_out_raw_gitlink_without_persisting_credentials(tmp_path: Path) -> None:
+    """Precondition: a ``candidate`` job checkout step for a repository whose ``website`` entry
+    is a raw gitlink with an empty ``.gitmodules``. Action: run ``checkout-candidate`` then
+    ``fetch-website`` in an empty workspace under bash. Postcondition: the parent commit and pinned
+    website commit materialize cleanly without invoking ``actions/checkout`` credential cleanup on
+    unmapped gitlinks, and local git config holds no authorization header."""
+    workflow = yaml.safe_load(_WEBSITE_WORKFLOW.read_text(encoding="utf-8"))
+    candidate_steps = workflow["jobs"]["candidate"]["steps"]
+    assert not any(
+        str(step.get("uses", "")).startswith("actions/checkout")
+        and step.get("with", {}).get("persist-credentials") is False
+        for step in candidate_steps
+    )
+
+    env, _, parent_origin, _, _, parent_sha, pinned_website_sha = _create_raw_website_gitlink_fixtures(tmp_path)
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+
+    checkout_step = _job_step(_WEBSITE_WORKFLOW, "candidate", "checkout-candidate")
+    subprocess.run(
+        ["bash", "--noprofile", "--norc", "-eo", "pipefail", "-c", checkout_step["run"]],
+        cwd=workspace,
+        env={**env, "REPOSITORY_URL": str(parent_origin), "TARGET_SHA": parent_sha},
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    fetch_step = _job_step(_WEBSITE_WORKFLOW, "candidate", "fetch-website")
+    subprocess.run(
+        ["bash", "--noprofile", "--norc", "-eo", "pipefail", "-c", fetch_step["run"]],
+        cwd=workspace,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    assert _run_git(env, "git", "rev-parse", "HEAD", cwd=workspace) == parent_sha
+    assert _run_git(env, "git", "rev-parse", "HEAD:website", cwd=workspace) == pinned_website_sha
+    assert _run_git(env, "git", "rev-parse", "HEAD", cwd=workspace / "website") == pinned_website_sha
+    assert (workspace / "website" / "sub" / "nested.txt").read_text(encoding="utf-8") == "nested\n"
+    assert "extraheader" not in _run_git(env, "git", "config", "--local", "--list", cwd=workspace).lower()
+    assert _run_git(env, "git", "status", "--porcelain", "--untracked-files=normal", cwd=workspace) == ""
