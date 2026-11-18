@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-18; revising Graphviz PR56 CI policy with owner-requested Claude Pair Review. Concurrent recursive-test fixture PR57 remains with its pair and the owner.
+State: paused 2026-11-18; Graphviz PR56 revised and accepted by Claude after one round; merged gate and native amd64/arm64 checks pass. PR56 and concurrent accepted PR57 await owner merge.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5b0f27c04de1
 
@@ -30,8 +30,32 @@ remain untouched.
 Main synchronization stays deferred for this release-targeted slice: the only
 workflow difference is the development-version stamp, not a rule change.
 Release remains at `5fcd1684`. No release ref is merged, rebased or retagged.
-The next step is independent Claude review of all PR56 changes, followed by
-assessment, any review merge, the full gate and an updated implementation PR.
+Claude Code `claude-fable-5-2` reviewed all PR56 changes in its own checkout.
+[Review PR58](https://github.com/mycodespace-ai/devcapsule/pull/58) was accepted at
+`5b39c09b` after one correction round and merged at `9df832f9`. Both detached
+turns exited 0 in session `3c7d4449-78ce-4f62-a06f-32056f838b6f`; streaming init
+confirmed the model. The implementor read the complete diff, passed 74 focused
+cases and [recorded the assessment](https://github.com/mycodespace-ai/devcapsule/pull/58#issuecomment-6971885045).
+
+The review fixes restrictive-umask staging modes, matches ARM pins by version,
+derives smoke PATH from component declarations, checks final-image libraries
+and licenses, and repairs masked/refusal/composition test coverage. The requested
+[round 1](evidence/2026-11-18-graphviz-review/round-1.md) makes the permission test
+set umask 077 and restore it, with red-before/green-after evidence. Reviewer gate:
+3,433 unit and 474 console passes, clean types/conventions, 26 integration passes;
+only docs-contract skipped for its uninitialized website. The implementor's
+merged gate passes all checks, including the documentation contract (249 pages):
+3,433 unit tests, 474 console tests, types over 368 files, conventions, CLI/PEX
+smoke. The merged focused integration command passes all 26 cases.
+
+The manual native workflow passes on both architectures in
+[run 44257920433](https://github.com/mycodespace-ai/devcapsule/actions/runs/44257920433),
+source `9df832f9`. Six final-image checks and all five renders pass on each
+platform as uid/gid 1000:1000, with no network during build or runtime. Reports
+in `evidence/graphviz-0.3.1/` now record that source and run. Source in this
+checkout matches that tested commit; later changes retain records only.
+The review worktree is removed after its clean-state check; its briefs and
+outcomes remain committed. No candidate or release acceptance is claimed.
 The review brief is [retained here](evidence/2026-11-18-graphviz-review/review-brief.md).
 The concurrent pair has since delivered recursive-test fix PR57, accepted by
 Antigravity; it awaits owner merge and is outside this checkout's scope.
@@ -81,7 +105,7 @@ The routing choice is recorded here and in R-TOOLS-001, so its capsule decision
 page was retired. No transcript or tokened URL is retained in Git.
 
 Coordination: the tool stores one claim per workstream; the concurrent pair's
-current fixture claim must not be cleared by this checkout. Live publication
+claim is released only by the checkout that owns it. Live publication
 preserves the other pair's status along with this component handoff. This
 limitation was handed to workflow-improvements at coordination `a6fd5bf232ec`
 without changing its code. No maintenance mail was waiting at pause.
@@ -5050,9 +5074,9 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Complete the owner-requested Claude review of Graphviz PR56, resolve findings,
-run the full gate and hand the revised PR back. The concurrent recursive-test
-fix PR57 is accepted and awaits owner merge; no fixture question remains.
+Owner review and merge of revised, Claude-reviewed Graphviz PR56 into the
+release. Concurrent recursive-test fix PR57 is independently accepted and awaits
+owner merge; no fixture question remains.
 Release propagation and candidate acceptance remain release-driver work.
 
 Current, 2026-11-17: rc3 publication and download verification are complete.
@@ -5907,9 +5931,17 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
+Graphviz review follow-ups: consider a public operation for ancillary stages
+and environment when another build component needs it; clarify migrated matrix
+test docstrings; reconsider the unreachable non-file recipe-input refusal then.
+These are optional cleanups, not new delivery requirements. No product choice
+is pending for Graphviz. Both merged and native validation passed; owner merge
+of PR56 is next.
+Review scratch and private event logs are deliberately not committed.
+
 Awaiting the owner: merge accepted PR57; no test-disposition question remains.
 Accepting group 0 and integration migration were authorized. Graphviz PR56 is independently
-under owner-requested Claude review after the CI correction. Weighed: supplying a positive fixture group would hide a
+ready for owner review and merge after the Claude review and CI correction. Weighed: supplying a positive fixture group would hide a
 real unsupported assumption, so it was rejected. The old dry-run runtime
 identity guard remains outside this Docker-group fix; the working successor
 launcher has its separate rootless support. Deliberately not preserved: scratch

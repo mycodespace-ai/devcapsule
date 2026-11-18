@@ -70,10 +70,43 @@ inputs; catalog snapshots and real loader checks moved to integration.
 - PATH is contributed once per component, so composing Graphviz with agent
   components does not repeat its prefix for every build dependency.
 
+## CI policy correction and independent review
+
+The owner rejected the original unexplained automatic push trigger for main
+and release-0.3.1. The native Docker workflow is now manual-only, with comments
+that explain acquisition, offline compilation, runtime rendering and evidence
+limits. This preserves the automatic gate's no-Docker contract. DEVELOPING.md
+and WORKFLOW-LOCAL.md describe how to run the opt-in check for a selected ref.
+There is no permanent release-specific trigger.
+
+At the owner's request, Claude Code `claude-fable-5-2` reviews the complete
+Graphviz diff in its own checkout under the committed
+[review brief](evidence/2026-11-18-graphviz-review/review-brief.md). The streaming
+init event confirms the model. [Review PR58](https://github.com/mycodespace-ai/devcapsule/pull/58)
+was accepted at `5b39c09b` after one correction round and merged at `9df832f9`.
+The [assessment](https://github.com/mycodespace-ai/devcapsule/pull/58#issuecomment-6971885045)
+records the implementor's diff review and independent 74-case focused pass.
+
+The review fixes staging-directory modes under restrictive host umasks and
+matches ARM artifact tables by version. Smoke PATH now comes from production
+component declarations. Final-image checks cover licenses, bundled libraries,
+missing dynamic libraries, and absent build-only packages. Tests now reach
+intended artifact-name refusals and cover recipe assembly, unsafe versions,
+duplicate grouped targets and complete lock propagation. Round 1 requires the
+umask regression to set 077 and restore it; red-before/green-after is proven.
+The reviewer gate passed 3,433 unit and 474 console tests, with 26 integration
+passes. Its documentation check skipped for an absent website submodule; the
+implementor's merged gate passes it here (249 pages), together with 3,433 unit
+and 474 console tests, types, conventions, CLI/PEX smoke. Merged focused
+integration passes all 26 cases. The final source is validated by manual native
+[run 44257920433](https://github.com/mycodespace-ai/devcapsule/actions/runs/44257920433)
+on `9df832f9`: both platforms pass six image checks and five renders. The durable
+reports above are replaced with that stronger proof and its source/run provenance.
+
 ## Remaining delivery
 
-PR56 targets `release-0.3.1`; the human merges. Final-head CI is rechecked after
-recording the native arm64 edge. No scope or implementation choice is pending.
+PR56 targets `release-0.3.1`; the human merges. Independent review and merged
+validation pass. Final automatic checks are reverified at handoff.
 Main propagation, candidate production and downloaded-candidate acceptance
 remain release-driver work; this component validation is not candidate acceptance.
 
