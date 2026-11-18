@@ -80,7 +80,7 @@ At the start of the next session, the incoming agent or developer reads [`CURREN
 ### Not a fit, or not yet
 
 - You only need a shell for your agent. Its built-in sandbox may already
-  cover your needs.
+  cover your needs. [Compare DevCapsule with other agent environments](engineering-docs/blog/2026-10-18-where-devcapsule-sits.md).
 - Your isolation requirements call for a separate virtual machine. DevCapsule
   uses Docker containers.
 - On Apple Silicon, the [macOS launcher](docs/platforms/macos.md) is an
@@ -151,7 +151,7 @@ choice.
 
 Choose DevCapsule when you want the desktop IDE itself, its debugger and the
 agent to run together inside Docker. DevCapsule is open source and needs no
-DevCapsule account. [See the detailed comparison](engineering-docs/design-notes/devcapsule/competitive-comparison.md).
+DevCapsule account. [Read the October 2026 competitive comparison](engineering-docs/blog/2026-10-18-where-devcapsule-sits.md).
 
 <!-- website:contribute -->
 ## Contribute
