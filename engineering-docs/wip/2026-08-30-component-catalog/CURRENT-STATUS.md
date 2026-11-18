@@ -4,13 +4,13 @@ Mnemonic: `component-catalog`
 
 Start date: 2026-08-30
 
-State: integrating the Xfce Terminal component through PR #60, 2026-11-18
+State: integrating the Xfce Terminal component into release 0.3.1, 2026-11-18
 
-Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
+Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5b0f27c04de1
 
-Branch association: `ws-component-catalog/xfce4-terminal`
+Branch association: `ws-component-catalog/xfce4-terminal-031`
 
-Integration target: `main`
+Integration target: `release-0.3.1`
 
 Delivery method: pull request, merge commit; owner operates the GitHub UI
 
@@ -34,6 +34,12 @@ workstream-specific capability profiles. New/changed code coverage must exceed
 No release or website publishing.
 
 ## Current State
+
+- 2026-11-18. At the owner's request, the terminal addition from
+  [PR #60](https://github.com/mycodespace-ai/devcapsule/pull/60) now targets
+  0.3.1. The release branch at `5c222388` includes Graphviz and its own
+  resolution test layout. Matrix `embedded-35` resolves the terminal with
+  Graphviz and Codex on amd64. The release driver owns the merge.
 
 - 2026-11-18. The owner selected Xfce Terminal as a tabbed desktop IDE with
   the exact configuration value `xfce4-terminal`. The fresh branch started
@@ -262,10 +268,15 @@ No release or website publishing.
 
 ## Planned Next Step
 
-Review and integrate [PR #60](https://github.com/mycodespace-ai/devcapsule/pull/60). The existing rollback,
+Review and integrate the terminal pull request against `release-0.3.1`. The existing rollback,
 pin recovery and proposal-export questions remain in Open Threads.
 
 ## Validation And External State
+
+- The rebased `v0.3.1-local-linux-x86_64` executable passed the amd64 browser
+  smoke on the published base: two independent tab shells in the checkout,
+  a saved Vim edit, and clean exit after closing the last shell. All 25
+  release matrix integration cases passed, including the new terminal lock.
 
 - Xfce Terminal, 2026-11-18. The packaged CLI initialized and ran a fresh
   amd64 checkout against the published recipe-11 base. Playwright opened a
