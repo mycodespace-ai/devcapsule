@@ -4,6 +4,7 @@
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -36,14 +37,20 @@ def test_grouped_inputs_copy_in_one_layer_and_keep_their_permissions(tmp_path: P
 
 
 def test_grouped_inputs_stage_directories_any_image_user_can_enter(tmp_path: Path) -> None:
-    """Every staged directory is world-searchable, so an exported parent stays usable by the capsule user."""
+    """Under a umask that denies group and others, every staged directory is still world-searchable,
+    so an exported parent stays usable by the capsule user."""
     source = tmp_path / "source"
     source.write_bytes(b"verified artifact")
     spec = ImageBuildSpec("result:test", "base:test", (FileGroupComponent((
         FileComponent(source, "/opt/tool/.build/source.tar.gz", 0o644),
     )),))
     context = tmp_path / "context"
-    render_build_context(spec.build_plan(), context)
+    # The umask is the precondition: under the usual 022 a plain mkdir already yields 0755.
+    previous = os.umask(0o077)
+    try:
+        render_build_context(spec.build_plan(), context)
+    finally:
+        os.umask(previous)
     root = context / "file-group-0"
     staged = [root, root / "opt", root / "opt/tool", root / "opt/tool/.build"]
     assert [path.stat().st_mode & 0o7777 for path in staged] == [0o755] * 4
