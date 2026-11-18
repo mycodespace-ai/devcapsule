@@ -1,28 +1,12 @@
 name: Graphviz component
 
+# Opt-in component acceptance: compile the locked source and render on native
+# amd64/arm64 runners. This uses Docker and stays outside the automatic unit
+# gate (DEVELOPING.md). Run manually for changed source/dependency pins or build
+# recipes, selecting the branch/ref to verify in Actions. No release is hardcoded.
+# This checks a source checkout; it does not accept a downloaded release candidate.
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - devcapsule-src/devcapsule/components/graphviz*.py
-      - devcapsule-src/devcapsule/components/interface.py
-      - devcapsule-src/devcapsule/components/catalog.py
-      - devcapsule-src/devcapsule/materialization.py
-      - devcapsule-src/devcapsule/resolution_matrix.py
-      - devcapsule-src/devcapsule/images/build.py
-      - devcapsule-src/scripts/graphviz-component-smoke.py
-      - .github/workflows/graphviz-component.yml
-  push:
-    branches: [main, release-0.3.1]
-    paths:
-      - devcapsule-src/devcapsule/components/graphviz*.py
-      - devcapsule-src/devcapsule/components/interface.py
-      - devcapsule-src/devcapsule/components/catalog.py
-      - devcapsule-src/devcapsule/materialization.py
-      - devcapsule-src/devcapsule/resolution_matrix.py
-      - devcapsule-src/devcapsule/images/build.py
-      - devcapsule-src/scripts/graphviz-component-smoke.py
-      - .github/workflows/graphviz-component.yml
 
 permissions:
   contents: read
@@ -57,6 +41,7 @@ jobs:
         with:
           path: .cache/graphviz
           key: graphviz-${{ matrix.platform }}-${{ hashFiles('devcapsule-src/devcapsule/components/graphviz_pin.py') }}
+      # Acquisition may use the network; compilation and runtime renders do not.
       - name: Build offline and render in the native capsule platform
         run: >-
           python devcapsule-src/scripts/graphviz-component-smoke.py

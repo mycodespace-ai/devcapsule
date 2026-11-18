@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: active 2026-11-18; Graphviz PR56 ready for owner merge into release-0.3.1; native amd64/arm64 validation passes. Concurrent recursive-test fixture slice is paused for owner clarification.
+State: active 2026-11-18; revising Graphviz PR56 CI policy with owner-requested Claude Pair Review. Concurrent recursive-test fixture PR57 remains with its pair and the owner.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -16,6 +16,25 @@ Branch association: `ws-maintenance/graphviz-031`, Graphviz PR56 synchronized wi
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
+
+## Graphviz CI correction and Pair Review — 2026-11-18
+
+The owner rejected the unexplained `push: branches: [main, release-0.3.1]`
+trigger and requested a different-engine Pair Review. The correction makes the
+native Graphviz Docker workflow manual-only. Comments explain its scope,
+network boundary and source-build evidence limit. The developer brief and local
+validation commands document this opt-in check. The owner's in-progress YAML
+removal was incorporated; the original project configuration and website edits
+remain untouched.
+
+Main synchronization stays deferred for this release-targeted slice: the only
+workflow difference is the development-version stamp, not a rule change.
+Release remains at `5fcd1684`. No release ref is merged, rebased or retagged.
+The next step is independent Claude review of all PR56 changes, followed by
+assessment, any review merge, the full gate and an updated implementation PR.
+The review brief is [retained here](evidence/2026-11-18-graphviz-review/review-brief.md).
+The concurrent pair has since delivered recursive-test fix PR57, accepted by
+Antigravity; it awaits owner merge and is outside this checkout's scope.
 
 ## Graphviz component delivered in PR56 — 2026-11-18
 
@@ -5866,7 +5885,7 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-Graphviz: PR56 is ready for owner review/merge; source and native rendering checks pass. No Graphviz implementation choice remains. Keep the separate recursive-test fixture clarification below pending; it belongs to the concurrent slice. Release propagation and candidate acceptance remain with the release driver. The personal Graphviz install was removed; scratch logs are not a transcript or candidate acceptance record.
+Graphviz: owner-requested Claude Pair Review and CI correction are in progress; PR56 is not handed back as ready until review and validation finish. Keep the separate recursive-test fixture clarification below pending; it belongs to the concurrent slice. Release propagation and candidate acceptance remain with the release driver. The personal Graphviz install was removed; scratch logs are not a transcript or candidate acceptance record.
 
 
 Awaiting the owner: literal deletion or repair of the two recursive dry-run tests.
