@@ -11,8 +11,10 @@ on:
 permissions:
   contents: read
 
+# One run per selected ref: dispatching again for the same ref replaces the
+# run in progress, and runs for different refs do not disturb one another.
 concurrency:
-  group: graphviz-component-${{ github.event.pull_request.number || github.ref }}
+  group: graphviz-component-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

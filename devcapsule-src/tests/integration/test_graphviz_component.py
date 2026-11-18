@@ -47,4 +47,6 @@ def test_a_project_can_declare_graphviz_on_its_native_capsule_platform(
     graphviz = lock["components"]["graphviz"]
     assert graphviz["platform"] == platform.value
     assert graphviz["delivery-policy"] == "local-materialization"
-    assert graphviz["artifacts"]["source"]["sha256"]
+    # Every source and dependency URL and hash the catalog pins reaches the project's lock unchanged.
+    assert graphviz == expected["components"]["graphviz"]
+    assert "unverified-combinations" not in lock

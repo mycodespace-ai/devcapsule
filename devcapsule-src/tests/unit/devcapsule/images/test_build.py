@@ -35,6 +35,32 @@ def test_grouped_inputs_copy_in_one_layer_and_keep_their_permissions(tmp_path: P
     assert (tree / "dependency.deb").stat().st_mode & 0o777 == 0o600
 
 
+def test_grouped_inputs_stage_directories_any_image_user_can_enter(tmp_path: Path) -> None:
+    """Every staged directory is world-searchable, so an exported parent stays usable by the capsule user."""
+    source = tmp_path / "source"
+    source.write_bytes(b"verified artifact")
+    spec = ImageBuildSpec("result:test", "base:test", (FileGroupComponent((
+        FileComponent(source, "/opt/tool/.build/source.tar.gz", 0o644),
+    )),))
+    context = tmp_path / "context"
+    render_build_context(spec.build_plan(), context)
+    root = context / "file-group-0"
+    staged = [root, root / "opt", root / "opt/tool", root / "opt/tool/.build"]
+    assert [path.stat().st_mode & 0o7777 for path in staged] == [0o755] * 4
+
+
+def test_grouped_inputs_refuse_two_files_at_one_destination(tmp_path: Path) -> None:
+    """Two grouped inputs cannot silently replace one another at the same image path."""
+    source = tmp_path / "source"
+    source.write_bytes(b"input")
+    spec = ImageBuildSpec("result:test", "base:test", (FileGroupComponent((
+        FileComponent(source, "/opt/tool/.build/input.deb"),
+        FileComponent(source, "/opt/tool/.build/input.deb"),
+    )),))
+    with pytest.raises(CliError, match="Invalid or repeated"):
+        render_build_context(spec.build_plan(), tmp_path / "context")
+
+
 @pytest.mark.parametrize("destination", ["/../escape", "/"])
 def test_grouped_inputs_refuse_destinations_outside_the_staged_tree(tmp_path: Path, destination: str) -> None:
     """A grouped file cannot escape its build-context directory or overwrite its root."""
