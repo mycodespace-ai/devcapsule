@@ -4,11 +4,11 @@ Mnemonic: `website`
 
 Start date: `2026-09-16`
 
-State: paused 2026-09-30; the producer migration is merged (PR #152) and the versioned documentation is live at devcapsule.mycodespace.ai; the owner declared the effort done
+State: landing page copy in review for DevCapsule main, 2026-11-18
 
-Definition read: WORKFLOW.md@89c7023c443d, WORKFLOW-LOCAL.md@39bae456ae83
+Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
-Branch association: `ws-website/contract-v1`, forked from `main` at `d9b9975` on 2026-09-28 under the `ws-` form; the earlier `website/initial-cut` is closed, everything it held is on `main`
+Branch association: `ws-website/content-update`
 
 Integration target: DevCapsule `main`. Website PR #1 is merged into its `main`
 at `b55ea0a`, with the same tree as previewed implementation `c508b91`.
@@ -17,6 +17,46 @@ Delivery method: reviewable SSH-pushed branches; the owner creates/merges PRs
 and performs final GitHub backend wiring. The owner has now authorized making
 the site live at `devcapsule.mycodespace.ai` before finishing the review.
 No force-push or mainline implementation is needed.
+
+## Landing page copy (2026-11-18)
+
+The owner supplied equivalent README patches for main and release-0.3.1.
+The website slice began at the current mainline, `79b98bfe`. Review the
+single mainline change with the pinned website renderer. The homepage
+continues to feature the step-by-step presentation integrated in PR #59.
+
+After 0.3.1, check the release documentation version declaration and align
+the producer and consumer contract wording. After the successor upgrade
+release, draft the article for the bounded adopter pilot. Project management
+owns the pilot plan and the owner reviews it before outreach or publication.
+
+## Planned Next Step
+
+Review and merge the landing page copy pull request.
+
+## Presentations on the website (2026-11-15)
+
+The owner resumed this workstream to bring the console presentation viewer to
+the website. The working branch synchronized with canonical `upstream/main`;
+`origin/main` had diverged and is the older fork. The viewer implementation is
+on the website repository branch `presentations`. This branch supplies the
+recorded `todo-fastapi-postgres-react` presentation from the release checkout;
+the website discovers its document and media at build time. The website branch is pushed at `c57a50c`, and this branch pins it for review.
+The website change and this content must be integrated together. No publication
+has occurred.
+
+The four incoming items were acknowledged in the disposition log. Journal video
+support remains a later website task; W10 records the Pagefind dependency
+constraint. Next: complete the website checks, integrate the website branch,
+advance the parent website pin, validate against the final content, and deliver
+through the normal review and publication process. The site build, production-mode link check, content contract, 23 tests, 63
+browser audits and clean-clone update check passed. A relocation-only README
+from the older fork was restored to canonical upstream content after the merge.
+The initial parent gate compared against the old fork; the rerun used upstream
+and passed types and test conventions, but reported test failures and errors.
+One reproduced error is a launcher-only command refusing inside this capsule.
+The run was stopped at 92% after it stalled; other failures remain untriaged.
+The full gate has not passed.
 
 ## Producer Migration (2026-09-28)
 
@@ -551,6 +591,12 @@ W00 remains the highest website priority; this split does not reprioritize it.
   or permanent exception to workstream routing is introduced.
 
 ## Open Threads
+
+- Presentations: review and merge the website branch first, then update the
+  parent pin to its merged revision, complete the parent gate in a suitable
+  launcher environment, and deliver the parent branch. Review the test site
+  before any production publication. The website viewer is a copied adaptation
+  and must follow future console changes.
 
 - Awaiting the owner: reader-test feedback and selection of the next bounded
   content/parent-integration task. The experiment's A− verdict is settled.
