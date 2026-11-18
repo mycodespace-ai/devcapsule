@@ -741,6 +741,34 @@ def test_materialization_builds_a_recipe_component_in_its_own_stage_and_exports_
     assert [value for name, value in plan.env if name == "PATH"][0] == "/opt/claude/bin:/opt/graphviz/bin:${PATH}"
 
 
+def test_deb_surface_installs_the_pinned_main_package_and_dependency_together(tmp_path: Path) -> None:
+    """A native surface passes both verified package files intact to one offline dpkg installation."""
+    terminal, dependency = tmp_path / "terminal.deb", tmp_path / "dependency.deb"
+    terminal.write_bytes(b"surface bytes")
+    dependency.write_bytes(b"dependency bytes")
+    surface = ArtifactSpec("1.0", terminal.as_uri(), sha256_file(terminal), None)
+    dep = LockedArtifactDeclaration("xfce4-terminal", "2.0", dependency.as_uri(), sha256_file(dependency),
+                                    "/tmp/dependency.deb", artifact_format="deb-package")
+    built: dict[str, ImageDetails] = {}
+
+    def build(spec: ImageBuildSpec) -> None:
+        plan = spec.build_plan()
+        staging, = (item for item in plan.directories if item.destination == "/tmp/devcapsule-native-debs")
+        install, = (step.args[-1] for step in plan.exec_steps if "dpkg --install" in step.args[-1])
+        for digest, source in ((surface.sha256, terminal), (dep.sha256, dependency)):
+            assert (staging.source / f"{digest}.deb").read_bytes() == source.read_bytes()
+            assert f"{staging.destination}/{digest}.deb" in install.split(";")[0]
+        built[plan.image] = image_details(plan.image, dict(plan.labels))
+
+    _, created = ensure_materialized_surface(
+        base_reference="base:test", base_identity="sha256:base", platform="linux-amd64",
+        component_id="xfce4-terminal", recipe_id="xfce4-terminal-deb", recipe_version="1",
+        artifact=surface, ancillary_artifacts=(dep,), cache_root=tmp_path / "cache",
+        inspect_image=built.get, build=build,
+    )
+    assert created
+
+
 def test_surface_materialization_spec_stamps_complete_formation_labels(tmp_path: Path) -> None:
     """``surface_materialization_spec`` produces labels that satisfy ``verify_materialized_image``."""
     pycharm = tmp_path / "pycharm"

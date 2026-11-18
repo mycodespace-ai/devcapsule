@@ -17,11 +17,10 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
-sys.path.insert(0, str(REPO_ROOT / "tests"))
 
 from devcapsule.platforms import Platform  # noqa: E402
 from devcapsule.resolution_matrix import MATRICES  # noqa: E402
-from test_resolution_matrix import GOLDEN_NEEDS, GOLDEN_ROOT  # noqa: E402
+from tests.integration.test_resolution_matrix import GOLDEN_NEEDS, GOLDEN_ROOT  # noqa: E402
 
 
 def main() -> int:

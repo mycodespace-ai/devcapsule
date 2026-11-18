@@ -23,6 +23,7 @@ GOLDEN_ROOT = Path(__file__).parents[1] / "resources" / "golden_locks"
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 GOLDEN_NEEDS = {
+    "xfce4-terminal": ["xfce4-terminal"],
     "eclipse-browser": ["eclipse-ide", "java", "browser-automation"],
     "pycharm-minimal": ["python", "python-ide"],
     "dogfood": ["antigravity-agent", "browser-automation", "claude-code-agent", "codex-agent", "docker-cli", "python", "python-ide"],
