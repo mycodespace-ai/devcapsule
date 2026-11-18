@@ -4,9 +4,9 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: paused 2026-11-18; recursive dry-run fix PR57 is accepted by Antigravity and ready for owner merge into release-0.3.1. Concurrent Graphviz PR56 remains ready for owner merge.
+State: active 2026-11-18; revising Graphviz PR56 CI policy with owner-requested Claude Pair Review. Concurrent recursive-test fixture PR57 remains with its pair and the owner.
 
-Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
+Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5b0f27c04de1
 
 Integration target: `main`
 
@@ -16,6 +16,25 @@ Branch association: `ws-maintenance/graphviz-031`, Graphviz PR56 synchronized wi
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
+
+## Graphviz CI correction and Pair Review — 2026-11-18
+
+The owner rejected the unexplained `push: branches: [main, release-0.3.1]`
+trigger and requested a different-engine Pair Review. The correction makes the
+native Graphviz Docker workflow manual-only. Comments explain its scope,
+network boundary and source-build evidence limit. The developer brief and local
+validation commands document this opt-in check. The owner's in-progress YAML
+removal was incorporated; the original project configuration and website edits
+remain untouched.
+
+Main synchronization stays deferred for this release-targeted slice: the only
+workflow difference is the development-version stamp, not a rule change.
+Release remains at `5fcd1684`. No release ref is merged, rebased or retagged.
+The next step is independent Claude review of all PR56 changes, followed by
+assessment, any review merge, the full gate and an updated implementation PR.
+The review brief is [retained here](evidence/2026-11-18-graphviz-review/review-brief.md).
+The concurrent pair has since delivered recursive-test fix PR57, accepted by
+Antigravity; it awaits owner merge and is outside this checkout's scope.
 
 ## Graphviz component delivered in PR56 — 2026-11-18
 
@@ -71,46 +90,25 @@ without changing its code. No maintenance mail was waiting at pause.
 
 ## Recursive test failure follow-up — 2026-11-18
 
-The owner authorized accepting Docker group 0 and moving the failing checks to
-integration. The real socket here has gid 0; namespace gid 0 maps to host gid
-1000. The successor launcher already handles rootless identity 0:0. The older
-dry-run staging code's blanket positive Docker-group requirement was stale.
-A disposable source probe reproduced two failures unchanged and two passes
-when only that rejection was removed; no test assertion was skipped.
+The owner reported PR55 merged and asked to get rid of the two failing tests.
+SSH fetch verifies the merge at `5fcd1684`. The current branch is
+`ws-maintenance/recursive-test-fixture`, within maintenance. Retain the release
+baseline: main's workflow difference is only the development-version stamp.
 
-The fix accepts non-negative integer Docker groups, rejects booleans and
-fractional IDs, and uses the existing root group for gid 0 rather than emitting
-a duplicate group ID. The separate successor identity and sudo-group contracts
-are unchanged. This does not claim rootless identity support for the old dry-run
-command: its positive runtime UID/GID guard remains outside this narrow slice.
+The focused `tests/test_recursive_orchestrator.py` run reproduces 2 failures
+and 4 passes. Both successful-dry-run tests create a socket with ambient group
+0; `RecursiveStagingArea.prepare_launch_files` requires a positive Docker group.
+Changing a disposable socket to group 1000 is refused with EPERM, both under
+home scratch and /tmp. No working-project configuration was changed.
 
-The whole six-test legacy orchestration file is retired into integration, as
-Unit Tests rule 5 requires complete retirement. These checks compose real
-packaging metadata, sockets, file staging and cleanup. All six behaviors remain;
-the failure tests now require the intended oversized-Xauthority error. Six
-parameter cases additionally cover zero, distinct and primary Docker groups,
-unique group entries, and invalid IDs. Focused integration: 12 passed.
-
-Branch: `ws-maintenance/recursive-test-fixture`, from release `5fcd1684`.
-Main's only workflow difference is its development-version stamp; the touched
-source/test files have no main/release difference. Retain the release baseline
-under the existing release-fix arrangement.
-[PR57](https://github.com/mycodespace-ai/devcapsule/pull/57) targets the release;
-the owner merges. No release/main merge, tag or E2E launch is claimed. Full gate passed: 3,409 unit passes, 1 skipped, 239 deselected, 1 xfailed and
-1 existing xpassed; mypy 362 files, conventions zero breaches, CLI/PEX smoke,
-docs contract and 474 console tests passed. Twelve focused integration cases
-passed separately. Antigravity `gemini-4-hydrogen` accepted `9eca39f0` without edits or a round.
-Its independent gate passed with the same unit/console counts and 12 integration
-passes; docs contract skipped only in its uninitialized website checkout. The
-implementor independently passed that check. No review PR or unimplemented
-proposal remains. Streaming init confirmed the model; the detached reviewer
-exited 0, conversation `586ff691-4744-4b9f-80de-013841edf6be`, under the
-[review brief](evidence/2026-11-18-recursive-group/review-brief.md).
-[Bug record](../../bugs/devcapsule/2026-11-18-recursive-dry-run-rejects-docker-group-zero.md). The initial gate could not create its
-scratch under read-only /opt; use writable scratch, without changing permissions.
-Preserve the user's two `.devcapsule` edits. The published Graphviz handoff is
-retained verbatim above; this checkout does not change that slice's source/state.
-
+Asked whether the owner means literal deletion or repair retaining the checks.
+Deletion triggers the local whole-file legacy retirement rule. A bounded repair
+can move the socket-group read to the public entry operation and pass it as a
+required value to preparation, with legacy call-signature updates. No repair,
+skip, deletion, production edit or test-policy change has been applied.
+The separate unmountable-staging failure is outside these two cases.
+Preserve both user `.devcapsule` edits. Mail is empty. Scratch probes are disposable.
+No PR exists for this records-only pause.
 
 ## CLI documentation follow-up — 2026-11-18
 
@@ -5031,10 +5029,9 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Owner review and merge of accepted recursive dry-run fix PR57 into the release.
-After merge, verify the remote tree and handle main propagation. Concurrent Graphviz
-PR56 remains with the owner. Main propagation and candidate acceptance remain
-release-driver work; no tag is authorized.
+Read the owner's answer about deleting or repairing the two recursive dry-run
+tests, then implement that bounded choice and validate. The CLI documentation
+PR55 is merged. Release propagation and acceptance remain later tasks.
 
 Current, 2026-11-17: rc3 publication and download verification are complete.
 Resume final 0.3.1 acceptance from the release overview: host project-config
@@ -5888,13 +5885,15 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-Awaiting the owner: merge accepted PR57; no test-disposition question remains.
-Accepting group 0 and integration migration were authorized. Graphviz PR56 is independently
-ready for owner merge. Weighed: supplying a positive fixture group would hide a
-real unsupported assumption, so it was rejected. The old dry-run runtime
-identity guard remains outside this Docker-group fix; the working successor
-launcher has its separate rootless support. Deliberately not preserved: scratch
-probes and raw transcripts. Preserve both user configuration edits.
+Graphviz: owner-requested Claude Pair Review and CI correction are in progress; PR56 is not handed back as ready until review and validation finish. Keep the separate recursive-test fixture clarification below pending; it belongs to the concurrent slice. Release propagation and candidate acceptance remain with the release driver. The personal Graphviz install was removed; scratch logs are not a transcript or candidate acceptance record.
+
+
+Awaiting the owner: literal deletion or repair of the two recursive dry-run tests.
+The fixture cannot set a positive socket group in this capsule (EPERM).
+Deletion requires whole-file legacy migration; an explicit-input repair is smaller.
+No source/test edits or policy exceptions have been made. The third staging
+failure remains separate. PR55's release merge is verified at `5fcd1684`.
+Preserve both user configuration edits. Scratch logs are reproducible and omitted.
 
 
 Owner returned this checkout to maintenance on 2026-11-17, explicitly requesting
