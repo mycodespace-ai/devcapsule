@@ -4,11 +4,11 @@ Mnemonic: `website`
 
 Start date: `2026-09-16`
 
-State: paused 2026-11-15; website presentations prepared for review; integration and publication remain
+State: landing page copy in review for DevCapsule main, 2026-11-18
 
-Definition read: WORKFLOW.md@89de30622697, WORKFLOW-LOCAL.md@d92bdcbb0a01
+Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
-Branch association: `ws-website/contract-v1`, forked from `main` at `d9b9975` on 2026-09-28 under the `ws-` form; the earlier `website/initial-cut` is closed, everything it held is on `main`
+Branch association: `ws-website/content-update`
 
 Integration target: DevCapsule `main`. Website PR #1 is merged into its `main`
 at `b55ea0a`, with the same tree as previewed implementation `c508b91`.
@@ -17,6 +17,22 @@ Delivery method: reviewable SSH-pushed branches; the owner creates/merges PRs
 and performs final GitHub backend wiring. The owner has now authorized making
 the site live at `devcapsule.mycodespace.ai` before finishing the review.
 No force-push or mainline implementation is needed.
+
+## Landing page copy (2026-11-18)
+
+The owner supplied equivalent README patches for main and release-0.3.1.
+The website slice began at the current mainline, `79b98bfe`. Review the
+single mainline change with the pinned website renderer. The homepage
+continues to feature the step-by-step presentation integrated in PR #59.
+
+After 0.3.1, check the release documentation version declaration and align
+the producer and consumer contract wording. After the successor upgrade
+release, draft the article for the bounded adopter pilot. Project management
+owns the pilot plan and the owner reviews it before outreach or publication.
+
+## Planned Next Step
+
+Review and merge the landing page copy pull request.
 
 ## Presentations on the website (2026-11-15)
 
