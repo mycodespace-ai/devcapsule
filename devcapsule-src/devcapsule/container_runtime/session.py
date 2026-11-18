@@ -77,6 +77,9 @@ class Session:
             )
         if adapter == "vscode":
             return SurfaceLaunch(vscode.plan(self.plan).command)
+        if adapter == "xfce4-terminal":
+            return SurfaceLaunch(("/usr/bin/xfce4-terminal", "--disable-server", "--maximize",
+                                  "--working-directory", self.plan.project_path))
         if adapter == "eclipse":
             return SurfaceLaunch(eclipse.plan(self.plan).command)
         raise RuntimePlanError(f"unsupported component adapter: {adapter}")

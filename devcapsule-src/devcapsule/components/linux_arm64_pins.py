@@ -22,6 +22,8 @@ Keys are ``(component id, version)``, as the linux-amd64 matrix pins them.
 
 from typing import Any
 
+from devcapsule.components.xfce_terminal_pin import ARM64 as XFCE_TERMINAL_ARM64
+
 LINUX_ARM64_ECLIPSE_NATIVE_PACKAGES: dict[str, dict[str, str]] = {'bubblewrap': {'sha256': 'dce3a2e5f0302eab717a64fe9c9411fe2d40469e2a7946e0f2ce1420a61025c3',
                 'url': 'https://ports.ubuntu.com/ubuntu-ports/pool/main/b/bubblewrap/bubblewrap_0.9.0-1ubuntu0.3_arm64.deb',
                 'version': '0.9.0-1ubuntu0.3'},
@@ -258,6 +260,7 @@ LINUX_ARM64_PLAYWRIGHT_PIN: dict[str, Any] = {'version': '1.63.0',
                                'destination': '/opt/playwright/browsers/ffmpeg-1011'}}}
 
 COMPONENT_LOCK_TABLES: dict[tuple[str, str], dict[str, Any]] = {
+    ("xfce4-terminal", "1.1.3"): XFCE_TERMINAL_ARM64,
     ('pycharm', '2026.2.0.1'): {'version': '2026.2.0.1',
      'variant': 'professional',
      'delivery-policy': 'local-materialization',

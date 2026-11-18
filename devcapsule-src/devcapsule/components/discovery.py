@@ -89,6 +89,20 @@ class RiderDiscovery(JetBrainsDiscovery):
     source = "https://data.services.jetbrains.com/products/releases?code=RD&latest=true&type=release"
 
 
+class XfceTerminalDiscovery(VendorDiscovery):
+    source = "https://api.launchpad.net/1.0/ubuntu/+archive/primary"
+
+    def _check(self, current: str, platform: str) -> ChannelReport:
+        arch = platform.removeprefix("linux-")
+        url = (f"{self.source}?ws.op=getPublishedBinaries&binary_name=xfce4-terminal&exact_match=true"
+               f"&status=Published&distro_arch_series=https://api.launchpad.net/1.0/ubuntu/noble/{arch}")
+        entries = read_json(url)["entries"]
+        versions = [exact_version(row["binary_package_version"].split("-")[0]) for row in entries
+                    if row["binary_package_name"] == "xfce4-terminal" and row["pocket"] in {"Release", "Updates", "Security"}]
+        latest = max(versions, key=lambda version: tuple(map(int, version.split("."))))
+        return _available(url, current, latest, "Published for Ubuntu Noble.")
+
+
 class EclipseDiscovery(VendorDiscovery):
     source = "https://www.eclipse.org/downloads/packages/"
 

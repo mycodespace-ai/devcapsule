@@ -1,6 +1,6 @@
 ---
 description: The IDEs DevCapsule offers, the terminal inside them, and how the capsule's shell differs from your computer's.
-updated: 2026-10-30
+updated: 2026-11-18
 weight: 1
 ---
 # IDEs and terminals
@@ -13,12 +13,24 @@ editor.
 
 | Capability | IDE component | Included toolchains |
 |---|---|---|
+| `xfce4-terminal` | Xfce Terminal | Tabbed shells for the project’s selected tools and agents |
 | `python-ide` | PyCharm (`pycharm`) | Python 3 from the base image |
 | `frontend-ide` | VSCodium (`codium`, default) or Visual Studio Code (`vscode`) | Node.js and npm from the base image |
 | `vscode-ide` | Visual Studio Code (`vscode`) | Polyglot editor; combine with base or component toolchains |
 | `java-ide` | IntelliJ IDEA (`intellij`) | Temurin Java and Maven (`JAVA_HOME`, `MAVEN_HOME`) from the base image |
 | `eclipse-ide` | Eclipse IDE for Java Developers (`eclipse`) | Bundled Eclipse runtime plus Java and Maven from the base image |
 | `dotnet-ide` | JetBrains Rider (`rider`) | `.NET` SDK (`dotnet-sdk`) selected automatically |
+
+## Choosing a tabbed terminal
+
+Run `devcapsule project config ide xfce4-terminal` and then
+`devcapsule project run`. Xfce Terminal opens maximized in the project directory
+on the capsule desktop. Press **Ctrl+Shift+T** or choose **File → Open Tab**
+to start another shell. For example, run `vi README.md` in one tab and a
+configured CLI agent or a test command in another. Closing the
+last terminal window ends the session. Preferences and shell history use the
+checkout’s persistent home. The terminal has been verified on Linux amd64.
+The Linux arm64 selection currently requires an unverified combination.
 
 ## Choosing Visual Studio Code
 
