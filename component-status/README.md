@@ -69,7 +69,7 @@ source or workstream records.
 ## Observations and diagnoses
 
 `policy-v1.json` is the authored input. Its probe baselines exercise the shipped
-discovery adapters for all six curated components on the supported Linux amd64
+discovery adapters for every curated component on the supported Linux amd64
 platform. Baselines are probe inputs, not assertions about a user's installed
 version. The backend records result, adapter ID, baseline, candidates, last
 successful probe and consecutive failures. One failure leaves other observations

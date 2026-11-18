@@ -58,6 +58,40 @@ matrix; the generated lock records any unverified combination explicitly.
 
 ## Require and offer capabilities
 
+### Graphviz diagrams
+
+Require Graphviz for every checkout, or offer it as an optional component:
+
+```sh
+devcapsule project config require graphviz --because "the project renders DOT diagrams"
+# Alternatively:
+devcapsule project config offer graphviz --because "diagram generation is optional"
+```
+
+Commit the updated manifest and platform lock. On the next `project run`,
+DevCapsule builds the pinned Graphviz 16.1.1 source offline and supplies
+`/opt/graphviz/bin` on `PATH`. The first build takes longer than downloading a
+prebuilt tool; subsequent launches reuse its cached image contribution.
+Graphviz is additive and does not change the selected IDE.
+
+Inside the capsule:
+
+```sh
+dot -V
+dot -Tsvg architecture.dot -o architecture.svg
+dot -Tpng architecture.dot -o architecture.png
+dot -Tpdf architecture.dot -o architecture.pdf
+```
+
+The component is separate from personal tools in `/opt/xtras`: its source and
+platform dependencies travel in the project lock and are acquired on each
+developer's host. The final image contains `/opt/graphviz`; its build headers,
+package-manager changes and source stay in the isolated build stage.
+Both Linux amd64 and arm64 capsule platforms have recorded build and rendering
+acceptance. Linux arm64 capsules launched from macOS use the same component.
+
+### Other capability edits
+
 ```sh
 devcapsule project config require 'java>=21' --because "the build targets Java 21"
 devcapsule project config require 'playwright>=1.21'

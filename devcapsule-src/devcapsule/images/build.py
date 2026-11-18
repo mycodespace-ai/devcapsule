@@ -1,4 +1,9 @@
-"""Composable image-build planning and Docker buildx execution."""
+"""Composable image-build planning and Docker buildx execution.
+
+Public operations include ImageBuildSpec, its BuildComponent implementations,
+BuildxImageBuilder, and render_build_context. FileGroupComponent copies a set
+of pinned build inputs in one layer rather than one layer per input.
+"""
 
 from __future__ import annotations
 
@@ -69,6 +74,7 @@ class ImageBuildPlan:
     command: tuple[str, ...] = ()
     stages: tuple[BuildStage, ...] = ()
     image_copies: tuple[ImageCopy, ...] = ()
+    file_groups: tuple[tuple[FileCopy, ...], ...] = ()
 
     def add_apt_packages(self, *packages: str) -> ImageBuildPlan:
         return replace(self, apt_packages=self.apt_packages + tuple(packages))
@@ -186,6 +192,18 @@ class ImageCopyComponent:
     def apply(self, plan: ImageBuildPlan) -> ImageBuildPlan:
         return replace(plan, image_copies=plan.image_copies + (
             ImageCopy(self.image, self.source, self.destination),
+        ))
+
+
+@dataclass(frozen=True)
+class FileGroupComponent:
+    """Copy build inputs at their absolute destinations with one image layer."""
+
+    files: tuple[FileComponent, ...]
+
+    def apply(self, plan: ImageBuildPlan) -> ImageBuildPlan:
+        return replace(plan, file_groups=plan.file_groups + (
+            tuple(FileCopy(item.source, item.destination, item.permissions) for item in self.files),
         ))
 
 
@@ -364,6 +382,29 @@ def _render_stage(
         if file_copy.permissions is not None:
             dockerfile_lines.append(f"RUN chmod {file_copy.permissions:o} {shell_quote(destination)}")
         copy_index += 1
+
+    for group_index, group in enumerate(plan.file_groups):
+        group_name = f"{prefix}file-group-{group_index}"
+        root = context_root / group_name
+        root.mkdir()
+        seen: set[str] = set()
+        for item in group:
+            destination = normalize_container_path(item.destination)
+            if ".." in Path(destination).parts or destination in seen or destination == "/":
+                raise CliError(f"Invalid or repeated grouped file destination: {destination}")
+            seen.add(destination)
+            target = root / destination.lstrip("/")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(item.source, target)
+            if item.permissions is not None:
+                target.chmod(item.permissions)
+        # COPY creates each missing image directory with the mode it has in
+        # the context, and a contribution export carries that mode into the
+        # final image. Fix the mode here so the launching user's umask never
+        # decides whether the capsule user can enter an exported directory.
+        for directory in (root, *(path for path in root.rglob("*") if path.is_dir())):
+            directory.chmod(0o755)
+        dockerfile_lines.append(f"COPY {group_name}/ /")
 
     for copy in plan.image_copies:
         source = normalize_container_path(copy.source)

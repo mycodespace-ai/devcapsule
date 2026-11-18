@@ -83,6 +83,8 @@ status file; internal WIP/archive documents use the local index in that status.
 
 ## Root Requirement Records
 
+- [R-TOOLS-001 Graphviz as a selectable capsule component](engineering-docs/requirements/product/r-tools-001-graphviz-component.md)
+
 - [Conservative configuration writers and tolerant readers](engineering-docs/requirements/product/r-config-001-conservative-writers-tolerant-readers.md) — R-CONFIG-001, accepted 0.3 direction.
 - [R-WRAP-001 Wrapped projects](engineering-docs/requirements/product/r-wrap-001-wrapped-projects.md)
 - [R-CONSOLE-001 Every capsule serves a web console](engineering-docs/requirements/product/r-console-001-capsule-web-console.md)

@@ -58,6 +58,7 @@ from devcapsule.configuration.capabilities import meets_minimum, requirement
 from devcapsule.platforms import Platform
 from devcapsule.components.catalog import COMPONENTS
 from devcapsule.components.playwright_pin import PIN as PLAYWRIGHT_PIN
+from devcapsule.components.graphviz_pin import PINS as GRAPHVIZ_PINS
 from devcapsule.components.eclipse_native_pin import PACKAGES as ECLIPSE_NATIVE_PACKAGES
 from devcapsule.components.linux_arm64_pins import COMPONENT_LOCK_TABLES as LINUX_ARM64_LOCK_TABLES
 from devcapsule.configuration.file_formats import (
@@ -82,7 +83,7 @@ class ResolutionError(ProjectConfigurationError):
     """
 
 
-_MATRIX_VERSION = "embedded-33"
+_MATRIX_VERSION = "embedded-34"
 
 
 # --------------------------------------------------------------------------
@@ -1481,6 +1482,8 @@ _LINUX_AMD64_MATRIX = ResolutionMatrix(
         "eclipse": (_ECLIPSE_2026_09,),
         "rider": (_RIDER_2026_2_3_1, _RIDER_2026_2_4),
         "dotnet-sdk": (_DOTNET_SDK_10_0_401,),
+        "graphviz": (_ComponentPin("graphviz", str(GRAPHVIZ_PINS["linux-amd64"]["version"]),
+                                   GRAPHVIZ_PINS["linux-amd64"]),),
         "playwright": (_ComponentPin("playwright", str(PLAYWRIGHT_PIN["version"]), PLAYWRIGHT_PIN),),
         "codium": (_CODIUM_1_126_04524, _CODIUM_1_143_17232),
         "vscode": (_VSCODE_1_143_1, _VSCODE_1_144_0),
@@ -1506,6 +1509,12 @@ _LINUX_AMD64_MATRIX = ResolutionMatrix(
         "postgresql-client": (_POSTGRESQL_CLIENT_16,),
     },
     edges=(
+        _VerifiedEdge(
+            "graphviz", "16.1.1", _BASE_FAMILY_UBUNTU_24_04,
+            "offline source build and unprivileged dot SVG/PNG/PDF, neato SVG and "
+            "sfdp SVG rendering passed on the pinned recipe-11 base, 2026-11-18; "
+            "scripts/graphviz-component-smoke.py; build dependencies excluded from final export",
+        ),
         _VerifiedEdge(
             "vscode", "1.144.0", _BASE_FAMILY_UBUNTU_24_04,
             "noVNC HTTP/window/pixel startup passed on pinned v0.3.0-rc6 "
@@ -1746,6 +1755,7 @@ _LINUX_AMD64_MATRIX = ResolutionMatrix(
         "postgresql-client": Capability(("postgresql-client",)),
         "browser-automation": Capability(("playwright",)),
         "dotnet": Capability(("dotnet-sdk",)),
+        "graphviz": Capability(("graphviz",)),
         "python": Capability(),
         "node": Capability(),
         "java": Capability(),
@@ -1818,7 +1828,12 @@ def _on_linux_arm64(pin: _ComponentPin) -> _ComponentPin:
     version added without one fails here rather than at a user's launch.
     """
 
-    table = LINUX_ARM64_LOCK_TABLES.get((pin.component_id, pin.version))
+    # Graphviz keeps both platforms' tables in one reviewed pin file. Match the
+    # version as the shared tables do, so that a later amd64 version cannot
+    # silently carry this version's arm64 artifacts.
+    graphviz = GRAPHVIZ_PINS["linux-arm64"]
+    table = (graphviz if (pin.component_id, pin.version) == ("graphviz", graphviz["version"])
+             else LINUX_ARM64_LOCK_TABLES.get((pin.component_id, pin.version)))
     if table is None and pin.lock_table.get("delivery-policy") == "base-image":
         return pin
     if table is None:
@@ -1838,6 +1853,12 @@ _LINUX_ARM64_MATRIX = ResolutionMatrix(
         for component, pins in _LINUX_AMD64_MATRIX._components.items()
     },
     edges=(
+        _VerifiedEdge(
+            "graphviz", "16.1.1", _BASE_FAMILY_UBUNTU_24_04,
+            "native arm64 offline source build and uid/gid 1000:1000 dot SVG/PNG/PDF, "
+            "neato SVG and sfdp SVG rendering passed on the pinned recipe-11 base, "
+            "2026-11-18; GitHub Actions run 44207529778; durable report in maintenance evidence",
+        ),
         # Native IDE smokes on Apple Silicon (Docker Desktop 29.3.1) against
         # the arm64 recipe-11 base above, run on the local image before its
         # push. They establish the IDE only: Playwright and the .NET SDK rode

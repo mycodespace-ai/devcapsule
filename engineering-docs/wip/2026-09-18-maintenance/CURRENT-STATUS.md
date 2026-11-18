@@ -4,18 +4,63 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: paused 2026-11-18; recursive dry-run fix PR57 is accepted by Antigravity and ready for owner merge into release-0.3.1. Concurrent Graphviz PR56 remains ready for owner merge.
+State: paused 2026-11-18; Graphviz PR56 revised and accepted by Claude after one round; merged gate and native amd64/arm64 checks pass. PR56 and concurrent accepted PR57 await owner merge.
 
-Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
+Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5b0f27c04de1
 
 Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
+
+
 Branch association: `ws-maintenance/graphviz-031`, Graphviz PR56 synchronized with release `5fcd1684`;  `ws-maintenance/recursive-test-fixture`, from release `5fcd1684`; `ws-maintenance/cli-docs`, documentation follow-up from release `3a5aea22`; `ws-maintenance/cli-syntax`, created from presentations handoff db9721dd, carrying final CLI decisions af0d3616; `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
+
+## Graphviz CI correction and Pair Review — 2026-11-18
+
+The owner rejected the unexplained `push: branches: [main, release-0.3.1]`
+trigger and requested a different-engine Pair Review. The correction makes the
+native Graphviz Docker workflow manual-only. Comments explain its scope,
+network boundary and source-build evidence limit. The developer brief and local
+validation commands document this opt-in check. The owner's in-progress YAML
+removal was incorporated; the original project configuration and website edits
+remain untouched.
+
+Main synchronization stays deferred for this release-targeted slice: the only
+workflow difference is the development-version stamp, not a rule change.
+Release remains at `5fcd1684`. No release ref is merged, rebased or retagged.
+Claude Code `claude-fable-5-2` reviewed all PR56 changes in its own checkout.
+[Review PR58](https://github.com/mycodespace-ai/devcapsule/pull/58) was accepted at
+`5b39c09b` after one correction round and merged at `9df832f9`. Both detached
+turns exited 0 in session `3c7d4449-78ce-4f62-a06f-32056f838b6f`; streaming init
+confirmed the model. The implementor read the complete diff, passed 74 focused
+cases and [recorded the assessment](https://github.com/mycodespace-ai/devcapsule/pull/58#issuecomment-6971885045).
+
+The review fixes restrictive-umask staging modes, matches ARM pins by version,
+derives smoke PATH from component declarations, checks final-image libraries
+and licenses, and repairs masked/refusal/composition test coverage. The requested
+[round 1](evidence/2026-11-18-graphviz-review/round-1.md) makes the permission test
+set umask 077 and restore it, with red-before/green-after evidence. Reviewer gate:
+3,433 unit and 474 console passes, clean types/conventions, 26 integration passes;
+only docs-contract skipped for its uninitialized website. The implementor's
+merged gate passes all checks, including the documentation contract (249 pages):
+3,433 unit tests, 474 console tests, types over 368 files, conventions, CLI/PEX
+smoke. The merged focused integration command passes all 26 cases.
+
+The manual native workflow passes on both architectures in
+[run 44257920433](https://github.com/mycodespace-ai/devcapsule/actions/runs/44257920433),
+source `9df832f9`. Six final-image checks and all five renders pass on each
+platform as uid/gid 1000:1000, with no network during build or runtime. Reports
+in `evidence/graphviz-0.3.1/` now record that source and run. Source in this
+checkout matches that tested commit; later changes retain records only.
+The review worktree is removed after its clean-state check; its briefs and
+outcomes remain committed. No candidate or release acceptance is claimed.
+The review brief is [retained here](evidence/2026-11-18-graphviz-review/review-brief.md).
+The concurrent pair has since delivered recursive-test fix PR57, accepted by
+Antigravity; it awaits owner merge and is outside this checkout's scope.
 
 ## Graphviz component delivered in PR56 — 2026-11-18
 
@@ -62,7 +107,7 @@ The routing choice is recorded here and in R-TOOLS-001, so its capsule decision
 page was retired. No transcript or tokened URL is retained in Git.
 
 Coordination: the tool stores one claim per workstream; the concurrent pair's
-current fixture claim must not be cleared by this checkout. Live publication
+claim is released only by the checkout that owns it. Live publication
 preserves the other pair's status along with this component handoff. This
 limitation was handed to workflow-improvements at coordination `a6fd5bf232ec`
 without changing its code. No maintenance mail was waiting at pause.
@@ -5031,10 +5076,10 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Owner review and merge of accepted recursive dry-run fix PR57 into the release.
-After merge, verify the remote tree and handle main propagation. Concurrent Graphviz
-PR56 remains with the owner. Main propagation and candidate acceptance remain
-release-driver work; no tag is authorized.
+Owner review and merge of revised, Claude-reviewed Graphviz PR56 into the
+release. Concurrent recursive-test fix PR57 is independently accepted and awaits
+owner merge; no fixture question remains.
+Release propagation and candidate acceptance remain release-driver work.
 
 Current, 2026-11-17: rc3 publication and download verification are complete.
 Resume final 0.3.1 acceptance from the release overview: host project-config
@@ -5888,13 +5933,22 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
+Graphviz review follow-ups: consider a public operation for ancillary stages
+and environment when another build component needs it; clarify migrated matrix
+test docstrings; reconsider the unreachable non-file recipe-input refusal then.
+These are optional cleanups, not new delivery requirements. No product choice
+is pending for Graphviz. Both merged and native validation passed; owner merge
+of PR56 is next.
+Review scratch and private event logs are deliberately not committed.
+
 Awaiting the owner: merge accepted PR57; no test-disposition question remains.
 Accepting group 0 and integration migration were authorized. Graphviz PR56 is independently
-ready for owner merge. Weighed: supplying a positive fixture group would hide a
+ready for owner review and merge after the Claude review and CI correction. Weighed: supplying a positive fixture group would hide a
 real unsupported assumption, so it was rejected. The old dry-run runtime
 identity guard remains outside this Docker-group fix; the working successor
 launcher has its separate rootless support. Deliberately not preserved: scratch
 probes and raw transcripts. Preserve both user configuration edits.
+
 
 
 Owner returned this checkout to maintenance on 2026-11-17, explicitly requesting

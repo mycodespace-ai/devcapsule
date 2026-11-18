@@ -30,6 +30,7 @@ from devcapsule.webconsole_bundle import (
 from devcapsule.platforms import XdgHomes
 from devcapsule.components.catalog import (
     ComponentCatalogError,
+    COMPONENTS,
     selected_component_definitions,
 )
 from devcapsule.components import LockedArtifactDeclaration
@@ -44,6 +45,7 @@ from devcapsule.images.build import (
     EnvComponent,
     ExecComponent,
     FileComponent,
+    FileGroupComponent,
     ImageBuildSpec,
     LabelComponent,
     normalize_archive_directory,
@@ -684,7 +686,7 @@ def surface_materialization_spec(
             ),
             FileComponent(component_template, COMPONENT_TEMPLATE_PATH, permissions=0o644),
             *_native_package_components(ancillary_files, native_package_directory),
-            *_ancillary_contributions(ancillary_files, npm_projects),
+            *_ancillary_contributions(ancillary_files, npm_projects, platform=platform),
             # The image supplies the alias; the runtime creates its writable
             # target in the persistent home as the capsule user. Never replace
             # pre-existing content in a custom base to establish this mapping.
@@ -1102,6 +1104,7 @@ class NpmProject:
 def _ancillary_contributions(
     files: tuple[tuple[Path, LockedArtifactDeclaration], ...],
     projects: tuple[NpmProject, ...],
+    *, platform: str,
 ) -> tuple[ContributionComponent, ...]:
     files = tuple((path, item) for path, item in files if item.artifact_format != "deb-package")
     contributions = []
@@ -1115,18 +1118,29 @@ def _ancillary_contributions(
         exports = tuple(destination for destination in destinations
                         if not any(destination != parent and Path(destination).is_relative_to(parent)
                                    for parent in destinations))
+        definition = COMPONENTS.get(component_id)
+        recipe = None if definition is None else definition.build_recipe(selected[0][1].version, platform)
+        if recipe is not None:
+            exports = recipe.exports
+        copies: tuple[DirectoryComponent | FileComponent | FileGroupComponent, ...] = tuple((DirectoryComponent(path, item.destination)
+                        if item.artifact_format in {"zip-directory", "tar-gz-directory"}
+                        else FileComponent(path, _artifact_image_path(item), permissions=item.permissions))
+                       for path, item in selected)
+        if recipe is not None:
+            if not all(isinstance(item, FileComponent) for item in copies):
+                raise CliError("A component build recipe requires file-shaped pinned inputs.")
+            copies = (FileGroupComponent(tuple(item for item in copies if isinstance(item, FileComponent))),)
         contributions.append(ContributionComponent(
             component_id,
             (
-                *((DirectoryComponent(path, item.destination) if item.artifact_format in {"zip-directory", "tar-gz-directory"}
-                   else FileComponent(path, _artifact_image_path(item), permissions=item.permissions))
-                  for path, item in selected),
+                *copies,
                 *(ExecComponent(wheel_install_step(destination, tuple(wheel_name(item.url)
                     for _path, item in selected if item.artifact_format == "python-wheel" and item.destination == destination)))
                   for destination in wheel_destinations),
                 *(FileComponent(project.package_json, f"{project.destination}/package.json", permissions=0o644)
                   for project in npm),
                 *(ExecComponent(npm_install_step(project.destination)) for project in npm),
+                *(ExecComponent(command) for command in (() if recipe is None else recipe.commands)),
             ),
             exports,
         ))

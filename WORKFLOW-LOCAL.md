@@ -175,6 +175,14 @@ in [`INFORMATION-MODEL.md`](devcapsule-src/devcapsule/assets/project_workflow/de
   Eclipse: `nox -s ide-smoke -- --agent --surface eclipse --component-browser`
   requires a noVNC editor save, checks the saved file independently, and keeps
   the Playwright movie. Use `--display` instead of `--agent` for startup only.
+- **Graphviz component smoke (opt-in)**: with Docker available, run
+  `.venv/bin/python scripts/graphviz-component-smoke.py --platform linux-amd64 --cache /opt/devcapsule-gate/graphviz-cache --report /opt/devcapsule-gate/graphviz-amd64.json`.
+  Use `linux-arm64` and distinct cache/report paths on a native arm64 host.
+  The manual `.github/workflows/graphviz-component.yml` runs both platforms
+  on native runners for a selected ref. It acquires checksum-pinned inputs,
+  compiles offline and renders as uid/gid 1000:1000. Run it for changed pins
+  or recipes. It is outside the automatic gate and is source-build evidence,
+  not downloaded-candidate acceptance.
 - **Web console**: `.venv/bin/python -m nox -s webconsole` type-checks and
   tests `devcapsule-webconsole/`, the capsule web console, in its own
   environment built from that directory's hash-pinned

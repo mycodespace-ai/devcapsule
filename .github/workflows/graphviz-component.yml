@@ -1,0 +1,57 @@
+name: Graphviz component
+
+# Opt-in component acceptance: compile the locked source and render on native
+# amd64/arm64 runners. This uses Docker and stays outside the automatic unit
+# gate (DEVELOPING.md). Run manually for changed source/dependency pins or build
+# recipes, selecting the branch/ref to verify in Actions. No release is hardcoded.
+# This checks a source checkout; it does not accept a downloaded release candidate.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One run per selected ref: dispatching again for the same ref replaces the
+# run in progress, and runs for different refs do not disturb one another.
+concurrency:
+  group: graphviz-component-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    name: Graphviz ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-amd64
+            runner: ubuntu-24.04
+          - platform: linux-arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install the source CLI's dependencies
+        run: |
+          python -m pip install -r devcapsule-src/requirements.txt
+          python -m pip install -e devcapsule-src --no-deps
+      - uses: actions/cache@v4
+        with:
+          path: .cache/graphviz
+          key: graphviz-${{ matrix.platform }}-${{ hashFiles('devcapsule-src/devcapsule/components/graphviz_pin.py') }}
+      # Acquisition may use the network; compilation and runtime renders do not.
+      - name: Build offline and render in the native capsule platform
+        run: >-
+          python devcapsule-src/scripts/graphviz-component-smoke.py
+          --platform ${{ matrix.platform }}
+          --cache .cache/graphviz
+          --report graphviz-${{ matrix.platform }}.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: graphviz-${{ matrix.platform }}
+          path: graphviz-${{ matrix.platform }}.json
+          if-no-files-found: error
