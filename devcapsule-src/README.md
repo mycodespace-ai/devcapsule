@@ -7,16 +7,16 @@ image operations use `devcapsule images …`.
 `devcapsule project info` (or `info --json`) provides a read-only overview of
 software, environment and persistent storage. It works from the host project's
 directory or descendants and anywhere inside its running capsule. See
-[extra tools and environment inspection](../docs/guides/your-project.md#install-extra-tools-0215)
+[extra tools and environment inspection](../docs/configuration/extra-tools.md)
 for the persistent `/opt/xtras` contract.
 
 ## User Setup
 
-To use DevCapsule, start with [your first session](../docs/guides/first-session.md):
+To use DevCapsule, start with [your first session](../docs/getting-started/first-session.md):
 download the released executable, open an IDE and return to your saved work.
 You do not need to clone this repository, install Python or build an artifact.
 For an existing repository or a coding agent, continue with
-[use your own project](../docs/guides/your-project.md).
+[use your own project](../docs/your-project/existing-repository.md).
 
 To develop DevCapsule itself, read [For developers](../DEVELOPING.md) and the
 [subproject requirements](REQUIREMENTS.md), then use the setup below.
@@ -130,10 +130,10 @@ python -m piptools compile --strip-extras --extra dev pyproject.toml --output-fi
 
 ## Component Version Sets
 
-The v0.2.14 development CLI supports checkout-local component upgrades:
+The CLI supports checkout-local component upgrades:
 `devcapsule project versions show`, `check`, `preview COMPONENT VERSION`,
 `select PREVIEW_ID`, `history`, `rollback`, `follow-project`, and `propose PATH`.
-See [the practical upgrade and recovery guide](../docs/guides/component-upgrades.md).
+See [the practical upgrade and recovery guide](../docs/updates/component-upgrades.md).
 Local choices preserve a complete version set without changing the committed
 project lock. Only successful ordinary launches become known-good; rollback
 preserves current host permissions and personal state.
@@ -250,7 +250,7 @@ devcapsule-src/dist/devcapsule.pex pycharm build --help
 ```
 
 Published executable downloads and checksum verification are documented in
-[your first session](../docs/guides/first-session.md#1-get-devcapsule). The
+[your first session](../docs/getting-started/install.md). The
 remaining examples in this section are contributor build/release validation,
 not prerequisites for using DevCapsule.
 
@@ -363,6 +363,15 @@ at a writable directory or unset it if PEX warns about an unwritable cache.
 
 ## Commands
 
+Use the [command reference](../docs/reference/cli.md) for the current command
+tree, argument placement, and configuration operations. The sections below
+explain contributor-facing behavior. `devcapsule COMMAND --help` prints usage
+without running the operation, including `pycharm check-runtime`.
+
+Inside a capsule, `devcapsule instance --get-link PATH-OR-URL` prints a link to
+existing project content. Paths select Files; current-console URLs select Files,
+Records or Presentations. See [content links](../docs/sessions/web-console.md#link-to-project-content).
+
 ### Managed local images
 
 List only V1 DevCapsule-managed images from the local Docker image store:
@@ -463,7 +472,6 @@ otherwise absent acquisition authorization:
 
 ```bash
 devcapsule project config authorize claude-code-download true
-devcapsule project config resolve
 devcapsule images build --type environment --project .
 ```
 
@@ -598,8 +606,8 @@ description = "Hard memory limit applied to the checkout's project container."
 
 A declaration may also supply a typed `recommended` value. Resolution uses it
 when the checkout has neither an explicit value nor an explicit omission;
-`config show` labels it `project-recommended`. `config set NAME default` records
-the current recommendation, while `config unset NAME` follows it again. These
+`config show` labels it `project-recommended`. `config set NAME default` clears
+the checkout override so the recommendation applies again. These
 ordinary-value defaults never grant host access or authorize downloads.
 
 For DevCapsule development, this repository declares:
@@ -630,38 +638,14 @@ The developer selects a value for one checkout with the generic command:
 
 ```bash
 devcapsule project config show
-devcapsule project config set runtime.memory-limit 8GiB
-devcapsule project config resolve
+devcapsule project config set memory 8GiB
 ```
 
-`project config show` initializes the selected checkout's workstation-owned
-directory, minimal checkout input, and unresolved generated-plan placeholder
-when they do not exist, then prints every declared value, component binding,
-recommended authorization, and the generated resolution's state. It is a
-listing and nothing else: no advice, no commands to run. `project config show`
-prints the same listing followed by the configuration review: the pending
-decisions with their remedies, the recorded base beside the recommendation,
-and whether resolving is needed. A ready review over a fresh resolution says
-so and gives no resolve instruction. Every row carries a `SOURCE` column
-naming the document its status and value come from: `checkout` for the
-checkout input, `manifest` for a project recommendation or declaration,
-`lock` for the platform lock's recommendations and component declarations,
-`resolution` for the generated plan, `managed` for DevCapsule-owned state
-directories, and `environment` for a bound secret. `config show` expands
-those tokens in a `Sources:` block with each file's path and whether the
-generated resolution still reflects it. It shows
-the materialized checkout name and exact files. Repeated calls do not rewrite
-existing choices or a resolved plan. If the same portable project identity is
-already registered for another checkout, assign a distinct name first with
-`project checkout register NAME`; the list command never invents or inherits a
-checkout name.
-
-Value statuses distinguish configured, project-recommended, explicitly omitted,
-invalid, required-but-missing, and optional-but-unset values. Bindings show an explicit host directory, legacy
-adoption, conflict, or managed-default storage. Authorizations show authorized,
-stale, required-but-missing, or recommended-but-missing decisions. Resolution
-is unresolved, fresh, or stale. Missing choices are reported without making a
-valid readiness listing fail.
+`project config show` is read-only. It reports effective choices, their sources,
+pending decisions and the commands that settle them. It creates no checkout
+record or resolution. Use `project config check` to validate without launching;
+`project run` resolves the next launch from the current inputs. Configuration
+writes take effect at the next launch. See [configuration inspection](../docs/configuration/inspect.md).
 
 To review and accept every current authorization recommendation interactively,
 use:
@@ -676,7 +660,7 @@ set and writes the checkout once; every other key cancels without writing.
 Non-interactive workflows must continue to authorize each exact name and value
 separately.
 
-`config set` accepts only keys declared by the project, validates the supplied
+`config set` accepts `memory`, `cpus`, and keys declared by the project. It validates the supplied
 value from its metadata, and writes the resulting ordinary value to the
 developer-owned checkout input reported by the command. It does not edit the
 project declaration or generated resolution. The supported V1 scalar metadata
@@ -703,7 +687,6 @@ devcapsule project config bind pycharm/cache host-directory:/path/to/cache
 devcapsule project config bind codex/home host-directory:/path/to/codex-home
 devcapsule project config bind codex/openai-api-key \
   host-environment:OPENAI_API_KEY
-devcapsule project config resolve
 ```
 
 The command is generic: it looks up the selected component's persistence
@@ -782,14 +765,13 @@ developer's OpenAI Platform account and does not grant ChatGPT workspace or
 cloud-task entitlements.
 
 Normal `project run` now realizes the lock-selected local environment
-automatically after loading a fresh checkout resolution. To prebuild or inspect
-that same environment explicitly without launching a container, use:
+automatically from the effective launch plan. To prebuild or inspect
+that same environment explicitly without launching a container, use the base
+reference reported by `project config show` in place of the placeholder below:
 
 ```bash
-devcapsule project --path /path/to/checkout config resolve
 devcapsule project --path /path/to/checkout config authorize base-image \
-  docker.io/mycodespaceai/devcapsule-base@sha256:695f9eb6dd269dc694b3367f6a2570d500b938998d6f7aa3aa00e5d04cc7394a
-devcapsule project --path /path/to/checkout config resolve
+  docker.io/ORGANIZATION/devcapsule-base@sha256:DIGEST
 devcapsule images build \
   --type environment \
   --project /path/to/checkout \
@@ -845,9 +827,8 @@ host-socket` exposes the host Docker control socket, effectively granting the
 container control over the host daemon. `network host` shares the host network
 namespace instead of the default Docker bridge. `development-sudo true`
 authorizes the launcher to let the capsule's development user elevate inside
-the container; it is not host-root authorization. The following `config
-resolve` incorporates the recorded decisions into the inspectable generated
-resolution, and `project run` applies the Docker and network effects.
+the container; it is not host-root authorization. `project run` resolves the
+recorded decisions and applies the Docker and network effects.
 Development-sudo authorization generates a temporary group-scoped `NOPASSWD`
 policy, makes that one file root-owned through a network-disabled,
 read-only, `CHOWN`-only helper invocation of the selected local image, and
@@ -863,7 +844,6 @@ DevCapsule metadata-v1 base name:
 
 ```bash
 devcapsule project config authorize base-image devcapsule-local-base:v026
-devcapsule project config resolve
 devcapsule project run
 ```
 
@@ -871,7 +851,7 @@ This is a developer-owned override, not a new project recommendation. At
 authorization time DevCapsule inspects the local image, validates its managed
 base metadata and platform, and records both the supplied name and immutable
 Docker image ID; the selection stays valid across lock changes, being bound
-to the image. Resolve and run inspect it again;
+to the image. Launch preparation inspects it again;
 removing or retagging the name fails instead of pulling or silently running a
 different image. Reauthorize after deliberately rebuilding the tag.
 `config show` reports this state as `authorized-local`, while
@@ -879,22 +859,10 @@ different image. Reauthorize after deliberately rebuilding the tag.
 published recommendation. A different published registry digest remains
 rejected unless the project lock recommends it.
 
-`--base IMAGE` is an explicit run-once development override and needs no
-persisted authorization. It never rewrites the lock or resolution, and the
-selected local image must still pass DevCapsule metadata, platform, and
-immutable image-ID inspection.
-
-This repository's current Linux dogfood lock uses published digest
-`docker.io/mycodespaceai/devcapsule-base@sha256:695f9eb6dd269dc694b3367f6a2570d500b938998d6f7aa3aa00e5d04cc7394a`.
-The associated `ubuntu-24.04-v026` tag is only a dogfood discovery tag;
-official V1 artifacts will use semantic release versions and committed locks
-will continue to use immutable digests.
-
-The immutable v026 image uses agent-neutral base recipe version 5, embeds the
-self-contained DevCapsule PEX released from source revision `91d50b1...` at
-the canonical `mycodespace-ai/devcapsule` repository, and contains the supported
-Python, Node.js, Java, Maven, and PostgreSQL client toolchain. It contains no
-ambient agent CLI.
+For current local-base selection and its constraints, see
+[building and selecting a local base](../docs/configuration/local-base.md).
+Use `project config show` to inspect the base selected by this checkout;
+do not copy a historical dogfood digest into a new authorization.
 
 The command obtains the selected base when it is not local, verifies that it
 is a managed metadata-v1 base for the locked platform, and downloads the
@@ -1045,13 +1013,13 @@ explicit runtime effects continue in Stage 3 of the active dogfood plan.
 For a new .NET project on Linux x86-64:
 
 ```bash
-devcapsule project init --need dotnet-ide
+devcapsule project init --ide dotnet-ide
 devcapsule project run
 ```
 
 `dotnet-ide` selects JetBrains Rider and automatically includes the pinned
 .NET SDK. To add the SDK to another IDE, include `dotnet` alongside that
-IDE's capability, for example `--need frontend-ide --need dotnet`.
+IDE's capability, for example `--ide frontend-ide --with dotnet`.
 The current catalog pins SDK 10.0.401 and Rider 2026.2.3.1; resolution is
 offline and locks exact versions and SHA-256 checksums, never a moving
 `latest` installer. Updates require a reviewed catalog pin.
@@ -1069,75 +1037,36 @@ does not grant a license or activate a trial. The noVNC startup smoke and
 optional licensed editor interaction are described in the
 [E2E guide](../engineering-docs/development/e2e-tests.md).
 
-### Capability-first dogfood path
+### Initialize and launch a project
 
-`devcapsule project init` initializes a project completely: it authors (or
-honors) the declaration, derives the current-platform lock offline from the
-client's embedded resolution matrix, records the owner's checkout answers,
-and ends with a fresh resolution, so `init` followed by `run` is the entire
-owner first-run:
+Use `init` to create or extend the declaration and platform lock, then `run` to
+resolve choices and launch. Select shared requirements with `--require`, your
+checkout's IDE with `--ide`, and personal additions with `--with`:
 
 ```bash
 devcapsule project --path . init --creator https://github.com/example \
-  --need python --need python-ide --need docker-cli
+  --require python --ide python-ide --with docker-cli
+devcapsule project config show
+devcapsule project run
 ```
 
-Interactively, `init` asks only what no flag, existing record, or derivable
-default already answers; every question can be pre-answered with the same
-spellings the `config` family uses (`--set NAME VALUE`,
-`--bind NAME PROVIDER:VALUE`, `--authorize NAME VALUE [JUSTIFICATION]`).
-Repairing a partially initialized project is `init`'s own job, and
-`init --regenerate` rewrites the derived platform lock while keeping the
-authored manifest. Dogfood image locks written by the retired
-`project lock` stub remain fully readable.
-Adopt the six existing dogfood state directories once, then generate the local
-developer-owned resolution:
+Host Docker, host networking, browser integration and development sudo require
+explicit authorization. Use `project run --authorize NAME VALUE` for a single
+launch, or `project config authorize NAME VALUE` to save the choice. See
+[granting host access](../docs/containment/granting-and-withdrawing.md) and this repository's
+`WORKFLOW-LOCAL.md` for its own validation environment.
 
-```bash
-devcapsule project state adopt home --from ~/.config/docker-pycharm-codex/state/home
-devcapsule project state adopt pycharm/config --from ~/.config/docker-pycharm-codex/state/config
-devcapsule project state adopt pycharm/plugins --from ~/.config/docker-pycharm-codex/plugins
-devcapsule project state adopt pycharm/system --from /path/to/project-state/system
-devcapsule project state adopt pycharm/log --from /path/to/project-state/log
-devcapsule project state adopt pycharm/cache --from /path/to/project-state/home/.cache
-devcapsule project config resolve
-```
+To adopt existing state, use `project state adopt SLOT --from DIRECTORY` or
+`project config bind SLOT host-directory:DIRECTORY`. The source must exist;
+no files are copied. Inspect with `project config show` before the next launch.
 
-Normal launch then uses the committed manifest and platform lock plus that
-checkout-local resolution:
-
-```bash
-devcapsule project run \
-  --docker-daemon host-socket \
-  --development-sudo \
-  --host-browser
-```
-
-For the DevCapsule repository's own recursive dogfood validation, this same
-ordinary `project run` path marks the launched environment as recursive-ready
-when host Docker has been accepted. It recognizes the repository by
-`devcapsule-src/pyproject.toml` declaring `[project].name = "devcapsule"`. Use
-`--no-recursive-e2e` for a one-launch opt-out; it forces host Docker off,
-bridge networking, and development sudo off without rewriting configuration.
-The flag cannot grant host access. Launch readiness does not execute the
-expensive E2E. That test remains an explicit developer action inside the
-running environment:
+DevCapsule's recursive validation uses the ordinary launch path. Run its explicit
+E2E suite from the development environment when the task requires it:
 
 ```bash
 cd devcapsule-src
-python -m nox -s recursive_dogfood_e2e
+.venv/bin/python -m nox -s recursive_dogfood_e2e
 ```
-
-Those two host relaxations are run-once choices and are not granted by the
-committed Docker recommendation. They can be recorded manually in the
-developer-owned checkout file's `[host]` table for this initial slice. The
-PyCharm runtime now uses Docker bridge networking unless an expert path adds a
-different explicit Docker choice.
-
-This is intentionally a dogfood bridge, not the complete V1 resolver: `lock`
-currently pins a local image tag supplied with `--image`; immutable image
-digest resolution and general curated capability selection remain follow-up
-work.
 
 Registered checkout records can be listed without scanning source trees:
 
@@ -1185,9 +1114,18 @@ devcapsule pycharm check-runtime
 installed distribution or self-contained PEX. It installs reusable
 `AGENTS.md` and `WORKFLOW.md` definitions separately from project-owned
 `CURRENT-STATUS.md`, `REQUIREMENTS.md`, `index.md`, and engineering-record
-state. A missing `workflow-type` in `.devcapsule/devcapsule.toml` means
-`single-stream`; `multiple-streams` additionally initializes the reserved
-`project-management` registry and handoff.
+state. The `[workflow]` table in `.devcapsule/devcapsule.toml` selects the mode,
+with the older `workflow-type` field as a fallback and `single-stream` as
+the default. `multiple-streams` initializes the reserved `project-management`
+and `maintenance` workstreams.
+
+Bootstrap also installs complete versioned recording kits in
+`.agents/skills/devcapsule-recorded-e2e/` and `.claude/skills/devcapsule-recorded-e2e/`.
+`project wrap` installs them in the wrapper. Existing skill folders and symlinked
+locations are preserved, including during workflow-definition refresh.
+See the [recording guide](devcapsule/presentation_tools/README.md) for local helper
+use and migration of older kits. The standalone `presentations` commands are
+removed; use `instance --get-link` for content links.
 
 Existing files are preserved. An older README-centered handoff is copied into
 a newly created single-stream `CURRENT-STATUS.md`. To deliberately replace
@@ -1212,17 +1150,17 @@ Project launch preserves home and IDE state through declared bindings, including
 `home`, `pycharm/config`, `pycharm/plugins`, `pycharm/system`, `pycharm/log`, and
 `pycharm/cache`. Use `project config show` to inspect them and
 `project config bind NAME host-directory:/path/to/directory` to select an
-explicit location, then `project config resolve`. Separate concurrent PyCharm
+explicit location for the next launch. Separate concurrent PyCharm
 sessions must use separate IDE configuration directories. Legacy profile and
 state-root flags are no longer a public launch interface.
 
 ### Persist extra Docker options
 
-Use `project config set-extra-docker-args -- OPTIONS...` to replace the saved
+Use `project config docker-args set -- OPTIONS...` to replace the saved
 argument list for this checkout. For example, `--gpus all` grants GPU access
-when the host has the necessary GPU runtime. `list-extra-docker-args [--json]`
+when the host has the necessary GPU runtime. `project config docker-args list [--json]`
 shows the saved tokens with inline environment values masked;
-`remove-extra-docker-args` clears the list. The hidden-input `set-env KEY`
+`project config docker-args clear` clears the list. The hidden-input `project config env set NAME`
 convenience edits that same list. See [saved Docker arguments](../docs/configuration/project-versus-personal.md#saved-docker-arguments)
 for storage, precedence, mounts and credential handling.
 

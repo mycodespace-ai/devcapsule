@@ -83,8 +83,8 @@ command deliberately when testing released behaviour, and the virtualenv's
 shipped one silently when the development setup is missing. The
 recommendation is an ordinary configuration value, not a permission; a
 checkout overrides it from the outside launcher with
-`project config set runtime.devcapsule-command devcapsule` followed by
-`config resolve`, and it takes effect at the next launch.
+`devcapsule project config set runtime.devcapsule-command devcapsule`;
+inspect it with `devcapsule project config show`. It takes effect at the next launch.
 
 ## Working inside a capsule
 

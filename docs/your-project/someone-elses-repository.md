@@ -1,7 +1,7 @@
 ---
 description: Work on a repository that is not yours, and carries no DevCapsule configuration, by wrapping it as a submodule of a small project of your own.
 weight: 3
-updated: 2026-11-02
+updated: 2026-11-18
 ---
 # Someone else's repository
 
@@ -70,9 +70,12 @@ The generated guidance escapes repository names, paths, and URLs as text.
 `wrap` replaces a guidance file only when its entire first line equals the
 generated marker. It keeps the owner's other files.
 
+It installs the recording skill kits in the wrapper, preserving any existing
+kits. See [recording with an agent](../working-with-ai/instructions-for-agents.md#record-a-scenario).
+
 ## What `wrap` does not do
 
-It does not install the project workflow; `project bootstrap` remains
+It does not install the project workflow; `devcapsule bootstrap project` remains
 available. It does not run the foreign project's build, tests or setup; those
 run inside the capsule, from the submodule's directory, with its own tools.
 It does not add the project's dependencies to the lock; the Gradle cache
