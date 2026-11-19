@@ -4,7 +4,7 @@ Mnemonic: `host-ide`
 
 Start date: 2026-11-19
 
-State: active 2026-11-19; workstream opened and registered, aligning on remote transport, CLI/configuration UX, and platform scope for host VS Code / VSCodium with container `xfce4-terminal`.
+State: active 2026-11-19; work order authored and approved; coordinating Pair Review implementation (Codex `gpt-6-astra` high-effort implementer, Antigravity `Gemini 4 Hydrogen` reviewer) targeting `release-0.3.1`.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5b0f27c04de1
 
@@ -14,7 +14,9 @@ Delivery method: pull request to `release-0.3.1`; owner merges; records publishe
 
 Branch prefix: `ws-host-ide/`
 
-Branch association: `ws-host-ide/vscode-codium`, forked from `upstream/release-0.3.1` (`8d71b26c`).
+Branch association: `ws-host-ide/vscode-codium`, forked from `upstream/release-0.3.1` (`8d71b26c`); implementation branch `ws-host-ide/vscode-codium-impl`.
+
+Work order: [Split-surface host IDE (`host-ide`) — VS Code first slice](../../work-orders/2026-11-19-host-ide-vscode.md)
 
 Requirements: `R-PRODUCT-001`, `R-PRODUCT-002`, `R-SCOPE-001`
 
@@ -36,19 +38,17 @@ Reduce daily IDE UX friction (multi-step copy/paste across the browser noVNC tab
 
 ## Planned Next Step
 
-Align with the product owner on the three open design questions for the `vscode` / `codium` split-surface UX before drafting the implementation plan:
-
-1. Remote connection transport for VS Code (`attached-container` vs. SSH) and VSCodium (`open-remote-ssh` over `docker exec` / loopback vs. alternatives).
-2. CLI and checkout configuration representation for selecting the split-surface UX mode.
-3. Host platforms in scope for the first slice (Linux, WSL2, macOS) and host IDE/extension readiness checks.
+Dispatch Codex (`gpt-6-astra`, high effort) in `/home/devcapsule/worktrees/host-ide-impl` (`ws-host-ide/vscode-codium-impl`) to implement the VS Code `host-ide` work order and open the implementation PR against `release-0.3.1`, then review it in the Pair Review Loop.
 
 ## Open Threads
 
-- Preserve the user's two uncommitted `.devcapsule/devcapsule.toml` and `.devcapsule/devcapsule.linux-amd64.lock` edits in this checkout (exclude from commits).
-- Confirm whether `docs/` updates and Playwright/integration validation belong in the first slice targeting `release-0.3.1`.
+- Preserve the user's two uncommitted `.devcapsule/devcapsule.toml` and `.devcapsule/devcapsule.linux-amd64.lock` edits in `/workspace/301e4208ef81-ChatGPT_Codex` (exclude from commits).
+- VSCodium (`codium`) support via `open-remote-ssh` / `docker exec` will follow in the next slice after the VS Code slice lands.
 
 ## Document Index
 
-- [Workstream status](CURRENT-STATUS.md) — active state, recorded `release-0.3.1` base exception, and next design alignment questions.
+- [Workstream status](CURRENT-STATUS.md) — active state, recorded `release-0.3.1` base exception, and next Pair Review step.
+- [Work order](../../work-orders/2026-11-19-host-ide-vscode.md) — approved scope and engineering constraints for the VS Code `host-ide` slice.
+- [Implementor brief](evidence/2026-11-19-vscode-impl-brief.md) — implementation brief for Codex (`gpt-6-astra`, high effort) on `ws-host-ide/vscode-codium-impl`.
 - [Intake](intake/README.md) — workstream intake queue (empty).
 - [Intake dispositions](intake-dispositions.md) — intake decision log (no items received).
