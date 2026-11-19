@@ -1,7 +1,7 @@
 ---
 description: "Every configuration node a checkout can record: host and software authorizations, declared values, and directory or secret bindings."
 weight: 2
-updated: 2026-10-30
+updated: 2026-11-19
 ---
 # Configuration nodes
 
@@ -28,6 +28,7 @@ names below. See
 | `docker-daemon` | `host-socket`, `none` (default `none`) | `host-socket` mounts the host Docker socket into the capsule; `none` keeps the daemon unreachable. |
 | `development-sudo` | `true`, `false` (default `false`) | `true` lets the capsule user run `sudo` inside the container via a launcher-generated policy; `false` disables elevation. |
 | `host-browser` | `true`, `false` (default `false`) | `true` lets `xdg-open` inside the capsule ask your host browser to open URLs. |
+| `host-ide` | `true`, `false` (default `false`) | Runs VS Code on the host in an isolated profile and attaches through host Docker, while the capsule runs Xfce Terminal. Host IDE extensions run with host permissions. User-owned; never recommended by a project. See [Host VS Code](../everyday-development/ides-and-terminals.md#host-vs-code-with-a-capsule-terminal). |
 | `host-x11` | `true`, `false` (default `false`) | `true` binds your host X11 display instead of starting the contained web desktop. Never recommended by a project. |
 | `vscode-download`, `claude-code-download`, `antigravity-download` | `true`, `false` | Per-checkout vendor download consent when the vendor's channel is not trusted in this home; setting `false` blocks that vendor on this checkout even if the home trusts the channel. |
 

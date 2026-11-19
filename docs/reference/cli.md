@@ -157,7 +157,9 @@ prints the command of an environment that is already on your machine. When
 the base image or the environment's image is not there yet, it exits `2` and
 names what a launch would pull, download and build; launch once with
 `project run`, then print. Printed secret and environment values are
-redacted.
+redacted. With `--authorize host-ide true` and VS Code selected, the output
+also includes the host VS Code attach command. Printing installs no host editor
+or extension. See [Host VS Code](../everyday-development/ides-and-terminals.md#host-vs-code-with-a-capsule-terminal).
 
 ## `devcapsule project config`
 

@@ -73,7 +73,7 @@ DEFERRED_VERBS = {"authorize", "bind", "forget"}
 DEFERRED_SUBVERBS = {("trust", "accept"), ("docker-args", "set")}
 SECURE_AUTHORIZATIONS = {
     "network": {"bridge", "none"}, "docker-daemon": {"none"},
-    "github-ssh": {"false", "none"},
+    "github-ssh": {"false", "none"}, "host-ide": {"false", "none"},
     "development-sudo": {"false", "none"}, "host-browser": {"false", "none"}, "host-x11": {"false", "none"},
 }
 READ_ONLY_VERBS = {"show", "check", "console"}

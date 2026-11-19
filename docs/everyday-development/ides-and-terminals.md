@@ -1,6 +1,6 @@
 ---
 description: The IDEs DevCapsule offers, the terminal inside them, and how the capsule's shell differs from your computer's.
-updated: 2026-11-18
+updated: 2026-11-19
 weight: 1
 ---
 # IDEs and terminals
@@ -51,6 +51,57 @@ vscode`, or approve it per checkout with `devcapsule project config authorize
 vscode-download true` after reviewing [Microsoft's Visual Studio Code license
 terms](https://code.visualstudio.com/license); see [Vendor software and
 trust](../configuration/software-approvals.md).
+
+## Host VS Code with a capsule terminal
+
+With VS Code selected, enable `host-ide` for one session:
+
+```bash
+devcapsule project run --authorize host-ide true
+```
+
+Add `--save` to remember the grant, or run `devcapsule project config authorize
+host-ide true`. It defaults to `false`. To return to the container editor, run
+`devcapsule project config deny host-ide`. This first slice supports only
+`vscode`; VSCodium and all other selected surfaces are refused.
+
+Your saved IDE selection and project lock stay unchanged. For this launch,
+DevCapsule materializes and supervises `xfce4-terminal` inside the capsule
+and attaches host VS Code to the container's project directory with Microsoft's
+Dev Containers extension. Tools, builds and agents still run in the capsule.
+The terminal uses the browser desktop unless you separately authorize
+`host-x11`. The host IDE does not grant Docker access inside the capsule or
+change its Docker mode, network access or sudo authorization. The launcher
+uses host Docker to attach. Recursive E2E readiness is disabled for DevCapsule
+checkouts using `host-ide`.
+
+The launcher first uses `code` on your host `PATH`, then an already unpacked
+managed copy. If neither exists on Linux or macOS (amd64 or arm64), it requires
+`devcapsule home trust accept vscode` (or `run --trust vscode`), downloads the
+stable release from Microsoft and verifies its SHA-256 before installing it
+under the DevCapsule data home's `host-ide/vscode/<version>/`. Download scratch
+uses the cache home's `host-ide/vscode/`. On WSL2, install VS Code on Windows
+with **Add to PATH**, reopen the WSL terminal, and check `code --version`;
+DevCapsule does not download a Linux editor for WSL2. Host acquisition uses
+home channel trust; a per-checkout `vscode-download` grant does not authorize
+it. Container `vscode-download` consent is unnecessary for this launch.
+
+The host editor has an isolated profile under your [DevCapsule configuration
+home](../configuration/home.md): `host-ide/vscode/user-data/` and
+`host-ide/vscode/extensions/`. The launcher installs
+`ms-vscode-remote.remote-containers` there before starting the container and
+preserves unrelated settings. On WSL2 with a Docker daemon inside the distro,
+it sets `dev.containers.executeInWSL` to `true`; with Docker Desktop, to `false`.
+Your normal VS Code profile is not imported. This profile separates preferences
+and extensions; it is not a sandbox. Host VS Code and its host extensions run
+with your host user's permissions, outside the capsule boundary.
+
+After the container is running and its project directory exists, VS Code opens
+in a new window. Closing that window leaves the terminal and agents running;
+closing the terminal ends the capsule. On headless Linux, the launcher prints
+the attach command for use on your desktop. `project run --print-command`
+prints both commands without installing or starting VS Code; the ordinary
+requirement that the container environment already exists still applies.
 
 ## Overriding a project-required IDE for one launch
 

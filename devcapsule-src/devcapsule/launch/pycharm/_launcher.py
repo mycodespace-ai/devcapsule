@@ -14,7 +14,7 @@ import stat
 import subprocess
 import sys
 import tempfile
-from threading import Event
+from threading import Event, Thread
 import time
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
@@ -22,6 +22,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Callable, Mapping, Sequence
 
+from ...host_ide import headless, readiness_commands
 from ...docker_arguments import inline_environment_names, redact_environment
 from ...platforms import HostOs, Platform
 from ...container_runtime.contract import (
@@ -243,6 +244,8 @@ class PycharmRunOptions:
     # external runtime plan. The caller decides; see commands/project.py.
     display_transport: str = HOST_X11_DISPLAY_TRANSPORT
     # Test seam: how the contained display's URL is opened once ready.
+    host_ide_command: tuple[str, ...] = ()
+    open_host_ide: Callable[[Sequence[str]], None] | None = None
     open_display_url: Callable[[str], None] | None = None
     open_console_url: Callable[[str], None] | None = None
     # Whether the base promises a web console, read from its labels by the
@@ -300,6 +303,8 @@ class PycharmRunConfig:
     # bridge listens on directly under host networking) and the per-run token.
     display_host_port: int | None = None
     display_token: str = ""
+    host_ide_command: tuple[str, ...] = ()
+    open_host_ide: Callable[[Sequence[str]], None] | None = None
     open_display_url: Callable[[str], None] | None = None
     # The web console, whenever the runtime runs: the host loopback port
     # Docker publishes (or the console listens on directly under host
@@ -371,8 +376,45 @@ def run_pycharm(options: PycharmRunOptions, env: Mapping[str, str] | None = None
                     command.extend(["/opt/pycharm/bin/pycharm.sh", config.project_mount])
                 if options.command_report is not None:
                     options.command_report(describe_run_command(command, config, files))
+                    if config.host_ide_command:
+                        options.command_report(shlex.join(config.host_ide_command) + "\n")
                     return 0  # Cleanup still runs; no container or display watcher.
                 stop_watching = Event()
+                host_ide_watcher: Thread | None = None
+                if config.host_ide_command:
+                    no_display = headless(HostOs.current(), runtime_env,
+                                          wsl=bool(runtime_env.get("WSL_DISTRO_NAME") or runtime_env.get("WSL_INTEROP")))
+
+                    def attach_when_ready() -> None:
+                        inspect, mounted = readiness_commands(config.name, config.project_mount)
+                        try:
+                            while not stop_watching.is_set():
+                                try:
+                                    running = subprocess.run(inspect, env=runtime_env, capture_output=True,
+                                                             text=True, timeout=2, check=False)
+                                    ready = (running.returncode == 0 and running.stdout.strip() == "true"
+                                             and subprocess.run(mounted, env=runtime_env, stdout=subprocess.DEVNULL,
+                                                                stderr=subprocess.DEVNULL, timeout=2, check=False).returncode == 0)
+                                except subprocess.TimeoutExpired:
+                                    ready = False
+                                if ready and not stop_watching.is_set():
+                                    if config.open_host_ide is not None:
+                                        config.open_host_ide(config.host_ide_command)
+                                    elif no_display:
+                                        print("Host VS Code: no host display; run this attach command on your desktop:\n"
+                                              + shlex.join(config.host_ide_command), file=sys.stderr, flush=True)
+                                    else:
+                                        subprocess.Popen(config.host_ide_command, env=runtime_env, stdin=subprocess.DEVNULL,
+                                                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                                         start_new_session=True)
+                                    return
+                                stop_watching.wait(0.5)
+                        except OSError as exc:
+                            print(f"Host VS Code could not attach ({exc}); run: " + shlex.join(config.host_ide_command),
+                                  file=sys.stderr, flush=True)
+
+                    host_ide_watcher = Thread(target=attach_when_ready, name="devcapsule-host-ide", daemon=True)
+                    host_ide_watcher.start()
                 if config.display_transport == CONTAINED_DISPLAY_TRANSPORT:
                     assert config.display_host_port is not None
                     url = display_url(config.display_host_port, config.display_token)
@@ -423,6 +465,8 @@ def run_pycharm(options: PycharmRunOptions, env: Mapping[str, str] | None = None
                     )
                 finally:
                     stop_watching.set()
+                    if host_ide_watcher is not None:
+                        host_ide_watcher.join(timeout=5)
                     if watcher is not None:
                         watcher.stop()
                 exit_code = INTERRUPTED_EXIT_CODE if result.interrupted else result.exit_code
@@ -1225,6 +1269,8 @@ def build_run_config(options: PycharmRunOptions, env: Mapping[str, str]) -> Pych
         display_transport=options.display_transport,
         display_host_port=display_host_port,
         display_token=display_token,
+        host_ide_command=options.host_ide_command,
+        open_host_ide=options.open_host_ide,
         open_display_url=options.open_display_url,
         console_host_port=console_host_port,
         session_id=session_id,

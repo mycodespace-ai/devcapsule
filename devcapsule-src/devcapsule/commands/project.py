@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import argparse
 import getpass
+import hashlib
+from copy import deepcopy
 import warnings
 from dataclasses import dataclass, replace
 import json
@@ -25,6 +27,11 @@ import termios
 import shlex
 from typing import Any, Callable, ClassVar, Mapping, Sequence
 
+from devcapsule.configuration.authorization import host_ide_enabled
+from devcapsule.configuration.host_ide import runtime_lock as host_ide_runtime_lock
+from devcapsule.commands._host_ide import prepare_host_ide
+from devcapsule.platforms import XdgHomes
+from devcapsule.resolution_matrix import MATRICES
 from devcapsule.launch.command_output import preparation_diagnostics
 from devcapsule.commands.framework import (
     STABLE_JSON_HELP,
@@ -1248,7 +1255,7 @@ class ConfigForgetCommand(Command):
 class ConfigDenyCommand(Command):
     name = "deny"
     capsule_access: ClassVar[CapsuleAccess] = CapsuleAccess.MUTATES
-    help = "Deny a host access for this checkout, recorded: network, docker-daemon, development-sudo, host-browser, host-x11, github-ssh."
+    help = "Deny a host access for this checkout, recorded: network, docker-daemon, development-sudo, host-browser, host-x11, github-ssh, host-ide."
 
     @classmethod
     def configure(cls, parser: argparse.ArgumentParser) -> None:
@@ -2116,7 +2123,7 @@ class RecursiveE2EGroup(Group):
 
 # The authorization nodes whose run-once answers feed the launch plan; every
 # other authorization (base-image, acquisitions) is inherently persistent.
-_RUN_ONCE_AUTHORIZATIONS = ("docker-daemon", "network", "development-sudo", "host-browser", "host-x11", "github-ssh")
+_RUN_ONCE_AUTHORIZATIONS = ("docker-daemon", "network", "development-sudo", "host-browser", "host-x11", "github-ssh", "host-ide")
 
 
 class ProjectRunCommand(Command):
@@ -2185,12 +2192,12 @@ class ProjectRunCommand(Command):
              command_report: Callable[[str], None] | None = None) -> int:
         start = _project_context(context).start_path()
         flags = _run_flags(arguments, manifest_for(start)[1])
-        if flags.ide is not None or flags.force:
-            load_launch_state(start, flags)
+        initial = load_launch_state(start, flags)
+        split_surface = host_ide_enabled(initial.checkout) or any(name == "host-ide" for name, _ in flags.authorize)
         # The bulk offer reviews and saves the checkout's ordinary selection.
         # A departed launch instead reviews its actual environment in prepare_launch;
         # that staged review still requires all software approvals and channel trust.
-        if command_report is None and not flags.force and not offer_software_approvals(start):
+        if command_report is None and not flags.force and not split_surface and not offer_software_approvals(start):
             print("Launch cancelled; no session was started.")
             return 1
         # The saved Docker arguments and the raw options are validated before
@@ -2242,6 +2249,23 @@ class ProjectRunCommand(Command):
             pass  # Optional cached reminders never gate an offline launch.
         authorizations = review.resolved_authorizations()
         host_access = review.effective_host(overrides)
+        host_ide = host_access.host_ide
+        host_ide_command: tuple[str, ...] = ()
+        container_name = arguments.container_name
+        if host_ide:
+            from devcapsule.configuration.trust import HomeTrust
+            container_name = container_name or "devcapsule-" + hashlib.sha256(str(root).encode()).hexdigest()[:16]
+            lock = host_ide_runtime_lock(lock, MATRICES[lock_platform(lock)], allow_unverified=flags.allow_unverified)
+            if lock.get("unverified-combinations"):
+                print("Host IDE terminal: " + str(lock["unverified-combinations"]), file=sys.stderr)
+            host_ide_command = prepare_host_ide(
+                XdgHomes.from_environment(), HomeTrust.read(prepared.home if command_report else load_settings()),
+                container_name, str(resolved["runtime"]["project-mount"]),
+                print_only=command_report is not None, environment=dict(os.environ),
+            )
+            resolved = deepcopy(resolved)
+            resolved["runtime"]["component"] = "xfce4-terminal"
+            selected = replace(selected, lock=lock, resolution=resolved)
         host_x11_answer = host_access.host_x11
         display_transport: str | None = None
         web_console: WebConsoleAvailability | None = None
@@ -2344,12 +2368,14 @@ class ProjectRunCommand(Command):
         recursive_environment = recursive_e2e_launch_environment(
             root,
             docker_daemon=str(selected_docker_daemon),
-            disabled=arguments.no_recursive_e2e,
+            disabled=arguments.no_recursive_e2e or host_ide,
         )
         readiness = recursive_environment.get(RECURSIVE_E2E_ENABLED_ENV)
         if readiness is not None:
             if readiness == "1":
                 print("Recursive E2E readiness: enabled for this DevCapsule launch.")
+            elif host_ide and not arguments.no_recursive_e2e:
+                print("Recursive E2E readiness: disabled because host-ide is enabled; host access choices are unchanged.")
             elif arguments.no_recursive_e2e:
                 print(
                     "Recursive E2E readiness: disabled for this launch; host Docker, "
@@ -2399,7 +2425,8 @@ class ProjectRunCommand(Command):
                 command_report=command_report,
                 project_mount=str(runtime["project-mount"]),
                 image=image,
-                name=arguments.container_name,
+                name=container_name,
+                host_ide_command=host_ide_command,
                 persistent_home=Path(state["home"]) if "home" in state else None,
                 ide_config=pycharm_state["config"],
                 plugins=pycharm_state["plugins"],
@@ -2444,7 +2471,7 @@ class ProjectRunCommand(Command):
             # it is no known-good generation and no proven version set.
             print("Not recorded as known-good: this launch departed from the project's required IDE.")
             return exit_code
-        if exit_code == 0 and not degraded_download:
+        if exit_code == 0 and not degraded_download and not host_ide:
             # D-0008: a zero exit proves this configuration; record it as a
             # known-good generation unless identical content already exists.
             # Recording failure must never fail the successful run.

@@ -210,7 +210,7 @@ class Resolution:
     @property
     def host_access(self) -> HostAccess:
         authorizations = self._document.get("authorization", {})
-        host_names = {"docker-daemon", "network", "development-sudo", "host-browser", "host-x11", "github-ssh"}
+        host_names = {"docker-daemon", "network", "development-sudo", "host-browser", "host-x11", "github-ssh", "host-ide"}
         return HostAccess().overlay(self._document.get("host", {})).overlay({
             name: value for name, value in authorizations.items() if name in host_names
         })
