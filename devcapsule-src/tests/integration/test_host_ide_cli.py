@@ -51,8 +51,10 @@ elif args == ['info', '--format', '{{.OperatingSystem}}']: print(os.environ.get(
 elif args[:2] == ['image', 'inspect']:
     if os.environ.get('IMAGE_IDENTITY'):
         entrypoint, cmd = [], []
-        if args[-1].startswith('devcapsule-local-') and os.environ.get('CANONICAL_LABELS_FILE'):
-            info = json.loads(Path(os.environ['CANONICAL_LABELS_FILE']).read_text())
+        if args[-1].startswith('devcapsule-local-'):
+            info = json.loads(Path(os.environ['CANONICAL_LABELS_FILE']).read_text()) if os.environ.get('CANONICAL_LABELS_FILE') else None
+            if not info or args[-1] != info.get('canonical_name', args[-1]):
+                print('[]'); print('Error response from daemon: No such image: ' + args[-1], file=sys.stderr); sys.exit(1)
             labels, entrypoint, cmd = info['labels'], info['entrypoint'], info['cmd']
         else:
             labels = {'devcapsule.image.managed': 'true', 'devcapsule.metadata.version': '1', 'devcapsule.image.kind': 'base'}
@@ -159,8 +161,8 @@ def test_denying_host_ide_flag_does_not_bypass_software_approvals(host: Host) ->
     assert 'is not on this machine' not in result.stderr
 
 
-def test_print_command_generates_distinct_container_names_across_launches(host: Host) -> None:
-    """Split launches without --name assign unique container names matching their attach URIs."""
+def prepare_terminal_image_fixture(host: Host, capabilities: list[str]) -> str:
+    """Register a fake local xfce4-terminal canonical image and matching PEX runtime for CLI launch tests."""
     import hashlib
     from devcapsule.configuration.host_ide import runtime_lock as host_ide_runtime_lock
     from devcapsule.materialization import (
@@ -171,10 +173,7 @@ def test_print_command_generates_distinct_container_names_across_launches(host: 
     from devcapsule.platforms import Platform
     from devcapsule.resolution_matrix import MATRICES
 
-    host.init()
-    composed_lock = tomllib.loads(
-        MATRICES[Platform.LINUX_AMD64].resolve(['python', 'vscode-ide']).render_lock()
-    )
+    composed_lock = tomllib.loads(MATRICES[Platform.LINUX_AMD64].resolve(capabilities).render_lock())
     terminal_lock = host_ide_runtime_lock(composed_lock, MATRICES[Platform.LINUX_AMD64])
     locked = parse_locked_environment(terminal_lock)
     pex = host.root / 'runtime.pex'
@@ -208,14 +207,24 @@ def test_print_command_generates_distinct_container_names_across_launches(host: 
     }
     labels_file = host.root / 'canonical-labels.json'
     labels_file.write_text(json.dumps({
+        'canonical_name': canonical_name,
         'labels': labels,
         'entrypoint': descriptor['runtime']['entrypoint'],
         'cmd': descriptor['runtime']['command'],
     }))
-    host.environment['DEVCAPSULE_RUNTIME_PEX'] = str(pex)
-    host.environment['IMAGE_IDENTITY'] = base_identity
-    host.environment['CANONICAL_LABELS_FILE'] = str(labels_file)
-    host.environment['DISPLAY'] = ':99'
+    host.environment.update({
+        'DEVCAPSULE_RUNTIME_PEX': str(pex),
+        'IMAGE_IDENTITY': base_identity,
+        'CANONICAL_LABELS_FILE': str(labels_file),
+        'DISPLAY': ':99',
+    })
+    return canonical_name
+
+
+def test_print_command_generates_distinct_container_names_across_launches(host: Host) -> None:
+    """Split launches without --name assign unique container names matching their attach URIs."""
+    host.init()
+    prepare_terminal_image_fixture(host, ['python', 'vscode-ide'])
     names: list[str] = []
     for _ in range(2):
         result = host.cli(
@@ -483,3 +492,49 @@ def test_bad_archive_digest_never_publishes_an_installation(host: Host, vendor_p
     assert not (host.home / 'data/host-ide/vscode/1.2.3').exists()
     assert not list((host.home / 'cache/host-ide/vscode').glob('.download-*'))
     assert host.recorded() == []
+
+
+def test_optional_artifact_unavailable_retry_keeps_split_surface(host: Host) -> None:
+    """When optional artifact acquisition fails in project run, the CLI retries with xfce4-terminal and host code attach."""
+    from devcapsule.components.catalog import COMPONENTS
+
+    assert host.cli('init', '--require', 'python', '--offer', 'claude-code-agent', '--creator', 'mailto:test@example.test').returncode == 0
+    assert host.cli('config', 'ide', 'vscode').returncode == 0
+    assert host.cli('config', 'authorize', 'base-image', 'default').returncode == 0
+    assert host.cli('config', 'authorize', 'claude-code-download', 'true').returncode == 0
+
+    canonical_name = prepare_terminal_image_fixture(host, ['python', 'vscode-ide'])
+    host.environment['EXTENSIONS'] = 'ms-vscode-remote.remote-containers'
+    with_opt_lock = tomllib.loads((host.project / '.devcapsule/devcapsule.linux-amd64.lock').read_text())
+    opt_url = COMPONENTS['claude-code'].locked_artifacts(with_opt_lock['components']['claude-code'], 'linux-amd64')[0].url
+
+    result = host.script(f'''
+import devcapsule.cli as cli
+from devcapsule.commands import project as project_commands
+from devcapsule.materialization import ArtifactUnavailable
+
+real_realize = project_commands.realize_environment
+attempts = []
+
+def retry_once(selected, **kwargs):
+    attempts.append((selected.lock['components'].get('interactive-surface'), selected.resolution['runtime']['component'], set(selected.lock['components'])))
+    if 'claude-code' in selected.lock['components']:
+        raise ArtifactUnavailable({opt_url!r}, 'offline')
+    return real_realize(selected, **kwargs)
+
+project_commands.realize_environment = retry_once
+status = cli.main([
+    'project', '--path', {str(host.project)!r}, 'run',
+    '--authorize', 'host-ide', 'true', '--authorize', 'host-x11', 'true', '--no-update-check',
+])
+assert status == 0, status
+assert len(attempts) == 2, attempts
+assert attempts[0][0] == 'xfce4-terminal' and attempts[0][1] == 'xfce4-terminal'
+assert attempts[1][0] == 'xfce4-terminal' and attempts[1][1] == 'xfce4-terminal'
+assert 'vscode' not in attempts[1][2] and 'claude-code' not in attempts[1][2]
+''')
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert 'optional tools claude-code unavailable' in result.stderr
+    calls = host.recorded()
+    assert any(call[0] == 'docker' and 'run' in call and canonical_name in call for call in calls)
+    assert any(call[0] == 'code' and '--folder-uri' in call for call in calls)
