@@ -187,6 +187,7 @@ status file; internal WIP/archive documents use the local index in that status.
 
 ## Workstream Status
 
+- [Host IDE current status](engineering-docs/wip/2026-11-19-host-ide/CURRENT-STATUS.md): split-surface container `xfce4-terminal` over noVNC with host-side VS Code / VSCodium remote IDE integration.
 - [Presentations](engineering-docs/wip/2026-11-16-presentations/CURRENT-STATUS.md): agent-driven E2E recordings and presentations in adopter projects.
 
 - [Multiple-stream workflow successful archive](engineering-docs/archive/2026-08-08-multi-workflow/CURRENT-STATUS.md)
