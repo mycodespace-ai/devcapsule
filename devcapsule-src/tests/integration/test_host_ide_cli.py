@@ -9,6 +9,10 @@ from pathlib import Path
 import subprocess
 import sys
 import shlex
+import tomllib
+from zipfile import ZipFile
+
+from devcapsule.build_info import build_info_json, current_build_info
 
 import pytest
 
@@ -45,6 +49,19 @@ if args == ['info', '--format', '{{json .SecurityOptions}}']: print('[]')
 elif args == ['version', '--format', '{{.Server.Arch}}']: print('amd64')
 elif args == ['info', '--format', '{{.OperatingSystem}}']: print(os.environ.get('DAEMON_OS', 'Ubuntu'))
 elif args[:2] == ['image', 'inspect']:
+    if os.environ.get('IMAGE_IDENTITY'):
+        entrypoint, cmd = [], []
+        if args[-1].startswith('devcapsule-local-'):
+            info = json.loads(Path(os.environ['CANONICAL_LABELS_FILE']).read_text()) if os.environ.get('CANONICAL_LABELS_FILE') else None
+            if not info or args[-1] != info.get('canonical_name', args[-1]):
+                print('[]'); print('Error response from daemon: No such image: ' + args[-1], file=sys.stderr); sys.exit(1)
+            labels, entrypoint, cmd = info['labels'], info['entrypoint'], info['cmd']
+        else:
+            labels = {'devcapsule.image.managed': 'true', 'devcapsule.metadata.version': '1', 'devcapsule.image.kind': 'base'}
+        print(json.dumps([{'Id': os.environ['IMAGE_IDENTITY'], 'Os': 'linux', 'Architecture': 'amd64',
+                           'Size': 1, 'RepoTags': [args[-1]],
+                           'Config': {'Labels': labels, 'Entrypoint': entrypoint, 'Cmd': cmd}}]))
+        sys.exit(0)
     print('[]'); print('Error response from daemon: No such image: ' + args[-1], file=sys.stderr); sys.exit(1)
 elif args[:2] == ['inspect', '-f']:
     print('true' if Path(os.environ['CALLS'] + '.running').exists() else 'false')
@@ -133,6 +150,98 @@ def test_run_once_host_ide_avoids_container_consent_and_preserves_project_files(
     assert all(p.read_bytes() == content for p, content in before.items())
     assert not any(call[0] == 'code' for call in host.recorded())
     assert not (host.home / 'host-ide').exists()
+
+
+def test_denying_host_ide_flag_does_not_bypass_software_approvals(host: Host) -> None:
+    """Passing --authorize host-ide false retains container VS Code consent and gating."""
+    host.init()
+    result = host.cli('run', '--authorize', 'host-ide', 'false', '--no-update-check')
+    assert result.returncode != 0
+    assert 'trust vscode' in result.stderr
+    assert 'is not on this machine' not in result.stderr
+
+
+def prepare_terminal_image_fixture(host: Host, capabilities: list[str]) -> str:
+    """Register a fake local xfce4-terminal canonical image and matching PEX runtime for CLI launch tests."""
+    import hashlib
+    from devcapsule.configuration.host_ide import runtime_lock as host_ide_runtime_lock
+    from devcapsule.materialization import (
+        CANONICAL_NAME_LABEL, IMAGE_KIND_LABEL, MANAGED_LABEL, MATERIALIZED_KIND, METADATA_VERSION,
+        METADATA_VERSION_LABEL, canonical_image_name, canonical_json, formation_descriptor, formation_identity,
+        parse_locked_environment,
+    )
+    from devcapsule.platforms import Platform
+    from devcapsule.resolution_matrix import MATRICES
+
+    composed_lock = tomllib.loads(MATRICES[Platform.LINUX_AMD64].resolve(capabilities).render_lock())
+    terminal_lock = host_ide_runtime_lock(composed_lock, MATRICES[Platform.LINUX_AMD64])
+    locked = parse_locked_environment(terminal_lock)
+    pex = host.root / 'runtime.pex'
+    with ZipFile(pex, 'w') as archive:
+        archive.writestr('pkg/devcapsule/_build_info.json', build_info_json(current_build_info()))
+    base_identity = 'sha256:' + '0' * 64
+    descriptor = formation_descriptor(
+        platform=locked.platform,
+        base_identity=base_identity,
+        artifact=locked.artifact,
+        ancillary_artifacts=locked.ancillary_artifacts,
+        recipe_id=locked.recipe_id,
+        recipe_version=locked.recipe_version,
+        component_id=locked.component_id,
+        runtime_sha256=hashlib.sha256(pex.read_bytes()).hexdigest(),
+    )
+    canonical_name = canonical_image_name(descriptor, locked.component_id)
+    labels = {
+        MANAGED_LABEL: 'true',
+        METADATA_VERSION_LABEL: METADATA_VERSION,
+        IMAGE_KIND_LABEL: MATERIALIZED_KIND,
+        CANONICAL_NAME_LABEL: canonical_name,
+        'devcapsule.materialization.identity': formation_identity(descriptor),
+        'devcapsule.materialization.base-identity': base_identity,
+        'devcapsule.pex.sha256': descriptor['runtime']['pex-sha256'],
+        'devcapsule.materialization.recipe-version': descriptor['recipe']['version'],
+        'devcapsule.component.id': locked.component_id,
+        'devcapsule.component.version': locked.artifact.version,
+        'devcapsule.component.sha256': locked.artifact.sha256,
+        'devcapsule.materialization.descriptor': canonical_json(descriptor),
+    }
+    labels_file = host.root / 'canonical-labels.json'
+    labels_file.write_text(json.dumps({
+        'canonical_name': canonical_name,
+        'labels': labels,
+        'entrypoint': descriptor['runtime']['entrypoint'],
+        'cmd': descriptor['runtime']['command'],
+    }))
+    host.environment.update({
+        'DEVCAPSULE_RUNTIME_PEX': str(pex),
+        'IMAGE_IDENTITY': base_identity,
+        'CANONICAL_LABELS_FILE': str(labels_file),
+        'DISPLAY': ':99',
+    })
+    return canonical_name
+
+
+def test_print_command_generates_distinct_container_names_across_launches(host: Host) -> None:
+    """Split launches without --name assign unique container names matching their attach URIs."""
+    host.init()
+    prepare_terminal_image_fixture(host, ['python', 'vscode-ide'])
+    names: list[str] = []
+    for _ in range(2):
+        result = host.cli(
+            'run', '--authorize', 'host-ide', 'true', '--authorize', 'host-x11', 'true',
+            '--print-command', '--no-update-check',
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+        lines = [line for line in result.stdout.replace('\\\n', ' ').splitlines() if line.strip()]
+        docker_tokens = next(shlex.split(line) for line in lines if '--name ' in line)
+        code_tokens = next(shlex.split(line) for line in lines if '--folder-uri ' in line)
+        name = docker_tokens[docker_tokens.index('--name') + 1]
+        uri = code_tokens[code_tokens.index('--folder-uri') + 1]
+        encoded = uri.removeprefix('vscode-remote://attached-container+').split('/', 1)[0]
+        assert name.startswith('devcapsule-')
+        assert json.loads(bytes.fromhex(encoded).decode('utf-8')) == {'containerName': '/' + name}
+        names.append(name)
+    assert names[0] != names[1]
 
 
 def test_codium_is_refused_before_host_code_or_docker(host: Host) -> None:
@@ -383,3 +492,49 @@ def test_bad_archive_digest_never_publishes_an_installation(host: Host, vendor_p
     assert not (host.home / 'data/host-ide/vscode/1.2.3').exists()
     assert not list((host.home / 'cache/host-ide/vscode').glob('.download-*'))
     assert host.recorded() == []
+
+
+def test_optional_artifact_unavailable_retry_keeps_split_surface(host: Host) -> None:
+    """When optional artifact acquisition fails in project run, the CLI retries with xfce4-terminal and host code attach."""
+    from devcapsule.components.catalog import COMPONENTS
+
+    assert host.cli('init', '--require', 'python', '--offer', 'claude-code-agent', '--creator', 'mailto:test@example.test').returncode == 0
+    assert host.cli('config', 'ide', 'vscode').returncode == 0
+    assert host.cli('config', 'authorize', 'base-image', 'default').returncode == 0
+    assert host.cli('config', 'authorize', 'claude-code-download', 'true').returncode == 0
+
+    canonical_name = prepare_terminal_image_fixture(host, ['python', 'vscode-ide'])
+    host.environment['EXTENSIONS'] = 'ms-vscode-remote.remote-containers'
+    with_opt_lock = tomllib.loads((host.project / '.devcapsule/devcapsule.linux-amd64.lock').read_text())
+    opt_url = COMPONENTS['claude-code'].locked_artifacts(with_opt_lock['components']['claude-code'], 'linux-amd64')[0].url
+
+    result = host.script(f'''
+import devcapsule.cli as cli
+from devcapsule.commands import project as project_commands
+from devcapsule.materialization import ArtifactUnavailable
+
+real_realize = project_commands.realize_environment
+attempts = []
+
+def retry_once(selected, **kwargs):
+    attempts.append((selected.lock['components'].get('interactive-surface'), selected.resolution['runtime']['component'], set(selected.lock['components'])))
+    if 'claude-code' in selected.lock['components']:
+        raise ArtifactUnavailable({opt_url!r}, 'offline')
+    return real_realize(selected, **kwargs)
+
+project_commands.realize_environment = retry_once
+status = cli.main([
+    'project', '--path', {str(host.project)!r}, 'run',
+    '--authorize', 'host-ide', 'true', '--authorize', 'host-x11', 'true', '--no-update-check',
+])
+assert status == 0, status
+assert len(attempts) == 2, attempts
+assert attempts[0][0] == 'xfce4-terminal' and attempts[0][1] == 'xfce4-terminal'
+assert attempts[1][0] == 'xfce4-terminal' and attempts[1][1] == 'xfce4-terminal'
+assert 'vscode' not in attempts[1][2] and 'claude-code' not in attempts[1][2]
+''')
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert 'optional tools claude-code unavailable' in result.stderr
+    calls = host.recorded()
+    assert any(call[0] == 'docker' and 'run' in call and canonical_name in call for call in calls)
+    assert any(call[0] == 'code' and '--folder-uri' in call for call in calls)

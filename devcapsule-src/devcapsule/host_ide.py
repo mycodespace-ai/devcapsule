@@ -59,6 +59,18 @@ def vscode_channel(origin: str = "https://vscode.download.prss.microsoft.com") -
                    "the SHA-256 the launcher pins", TERMS, "vscode-download")
 
 
+def _installed_version_key(path: Path, host_os: HostOs) -> tuple[tuple[int, ...], int, str, str]:
+    """Order managed VS Code directories numerically so 1.10.0 beats 1.9.0."""
+    relative_depth = len(code_relative_path(host_os).parts) - 1
+    version_name = path.parents[relative_depth].name if relative_depth < len(path.parents) else path.name
+    match = re.fullmatch(r"([0-9]+(?:\.[0-9]+)*)(?:[-+](.+))?", version_name)
+    if match is None:
+        return ((-1,), 0, "", version_name)
+    numeric = tuple(int(part) for part in match.group(1).split("."))
+    suffix = match.group(2)
+    return (numeric, 1 if suffix is None else 0, suffix or "", version_name)
+
+
 def acquisition_plan(inputs: HostIdeInputs, *, print_only: bool) -> AcquisitionPlan:
     """Prefer PATH, then a managed installation; never acquire a Linux IDE for WSL."""
     if inputs.path_code:
@@ -67,7 +79,8 @@ def acquisition_plan(inputs: HostIdeInputs, *, print_only: bool) -> AcquisitionP
         raise CliError("host-ide on WSL2 needs Windows VS Code on PATH. Install VS Code on Windows, "
                        "enable its Add to PATH option, then reopen the WSL2 terminal and check 'code --version'.")
     if inputs.installed:
-        return AcquisitionPlan(str(sorted(inputs.installed)[-1]), None, None)
+        newest = max(inputs.installed, key=lambda candidate: _installed_version_key(candidate, inputs.os))
+        return AcquisitionPlan(str(newest), None, None)
     targets = {(HostOs.LINUX, "amd64"): "linux-x64", (HostOs.LINUX, "arm64"): "linux-arm64",
                (HostOs.DARWIN, "amd64"): "darwin", (HostOs.DARWIN, "arm64"): "darwin-arm64"}
     target = targets.get((inputs.os, inputs.architecture))
