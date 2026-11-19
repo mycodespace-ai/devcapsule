@@ -17,7 +17,7 @@ __all__ = [
     "AuthorizationDeclaration", "AuthorizationChoice", "AuthorizationReview", "AuthorizedBaseSelection",
     "authorization_declarations", "authorization_deny_value", "base_recovery_choices",
     "review_authorizations", "resolved_checkout_authorizations",
-    "normalize_authorization_value", "render_authorization_value",
+    "host_ide_enabled", "normalize_authorization_value", "render_authorization_value",
     # What the platform lock says about the base, validated.
     "immutable_registry_reference", "locked_base_reference", "locked_base_contract", "locked_base_build_mnemonic",
     "authorized_base_selection", "authorized_base_reference",
@@ -93,6 +93,11 @@ HOME_CAPABILITY_DEFAULTS: dict[str, tuple[AuthorizationScalar, str]] = {
     # Host X11 passthrough survives only as this node (contained-display
     # design note, T7): never a default, never a project recommendation,
     # and the trade-off is stated where the answer is given.
+    "host-ide": (
+        True,
+        "Run VS Code on the host with an isolated profile and attach through host Docker; "
+        "the capsule runs xfce4-terminal. Host IDE extensions execute outside the capsule boundary.",
+    ),
     "host-x11": (
         True,
         "Run the IDE on the host's X session instead of the capsule's contained "
@@ -476,6 +481,16 @@ def _trusted_channel(declaration: AuthorizationDeclaration, channels: Mapping[st
     return None
 
 
+def host_ide_enabled(checkout: Mapping[str, Any]) -> bool:
+    """Only an explicit boolean grant enables the host IDE; an authorization overrides legacy input."""
+    records = checkout.get("authorization", {})
+    if isinstance(records, dict) and "host-ide" in records:
+        record = records["host-ide"]
+        return isinstance(record, dict) and record.get("value") is True
+    host = checkout.get("host", {})
+    return isinstance(host, dict) and host.get("host-ide") is True
+
+
 def review_authorizations(
     manifest: Mapping[str, Any], lock: Mapping[str, Any], checkout: Mapping[str, Any],
     trust: HomeTrust | None = None,
@@ -498,6 +513,8 @@ def review_authorizations(
         raise ProjectConfigurationError("Checkout authorization must be a table.")
     reviews: list[AuthorizationReview] = []
     for name, declaration in sorted(declarations.items()):
+        if name == "vscode-download" and host_ide_enabled(checkout):
+            continue  # The launch materializes a terminal; host acquisition has its own trust check.
         record = records.get(name)
         required = declaration.required
         recommended = declaration.display_value or render_authorization_value(declaration.recommended_value)

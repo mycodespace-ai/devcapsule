@@ -178,3 +178,32 @@ def test_a_trusted_channel_covers_another_version_from_the_same_origin() -> None
     review = _download_review(later, _checkout_answering(later, download=None), _trusting_every_channel_of(accepted))
 
     assert (review.status, review.trusted_channel, review.problem) == ("trusted", "claude-code", None)
+
+
+def test_host_ide_is_an_optional_user_owned_authorization() -> None:
+    """Every checkout can authorize host IDE use without a project recommendation or a required answer."""
+    declaration = authorization_declarations({}, {'components': {}})['host-ide']
+    assert not declaration.required
+    assert not declaration.project_recommended
+    assert declaration.recommended_value is True
+
+
+def test_host_ide_skips_only_the_container_vscode_acquisition() -> None:
+    """A host IDE grant removes container VS Code consent while keeping another selected vendor's consent."""
+    lock = {'components': {
+        'vscode': {'version': 'test', 'acquisition-authorization': 'vscode-download',
+                   'terms-url': 'https://code.visualstudio.com/license'},
+        'claude-code': {'version': 'test', 'acquisition-authorization': CLAUDE_CODE_AUTHORIZATION,
+                        'terms-url': CLAUDE_CODE_TERMS_URL},
+    }}
+    reviews = review_authorizations({}, lock, {'authorization': {'host-ide': {'value': True}}})
+    assert 'vscode-download' not in {item.name for item in reviews}
+    assert any(item.name == CLAUDE_CODE_AUTHORIZATION and item.problem for item in reviews)
+
+
+def test_host_ide_denial_keeps_container_vscode_consent() -> None:
+    """An explicit host IDE denial leaves the container VS Code acquisition subject to ordinary consent."""
+    lock = {'components': {'vscode': {'version': 'test', 'acquisition-authorization': 'vscode-download',
+                                     'terms-url': 'https://code.visualstudio.com/license'}}}
+    reviews = review_authorizations({}, lock, {'authorization': {'host-ide': {'value': False}}})
+    assert any(item.name == 'vscode-download' and item.problem for item in reviews)

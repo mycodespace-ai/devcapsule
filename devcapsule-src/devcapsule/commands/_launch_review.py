@@ -33,7 +33,7 @@ from typing import Any, Callable, Mapping
 
 from devcapsule.compat import DecisionPending
 from devcapsule.configuration.authorization import (
-    HOME_CAPABILITY_DEFAULTS, authorization_declarations, normalize_authorization_value, render_authorization_value,
+    HOME_CAPABILITY_DEFAULTS, host_ide_enabled, authorization_declarations, normalize_authorization_value, render_authorization_value,
 )
 from devcapsule.configuration.capabilities import (
     IDE_REQUIREMENT, CapabilityPolicy, LocalCapabilities, RequirementDeparture, capability_notes,
@@ -281,6 +281,9 @@ def review_launch(
     asked: set[tuple[str, str]] = set()
     while True:
         checkout = launch_checkout()
+        if host_ide_enabled(checkout):
+            from devcapsule.configuration.host_ide import validate_surface
+            validate_surface(state.composed_lock(checkout))
         for channel_id in flags.trust:
             if channel_id not in accepted:
                 stage_trust(state, checkout, channel_id, accepted)

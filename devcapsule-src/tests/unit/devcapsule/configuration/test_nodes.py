@@ -95,7 +95,7 @@ def test_authorization_family_includes_optional_github_access() -> None:
     registry = build_node_registry(example_manifest(), example_lock())
     nodes = registry.family(CARRIER_FAMILY_AUTHORIZE)
     assert {node.name for node in nodes} == {
-        'base-image', 'docker-daemon', 'network', 'development-sudo', 'host-browser', 'host-x11', 'github-ssh',
+        'base-image', 'docker-daemon', 'network', 'development-sudo', 'host-browser', 'host-x11', 'github-ssh', 'host-ide',
     }
 
 

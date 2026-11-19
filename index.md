@@ -152,6 +152,7 @@ status file; internal WIP/archive documents use the local index in that status.
 
 ## Work Orders
 
+- [Split-surface host IDE (`host-ide`) — VS Code first slice](engineering-docs/work-orders/2026-11-19-host-ide-vscode.md)
 - [CLI syntax and help discovery — owner decisions and review](engineering-docs/work-orders/2026-11-17-cli-syntax-and-discovery.md)
 - [Wrapped projects: a foreign repository as a submodule, three commands](engineering-docs/work-orders/2026-11-02-wrapped-projects.md)
 - [0.3.0 user documentation CLI alignment, full stub authoring, and prose review — maintenance, 0.3.0](engineering-docs/work-orders/2026-10-30-user-docs-0-3-0-cli-alignment.md)
@@ -187,6 +188,7 @@ status file; internal WIP/archive documents use the local index in that status.
 
 ## Workstream Status
 
+- [Host IDE current status](engineering-docs/wip/2026-11-19-host-ide/CURRENT-STATUS.md): split-surface container `xfce4-terminal` over noVNC with host-side VS Code / VSCodium remote IDE integration.
 - [Presentations](engineering-docs/wip/2026-11-16-presentations/CURRENT-STATUS.md): agent-driven E2E recordings and presentations in adopter projects.
 
 - [Multiple-stream workflow successful archive](engineering-docs/archive/2026-08-08-multi-workflow/CURRENT-STATUS.md)
