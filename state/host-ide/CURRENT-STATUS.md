@@ -4,7 +4,7 @@ Mnemonic: `host-ide`
 
 Start date: 2026-11-19
 
-State: active 2026-11-19; work order authored and approved; coordinating Pair Review implementation (Codex `gpt-6-astra` high-effort implementer, Antigravity `Gemini 4 Hydrogen` reviewer) targeting `release-0.3.1`.
+State: active 2026-11-19; VS Code `host-ide` slice implemented and Pair Review complete ([PR #65](https://github.com/mycodespace-ai/devcapsule/pull/65) open against `release-0.3.1`; review [PR #66](https://github.com/mycodespace-ai/devcapsule/pull/66) merged after 1 round at `717ce587`).
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5b0f27c04de1
 
@@ -33,22 +33,26 @@ Reduce daily IDE UX friction (multi-step copy/paste across the browser noVNC tab
 
 ## Current State
 
-- 2026-11-19: Closed out prior maintenance checkout effort (`ws-maintenance/website-candidate-checkout`, merged as PR #61 into `main`), removed its temporary worktree, and switched this checkout to `ws-host-ide/vscode-codium` while preserving the user's two uncommitted `.devcapsule/` files.
-- Registered `host-ide` in root `CURRENT-STATUS.md`, `index.md`, and `engineering-docs/wip/2026-11-19-host-ide/`. No production source code changed yet.
+- 2026-11-19: Implemented the VS Code `host-ide` first slice on `ws-host-ide/vscode-codium-impl` (`4c4ef9c5`) and opened [PR #65](https://github.com/mycodespace-ai/devcapsule/pull/65) targeting `release-0.3.1`.
+- Completed Pair Review Loop with Antigravity (`Gemini 4 Hydrogen High`) reviewer / Codex (`gpt-6-astra`, high effort) implementor: review [PR #66](https://github.com/mycodespace-ai/devcapsule/pull/66) fixed 5 findings (`8eee48c1`), resolved a Round 1 unit-test isolation / CLI-retry coverage pushback (`5eb9f317`), and merged into `ws-host-ide/vscode-codium-impl` at `717ce587`.
+- Merged-branch validation passed: `44` focused unit tests, `7` isolation-probe home cases, `3477` build unit passes (`1` skipped, `288` deselected, `1` xfailed, `1` xpassed), `474` webconsole tests, `21` host-IDE CLI integration tests, mypy (`377` + `9` files), `0` unittest convention breaches, local PEX smoke, and `249` docs contract pages.
 
 ## Planned Next Step
 
-Dispatch Codex (`gpt-6-astra`, high effort) in `/home/devcapsule/worktrees/host-ide-impl` (`ws-host-ide/vscode-codium-impl`) to implement the VS Code `host-ide` work order and open the implementation PR against `release-0.3.1`, then review it in the Pair Review Loop.
+Owner review and merge of [PR #65](https://github.com/mycodespace-ai/devcapsule/pull/65) into `release-0.3.1`; follow with real-host VS Code smoke verification and the VSCodium (`codium`) slice via `open-remote-ssh` / `docker exec`.
 
 ## Open Threads
 
+- Owner merge of [PR #65](https://github.com/mycodespace-ai/devcapsule/pull/65) into `release-0.3.1` and real-host VS Code attach verification outside the capsule sandbox.
+- Remove `/home/devcapsule/worktrees/host-ide-impl` and `/home/devcapsule/worktrees/host-ide-review` once `PR #65` merges.
 - Preserve the user's two uncommitted `.devcapsule/devcapsule.toml` and `.devcapsule/devcapsule.linux-amd64.lock` edits in `/workspace/301e4208ef81-ChatGPT_Codex` (exclude from commits).
-- VSCodium (`codium`) support via `open-remote-ssh` / `docker exec` will follow in the next slice after the VS Code slice lands.
+- VSCodium (`codium`) support via `open-remote-ssh` / `docker exec` follows in the next slice after the VS Code slice lands.
 
 ## Document Index
 
 - [Workstream status](CURRENT-STATUS.md) — active state, recorded `release-0.3.1` base exception, and next Pair Review step.
 - [Work order](../../work-orders/2026-11-19-host-ide-vscode.md) — approved scope and engineering constraints for the VS Code `host-ide` slice.
 - [Implementor brief](evidence/2026-11-19-vscode-impl-brief.md) — implementation brief for Codex (`gpt-6-astra`, high effort) on `ws-host-ide/vscode-codium-impl`.
+- [Pair Review brief and outcome](evidence/2026-11-19-pr65-review-brief.md) — PR #65 / PR #66 review findings, Round 1 pushback/resolution, and merged verification counts.
 - [Intake](intake/README.md) — workstream intake queue (empty).
 - [Intake dispositions](intake-dispositions.md) — intake decision log (no items received).
