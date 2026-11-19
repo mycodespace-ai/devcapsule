@@ -22,16 +22,15 @@ from dataclasses import dataclass, replace
 import json
 from pathlib import Path
 import os
+import secrets
 import sys
 import termios
 import shlex
 from typing import Any, Callable, ClassVar, Mapping, Sequence
 
-from devcapsule.configuration.authorization import host_ide_enabled
-from devcapsule.configuration.host_ide import runtime_lock as host_ide_runtime_lock
+from devcapsule.configuration.host_ide import apply_host_ide_surface, split_surface_requested
 from devcapsule.commands._host_ide import prepare_host_ide
 from devcapsule.platforms import XdgHomes
-from devcapsule.resolution_matrix import MATRICES
 from devcapsule.launch.command_output import preparation_diagnostics
 from devcapsule.commands.framework import (
     STABLE_JSON_HELP,
@@ -2193,7 +2192,7 @@ class ProjectRunCommand(Command):
         start = _project_context(context).start_path()
         flags = _run_flags(arguments, manifest_for(start)[1])
         initial = load_launch_state(start, flags)
-        split_surface = host_ide_enabled(initial.checkout) or any(name == "host-ide" for name, _ in flags.authorize)
+        split_surface = split_surface_requested(initial.manifest, initial.composed_lock(), initial.checkout, flags.authorize)
         # The bulk offer reviews and saves the checkout's ordinary selection.
         # A departed launch instead reviews its actual environment in prepare_launch;
         # that staged review still requires all software approvals and channel trust.
@@ -2230,6 +2229,7 @@ class ProjectRunCommand(Command):
             again = flags_after_upgrade(flags, prepared.host_overrides)
             prepared.selected = prepare_launch(start, again, interactive=False).selected
         selected = prepared.selected
+        source_selected = selected
         review = review_configuration(selected.manifest, selected.lock, selected.checkout,
                                       prepared.home if command_report is not None else load_settings())
         root, manifest, lock = selected.root, selected.manifest, selected.lock
@@ -2254,8 +2254,12 @@ class ProjectRunCommand(Command):
         container_name = arguments.container_name
         if host_ide:
             from devcapsule.configuration.trust import HomeTrust
-            container_name = container_name or "devcapsule-" + hashlib.sha256(str(root).encode()).hexdigest()[:16]
-            lock = host_ide_runtime_lock(lock, MATRICES[lock_platform(lock)], allow_unverified=flags.allow_unverified)
+            container_name = container_name or (
+                f"devcapsule-{hashlib.sha256(str(root).encode()).hexdigest()[:12]}"
+                f"-{os.getpid()}-{secrets.token_hex(4)}"
+            )
+            selected = apply_host_ide_surface(selected, allow_unverified=flags.allow_unverified)
+            lock, resolved = selected.lock, selected.resolution
             if lock.get("unverified-combinations"):
                 print("Host IDE terminal: " + str(lock["unverified-combinations"]), file=sys.stderr)
             host_ide_command = prepare_host_ide(
@@ -2263,9 +2267,6 @@ class ProjectRunCommand(Command):
                 container_name, str(resolved["runtime"]["project-mount"]),
                 print_only=command_report is not None, environment=dict(os.environ),
             )
-            resolved = deepcopy(resolved)
-            resolved["runtime"]["component"] = "xfce4-terminal"
-            selected = replace(selected, lock=lock, resolution=resolved)
         host_x11_answer = host_access.host_x11
         display_transport: str | None = None
         web_console: WebConsoleAvailability | None = None
@@ -2316,12 +2317,13 @@ class ProjectRunCommand(Command):
                         f"Launch once with {launch}, then print."
                     ) from missing
                 except ArtifactUnavailable as exc:
-                    smaller = omit_unavailable_optional(selected, exc.url)
+                    smaller = omit_unavailable_optional(source_selected, exc.url)
                     if smaller is None:
                         raise
-                    omitted = set(selected.lock["components"]) - set(smaller.lock["components"])
+                    omitted = set(source_selected.lock["components"]) - set(smaller.lock["components"])
+                    source_selected = smaller
+                    selected = apply_host_ide_surface(smaller, allow_unverified=flags.allow_unverified) if host_ide else smaller
                     print(f"Warning: optional tools {', '.join(sorted(omitted))} unavailable: {exc}; continuing without those enhancements.", file=sys.stderr)
-                    selected = smaller
                     lock, checkout, resolved = selected.lock, selected.checkout, selected.resolution
                     review = review_configuration(manifest, lock, checkout, load_settings())
                     authorizations = review.resolved_authorizations()

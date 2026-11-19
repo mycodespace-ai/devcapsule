@@ -142,3 +142,10 @@ def test_readiness_requires_running_container_and_project_mount() -> None:
         ('docker', 'inspect', '-f', '{{.State.Running}}', 'capsule'),
         ('docker', 'exec', 'capsule', 'test', '-d', '/workspace/project'),
     )
+
+
+def test_managed_installations_prefer_highest_numeric_version() -> None:
+    """Managed VS Code selection compares version numbers rather than lexicographic strings."""
+    older = Path('/data/host-ide/vscode/1.9.0/bin/code')
+    newer = Path('/data/host-ide/vscode/1.10.0/bin/code')
+    assert acquisition_plan(replace(inputs(), installed=(newer, older)), print_only=False).code == str(newer)
