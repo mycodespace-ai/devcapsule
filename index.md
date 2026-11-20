@@ -252,7 +252,7 @@ status file; internal WIP/archive documents use the local index in that status.
 
 ## Development Blog
 
-- [Adventures in How not What: fourteen help screens to update Codex](engineering-docs/blog/2026-11-20-fourteen-help-screens-to-update-codex.md) — the undiscoverable component update path, its origin, how it passed review, and proposals to catch the next one; draft for owner review.
+- [Adventures in How not What: fourteen help screens to update Codex](engineering-docs/blog/2026-11-20-fourteen-help-screens-to-update-codex.md) — the undiscoverable component update path, its origin, how it passed review, and proposals to catch the next one.
 - [Choosing an agent environment, November 2026](engineering-docs/blog/2026-11-18-comparing-agent-environments.md)
 - [Thirteen hours, thirty-five tests. Part 1: the AI's audit](engineering-docs/blog/2026-11-13-thirteen-hours-thirty-five-tests.md) — Claude's unedited audit of its own pull request against stricter test standards: the ledger, what got worse, where the rules are wrong, and why LLMs wrote tests the other way; Part 2 to follow.
 - [Diagnosing a capsule from both sides](engineering-docs/blog/2026-10-28-diagnosing-a-capsule-from-both-sides.md) — probing a live browser desktop from outside and inside a nested PyCharm capsule, with embedded recording; draft for owner review.
