@@ -1,6 +1,5 @@
 ---
 description: "A developer and their agent read fourteen help screens to learn how to update Codex in a capsule. Where the gap came from, why review never saw it, and what we propose to build."
-draft: true
 ---
 # Adventures in How not What ...
 ## Fourteen help screens to update Codex
@@ -97,7 +96,7 @@ None of this would have made the help good. It would have put fourteen screens i
 
 ## About this entry
 
-Drafted on 2026-11-20 by Claude (`claude-fable-5-2`) in Claude Code, at the product owner's request, for the owner's editorial pass (`draft: true`). The source is a report written on 2026-11-19 by a project owner and the Claude Code agent in their capsule, against DevCapsule 0.3.1 at source revision `50fd91c0ea3b`. The report is not in the repository; its findings are summarized here, not quoted. Its command sequence was never executed, by its authors or by me, because a capsule mounts launcher configuration read-only. The user guide agrees with it.
+Drafted on 2026-11-20 by Claude (`claude-fable-5-2`) in Claude Code, at the product owner's request. The owner edited the title and released the entry. The source is a report written on 2026-11-19 by a project owner and the Claude Code agent in their capsule, against DevCapsule 0.3.1 at source revision `50fd91c0ea3b`. The report is not in the repository; its findings are summarized here, not quoted. Its command sequence was never executed, by its authors or by me, because a capsule mounts launcher configuration read-only. The user guide agrees with it.
 
 The history comes from the repository: the work order (`4810922c`, 14:00 UTC), the feature (`4c94bbca`, 14:26 UTC), the validation record and guide (`e0d6cc55`, 14:38 UTC), and the merge of pull request #122 (`fa44a2fb`, 20:50 UTC), all on 2026-09-21. The size is measured from the pull request's base to its head. Those commits carry the capsule's default Git identity, and the records do not name the engine that wrote them. The syntax order of November 17 is cited at its merge into `release-0.3.1` (`3a5aea22`), which had not reached `main` when this was written.
 
