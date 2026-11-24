@@ -1,13 +1,4 @@
-devcapsule-schema-version = 1
-workflow-type = "multiple-streams"
-
-[workflow]
-definition = "devcapsule"
-version = "0.2.14.dev0"
-mode = "multiple-streams"
-
-[capabilities]
-need = ["antigravity-agent", "claude-code-agent", "codex-agent", "docker-cli", "python", "python-ide"]
+devcapsule-schema-version = 2
 
 [project]
 name = "DevCapsule"
@@ -15,20 +6,11 @@ slug = "devcapsule"
 creator = "https://github.com/ccozianu"
 mount = "/workspace/301e4208ef81-ChatGPT_Codex"
 
-[configuration.values."runtime.memory-limit"]
-type = "memory-size"
-runtime-effect = "docker.memory-limit"
-description = "Hard memory limit applied to the checkout's project container."
+[capabilities]
+required = ["antigravity-agent", "claude-code-agent", "codex-agent", "docker-cli", "python"]
 
-# Keep the public devcapsule name available for our development installation.
-# Other projects omit this recommendation and receive the shipped devcapsule.
-# No runtime-effect attribute: the name is reserved and carries the effect,
-# and released clients that predate the effect vocabulary reject any
-# attribute they do not know.
-[configuration.values."runtime.devcapsule-command"]
-type = "string"
-recommended = "devcapsule0"
-description = "Name of the shipped CLI inside the capsule; devcapsule0 leaves devcapsule for a development build."
+[recommendations]
+ide = "python-ide"
 
 [host.docker.mode.recommended]
 value = "host-socket"
@@ -44,3 +26,20 @@ enables = ["legacy-dogfood-host-services"]
 value = true
 justification = "Required by the current dogfood development and validation workflow."
 enables = ["dogfood-development-administration"]
+
+[configuration.values."runtime.memory-limit"]
+type = "memory-size"
+runtime-effect = "docker.memory-limit"
+description = "Hard memory limit applied to the checkout's project container."
+
+[configuration.values."runtime.devcapsule-command"]
+type = "string"
+recommended = "devcapsule0"
+description = "Name of the shipped CLI inside the capsule; devcapsule0 leaves devcapsule for a development build."
+
+# The project's workflow choice.
+
+[workflow]
+definition = "devcapsule"
+version = "0.2.14.dev0"
+mode = "multiple-streams"
