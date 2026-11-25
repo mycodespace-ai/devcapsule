@@ -224,6 +224,7 @@ status file; internal WIP/archive documents use the local index in that status.
 
 - [DevCapsule Python CLI](devcapsule-src/README.md)
 - [DevCapsule test suites](devcapsule-src/tests/README.md)
+- [Golden platform lock test fixtures](devcapsule-src/tests/resources/golden_locks/README.md)
 - [DevCapsule implementation requirements overview](devcapsule-src/REQUIREMENTS.md)
 - [R-ENV-001 Dockerized PyCharm Runtime](engineering-docs/requirements/devcapsule/r-env-001-dockerized-pycharm-runtime.md)
 - [R-RUNTIME-001 Identical Launcher And Container Runtime By Default](engineering-docs/requirements/devcapsule/r-runtime-001-launcher-runtime-identity.md)
