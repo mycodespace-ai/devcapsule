@@ -467,7 +467,13 @@ stands until the GitHub CLI is a DevCapsule component.
 6. In both cases, use ordinary Git over the SSH remote for fetch and branch
    delivery. Do not push to `main` in place of pull request integration.
    After the human reports a merge, re-verify `main` through an SSH fetch.
-7. Keep this rule until the owner changes it or the component replaces it.
+7. Push every branch, mail item, and coordination update only to
+   `https://github.com/mycodespace-ai/devcapsule`
+   (`git@github.com:mycodespace-ai/devcapsule.git`). Never push to the retired
+   `ccozianu/devcapsule` repository, even when `origin` points to it. Pass
+   `--remote upstream` to `devcapsule workflow` commands when `origin` points
+   elsewhere.
+8. Keep this rule until the owner changes it or the component replaces it.
 
 <a id="review-partners-in-this-checkout"></a>
 

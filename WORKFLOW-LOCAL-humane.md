@@ -468,10 +468,13 @@ is logged in, and then opens, updates and consults pull requests and posts
 reviews as comments; a failed login check stops the agent and asks the human
 to log in. If the CLI is absent, the human does GitHub, and the agent hands
 over the compare link from which one click opens the pull request. Merging
-stays the human's either way. No pull request is opened or updated before
-the unit session has run on the branch as pushed and the agent has good
-reason to expect the gate to pass; a change that touches only records is
-not excused from it.
+stays the human's either way. Push every branch, mail item, and coordination
+update only to `mycodespace-ai/devcapsule`, never to the retired
+`ccozianu/devcapsule` repository, and pass `--remote upstream` to
+`devcapsule workflow` commands when `origin` points elsewhere. No pull request
+is opened or updated before the unit session has run on the branch as pushed
+and the agent has good reason to expect the gate to pass; a change that touches
+only records is not excused from it.
 
 **Intended effect.** Pull-request work happens from the capsule when the
 tool is there, without the agent probing for credentials, and degrades to
@@ -510,6 +513,15 @@ three-minute local run would have caught before the queue and the human
 saw it. The
 rule asks for reasonable confidence, not certainty: the unit session,
 and the gate's other steps when the change touches what they check.
+
+The push-destination rule is from 2026-11-25, after the repository moved from
+`ccozianu/devcapsule` to `mycodespace-ai/devcapsule` and an existing checkout
+still had `origin` pointing at the retired personal repository while `upstream`
+pointed at the organization repository. Because `devcapsule workflow` commands
+default to `origin`, mail and claim commits went to the retired repository's
+`coordination` branch instead of the canonical one. Naming
+`mycodespace-ai/devcapsule` as the sole destination keeps branches, mail,
+claims, and published state together even when local remote names differ.
 
 ## Pair Review Loop In This Checkout
 
