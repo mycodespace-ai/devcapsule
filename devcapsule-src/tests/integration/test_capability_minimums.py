@@ -9,7 +9,6 @@ import tomllib
 
 import pytest
 
-from devcapsule import cli
 from devcapsule.commands._run_flow import RunFlags, prepare_launch
 from devcapsule.configuration import owner_commands
 from devcapsule.configuration.capabilities import CapabilityPolicy, LocalCapabilities, meets_minimum, version_parts
@@ -21,10 +20,54 @@ from devcapsule.configuration.trust import HomeTrust, channels_for
 from devcapsule.platforms import Platform
 from devcapsule.resolution_matrix import Capability, MATRICES, ResolutionMatrix, _BasePin, _ComponentPin, _VerifiedEdge
 
-pytestmark = pytest.mark.legacy
+pytestmark = pytest.mark.integration
+
+def _run_project_command(argv: list[str] | tuple[str, ...]) -> int:
+    import sys
+    from devcapsule.commands.project import COMMAND as PROJECT_COMMAND
+    from devcapsule.compat import CliError, DecisionPending
+    from devcapsule.configuration.storage import load_settings
+
+    args = list(argv)
+    assert args and args[0] == "project", args
+    try:
+        load_settings()
+        return PROJECT_COMMAND.invoke("devcapsule project", args[1:])
+    except SystemExit as exc:
+        code = exc.code
+        if code is None:
+            return 0
+        return code if isinstance(code, int) else 1
+    except DecisionPending as exc:
+        print(f"devcapsule: {exc}", file=sys.stderr)
+        return DecisionPending.EXIT_STATUS
+    except CliError as exc:
+        print(f"devcapsule: {exc}", file=sys.stderr)
+        return 2
+
+
+def run_until_prepared(project: Path | None = None) -> int:
+    from unittest.mock import patch
+    from devcapsule.commands._run_flow import prepare_launch as _real_prepare_launch
+
+    class _Prepared(Exception):
+        pass
+
+    def prepare(*args, **kwargs):
+        return _real_prepare_launch(*args, **kwargs, interactive=False, check_display=False)
+
+    prefix = ["project"] if project is None else ["project", "--path", str(project)]
+    with patch("devcapsule.commands.project.offer_software_approvals", return_value=True), \
+         patch("devcapsule.commands.project.prepare_launch", side_effect=prepare), \
+         patch("devcapsule.commands.project.offer_upgrades", side_effect=_Prepared):
+        try:
+            return _run_project_command([*prefix, "run", "--no-update-check"])
+        except _Prepared:
+            return 0
+
 
 MATRIX = MATRICES[Platform.LINUX_AMD64]
-GOLDEN = Path(__file__).parent / "resources" / "golden_locks"
+GOLDEN = Path(__file__).parents[1] / "resources" / "golden_locks"
 MANIFEST = '''devcapsule-schema-version = 2
 [project]
 name = "Minimums"
@@ -65,11 +108,13 @@ def write_project(root: Path, text: str) -> tuple[Path, Path]:
     ("3.12", "3.14", False), ("25.0.4+7", "25.0.4+99", True),
 ])
 def test_dotted_integer_comparison(actual: str, minimum: str, accepted: bool) -> None:
+    """Dotted integer comparison."""
     assert meets_minimum(actual, minimum) is accepted
 
 
 @pytest.mark.parametrize("value", ["3.14rc1", "3.14-rc.1", "3.x", "3..1", "3.14.*", "", "3.14+beta"])
 def test_unsupported_version_forms_are_explicit(value: str) -> None:
+    """Unsupported version forms are explicit."""
     with pytest.raises(ProjectConfigurationError, match="[Uu]nsupported"):
         version_parts(value)
     with pytest.raises(ProjectConfigurationError, match="[Uu]nsupported"):
@@ -78,48 +123,52 @@ def test_unsupported_version_forms_are_explicit(value: str) -> None:
 
 @pytest.mark.parametrize("value", ["python=3", "python>3", "python<=3", "python>=3,<4", "python >=3"])
 def test_only_minimum_relation_is_supported(value: str) -> None:
+    """Only minimum relation is supported."""
     with pytest.raises(ProjectConfigurationError, match="[Uu]nsupported"):
         CapabilityPolicy.read({"capabilities": {"required": [value]}})
 
 
 def test_owners_three_requirements_refuse_python_before_writes(project: Path, tmp_path: Path, capsys) -> None:
+    """Owners three requirements refuse python before writes."""
     manifest_path, lock_path = write_project(project, MANIFEST)
     lock_path.write_text(MATRIX.resolve(["python", "java", "playwright"], project_only=True).render_lock())
     before = snapshot(tmp_path)
-    assert cli.main(["project", "--path", str(project), "init", "--regenerate"]) == 2
+    assert _run_project_command(["project", "--path", str(project), "init", "--regenerate"]) == 2
     assert "no base supplies python 3.14 or newer; the Ubuntu 24.04 bases supply 3.12" in capsys.readouterr().err
     assert snapshot(tmp_path) == before
-    assert cli.main(["project", "--path", str(project), "config", "check"]) == 2
+    assert _run_project_command(["project", "--path", str(project), "config", "check"]) == 2
     assert "python>=3.14" in capsys.readouterr().err
     assert snapshot(tmp_path) == before
     assert CapabilityPolicy.read(load_toml(manifest_path)).required == ("java", "playwright", "python")
 
 
 def test_owners_java_and_playwright_resolve_show_and_preserve_minimums(project: Path, capsys) -> None:
+    """Owners java and playwright resolve show and preserve minimums."""
     manifest_path, lock_path = write_project(project, MANIFEST.replace('"python>=3.14", ', ''))
-    assert cli.main(["project", "--path", str(project), "init"]) == 0
+    assert _run_project_command(["project", "--path", str(project), "init"]) == 0
     lock = load_toml(lock_path)
     assert MATRIX.supplied_version("java", lock) == "25.0.4+7"
-    assert lock["components"]["playwright"]["version"] == "1.63.0"
+    assert lock["components"]["playwright"]["version"] == "1.65.2"
     assert load_toml(manifest_path)["capabilities"]["required"] == ["java>=21", "playwright>=1.21"]
-    assert cli.main(["project", "--path", str(project), "config", "show"]) == 0
+    assert _run_project_command(["project", "--path", str(project), "config", "show"]) == 0
     shown = capsys.readouterr().out
     java = next(line for line in shown.splitlines() if line.split()[:2] == ["capability", "java"])
     playwright = next(line for line in shown.splitlines() if line.split()[:2] == ["capability", "playwright"])
     assert "supplied by the base, 25.0.4+7" in java and "project (required, >=21)" in java
-    assert "playwright 1.63.0" in playwright and "project (required, >=1.21)" in playwright
-    assert playwright.count("1.63.0") == 1
-    assert cli.main(["project", "--path", str(project), "config", "show", "--json"]) == 0
+    assert "playwright 1.65.2" in playwright and "project (required, >=1.21)" in playwright
+    assert playwright.count("1.65.2") == 1
+    assert _run_project_command(["project", "--path", str(project), "config", "show", "--json"]) == 0
     rows = {row["name"]: row for row in json.loads(capsys.readouterr().out)["rows"] if row["kind"] == "capability"}
     assert rows["java"]["source"] == "project (required, >=21)"
     assert rows["java"]["effective"] == "supplied by the base, 25.0.4+7"
     assert rows["playwright"]["source"] == "project (required, >=1.21)"
-    assert rows["playwright"]["effective"] == "playwright 1.63.0"
+    assert rows["playwright"]["effective"] == "playwright 1.65.2"
     owner_commands.require_tools(project, ["node"])
     assert load_toml(manifest_path)["capabilities"]["required"] == ["java>=21", "node", "playwright>=1.21"]
 
 
 def test_minimum_is_part_of_new_digest() -> None:
+    """Minimum is part of new digest."""
     plain = generate_lock(CapabilityPolicy.read(tomllib.loads(MANIFEST.replace('"python>=3.14", ', '').replace('>=21', ''))), MATRIX)
     minimum = generate_lock(CapabilityPolicy.read(tomllib.loads(MANIFEST.replace('"python>=3.14", ', ''))), MATRIX)
     assert plain["capabilities-digest"] != minimum["capabilities-digest"]
@@ -127,6 +176,7 @@ def test_minimum_is_part_of_new_digest() -> None:
 
 def test_provider_order_dependencies_and_minimum_filter() -> None:
     # Synthetic catalog: the second provider qualifies only after filtering.
+    """Provider order dependencies and minimum filter."""
     base = _BasePin("test", "test", {"python": "3.12"}, {"reference": "test@sha256:aa"})
     matrix = ResolutionMatrix(
         platform=Platform.LINUX_AMD64, matrix_version="test", bases=(base,),
@@ -150,6 +200,7 @@ def test_provider_order_dependencies_and_minimum_filter() -> None:
 
 
 def test_newest_base_below_minimum_is_not_selected() -> None:
+    """Newest base below minimum is not selected."""
     base = _BasePin("older", "test", {"python": "3.14"}, {"reference": "older@sha256:aa"})
     matrix = ResolutionMatrix(
         platform=Platform.LINUX_AMD64, matrix_version="test",
@@ -161,6 +212,7 @@ def test_newest_base_below_minimum_is_not_selected() -> None:
 
 
 def test_provider_without_version_composes_without_a_minimum() -> None:
+    """Provider without version composes without a minimum."""
     manifest = {"capabilities": {"required": ["python"]}}
     shared = generate_lock(CapabilityPolicy.read(manifest), MATRIX)
     pins = generate_lock(CapabilityPolicy(("codex-agent",)), MATRIX)
@@ -175,10 +227,18 @@ def test_provider_without_version_composes_without_a_minimum() -> None:
 
 
 def test_saved_version_set_below_minimum_stops_run_with_three(project: Path, tmp_path: Path, capsys, monkeypatch) -> None:
+    """Saved version set below minimum stops run with three."""
     import io
-    from tests.test_upgrade_recovery import install_external_fakes, invoke
+    from unittest.mock import Mock
+    from devcapsule.commands import project as project_command_module
+    def invoke(target: Path, *args: str) -> int:
+        return _run_project_command(["project", "--path", str(target), *args])
+    def install_external_fakes(mp: pytest.MonkeyPatch, _images: list) -> Mock:
+        launch = Mock(return_value=0)
+        mp.setattr(project_command_module, "run_pycharm", launch)
+        return launch
     manifest_path, lock_path = write_project(project, MANIFEST.replace('"python>=3.14", ', ''))
-    assert cli.main(["project", "--path", str(project), "init", "--ide", "frontend-ide", "--authorize", "base-image", "default"]) == 0
+    assert _run_project_command(["project", "--path", str(project), "init", "--ide", "frontend-ide", "--authorize", "base-image", "default"]) == 0
     manifest = load_toml(manifest_path)
     state = load_state(project, manifest)
     old = state.composed_lock()
@@ -199,6 +259,7 @@ def test_saved_version_set_below_minimum_stops_run_with_three(project: Path, tmp
 
 def test_rc4_documents_keep_launch_and_old_digest(project: Path, tmp_path: Path, capsys) -> None:
     # These bytes use rc4 shapes. Pins come from the existing golden rc4 lock.
+    """Rc4 documents keep launch and old digest."""
     manifest_path, lock_path = write_project(project, '''devcapsule-schema-version = 2
 [project]
 name = "Minimums"
@@ -256,7 +317,7 @@ accepted = "2026-10-24T10:00:00+00:00"
     assert prepared.selected.resolution["runtime"]["component"] == "codium"
     assert len([note for note in prepared.notes if "SDK major" in note]) == 1
     assert snapshot(tmp_path) == before
-    assert cli.main(["project", "--path", str(project), "config", "check"]) == 0
+    assert _run_project_command(["project", "--path", str(project), "config", "check"]) == 0
     report = capsys.readouterr().out
     assert report.count("SDK major") == 1
     assert report.startswith("Note: The SDK major constraint was removed")
@@ -270,6 +331,7 @@ accepted = "2026-10-24T10:00:00+00:00"
 
 @pytest.mark.parametrize("value", [{"python": 3}, {"python": True}, {"future": "opaque"}])
 def test_old_table_is_ignored_and_never_written(value: dict) -> None:
+    """Old table is ignored and never written."""
     policy = CapabilityPolicy.read({"capabilities": {"required": ["python"], "sdk-major": value}})
     assert policy.document() == {"required": ["python"], "optional": []}
 
@@ -280,14 +342,16 @@ def test_old_table_is_ignored_and_never_written(value: dict) -> None:
     ("recommend", "ide", "python-ide"), ("recommend", "network", "host", "--because", "ports"),
 ])
 def test_every_owner_preview_leaves_all_files_unchanged(project: Path, tmp_path: Path, arguments: tuple[str, ...]) -> None:
+    """Every owner preview leaves all files unchanged."""
     manifest_path, lock_path = write_project(project, MANIFEST.replace('"python>=3.14", ', '') + '\n[environment.required.DB]\nreason = "database"\n')
     lock_path.write_text(render_toml(generate_lock(CapabilityPolicy.read(load_toml(manifest_path)), MATRIX)))
     before = snapshot(tmp_path)
-    assert cli.main(["project", "--path", str(project), "config", *arguments, "--preview"]) == 0
+    assert _run_project_command(["project", "--path", str(project), "config", *arguments, "--preview"]) == 0
     assert snapshot(tmp_path) == before
 
 
 def test_owner_drop_recognizes_a_handwritten_component_alias(project: Path) -> None:
+    """Owner drop recognizes a handwritten component alias."""
     manifest_path, lock_path = write_project(project, MANIFEST.replace('"python>=3.14", ', ''))
     lock_path.write_text(render_toml(generate_lock(CapabilityPolicy.read(load_toml(manifest_path)), MATRIX)))
     owner_commands.drop_tools(project, ["playwright"])
@@ -295,6 +359,7 @@ def test_owner_drop_recognizes_a_handwritten_component_alias(project: Path) -> N
 
 
 def test_an_unpinned_base_version_cannot_claim_a_minimum() -> None:
+    """An unpinned base version cannot claim a minimum."""
     policy = CapabilityPolicy.read({"capabilities": {"required": ["docker-cli>=20"]}})
     with pytest.raises(ProjectConfigurationError, match="bases supply unknown"):
         generate_lock(policy, MATRIX)

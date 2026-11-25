@@ -4,9 +4,9 @@ Mnemonic: `component-catalog`
 
 Start date: 2026-08-30
 
-State: active 2026-11-25; checking all existing components for version upgrades on `ws-component-catalog/version-upgrades` targeting `release-0.3.1`; `gh` and `gcloud` queued next for `release-0.3.1`
+State: active 2026-11-25; completed 0.3.1 `linux-amd64` all-component version-upgrades sweep (`embedded-36`), legacy pin-test retirement, and all-components instantiation integration test on `ws-component-catalog/version-upgrades` targeting `release-0.3.1`; `gh` and `gcloud` queued next for `release-0.3.1`
 
-Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5787d0e0395f
+Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94286a92761d
 
 Branch association: `ws-component-catalog/version-upgrades`, forked from `origin/release-0.3.1` (`82a83b9a`)
 
@@ -34,6 +34,27 @@ workstream-specific capability profiles. New/changed code coverage must exceed
 No release or website publishing.
 
 ## Current State
+
+- 2026-11-25. Completed the `release-0.3.1` `linux-amd64` all-component version-upgrades sweep (`embedded-35` → `embedded-36`) on `ws-component-catalog/version-upgrades` off `origin/release-0.3.1` (`82a83b9a`):
+  - **10 components upgraded on `linux-amd64` (with `linux-arm64` pins intentionally left untouched per owner direction because no `linux-arm64` test environment is available here):**
+    - `codex`: `0.167.0` → **`0.172.0`**
+    - `claude-code`: `2.1.321` → **`2.1.332`**
+    - `antigravity-cli`: `1.4.12` → **`1.5.17`**
+    - `vscode`: `1.144.0` → **`1.148.0`**
+    - `pycharm`: `2026.2.4` → **`2026.3.0.2`**
+    - `intellij`: `2026.2.4` → **`2026.3.0.1`**
+    - `rider`: `2026.2.4` → **`2026.3.0.2`**
+    - `dotnet-sdk`: `10.0.401` → **`11.0.100`**
+    - `graphviz`: `16.1.1` → **`16.1.2`**
+    - `playwright`: `1.63.0` → **`1.65.2`** (Chromium `159.0.8154.6` / revision `1255`, `ffmpeg-1013`)
+  - **4 components already at latest upstream version (`no update needed`):**
+    - `xfce4-terminal` (`1.1.3`, latest Ubuntu Noble package)
+    - `eclipse` (`2026-09-R`, latest Eclipse Java quarterly release)
+    - `codium` (`1.143.17232`, latest VSCodium stable release)
+    - `postgresql-client` (`16`, base-supplied Ubuntu 24.04 major)
+  - Regenerated all 12 golden lock files under `devcapsule-src/tests/resources/golden_locks/`.
+  - Retired the 3 legacy test files that hardcoded previous default component versions (`tests/test_capability_minimums.py`, `tests/test_capability_policy.py`, `tests/test_project_init.py`) into convention-compliant unit/integration test files (`tests/unit/devcapsule/configuration/test_capabilities.py` and `tests/integration/test_{capability_minimums,capability_policy,project_init}.py`).
+  - Added `devcapsule-src/tests/integration/test_all_components_instantiation.py` with both offline full-catalog initialization/launch-preparation verification across all 12 non-IDE capabilities and 7 IDE surfaces and an opt-in `@pytest.mark.docker` live capsule instantiation smoke test (not executed inside this rootless `uid=0` capsule).
 
 - 2026-11-25. Resumed `component-catalog` on `ws-component-catalog/version-upgrades` off `origin/release-0.3.1` (`82a83b9a`, after Xfce Terminal PR #62 and PR #72 merged). Acknowledged three `project-management` items targeting `release-0.3.1`:
   1. All-component version-upgrades sweep (active first slice).
@@ -273,7 +294,7 @@ No release or website publishing.
 
 ## Planned Next Step
 
-1. Check all existing catalog components for version upgrades on `ws-component-catalog/version-upgrades` targeting `release-0.3.1`, deliver verified pin upgrades, and record per-component outcomes.
+1. Open and merge the `ws-component-catalog/version-upgrades` → `release-0.3.1` pull request for the `linux-amd64` version-upgrades sweep (`embedded-36`) and all-components instantiation integration test.
 2. Implement `gh` (GitHub CLI) and `gcloud` (Google Cloud CLI) as available optional components targeting `release-0.3.1`.
 3. Existing rollback, pin recovery, and proposal-export questions remain in Open Threads.
 

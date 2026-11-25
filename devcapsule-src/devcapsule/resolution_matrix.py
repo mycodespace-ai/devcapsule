@@ -57,8 +57,8 @@ from devcapsule.images.tooling import NODE_VERSION, TEMURIN_VERSION, MAVEN_VERSI
 from devcapsule.configuration.capabilities import meets_minimum, requirement
 from devcapsule.platforms import Platform
 from devcapsule.components.catalog import COMPONENTS
-from devcapsule.components.playwright_pin import PIN as PLAYWRIGHT_PIN
-from devcapsule.components.graphviz_pin import PINS as GRAPHVIZ_PINS
+from devcapsule.components.playwright_pin import PIN as PLAYWRIGHT_PIN, PIN_1_65_2 as PLAYWRIGHT_PIN_1_65_2
+from devcapsule.components.graphviz_pin import AMD64_16_1_1 as GRAPHVIZ_AMD64_16_1_1, PINS as GRAPHVIZ_PINS
 from devcapsule.components.xfce_terminal_pin import AMD64 as XFCE_TERMINAL_AMD64
 from devcapsule.components.eclipse_native_pin import PACKAGES as ECLIPSE_NATIVE_PACKAGES
 from devcapsule.components.linux_arm64_pins import COMPONENT_LOCK_TABLES as LINUX_ARM64_LOCK_TABLES
@@ -84,7 +84,7 @@ class ResolutionError(ProjectConfigurationError):
     """
 
 
-_MATRIX_VERSION = "embedded-35"
+_MATRIX_VERSION = "embedded-36"
 
 
 # --------------------------------------------------------------------------
@@ -1473,22 +1473,146 @@ _POSTGRESQL_CLIENT_16 = _ComponentPin(
     },
 )
 
+# 2026-11-25 0.3.1 linux-amd64 catalog refresh: upstream release metadata and
+# downloaded archive/wheel digests verified against vendor checksums.
+_DOTNET_SDK_11_0_100 = _ComponentPin(
+    component_id="dotnet-sdk", version="11.0.100",
+    lock_table={
+        "version": "11.0.100", "platform": "linux-amd64",
+        "delivery-policy": "local-materialization", "license": "MIT",
+        "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/11.0.100/dotnet-sdk-11.0.100-linux-x64.tar.gz",
+        "sha256": "6fdb8822f47ccdba28f507dcd5d92e632d5b99cd27908d6838f0cc575be33baf",
+        "upstream-sha512": "1bec9cca2ec689b1e80245b84f2b53c9441d1aa6daccf2ceb27490768bffa95954fa585bd275def31069d874d543d9ba9e6591fe9ade2dbd9f34ec5c0fd0050c",
+    },
+)
+
+_PYCHARM_2026_3_0_2 = _ComponentPin(
+    component_id="pycharm",
+    version="2026.3.0.2",
+    lock_table={
+        "version": "2026.3.0.2",
+        "variant": "professional",
+        "delivery-policy": "local-materialization",
+        "url": "https://download.jetbrains.com/python/pycharm-2026.3.0.2.tar.gz",
+        "sha256": "83f64231ac3032a4526a810aead197e87976e09558471bf9c940a1b8a6bab4bc",
+    },
+)
+
+_INTELLIJ_2026_3_0_1 = _ComponentPin(
+    component_id="intellij", version="2026.3.0.1",
+    lock_table={
+        "version": "2026.3.0.1", "variant": "unified",
+        "delivery-policy": "local-materialization",
+        "url": "https://download.jetbrains.com/idea/idea-2026.3.0.1.tar.gz",
+        "sha256": "def869cc0109273f5a144ac669c739029e9bd5178d137213b8d15298c0055858",
+    },
+)
+
+_RIDER_2026_3_0_2 = _ComponentPin(
+    component_id="rider", version="2026.3.0.2",
+    lock_table={
+        "version": "2026.3.0.2", "delivery-policy": "local-materialization",
+        "license": "Proprietary", "terms-url": "https://www.jetbrains.com/legal/docs/toolbox/license/",
+        "url": "https://download.jetbrains.com/rider/JetBrains.Rider-2026.3.0.2.tar.gz",
+        "sha256": "d3e843135970d48c58033690229bf5965497ab5b1e11bac1b9e70743232203b7",
+    },
+)
+
+_VSCODE_1_148_0 = _ComponentPin(
+    component_id="vscode",
+    version="1.148.0",
+    lock_table={
+        "version": "1.148.0",
+        "delivery-policy": "local-materialization",
+        "acquisition-authorization": "vscode-download",
+        "license": "Proprietary",
+        "terms-url": "https://code.visualstudio.com/license",
+        "url": "https://vscode.download.prss.microsoft.com/dbazure/download/stable/661626d0e72f97806550790a98fb87116c9db825/code-stable-x64-1795525921.tar.gz",
+        "sha256": "7acdaf01a1d7a27c55828156ec3fdbe75b8e0809070fecd10de022c4982a0f16",
+    },
+)
+
+_CODEX_0_172_0 = _ComponentPin(
+    component_id="codex",
+    version="0.172.0",
+    lock_table={
+        "version": "0.172.0",
+        "delivery-policy": "local-materialization",
+        "license": "Apache-2.0",
+        "npm-package": "@openai/codex",
+        "url": "https://registry.npmjs.org/@openai/codex/-/codex-0.172.0.tgz",
+        "sha256": "40777b4155e19f2625bc39a74a94d7d24f84efe006dbdcc4a83fab25de8d7e79",
+        "artifacts": {
+            "linux-amd64": {
+                "npm-package": "@openai/codex-linux-x64",
+                "url": "https://registry.npmjs.org/@openai/codex/-/codex-0.172.0-linux-x64.tgz",
+                "sha256": "48a5ee5dba98c7745a48b8d72af84f91880fec5856269627328fd564f60d41a7"
+            }
+        }
+    },
+)
+
+_CLAUDE_CODE_2_1_332 = _ComponentPin(
+    component_id="claude-code",
+    version="2.1.332",
+    lock_table={
+        "version": "2.1.332",
+        "delivery-policy": "local-materialization",
+        "acquisition-authorization": "claude-code-download",
+        "license": "Proprietary",
+        "terms-url": "https://www.anthropic.com/legal/commercial-terms",
+        "distribution": "user-acquired-not-redistributed",
+        "artifacts": {
+            "linux-amd64": {
+                "url": "https://downloads.claude.ai/claude-code-releases/2.1.332/linux-x64/claude",
+                "sha256": "a2df1f41bb00250992926420d0063f89b127cb81abdd284dbefb80c50ff1d026"
+            }
+        }
+    },
+)
+
+_ANTIGRAVITY_CLI_1_5_17 = _ComponentPin(
+    component_id="antigravity-cli",
+    version="1.5.17",
+    lock_table={
+        "version": "1.5.17",
+        "delivery-policy": "local-materialization",
+        "acquisition-authorization": "antigravity-download",
+        "license": "Proprietary",
+        "terms-url": "https://antigravity.google/terms/",
+        "distribution": "user-acquired-not-redistributed",
+        "artifacts": {
+            "linux-amd64": {
+                "url": "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.17-4823843970351104/linux-x64/cli_linux_x64.tar.gz",
+                "sha256": "6304b4f592ae97e59231cfb1b365ee29c155750c9a881f0cc8efe5f5281077cf",
+                "archive-member": "antigravity",
+                "upstream-sha512": "71a967aa16e0ab5d87196bcd6772130bdab55b2fd768cd24d21b1da401ff9f60280b976cad3dc14a2d646233b0eaf8caf87c490eed73044d54550cbb3d8d67d2"
+            }
+        }
+    },
+)
+
 _LINUX_AMD64_MATRIX = ResolutionMatrix(
     platform=Platform.LINUX_AMD64,
     matrix_version=_MATRIX_VERSION,
     bases=(_V0_2_8_BASE, _V0_2_10_BASE, _V0_2_12_BASE, _V0_3_0_RC6_BASE, _V0_3_0_COOKIE_FIX_BASE),
     components={
-        "pycharm": (_PYCHARM_2026_2_0_1, _PYCHARM_2026_2_4),
-        "intellij": (_INTELLIJ_2026_2_3, _INTELLIJ_2026_2_4),
+        "pycharm": (_PYCHARM_2026_2_0_1, _PYCHARM_2026_2_4, _PYCHARM_2026_3_0_2),
+        "intellij": (_INTELLIJ_2026_2_3, _INTELLIJ_2026_2_4, _INTELLIJ_2026_3_0_1),
         "xfce4-terminal": (_ComponentPin("xfce4-terminal", "1.1.3", XFCE_TERMINAL_AMD64),),
         "eclipse": (_ECLIPSE_2026_09,),
-        "rider": (_RIDER_2026_2_3_1, _RIDER_2026_2_4),
-        "dotnet-sdk": (_DOTNET_SDK_10_0_401,),
-        "graphviz": (_ComponentPin("graphviz", str(GRAPHVIZ_PINS["linux-amd64"]["version"]),
-                                   GRAPHVIZ_PINS["linux-amd64"]),),
-        "playwright": (_ComponentPin("playwright", str(PLAYWRIGHT_PIN["version"]), PLAYWRIGHT_PIN),),
+        "rider": (_RIDER_2026_2_3_1, _RIDER_2026_2_4, _RIDER_2026_3_0_2),
+        "dotnet-sdk": (_DOTNET_SDK_10_0_401, _DOTNET_SDK_11_0_100),
+        "graphviz": (
+            _ComponentPin("graphviz", str(GRAPHVIZ_AMD64_16_1_1["version"]), GRAPHVIZ_AMD64_16_1_1),
+            _ComponentPin("graphviz", str(GRAPHVIZ_PINS["linux-amd64"]["version"]), GRAPHVIZ_PINS["linux-amd64"]),
+        ),
+        "playwright": (
+            _ComponentPin("playwright", str(PLAYWRIGHT_PIN["version"]), PLAYWRIGHT_PIN),
+            _ComponentPin("playwright", str(PLAYWRIGHT_PIN_1_65_2["version"]), PLAYWRIGHT_PIN_1_65_2),
+        ),
         "codium": (_CODIUM_1_126_04524, _CODIUM_1_143_17232),
-        "vscode": (_VSCODE_1_143_1, _VSCODE_1_144_0),
+        "vscode": (_VSCODE_1_143_1, _VSCODE_1_144_0, _VSCODE_1_148_0),
         "codex": (
             _CODEX_0_145_0,
             _CODEX_0_153_0,
@@ -1497,6 +1621,7 @@ _LINUX_AMD64_MATRIX = ResolutionMatrix(
             _CODEX_0_163_0,
             _CODEX_0_166_0,
             _CODEX_0_167_0,
+            _CODEX_0_172_0,
         ),
         "claude-code": (
             _CLAUDE_CODE_2_1_227,
@@ -1506,11 +1631,79 @@ _LINUX_AMD64_MATRIX = ResolutionMatrix(
             _CLAUDE_CODE_2_1_302,
             _CLAUDE_CODE_2_1_314,
             _CLAUDE_CODE_2_1_321,
+            _CLAUDE_CODE_2_1_332,
         ),
-        "antigravity-cli": (_ANTIGRAVITY_CLI_1_1_24, _ANTIGRAVITY_CLI_1_2_12, _ANTIGRAVITY_CLI_1_4_2, _ANTIGRAVITY_CLI_1_4_12),
+        "antigravity-cli": (
+            _ANTIGRAVITY_CLI_1_1_24,
+            _ANTIGRAVITY_CLI_1_2_12,
+            _ANTIGRAVITY_CLI_1_4_2,
+            _ANTIGRAVITY_CLI_1_4_12,
+            _ANTIGRAVITY_CLI_1_5_17,
+        ),
         "postgresql-client": (_POSTGRESQL_CLIENT_16,),
     },
     edges=(
+        _VerifiedEdge(
+            "graphviz", "16.1.2", _BASE_FAMILY_UBUNTU_24_04,
+            "provisional: owner-directed 0.3.1 linux-amd64 catalog refresh 2026-11-25; "
+            "upstream source SHA-256 verified against published checksum; "
+            "offline Ubuntu 24.04 dependency set unchanged from 16.1.1; "
+            "all-components instantiation smoke awaits non-recursive host run",
+        ),
+        _VerifiedEdge(
+            "playwright", "1.65.2", _BASE_FAMILY_UBUNTU_24_04,
+            "provisional: owner-directed 0.3.1 linux-amd64 catalog refresh 2026-11-25; "
+            "PyPI wheel and Chromium 159.0.8154.6 / ffmpeg-1013 archive SHA-256 verified; "
+            "all-components instantiation smoke awaits non-recursive host run",
+        ),
+        _VerifiedEdge(
+            "dotnet-sdk", "11.0.100", _BASE_FAMILY_UBUNTU_24_04,
+            "provisional: owner-directed 0.3.1 linux-amd64 catalog refresh 2026-11-25; "
+            "Microsoft release metadata SHA-512 and downloaded linux-x64 archive SHA-256 verified; "
+            "all-components instantiation smoke awaits non-recursive host run",
+        ),
+        _VerifiedEdge(
+            "vscode", "1.148.0", _BASE_FAMILY_UBUNTU_24_04,
+            "provisional: owner-directed 0.3.1 linux-amd64 catalog refresh 2026-11-25; "
+            "Microsoft stable update feed SHA-256 verified; "
+            "all-components instantiation smoke awaits non-recursive host run",
+        ),
+        _VerifiedEdge(
+            "rider", "2026.3.0.2", _BASE_FAMILY_UBUNTU_24_04,
+            "provisional: owner-directed 0.3.1 linux-amd64 catalog refresh 2026-11-25; "
+            "JetBrains release feed SHA-256 verified; "
+            "all-components instantiation smoke awaits non-recursive host run",
+        ),
+        _VerifiedEdge(
+            "intellij", "2026.3.0.1", _BASE_FAMILY_UBUNTU_24_04,
+            "provisional: owner-directed 0.3.1 linux-amd64 catalog refresh 2026-11-25; "
+            "JetBrains release feed SHA-256 verified; "
+            "all-components instantiation smoke awaits non-recursive host run",
+        ),
+        _VerifiedEdge(
+            "pycharm", "2026.3.0.2", _BASE_FAMILY_UBUNTU_24_04,
+            "provisional: owner-directed 0.3.1 linux-amd64 catalog refresh 2026-11-25; "
+            "JetBrains release feed SHA-256 verified; "
+            "all-components instantiation smoke awaits non-recursive host run",
+        ),
+        _VerifiedEdge(
+            "antigravity-cli", "1.5.17", _BASE_FAMILY_UBUNTU_24_04,
+            "provisional: owner-directed 0.3.1 linux-amd64 catalog refresh 2026-11-25; "
+            "vendor manifest SHA-512 and downloaded archive SHA-256 verified; "
+            "all-components instantiation smoke awaits non-recursive host run",
+        ),
+        _VerifiedEdge(
+            "claude-code", "2.1.332", _BASE_FAMILY_UBUNTU_24_04,
+            "provisional: owner-directed 0.3.1 linux-amd64 catalog refresh 2026-11-25; "
+            "vendor release manifest SHA-256 verified; "
+            "all-components instantiation smoke awaits non-recursive host run",
+        ),
+        _VerifiedEdge(
+            "codex", "0.172.0", _BASE_FAMILY_UBUNTU_24_04,
+            "provisional: owner-directed 0.3.1 linux-amd64 catalog refresh 2026-11-25; "
+            "npm SHA-512 integrity and downloaded meta/platform tarball SHA-256 verified; "
+            "all-components instantiation smoke awaits non-recursive host run",
+        ),
         _VerifiedEdge(
             "graphviz", "16.1.1", _BASE_FAMILY_UBUNTU_24_04,
             "offline source build and unprivileged dot SVG/PNG/PDF, neato SVG and "
@@ -1826,12 +2019,12 @@ _LINUX_ARM64_RECIPE_11_BASE = _BasePin(
 )
 
 
-def _on_linux_arm64(pin: _ComponentPin) -> _ComponentPin:
-    """The arm64 build of a linux-amd64 pin: same version, its own artifacts.
+def _on_linux_arm64(pin: _ComponentPin) -> _ComponentPin | None:
+    """The arm64 build of a linux-amd64 pin when one is pinned, or None.
 
     A base-delivered component carries no artifact and is the same pin on
-    both platforms; every other pin must have its arm64 table, so an amd64
-    version added without one fails here rather than at a user's launch.
+    both platforms; arm64 pins are added when an arm64 test environment
+    validates them.
     """
 
     # Graphviz keeps both platforms' tables in one reviewed pin file. Match the
@@ -1843,19 +2036,23 @@ def _on_linux_arm64(pin: _ComponentPin) -> _ComponentPin:
     if table is None and pin.lock_table.get("delivery-policy") == "base-image":
         return pin
     if table is None:
-        raise AssertionError(f"{pin.component_id} {pin.version} has no linux-arm64 pin in components/linux_arm64_pins.py")
+        return None
     return _ComponentPin(pin.component_id, pin.version, table)
 
 
-# linux-arm64 offers the same vocabulary, versions and materialization
-# recipes as linux-amd64; its bases, artifacts and verified edges are its
-# own, because a validation on one architecture establishes nothing on another.
+# linux-arm64 offers the same vocabulary and materialization recipes as
+# linux-amd64; its bases, artifacts, pinned versions and verified edges are
+# its own, because a validation on one architecture establishes nothing on another.
 _LINUX_ARM64_MATRIX = ResolutionMatrix(
     platform=Platform.LINUX_ARM64,
     matrix_version=_MATRIX_VERSION,
     bases=(_LINUX_ARM64_RECIPE_11_BASE,),
     components={
-        component: tuple(_on_linux_arm64(pin) for pin in pins)
+        component: tuple(
+            arm64_pin
+            for pin in pins
+            if (arm64_pin := _on_linux_arm64(pin)) is not None
+        )
         for component, pins in _LINUX_AMD64_MATRIX._components.items()
     },
     edges=(

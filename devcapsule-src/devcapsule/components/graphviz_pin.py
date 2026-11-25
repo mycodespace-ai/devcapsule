@@ -1,4 +1,4 @@
-"""Graphviz 16.1.1 source and offline Ubuntu 24.04 build dependencies.
+"""Graphviz 16.1.2 (linux-amd64) and 16.1.1 (linux-arm64) source and offline Ubuntu 24.04 build dependencies.
 
 The upstream source SHA-256 matches its published checksum. Dependency bytes
 were downloaded from Ubuntu's signed-index-selected URLs and SHA-256 pinned
@@ -8,15 +8,15 @@ Public data: PINS maps the capsule platform to its reviewed lock table.
 """
 from typing import Any
 
-__all__ = ["PINS"]
+__all__ = ["AMD64_16_1_1", "PINS"]
 
-PINS: dict[str, dict[str, Any]] = {'linux-amd64': {'version': '16.1.1',
+PINS: dict[str, dict[str, Any]] = {'linux-amd64': {'version': '16.1.2',
                  'delivery-policy': 'local-materialization',
                  'license': 'EPL-1.0',
                  'platform': 'linux-amd64',
                  'build-recipe': 'graphviz-autotools-v1',
-                 'artifacts': {'source': {'url': 'https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/16.1.1/graphviz-16.1.1.tar.gz',
-                                          'sha256': '42806c79271e286028b9422c7016b0368ad86beb381aa46d1d8c720f69ce3fc7'},
+                 'artifacts': {'source': {'url': 'https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/16.1.2/graphviz-16.1.2.tar.gz',
+                                          'sha256': '4375153fde8bd1ddc09a5ab715cb08c8df8bb35c677cc2ffe67acde808527512'},
                                'libpcre2-8-0': {'url': 'https://archive.ubuntu.com/ubuntu/pool/main/p/pcre2/libpcre2-8-0_10.42-4ubuntu2.2_amd64.deb',
                                                 'sha256': 'f41da7cb7e979d6b037ea92650c72ec8ec532ec3c93aa8d5b997207de56695ea'},
                                'libglib2-0-0t64': {'url': 'https://archive.ubuntu.com/ubuntu/pool/main/g/glib2.0/libglib2.0-0t64_2.80.0-6ubuntu3.10_amd64.deb',
@@ -328,3 +328,15 @@ PINS: dict[str, dict[str, Any]] = {'linux-amd64': {'version': '16.1.1',
                                               'sha256': '7652869705e5368f06c689679f2477da0e65ddea78b2b95dc3b64f985b007575'},
                                'libgts-0-7-5t64': {'url': 'https://ports.ubuntu.com/ubuntu-ports/pool/universe/g/gts/libgts-0.7-5t64_0.7.6+darcs121130-5.2build1_arm64.deb',
                                                    'sha256': 'd2ee8b711afdaabc8253aa744742c45ff65923ae1d4ba5e05d0893c92b1d46fb'}}}}
+
+AMD64_16_1_1: dict[str, Any] = {
+    **PINS["linux-amd64"],
+    "version": "16.1.1",
+    "artifacts": {
+        **PINS["linux-amd64"]["artifacts"],
+        "source": {
+            "url": "https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/16.1.1/graphviz-16.1.1.tar.gz",
+            "sha256": "42806c79271e286028b9422c7016b0368ad86beb381aa46d1d8c720f69ce3fc7",
+        },
+    },
+}

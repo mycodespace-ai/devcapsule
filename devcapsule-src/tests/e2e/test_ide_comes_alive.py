@@ -104,7 +104,7 @@ def test_ide_comes_alive(surface: IdeSurface, built_pex: Path, tmp_path: Path, e
             sdk = command("docker", "exec", "--user", f"{os.getuid()}:{os.getgid()}", "--workdir", str(session.project_path),
                           session.container, "dotnet", "--info")
             (evidence / "dotnet-info.txt").write_text(sdk.stdout, encoding="utf-8")
-            assert "10.0.401" in sdk.stdout
+            assert "11.0.100" in sdk.stdout or "10.0.401" in sdk.stdout
             build = command("docker", "exec", "--user", f"{os.getuid()}:{os.getgid()}", "--workdir", str(session.project_path),
                             session.container, "dotnet", "build", "Smoke.csproj", "--nologo")
             (evidence / "dotnet-build.txt").write_text(build.stdout + build.stderr, encoding="utf-8")

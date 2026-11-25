@@ -5,7 +5,6 @@ outcomes, rather than how the implementation happens to compute them.
 """
 from __future__ import annotations
 
-from tests.launch_preparation import run_until_prepared
 
 from copy import deepcopy
 from pathlib import Path
@@ -14,7 +13,6 @@ from typing import Any
 
 import pytest
 
-from devcapsule import cli
 from devcapsule.configuration import capability_commands as commands
 from devcapsule.configuration.capabilities import CapabilityPolicy, LocalCapabilities
 from devcapsule.configuration.capability_selection import generate_lock, selected_lock, usable_lock
@@ -24,7 +22,51 @@ from devcapsule.configuration.storage import checkout_record_paths, load_toml, l
 from devcapsule.platforms import Platform
 from devcapsule.resolution_matrix import MATRICES
 
-pytestmark = pytest.mark.legacy
+pytestmark = pytest.mark.integration
+
+def _run_project_command(argv: list[str] | tuple[str, ...]) -> int:
+    import sys
+    from devcapsule.commands.project import COMMAND as PROJECT_COMMAND
+    from devcapsule.compat import CliError, DecisionPending
+    from devcapsule.configuration.storage import load_settings
+
+    args = list(argv)
+    assert args and args[0] == "project", args
+    try:
+        load_settings()
+        return PROJECT_COMMAND.invoke("devcapsule project", args[1:])
+    except SystemExit as exc:
+        code = exc.code
+        if code is None:
+            return 0
+        return code if isinstance(code, int) else 1
+    except DecisionPending as exc:
+        print(f"devcapsule: {exc}", file=sys.stderr)
+        return DecisionPending.EXIT_STATUS
+    except CliError as exc:
+        print(f"devcapsule: {exc}", file=sys.stderr)
+        return 2
+
+
+def run_until_prepared(project: Path | None = None) -> int:
+    from unittest.mock import patch
+    from devcapsule.commands._run_flow import prepare_launch as _real_prepare_launch
+
+    class _Prepared(Exception):
+        pass
+
+    def prepare(*args, **kwargs):
+        return _real_prepare_launch(*args, **kwargs, interactive=False, check_display=False)
+
+    prefix = ["project"] if project is None else ["project", "--path", str(project)]
+    with patch("devcapsule.commands.project.offer_software_approvals", return_value=True), \
+         patch("devcapsule.commands.project.prepare_launch", side_effect=prepare), \
+         patch("devcapsule.commands.project.offer_upgrades", side_effect=_Prepared):
+        try:
+            return _run_project_command([*prefix, "run", "--no-update-check"])
+        except _Prepared:
+            return 0
+
 
 MATRIX = MATRICES[Platform.LINUX_AMD64]
 
@@ -55,6 +97,7 @@ def shared_bytes(project: Path) -> dict[str, bytes]:
 def test_manifest_only_promotion_recovers_without_touching_lock(
     project: Path, monkeypatch: pytest.MonkeyPatch, committed: bool, lock_bytes: bytes | None,
 ) -> None:
+    """Manifest only promotion recovers without touching lock."""
     manifest_path, lock_path, journal = commands.paths(project)
     if lock_bytes is None:
         lock_path.unlink()
@@ -90,6 +133,7 @@ def test_manifest_only_promotion_recovers_without_touching_lock(
 
 
 def test_manifest_only_promotion_keeps_crlf_lock_bytes(project: Path) -> None:
+    """Manifest only promotion keeps crlf lock bytes."""
     manifest_path, lock_path, journal = commands.paths(project)
     original = lock_path.read_bytes().replace(b"\n", b"\r\n")
     lock_path.write_bytes(original)
@@ -100,6 +144,7 @@ def test_manifest_only_promotion_keeps_crlf_lock_bytes(project: Path) -> None:
 
 @pytest.mark.parametrize("value", [None, "python", 3, [None], [3], [""], [" python"], ["python\x00"], {}])
 def test_invalid_required_names_are_never_admitted(value: object) -> None:
+    """Invalid required names are never admitted."""
     with pytest.raises(ProjectConfigurationError, match="array"):
         CapabilityPolicy.read(declaration(required=value))
 
@@ -109,11 +154,13 @@ def test_invalid_required_names_are_never_admitted(value: object) -> None:
     {"required": ["python"], "optional": ["python"]},
 ])
 def test_ambiguous_or_invalid_policy_is_refused(values: dict[str, Any]) -> None:
+    """Ambiguous or invalid policy is refused."""
     with pytest.raises(ProjectConfigurationError):
         CapabilityPolicy.read(declaration(**values))
 
 
 def test_normalization_keeps_unknown_optional_intent() -> None:
+    """Normalization keeps unknown optional intent."""
     policy = CapabilityPolicy.read(declaration(required=["python", "python"], optional=["future-tool"], **{"sdk-major": {"python": 3}}))
     assert policy.document() == {"required": ["python"], "optional": ["future-tool"]}
     assert CapabilityPolicy.read({"capabilities": policy.document()}) == policy
@@ -124,11 +171,13 @@ def test_normalization_keeps_unknown_optional_intent() -> None:
     {"lock": 4}, {"selected": "python"}, {"without": [False]},
 ])
 def test_invalid_local_selections_are_refused(value: dict[str, Any]) -> None:
+    """Invalid local selections are refused."""
     with pytest.raises(ProjectConfigurationError):
         LocalCapabilities.read({"capabilities": value})
 
 
 def test_required_and_optional_are_independent_of_locality() -> None:
+    """Required and optional are independent of locality."""
     policy = CapabilityPolicy(("python",), ("browser-automation",), (("python", "3"),))
     lock = generate_lock(policy, MATRIX)
     assert "interactive-surface" not in lock["components"]
@@ -144,6 +193,7 @@ def test_required_and_optional_are_independent_of_locality() -> None:
 
 
 def test_unknown_optional_provider_is_removed_without_altering_shared_input() -> None:
+    """Unknown optional provider is removed without altering shared input."""
     policy = CapabilityPolicy(("python",), ("future-tool",))
     lock = tomllib.loads(MATRIX.resolve(["python", "python-ide"]).render_lock())
     lock["components"]["future"] = {"version": "500", "opaque": {"new-field": [1, 2]}}
@@ -160,11 +210,13 @@ def test_unknown_optional_provider_is_removed_without_altering_shared_input() ->
 
 @pytest.mark.parametrize("required,optional", [(["future-tool"], []), (["python"], ["future-tool"])])
 def test_writers_cannot_introduce_unknown_names(required: list[str], optional: list[str]) -> None:
+    """Writers cannot introduce unknown names."""
     with pytest.raises(ProjectConfigurationError):
         generate_lock(CapabilityPolicy(tuple(required), tuple(optional)), MATRIX)
 
 
 def test_missing_required_provider_fails_but_optional_provider_warns() -> None:
+    """Missing required provider fails but optional provider warns."""
     lock = generate_lock(CapabilityPolicy(("python",)), MATRIX)
     result, warnings = usable_lock(CapabilityPolicy(("python",), ("browser-automation",)), lock)
     assert warnings and "playwright" in warnings[0]
@@ -174,6 +226,7 @@ def test_missing_required_provider_fails_but_optional_provider_warns() -> None:
 
 
 def test_omitting_optional_sdk_cannot_remove_mandatory_dependency() -> None:
+    """Omitting optional sdk cannot remove mandatory dependency."""
     policy = CapabilityPolicy(("dotnet-ide",), ("dotnet",))
     lock = generate_lock(policy, MATRIX)
     result, _ = usable_lock(policy, lock, LocalCapabilities(without=("dotnet",)))
@@ -185,11 +238,13 @@ def test_omitting_optional_sdk_cannot_remove_mandatory_dependency() -> None:
 
 @pytest.mark.parametrize("minimum", ["3.14", "4"])
 def test_python_minimum_is_a_hard_constraint(minimum: str) -> None:
+    """Python minimum is a hard constraint."""
     with pytest.raises(ProjectConfigurationError, match=f"python {minimum} or newer"):
         generate_lock(CapabilityPolicy(("python",), minimums=(("python", minimum),)), MATRIX)
 
 
 def test_unknown_base_cannot_claim_a_required_sdk() -> None:
+    """Unknown base cannot claim a required sdk."""
     policy = CapabilityPolicy(("python",), minimums=(("python", "3"),))
     lock = generate_lock(policy, MATRIX)
     lock["base"]["reference"] = "example.invalid/base@sha256:" + "a" * 64
@@ -198,16 +253,18 @@ def test_unknown_base_cannot_claim_a_required_sdk() -> None:
 
 
 def test_legacy_lock_is_not_re_resolved() -> None:
+    """Legacy lock is not re resolved."""
     lock = {"resolution-matrix-version": "embedded-18", "opaque": {"old": True}}
     actual, warnings = usable_lock(CapabilityPolicy(("python-ide",)), lock)
     assert actual == lock and actual is not lock and not warnings
 
 
 def test_personal_pins_do_not_make_a_composed_legacy_lock_current() -> None:
+    """Personal pins do not make a composed legacy lock current."""
     from devcapsule.configuration.capability_selection import compose_lock
     from devcapsule.configuration.fingerprints import resolution_source_digests
     from devcapsule.configuration.manifest import current_manifest
-    from tests.test_upgrade_recovery import FIXTURE
+    FIXTURE = Path(__file__).parents[1] / "resources/compat/v0.2.11"
     root = FIXTURE / "project/.devcapsule"
     manifest = current_manifest(load_toml(root / "devcapsule.toml"), "fixture").document()
     shared = load_toml(root / "devcapsule.linux-amd64.lock")
@@ -225,6 +282,7 @@ def test_personal_pins_do_not_make_a_composed_legacy_lock_current() -> None:
 
 @pytest.mark.parametrize("version", ["vendor-v1", "embedded-next"])
 def test_unrecognized_matrix_version_cannot_hide_a_missing_requirement(version: str) -> None:
+    """Unrecognized matrix version cannot hide a missing requirement."""
     lock = generate_lock(CapabilityPolicy(("python",)), MATRIX)
     lock["resolution-matrix-version"] = version
     with pytest.raises(ProjectConfigurationError, match="Required capability 'browser-automation'.*playwright"):
@@ -233,6 +291,7 @@ def test_unrecognized_matrix_version_cannot_hide_a_missing_requirement(version: 
 
 @pytest.mark.parametrize("pinned", ["pycharm", "absent-ide"])
 def test_pinned_ide_is_kept_only_when_its_provider_is_present(pinned: str) -> None:
+    """Pinned ide is kept only when its provider is present."""
     lock = generate_lock(CapabilityPolicy(("python",)), MATRIX)
     lock["components"]["interactive-surface"] = pinned
     actual, _ = usable_lock(CapabilityPolicy(("python",)), lock)
@@ -240,6 +299,7 @@ def test_pinned_ide_is_kept_only_when_its_provider_is_present(pinned: str) -> No
 
 
 def test_retaining_a_pinned_ide_does_not_waive_a_missing_requirement() -> None:
+    """Retaining a pinned ide does not waive a missing requirement."""
     lock = generate_lock(CapabilityPolicy(("python", "python-ide")), MATRIX)
     actual, _ = usable_lock(CapabilityPolicy(("python",)), lock)
     assert actual["components"]["interactive-surface"] == "pycharm"
@@ -249,6 +309,7 @@ def test_retaining_a_pinned_ide_does_not_waive_a_missing_requirement() -> None:
 
 
 def test_command_migration_and_personal_choices_preserve_ownership(project: Path) -> None:
+    """Command migration and personal choices preserve ownership."""
     commands.configure(project, required=["python"], optional=["browser-automation"])
     shared = shared_bytes(project)
     commands.configure(project, local=["python-ide", "codex-agent"], without=["browser-automation"])
@@ -270,6 +331,7 @@ def test_command_migration_and_personal_choices_preserve_ownership(project: Path
     {"without": ["python"]}, {"local": ["unknown"]},
 ])
 def test_rejected_edits_leave_all_shared_bytes_intact(project: Path, kwargs: dict[str, Any]) -> None:
+    """Rejected edits leave all shared bytes intact."""
     before = shared_bytes(project)
     with pytest.raises(ProjectConfigurationError):
         commands.configure(project, **kwargs)
@@ -277,6 +339,7 @@ def test_rejected_edits_leave_all_shared_bytes_intact(project: Path, kwargs: dic
 
 
 def test_check_and_preview_never_register_or_write(project: Path) -> None:
+    """Check and preview never register or write."""
     before = shared_bytes(project)
     assert "valid" in commands.check(project)
     assert "Preview" in commands.configure(project, required=["python"], preview=True)
@@ -288,6 +351,7 @@ def test_check_and_preview_never_register_or_write(project: Path) -> None:
 
 @pytest.mark.parametrize("committed", [False, True])
 def test_interrupted_shared_edit_recovers_to_one_complete_endpoint(project: Path, committed: bool) -> None:
+    """Interrupted shared edit recovers to one complete endpoint."""
     manifest_path, lock_path, journal = commands.paths(project)
     before_manifest, before_lock = manifest_path.read_text(), lock_path.read_text()
     new_manifest = declaration(required=["python"])
@@ -308,6 +372,7 @@ def test_interrupted_shared_edit_recovers_to_one_complete_endpoint(project: Path
 
 
 def test_io_failure_before_commit_rolls_back(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Io failure before commit rolls back."""
     before = shared_bytes(project)
     real_write = commands.atomic_write
     def fail_manifest(path: Path, content: str, *, mode: int = 0o600) -> None:
@@ -321,21 +386,23 @@ def test_io_failure_before_commit_rolls_back(project: Path, monkeypatch: pytest.
 
 
 def test_cli_check_and_capability_mutation(project: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Cli check and capability mutation."""
     prefix = ["project", "--path", str(project), "config"]
-    assert cli.main([*prefix, "check"]) == 3  # the base consent is pending
-    assert cli.main([*prefix, "require", "python"]) == 0
-    assert cli.main([*prefix, "ide", "python-ide"]) == 0
-    assert cli.main([*prefix, "capabilities", "--recover"]) == 0
+    assert _run_project_command([*prefix, "check"]) == 3  # the base consent is pending
+    assert _run_project_command([*prefix, "require", "python"]) == 0
+    assert _run_project_command([*prefix, "ide", "python-ide"]) == 0
+    assert _run_project_command([*prefix, "capabilities", "--recover"]) == 0
 
 
 def prepare_launch(project: Path) -> None:
     prefix = ["project", "--path", str(project), "config"]
-    assert cli.main([*prefix, "authorize", "base-image", "default"]) == 0
-    assert cli.main([*prefix, "authorize", "host-x11", "false"]) == 0
+    assert _run_project_command([*prefix, "authorize", "base-image", "default"]) == 0
+    assert _run_project_command([*prefix, "authorize", "host-x11", "false"]) == 0
     assert run_until_prepared(project) == 0
 
 
 def test_optional_only_contribution_does_not_block_next_launch(project: Path) -> None:
+    """Optional only contribution does not block next launch."""
     from devcapsule.configuration.execution import ExecutionConfiguration
     commands.configure(project, required=["python"])
     commands.configure(project, local=["python-ide"])
@@ -362,28 +429,30 @@ def test_optional_only_contribution_does_not_block_next_launch(project: Path) ->
 
 
 def test_local_answers_still_require_explicit_resolution(project: Path) -> None:
+    """Local answers still require explicit resolution."""
     from devcapsule.configuration.execution import ExecutionConfiguration
     commands.configure(project, required=["python"])
     commands.configure(project, local=["python-ide"])
     prepare_launch(project)
-    assert cli.main(["project", "--path", str(project), "config", "authorize", "development-sudo", "true"]) == 0
+    assert _run_project_command(["project", "--path", str(project), "config", "authorize", "development-sudo", "true"]) == 0
     with pytest.raises(ProjectConfigurationError, match="stale"):
         ExecutionConfiguration.load(project)
 
 
 def test_new_project_creation_has_no_implicit_agent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """New project creation has no implicit agent."""
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
     root = tmp_path / "fresh"
     root.mkdir()
-    assert cli.main(["project", "--path", str(root), "init", "--require", "python", "--offer", "browser-automation",
+    assert _run_project_command(["project", "--path", str(root), "init", "--require", "python", "--offer", "browser-automation",
                      "--ide", "eclipse-ide", "--creator", "mailto:owner@example.test",
                      "--authorize", "base-image", "default"]) == 0
     manifest, lock = load_toml(commands.paths(root)[0]), load_toml(commands.paths(root)[1])
     assert manifest["capabilities"] == {"required": ["python"], "optional": ["browser-automation"]}
     assert set(lock["components"]) == {"playwright"}
     assert set(lock_for(root, manifest)[1]["components"]) == {"interactive-surface", "eclipse", "playwright"}
-    assert cli.main(["project", "--path", str(root), "init"]) != 0
-    assert cli.main(["project", "--path", str(root), "config", "need", "node"]) != 0
+    assert _run_project_command(["project", "--path", str(root), "init"]) != 0
+    assert _run_project_command(["project", "--path", str(root), "config", "need", "node"]) != 0
 
 
 @pytest.mark.parametrize("arguments", [
@@ -391,6 +460,7 @@ def test_new_project_creation_has_no_implicit_agent(tmp_path: Path, monkeypatch:
     {"agents": ("unknown",)}, {"project_mount": "relative/path"},
 ])
 def test_new_project_failure_writes_nothing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, arguments: dict[str, Any]) -> None:
+    """New project failure writes nothing."""
     from devcapsule.compat import CliError
     from devcapsule.configuration.operations import InitializeRequest, initialize_project
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
@@ -405,6 +475,7 @@ def test_new_project_failure_writes_nothing(tmp_path: Path, monkeypatch: pytest.
 
 
 def test_local_reselection_retains_unrelated_version_pins(project: Path) -> None:
+    """Local reselection retains unrelated version pins."""
     from devcapsule.configuration.file_formats import canonical_digest, selected_version_lock
     commands.configure(project, required=["python"], optional=["browser-automation"])
     commands.configure(project, local=["python-ide", "codex-agent"])
@@ -428,6 +499,7 @@ def test_local_reselection_retains_unrelated_version_pins(project: Path) -> None
 
 @pytest.mark.parametrize("fault", ["malformed", "manifest-conflict", "lock-conflict"])
 def test_recovery_never_overwrites_independent_edits(project: Path, fault: str) -> None:
+    """Recovery never overwrites independent edits."""
     manifest, lock, journal = commands.paths(project)
     values = {"before-manifest": manifest.read_text(), "after-manifest": "candidate-manifest",
               "before-lock": lock.read_text(), "after-lock": "candidate-lock"}
@@ -445,18 +517,20 @@ def test_recovery_never_overwrites_independent_edits(project: Path, fault: str) 
 
 
 def test_recovery_of_interrupted_initial_creation(tmp_path: Path) -> None:
+    """Recovery of interrupted initial creation."""
     root = tmp_path / "fresh"
     (root / ".devcapsule").mkdir(parents=True)
     manifest, lock, journal = commands.paths(root)
     lock.write_text("candidate-lock")
     journal.write_text(render_toml({"before-manifest": "", "before-lock": "",
                                        "after-manifest": "candidate-manifest", "after-lock": "candidate-lock"}))
-    assert cli.main(["project", "--path", str(root), "config", "capabilities", "--recover"]) == 0
+    assert _run_project_command(["project", "--path", str(root), "config", "capabilities", "--recover"]) == 0
     assert not lock.exists() and not manifest.exists() and not journal.exists()
 
 
 @pytest.mark.parametrize("record", [{}, {"lock": "[bad"}, {"lock": "[components]\n"}])
 def test_incomplete_local_pins_are_actionable(project: Path, record: dict[str, Any]) -> None:
+    """Incomplete local pins are actionable."""
     commands.configure(project, required=["python"])
     manifest, lock = load_toml(commands.paths(project)[0]), load_toml(commands.paths(project)[1])
     with pytest.raises(ProjectConfigurationError, match="pins|provider"):
@@ -466,6 +540,7 @@ def test_incomplete_local_pins_are_actionable(project: Path, record: dict[str, A
 def test_a_local_ide_replaces_the_ide_a_legacy_need_list_recommends(project: Path) -> None:
     # The IDE in a schema-1 ``need`` list reads as the project's recommendation
     # (manifest_schemas.upgrade); each developer may choose another.
+    """A local ide replaces the ide a legacy need list recommends."""
     commands.configure(project, local=["eclipse-ide"])
     _, manifest = manifest_for(project)
     assert manifest["recommendations"]["ide"] == "python-ide"
@@ -473,31 +548,36 @@ def test_a_local_ide_replaces_the_ide_a_legacy_need_list_recommends(project: Pat
 
 
 def test_wrong_lock_platform_is_refused() -> None:
+    """Wrong lock platform is refused."""
     with pytest.raises(ProjectConfigurationError, match="Unsupported lock platform"):
         usable_lock(CapabilityPolicy(("python",)),
                     {"resolution-matrix-version": "embedded-28", "capability-providers": {}, "platform": "unknown"})
 
 
 def test_supplied_versions_are_explicit() -> None:
+    """Supplied versions are explicit."""
     lock = tomllib.loads(MATRIX.resolve(["dotnet-ide"]).render_lock())
-    assert MATRIX.supplied_version("dotnet", lock) == "10.0.401"
+    assert MATRIX.supplied_version("dotnet", lock) == "11.0.100"
     assert MATRIX.supplied_version("java", lock) == "25.0.4+7"
     assert MATRIX.supplied_version("docker-cli", lock) is None
 
 
 def test_cannot_preserve_missing_opaque_optional_provider() -> None:
+    """Cannot preserve missing opaque optional provider."""
     with pytest.raises(ProjectConfigurationError, match="conflicts or is missing"):
         generate_lock(CapabilityPolicy(("python",), ("future",)), MATRIX,
                       previous={"capability-providers": {"future": ["missing"]}})
 
 
 def test_choose_local_ide_before_resolving_required_only_project(project: Path) -> None:
+    """Choose local ide before resolving required only project."""
     commands.configure(project, required=["python"])
     with pytest.raises(ProjectConfigurationError, match="Choose your IDE"):
         lock_for(project, load_toml(commands.paths(project)[0]))
 
 
 def test_pending_local_activation_is_not_overwritten(project: Path) -> None:
+    """Pending local activation is not overwritten."""
     manifest = load_toml(commands.paths(project)[0])
     record, _ = checkout_record_paths(manifest, project)
     record.parent.mkdir(parents=True)
@@ -507,6 +587,7 @@ def test_pending_local_activation_is_not_overwritten(project: Path) -> None:
 
 
 def test_local_base_cannot_claim_minimum_guarantee(project: Path) -> None:
+    """Local base cannot claim minimum guarantee."""
     from devcapsule.configuration.model import Configuration
     commands.configure(project, required=["python>=3"])
     commands.configure(project, local=["python-ide"])
@@ -518,6 +599,7 @@ def test_local_base_cannot_claim_minimum_guarantee(project: Path) -> None:
 
 
 def test_optional_download_failure_reduces_only_this_run(project: Path) -> None:
+    """Optional download failure reduces only this run."""
     from devcapsule.configuration.execution import ExecutionConfiguration
     from devcapsule.environment_realization import omit_unavailable_optional
     commands.configure(project, required=["python"], optional=["browser-automation"])
@@ -537,6 +619,7 @@ def test_optional_download_failure_reduces_only_this_run(project: Path) -> None:
 
 
 def test_required_download_and_digest_errors_are_not_optional(project: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Required download and digest errors are not optional."""
     from devcapsule.configuration.execution import ExecutionConfiguration
     from devcapsule.environment_realization import omit_unavailable_optional
     from devcapsule.materialization import acquire_artifact, ArtifactSpec, ArtifactUnavailable
@@ -561,6 +644,7 @@ def test_required_download_and_digest_errors_are_not_optional(project: Path, tmp
 
 
 def test_project_run_retries_optional_download_without_certifying_full_set(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Project run retries optional download without certifying full set."""
     from types import SimpleNamespace
     from devcapsule.commands import project as command_module
     from devcapsule.materialization import ArtifactUnavailable, ImageDetails, parse_locked_environment
@@ -587,13 +671,14 @@ def test_project_run_retries_optional_download_without_certifying_full_set(proje
     monkeypatch.setattr(command_module, "offer_upgrades", lambda *args, **kwargs: True)
     monkeypatch.setattr(command_module, "run_pycharm", launch)
     monkeypatch.setattr(command_module, "record_known_good_configuration", forbidden)
-    assert cli.main(["project", "--path", str(project), "run", "--no-update-check"]) == 0
+    assert _run_project_command(["project", "--path", str(project), "run", "--no-update-check"]) == 0
     assert len(realized_sets) == 2 and "playwright" not in realized_sets[-1]
     assert len(launches) == 1
     assert shared_bytes(project) == shared
 
 
 def test_run_does_not_degrade_required_download_failure(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Run does not degrade required download failure."""
     from devcapsule.commands import project as command_module
     from devcapsule.materialization import ArtifactUnavailable
     commands.configure(project, required=["python"])
@@ -603,16 +688,17 @@ def test_run_does_not_degrade_required_download_failure(project: Path, monkeypat
         raise ArtifactUnavailable("https://fixture.invalid/ide", "offline")
     monkeypatch.setattr(command_module, "realize_environment", unavailable)
     monkeypatch.setattr(command_module, "offer_upgrades", lambda *args, **kwargs: True)
-    assert cli.main(["project", "--path", str(project), "run", "--no-update-check"]) != 0
+    assert _run_project_command(["project", "--path", str(project), "run", "--no-update-check"]) != 0
 
 
 def test_init_without_an_ide_leaves_the_checkout_waiting_for_one(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+    """Init without an ide leaves the checkout waiting for one."""
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
     root = tmp_path / "fresh"
     root.mkdir()
     prefix = ["project", "--path", str(root), "init"]
-    assert cli.main([*prefix, "--ide", "python-ide"]) != 0  # no creator
-    assert cli.main([*prefix, "--require", "python", "--creator", "mailto:owner@example.test"]) == 0
+    assert _run_project_command([*prefix, "--ide", "python-ide"]) != 0  # no creator
+    assert _run_project_command([*prefix, "--require", "python", "--creator", "mailto:owner@example.test"]) == 0
     out = capsys.readouterr().out
     assert "no IDE or personal capability selected yet" in out and "Choose your IDE" in out
     assert commands.check(root).startswith("Configuration contract valid")
@@ -622,6 +708,7 @@ def test_init_without_an_ide_leaves_the_checkout_waiting_for_one(tmp_path: Path,
 
 
 def test_a_local_ide_overlays_the_surface_a_legacy_lock_pinned() -> None:
+    """A local ide overlays the surface a legacy lock pinned."""
     manifest = current_manifest(declaration(need=["python", "python-ide"]), "manifest").document()
     shared = tomllib.loads(MATRIX.resolve(["python", "python-ide"]).render_lock())
     checkout = {"capabilities": {"selected": ["eclipse-ide"], "lock": MATRIX.resolve(["eclipse-ide"]).render_lock()}}
@@ -629,6 +716,7 @@ def test_a_local_ide_overlays_the_surface_a_legacy_lock_pinned() -> None:
 
 
 def test_a_hand_written_required_ide_still_refuses_a_conflicting_local_ide() -> None:
+    """A hand written required ide still refuses a conflicting local ide."""
     manifest = declaration(required=["python", "python-ide"])
     manifest["devcapsule-schema-version"] = 2
     shared = tomllib.loads(MATRIX.resolve(["python", "python-ide"]).render_lock())
@@ -638,6 +726,7 @@ def test_a_hand_written_required_ide_still_refuses_a_conflicting_local_ide() -> 
 
 
 def test_local_tools_without_an_ide_preserve_shared_ide(project: Path) -> None:
+    """Local tools without an ide preserve shared ide."""
     commands.configure(project, local=["codex-agent"])
     _, manifest = manifest_for(project)
     assert lock_for(project, manifest)[1]["components"]["interactive-surface"] == "pycharm"
@@ -646,6 +735,7 @@ def test_local_tools_without_an_ide_preserve_shared_ide(project: Path) -> None:
 
 
 def test_wrong_platform_local_version_set_is_refused(project: Path) -> None:
+    """Wrong platform local version set is refused."""
     manifest = load_toml(commands.paths(project)[0])
     record, _ = checkout_record_paths(manifest, project)
     checkout = tomllib.loads(render_checkout(manifest, project, {}, {}))
@@ -659,6 +749,7 @@ def test_wrong_platform_local_version_set_is_refused(project: Path) -> None:
 
 
 def test_baseline_evidence_must_cover_required_capabilities() -> None:
+    """Baseline evidence must cover required capabilities."""
     from devcapsule.configuration.fingerprints import resolution_source_digests
     manifest = declaration(required=["python"])
     manifest["devcapsule-schema-version"] = 2
@@ -667,6 +758,7 @@ def test_baseline_evidence_must_cover_required_capabilities() -> None:
 
 
 def test_base_override_cannot_bypass_minimum_constraint(project: Path) -> None:
+    """Base override cannot bypass minimum constraint."""
     from devcapsule.configuration.execution import ExecutionConfiguration
     from devcapsule.environment_realization import realize_environment
     from devcapsule.compat import CliError
@@ -683,6 +775,7 @@ def test_base_override_cannot_bypass_minimum_constraint(project: Path) -> None:
 
 
 def test_required_dependency_download_is_never_omitted(project: Path) -> None:
+    """Required dependency download is never omitted."""
     from devcapsule.configuration.execution import ExecutionConfiguration
     from devcapsule.environment_realization import omit_unavailable_optional
     from devcapsule.components.catalog import COMPONENTS
@@ -699,6 +792,7 @@ def test_required_dependency_download_is_never_omitted(project: Path) -> None:
 
 
 def test_removing_a_local_licensed_agent_retains_inactive_consent(project: Path) -> None:
+    """Removing a local licensed agent retains inactive consent."""
     from devcapsule.configuration.authorization import authorization_declarations
     from devcapsule.configuration.execution import ExecutionConfiguration
     commands.configure(project, required=["python"])
@@ -708,7 +802,7 @@ def test_removing_a_local_licensed_agent_retains_inactive_consent(project: Path)
     acquisitions = [entry.name for entry in authorization_declarations(manifest, lock).values() if entry.kind == "acquisition"]
     assert acquisitions
     for name in acquisitions:
-        assert cli.main(["project", "--path", str(project), "config", "authorize", name, "true"]) == 0
+        assert _run_project_command(["project", "--path", str(project), "config", "authorize", name, "true"]) == 0
     prepare_launch(project)
     record = checkout_record_paths(manifest, project)[0]
     consent = deepcopy(load_toml(record)["authorization"])
@@ -726,6 +820,7 @@ def test_removing_a_local_licensed_agent_retains_inactive_consent(project: Path)
     ({"sha256": "invalid"}, "SHA-256"),
 ])
 def test_offline_artifact_validation_protects_every_capability(changes: dict[str, Any], message: str) -> None:
+    """Offline artifact validation protects every capability."""
     from dataclasses import replace
     from devcapsule.components.interface import LockedArtifactDeclaration
     from devcapsule.materialization import validate_locked_artifact
@@ -736,6 +831,7 @@ def test_offline_artifact_validation_protects_every_capability(changes: dict[str
 
 
 def test_check_rejects_corrupt_optional_pin_without_writing(project: Path) -> None:
+    """Check rejects corrupt optional pin without writing."""
     from devcapsule.compat import CliError
     commands.configure(project, required=["python"], optional=["dotnet"])
     manifest, lock, _ = commands.paths(project)
@@ -750,6 +846,7 @@ def test_check_rejects_corrupt_optional_pin_without_writing(project: Path) -> No
 
 
 def test_omitting_then_restoring_an_optional_keeps_the_version_set_pin(project: Path) -> None:
+    """Omitting then restoring an optional keeps the version set pin."""
     from devcapsule.configuration.file_formats import canonical_digest, selected_version_lock
     commands.configure(project, required=["python"], optional=["browser-automation"])
     commands.configure(project, local=["python-ide"])
@@ -774,6 +871,7 @@ def test_omitting_then_restoring_an_optional_keeps_the_version_set_pin(project: 
 
 
 def test_locally_selecting_a_project_optional_tool_follows_the_shared_pin(project: Path) -> None:
+    """Locally selecting a project optional tool follows the shared pin."""
     commands.configure(project, required=["python"], optional=["browser-automation"])
     _, lock_path, _ = commands.paths(project)
     lock = load_toml(lock_path)
@@ -785,6 +883,7 @@ def test_locally_selecting_a_project_optional_tool_follows_the_shared_pin(projec
 
 
 def test_corrupt_local_pins_are_refused_without_changing_the_record(project: Path) -> None:
+    """Corrupt local pins are refused without changing the record."""
     commands.configure(project, local=["codex-agent"])
     manifest = load_toml(commands.paths(project)[0])
     input_path, _ = checkout_record_paths(manifest, project)
@@ -798,12 +897,13 @@ def test_corrupt_local_pins_are_refused_without_changing_the_record(project: Pat
 
 
 def test_new_project_may_select_an_agent_before_choosing_an_ide(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """New project may select an agent before choosing an ide."""
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
     root = tmp_path / "fresh"
     root.mkdir()
-    assert cli.main(["project", "--path", str(root), "init", "--require", "python",
+    assert _run_project_command(["project", "--path", str(root), "init", "--require", "python",
                      "--creator", "mailto:owner@example.test"]) == 0
-    assert cli.main(["project", "--path", str(root), "config", "add", "codex-agent"]) == 0
+    assert _run_project_command(["project", "--path", str(root), "config", "add", "codex-agent"]) == 0
     manifest = load_toml(commands.paths(root)[0])
     with pytest.raises(ProjectConfigurationError, match="Choose your IDE"):
         lock_for(root, manifest)
@@ -812,6 +912,7 @@ def test_new_project_may_select_an_agent_before_choosing_an_ide(tmp_path: Path, 
 
 
 def test_unavailable_local_selection_is_named_as_a_selection() -> None:
+    """Unavailable local selection is named as a selection."""
     lock = generate_lock(CapabilityPolicy(("python",)), MATRIX)
     with pytest.raises(ProjectConfigurationError, match="Selected capability 'codex-agent'"):
         usable_lock(CapabilityPolicy(("python",)), lock, LocalCapabilities(("codex-agent",)))
@@ -833,6 +934,7 @@ def version_set_with(project: Path, **pins: str) -> tuple[dict[str, Any], Path]:
 
 
 def test_deselecting_a_project_optional_tool_keeps_its_version_set_pin(project: Path) -> None:
+    """Deselecting a project optional tool keeps its version set pin."""
     from devcapsule.configuration.file_formats import selected_version_lock
     commands.configure(project, required=["python"], optional=["browser-automation"])
     commands.configure(project, local=["python-ide", "browser-automation"])
@@ -845,6 +947,7 @@ def test_deselecting_a_project_optional_tool_keeps_its_version_set_pin(project: 
 
 
 def test_deselecting_an_agent_removes_its_pin_from_the_version_set(project: Path) -> None:
+    """Deselecting an agent removes its pin from the version set."""
     from devcapsule.configuration.file_formats import selected_version_lock
     commands.configure(project, required=["python"])
     commands.configure(project, local=["python-ide", "codex-agent"])
