@@ -44,15 +44,15 @@ class GitHubRequest:
         """Use host SSH configuration with noninteractive, verified authentication.
 
         ``identity`` is the one key file to offer, or None to let host OpenSSH
-        choose. With a key, OpenSSH offers it first and offers neither the
-        agent's other keys nor its default key files. It still offers, after
-        it, any ``IdentityFile`` the host's own SSH configuration gives
-        GitHub: no option withdraws those. The agent may hold the key
-        unlocked; ``BatchMode`` asks for no passphrase.
+        choose. A named key excludes unrelated agent keys and implicit default
+        key files. Host configuration can name other identities or certificates
+        for GitHub. One of those can authenticate the request. The agent may
+        hold a configured key unlocked. BatchMode suppresses passphrase prompts.
         """
         self.validate()
         # -i takes the path as it is; -oIdentityFile= would split it at a space.
-        selected = () if identity is None else ("-oIdentitiesOnly=yes", "-i", str(identity))
+        # Suppress implicit default files even if the selected file disappeared after launch.
+        selected = () if identity is None else ("-oIdentityFile=none", "-oIdentitiesOnly=yes", "-i", str(identity))
         return (executable, "-T", "-oBatchMode=yes", "-oStrictHostKeyChecking=yes",
                 "-oClearAllForwardings=yes", "-oForwardAgent=no", "-oPermitLocalCommand=no",
                 "-oControlMaster=no", "-oControlPath=none", "-oRemoteCommand=none",

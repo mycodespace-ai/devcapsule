@@ -79,10 +79,10 @@ The value selects the key:
 | `false` | None: the proxy is off. This is the default. |
 
 A named key is checked when you launch, on your host: if the file is not
-there, the launch stops before the capsule starts. With a named key, OpenSSH
-offers that key first and does not offer the other keys in your agent or your
-default key files. It still offers, after it, any `IdentityFile` that your own
-`~/.ssh/config` gives for GitHub. A key file called `true`, `false`, `none`,
+there, the launch stops before the capsule starts. OpenSSH uses the named key and skips unrelated
+agent keys and implicit default key files. Your SSH configuration can also
+name keys or certificates for GitHub. One of those can authenticate you.
+A key file called `true`, `false`, `none`,
 or `default` needs its path.
 
 Inside the capsule, ordinary `git clone`, `git fetch`, `git pull`, and `git push`
