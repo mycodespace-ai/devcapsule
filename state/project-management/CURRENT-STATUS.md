@@ -23,6 +23,15 @@ This reserved workstream remains open for the lifetime of multiple-stream mode.
 
 ## Current State
 
+### Dispatched `gh`, `gcloud`, and version-upgrades sweep to `component-catalog`, 2026-11-25
+
+By owner direction on 2026-11-25, delivered three `release-0.3.1` tasks to `component-catalog` on `upstream/coordination`:
+- `2026-11-25-project-management-gh-cli-component.md` (`4b79f034b446`) — implement `gh` (GitHub CLI) as an available component, superseding the November 17 manual-only deferral.
+- `2026-11-25-project-management-gcloud-cli-component.md` (`f8937ecd8833`) — implement `gcloud` (Google Cloud CLI) as an available component (separate from unselected Gemini CLI).
+- `2026-11-25-project-management-component-version-upgrades-sweep.md` (`3967e9e0264c`) — check all existing catalog components for version upgrades and deliver updated pins/outcome table for `release-0.3.1`.
+
+Three taken intake items (`2026-11-17-presentations-launcher-base-requirements.md`, `2026-11-18-component-catalog-localize-ide-additions.md`, `2026-11-24-maintenance-optimize-no-change-builds.md`) and three `pile-of-ideas/` items await triage/disposition.
+
 ### Intake review complete; switch to rc3, 2026-11-17
 
 The owner answered the final two questions at 2026-11-17T01:17:38Z: finish the
