@@ -1,9 +1,0 @@
-# Schedule a refactor to localize IDE additions
-
-The owner requests that project management schedule refactoring to make adding a selectable IDE a local change. They are willing to accept the Xfce Terminal addition for 0.3.1 as submitted. Please assign an owning workstream and a place in the backlog, and record both when you disposition this item.
-
-The release PR touched 36 files. Five hand-maintained lists in three CLI and configuration modules needed the same new IDE name for help and error messages. The catalog, resolution matrix, image builder and runtime each needed separate wiring. Eleven existing golden locks changed only to repeat the new matrix revision in a comment and a metadata field. The new terminal also introduced a genuine installation requirement, a checksum-pinned Debian package as the primary desktop application. [Release PR #62](https://github.com/mycodespace-ai/devcapsule/pull/62/files)
-
-Use the terminal diff as the acceptance example. Once an installation and launch method exists, adding another IDE that uses it should require its component definition, platform pins, compatibility evidence, documentation and focused tests. Help and selection errors should discover the same choices as the resolver. The existing builder and launcher should be able to consume that declaration without a new component-name branch. Review how the fixture suite can test global revision metadata once while continuing to catch changes to the resolved packages of each environment.
-
-A small demonstration with a second IDE definition using an existing method would let the owner review which files still need hand edits and why. Preserve reproducible locks, reading older locks, per-platform verification and end-to-end launch coverage. Project management owns the scheduling decision because this crosses the catalog, configuration, build and runtime responsibilities.
