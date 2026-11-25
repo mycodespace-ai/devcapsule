@@ -85,7 +85,7 @@ class CodexComponent(ComponentDefinition):
     def state_environment(self) -> tuple[StateEnvironmentDeclaration, ...]:
         return (StateEnvironmentDeclaration("CODEX_HOME", "home"),)
 
-    def state_seeds(self) -> tuple[StateSeedDeclaration, ...]:
+    def state_seeds(self, version: str | None = None) -> tuple[StateSeedDeclaration, ...]:
         return (
             StateSeedDeclaration(
                 slot="home",

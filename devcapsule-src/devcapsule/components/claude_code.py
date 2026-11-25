@@ -57,7 +57,7 @@ class ClaudeCodeComponent(ComponentDefinition):
     def secret_inputs(self) -> tuple[SecretInputDeclaration, ...]:
         return ()
 
-    def state_seeds(self) -> tuple[StateSeedDeclaration, ...]:
+    def state_seeds(self, version: str | None = None) -> tuple[StateSeedDeclaration, ...]:
         return (
             StateSeedDeclaration(
                 slot="home",

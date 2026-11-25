@@ -2702,12 +2702,20 @@ def _component_state_mounts(
         source.mkdir(parents=True, exist_ok=True, mode=0o700)
         if configured is None:
             source.chmod(0o700)
-            _seed_component_state(source, declaration)
+            component_meta = lock.get("components", {}).get(declaration.component_id)
+            version = component_meta.get("version") if isinstance(component_meta, Mapping) else None
+            _seed_component_state(
+                source,
+                declaration,
+                version=version if isinstance(version, str) else None,
+            )
         mounts[name] = (source, declaration.container_path)
     return mounts
 
 
-def _seed_component_state(source: Path, declaration: Any) -> None:
+def _seed_component_state(
+    source: Path, declaration: Any, *, version: str | None = None
+) -> None:
     """Place a component's declared default files into its managed slot.
 
     Written as the invoking user before the daemon mounts the slot. JSON
@@ -2718,7 +2726,7 @@ def _seed_component_state(source: Path, declaration: Any) -> None:
     definition = COMPONENTS.get(str(declaration.component_id))
     if definition is None:
         return
-    for seed in definition.state_seeds():
+    for seed in definition.state_seeds(version=version):
         if seed.slot != declaration.slot_name:
             continue
         target = source / seed.relative_path
