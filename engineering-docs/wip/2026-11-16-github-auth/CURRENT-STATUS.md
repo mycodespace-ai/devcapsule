@@ -523,8 +523,13 @@ remote PR existence remains unverified.
   own `IdentityFile` for GitHub beside a named key.
 - The published state on the coordination branch still says paused, as of
   2026-11-16; it was not republished on 2026-11-25.
-- Not done for the `ssh-proxy` change: a decision record, a Pair Review round,
-  and a rerun of the end-to-end scenario.
+- Pair Review of PR #75 with Codex, gpt-6.2-astra, at the owner's word of
+  2026-11-25: the brief is committed; the review worktree is
+  `~/worktrees/github-auth-review` and is removed when the loop ends. Its
+  scratch is pytest's default under `/tmp`: `/opt/devcapsule-gate` is absent
+  and `/opt` is not writable in this capsule.
+- Not done for the `ssh-proxy` change: a decision record and a rerun of the
+  end-to-end scenario.
 - PR #47 was merged into release-0.3.1 on 2026-11-16. Whether the two inherited
   recursive Docker gid-zero test failures still stand was not rechecked on
   2026-11-25; the unit session passed in full.
@@ -542,6 +547,7 @@ remote PR existence remains unverified.
 
 ## Workstream document index
 
+- [Review brief for PR #75, the `ssh-proxy` authorization, Codex gpt-6.2-astra](evidence/2026-11-25-ssh-proxy/review-brief.md)
 - [Final Pair Review and release-target validation](evidence/2026-11-16-final-review.md)
 - [Round 2 brief](evidence/round-2.md)
 
