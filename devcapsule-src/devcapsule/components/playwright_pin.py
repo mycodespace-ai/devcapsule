@@ -1,7 +1,7 @@
-"""Playwright Python wheels and Chromium artifacts verified 2026-10-03.
+"""Playwright Python wheels and Chromium artifacts verified 2026-10-03 and 2026-11-25.
 
 Wheel hashes match PyPI; browser hashes computed from the version-specific
-URLs shipped by Playwright 1.63.0. Ubuntu 24.04, CPython 3.12, x86-64 only.
+URLs shipped by Playwright 1.63.0 and 1.65.2. Ubuntu 24.04, CPython 3.12, x86-64 only.
 """
 
 from typing import Any
@@ -38,3 +38,36 @@ PIN: dict[str, Any] = {'version': '1.63.0',
                                'url': 'https://cdn.playwright.dev/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-linux.zip',
                                'sha256': 'ebc74fc5b94830176a3c2914ae96bd8bc7f6a91f4f33890230f84a172ee61ccc',
                                'destination': '/opt/playwright/browsers/ffmpeg-1011'}}}
+
+PIN_1_65_2: dict[str, Any] = {'version': '1.65.2',
+ 'delivery-policy': 'local-materialization',
+ 'license': 'Apache-2.0',
+ 'platform': 'linux-amd64',
+ 'artifacts': {'greenlet': {'format': 'python-wheel',
+                            'url': 'https://files.pythonhosted.org/packages/66/6a/1594f3869c57c149abdb380492529e04d4c0229b5e4d79572c5bd0aaa673/greenlet-3.5.6-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl',
+                            'sha256': '975736b002ed080d124cf81a79cb7e05cb26d6b3f5c7a7b651c0fcce70353aa1',
+                            'destination': '/opt/playwright'},
+               'playwright': {'format': 'python-wheel',
+                              'url': 'https://files.pythonhosted.org/packages/de/c3/2fc4b7da0496401ecf35c3fba50235e7f2cdbe141b42be83eb2d93f08fc5/playwright-1.65.2-py3-none-manylinux1_x86_64.whl',
+                              'sha256': '58932d35f56767ab7ebcdd3d4a733bfb3e62a1a5bc43c08e28b9fa9b3e61cf33',
+                              'destination': '/opt/playwright'},
+               'pyee': {'format': 'python-wheel',
+                        'url': 'https://files.pythonhosted.org/packages/a0/c4/b4d4827c93ef43c01f599ef31453ccc1c132b353284fc6c87d535c233129/pyee-13.0.1-py3-none-any.whl',
+                        'sha256': 'af2f8fede4171ef667dfded53f96e2ed0d6e6bd7ee3bb46437f77e3b57689228',
+                        'destination': '/opt/playwright'},
+               'typing_extensions': {'format': 'python-wheel',
+                                     'url': 'https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl',
+                                     'sha256': '481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8',
+                                     'destination': '/opt/playwright'},
+               'chromium-1255': {'format': 'zip-directory',
+                                 'url': 'https://cdn.playwright.dev/builds/cft/159.0.8154.6/linux64/chrome-linux64.zip',
+                                 'sha256': '370601106c1b5619aae5f06f7a3fdc60836486135934779461e2a208d777f596',
+                                 'destination': '/opt/playwright/browsers/chromium-1255'},
+               'chromium_headless_shell-1255': {'format': 'zip-directory',
+                                                'url': 'https://cdn.playwright.dev/builds/cft/159.0.8154.6/linux64/chrome-headless-shell-linux64.zip',
+                                                'sha256': '77a6442fd3c8acd3bef9e1067fc26f5ef464277d22f0e8cb58dc3e4077a3e458',
+                                                'destination': '/opt/playwright/browsers/chromium_headless_shell-1255'},
+               'ffmpeg-1013': {'format': 'zip-directory',
+                               'url': 'https://cdn.playwright.dev/dbazure/download/playwright/builds/ffmpeg/1013/ffmpeg-linux.zip',
+                               'sha256': 'ee986434d158f74fb5d9c5ff1092026ceedb63f324fe90b5be89460926b7b679',
+                               'destination': '/opt/playwright/browsers/ffmpeg-1013'}}}

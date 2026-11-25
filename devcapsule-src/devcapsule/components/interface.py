@@ -176,7 +176,7 @@ class ComponentDefinition(ABC):
     def secret_inputs(self) -> tuple[SecretInputDeclaration, ...]:
         """Declare secret inputs that a developer may explicitly bind."""
 
-    def state_seeds(self) -> tuple[StateSeedDeclaration, ...]:
+    def state_seeds(self, version: str | None = None) -> tuple[StateSeedDeclaration, ...]:
         """Default files to place in this component's state slots when absent.
 
         Most components need none (the default).  A component whose tool

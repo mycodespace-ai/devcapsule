@@ -66,7 +66,7 @@ def test_minimal_need_generates_a_complete_pycharm_lock() -> None:
     )
     assert lock["base"]["build-mnemonic"] == "v0.3.0-local-linux-x86_64"
     assert lock["components"]["interactive-surface"] == "pycharm"
-    assert lock["components"]["pycharm"]["version"] == "2026.2.4"
+    assert lock["components"]["pycharm"]["version"] == "2026.3.0.2"
     assert lock["materialization"]["recipe"] == "jetbrains-local-materialization"
     assert set(lock["components"]) == {"interactive-surface", "pycharm"}
     # The scoped digest covers exactly the derivation input; the retired
@@ -117,7 +117,7 @@ def test_formation_reports_capabilities_and_provenance() -> None:
 
     assert isinstance(formation, Formation)
     assert formation.capabilities == ("python", "python-ide")
-    assert "pycharm 2026.2.4" in formation.provenance
+    assert "pycharm 2026.3.0.2" in formation.provenance
     assert "base v0.3.0-local-linux-x86_64" in formation.provenance
 
 def test_two_interactive_capabilities_are_rejected() -> None:
