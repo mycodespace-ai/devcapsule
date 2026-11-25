@@ -523,11 +523,18 @@ remote PR existence remains unverified.
   own `IdentityFile` for GitHub beside a named key.
 - The published state on the coordination branch still says paused, as of
   2026-11-16; it was not republished on 2026-11-25.
-- Pair Review of PR #75 with Codex, gpt-6.2-astra, at the owner's word of
-  2026-11-25: the brief is committed; the review worktree is
-  `~/worktrees/github-auth-review` and is removed when the loop ends. Its
-  scratch is pytest's default under `/tmp`: `/opt/devcapsule-gate` is absent
-  and `/opt` is not writable in this capsule.
+- Pair Review of PR #75, asked by the owner on 2026-11-25 with Codex,
+  gpt-6.2-astra: not started. Codex 0.163.0 refused that model for this
+  account, and its catalogue listed no 6.2 model. The owner suspended the
+  Claude Code session and runs the review from inside Codex. No review
+  commit, review pull request or assessment exists. Left ready for it: the
+  committed brief, and the worktree `~/worktrees/github-auth-review` on the
+  local branch `ws-github-auth/ssh-proxy-fix-review`, not pushed, with its
+  own `.venv` and the website cloned at the recorded commit. Remove the
+  worktree when the loop ends. Its scratch is pytest's default under `/tmp`:
+  `/opt/devcapsule-gate` is absent and `/opt` is not writable in this capsule.
+- `devcapsule-src/dist/devcapsule-local.pex` was built from the code of
+  `0979c31d`. Rebuild it after any code change from the review.
 - Not done for the `ssh-proxy` change: a decision record and a rerun of the
   end-to-end scenario.
 - PR #47 was merged into release-0.3.1 on 2026-11-16. Whether the two inherited
