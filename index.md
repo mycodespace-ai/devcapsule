@@ -322,6 +322,7 @@ history; record current decisions in the active documents above.
 
 ## Bugs
 
+- [`devcapsule` lacks a documented and enforced base-image compatibility contract when running projects with older bases](engineering-docs/bugs/devcapsule/2026-11-25-launcher-lacks-base-image-compatibility-contract-and-enforcement.md)
 - [A video opened from the web console's Files page does not play: the raw route's policy blocks the browser's own player](engineering-docs/bugs/devcapsule/2026-11-10-console-video-opened-from-files-does-not-play.md)
 - [Inside a capsule on another machine, `devcapsule` warns on `/home/devcapsule/.cache/pex` and aborts with `Permission denied` reading `/etc/devcapsule/home/settings.toml`](engineering-docs/bugs/devcapsule/2026-11-15-in-capsule-devcapsule-fails-on-mounted-settings-and-pex-cache.md)
 - [Markdown-only changes run the whole Python unit suite: the hosted path filter lists too few non-inputs, and the local gate has no filter](engineering-docs/bugs/devcapsule/2026-11-10-markdown-only-changes-run-the-python-unit-suite.md)
