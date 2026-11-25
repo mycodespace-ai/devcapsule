@@ -73,6 +73,7 @@ def test_a_denial_selects_no_key_and_is_refused() -> None:
     ("deploy key", HOME / ".ssh" / "deploy key"),
     ("id_work.pub", HOME / ".ssh" / "id_work.pub"),
     ("~/keys/deploy", HOME / "keys" / "deploy"),
+    ("~//keys/deploy", HOME / "keys" / "deploy"),
     ("/keys/deploy", Path("/keys/deploy")),
 ])
 def test_a_name_is_a_file_in_the_homes_ssh_directory_and_a_path_is_itself(selection: str, identity: Path) -> None:

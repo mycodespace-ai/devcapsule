@@ -107,7 +107,7 @@ def selected_identity(selection: bool | str, *, home: Path,
     elif "/" not in selection:
         identity = directory / selection
     elif selection.startswith("~/"):
-        identity = home / selection.removeprefix("~/")
+        identity = home / selection[1:].lstrip("/")
     else:
         identity = Path(selection)
     if any(character in str(identity) for character in _EXPANDED_BY_OPENSSH):

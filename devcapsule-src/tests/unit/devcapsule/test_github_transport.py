@@ -79,7 +79,7 @@ def test_host_command_offers_a_named_key_and_no_other_agent_or_default_key() -> 
 
     command = request.ssh_command('/usr/bin/ssh', identity)
 
-    assert command[-5:] == ('-oIdentitiesOnly=yes', '-i', '/homes/developer/.ssh/deploy key',
+    assert command[-6:] == ('-oIdentityFile=none', '-oIdentitiesOnly=yes', '-i', '/homes/developer/.ssh/deploy key',
                             'git@github.com', "git-receive-pack 'acme/repo.git'")
     assert set(request.ssh_command('/usr/bin/ssh', None)) < set(command)
 
