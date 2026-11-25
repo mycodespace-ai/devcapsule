@@ -4,7 +4,7 @@ Mnemonic: `github-auth`
 
 Start date: 2026-11-16
 
-State: resumed 2026-11-25 for one 0.3.1 fix: the authorization is renamed `ssh-proxy` and selects the host key. Delivered on `ws-github-auth/ssh-proxy-fix` as a pull request into `release-0.3.1`; the owner tests it with a locally built executable and merges.
+State: resumed 2026-11-25 for one 0.3.1 fix: the authorization is renamed `ssh-proxy` and selects the host key. Delivered on `ws-github-auth/ssh-proxy-fix` as [PR #75](https://github.com/mycodespace-ai/devcapsule/pull/75) into `release-0.3.1`; the owner tests it with a locally built executable and merges.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -154,7 +154,7 @@ checkout remains untouched. Review evidence and prepared PR text are indexed bel
 ## Planned next step
 
 The owner tests the `ssh-proxy` change with `devcapsule-src/dist/devcapsule-local.pex`,
-built from the pull request's head, and merges the pull request into
+built from the code of commit `0979c31d`, and merges PR #75 into
 `release-0.3.1`. Decide with the owner whether it takes a Pair Review round
 and a rerun of the recorded end-to-end scenario with a named key.
 Maintenance owns carrying the release to main. Do not conclude this workstream
