@@ -6,7 +6,7 @@ Start date: 2026-08-30
 
 State: active 2026-11-25; checking all existing components for version upgrades on `ws-component-catalog/version-upgrades` targeting `release-0.3.1`; `gh` and `gcloud` queued next for `release-0.3.1`
 
-Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5b0f27c04de1
+Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5787d0e0395f
 
 Branch association: `ws-component-catalog/version-upgrades`, forked from `origin/release-0.3.1` (`82a83b9a`)
 
