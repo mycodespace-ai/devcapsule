@@ -11,6 +11,7 @@ this list retains only the coordination obligation.
 
 - **`gh` (GitHub CLI) and `gcloud` (Google Cloud CLI) components (`release-0.3.1`):** Owner directed adding `gh` and `gcloud` as available optional catalog components targeting `release-0.3.1` (superseding the 2026-11-17 item 9 manual-only deferral for `gh`). Delivered to `component-catalog` via `upstream/coordination` (`2026-11-25-project-management-gh-cli-component.md` at `4b79f034b446`, `2026-11-25-project-management-gcloud-cli-component.md` at `f8937ecd8833`).
 - **All-component version-upgrades check (`release-0.3.1`):** Owner assigned `component-catalog` to check every existing component for version upgrades, deliver pin-upgrade PRs targeting `release-0.3.1`, and provide the per-component sweep outcome table under the November 17 rule. Delivered to `component-catalog` (`2026-11-25-project-management-component-version-upgrades-sweep.md` at `3967e9e0264c`).
+- **Launcher-to-base compatibility contract & enforcement (`0.3.1`):** Owner accepted `2026-11-17-presentations-launcher-base-requirements.md` as a bug (`engineering-docs/bugs/devcapsule/2026-11-25-launcher-lacks-base-image-compatibility-contract-and-enforcement.md`, `owner: maintenance`, `target: 0.3.1`), including documenting the utility-to-base-image running contract.
 
 ## Decisions From The November 17 Intake Review
 
