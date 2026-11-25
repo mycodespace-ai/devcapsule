@@ -4,7 +4,7 @@ Mnemonic: `project-management`
 
 Start date: 2026-08-09
 
-State: active 2026-11-25; resumed on ws-project-management/coordination; 3 intake items taken and 3 pile-of-ideas items pending triage
+State: active 2026-11-25; resumed on ws-project-management/coordination; 3 component-catalog tasks dispatched for 0.3.1; intake #1 filed as 0.3.1 maintenance bug; 2 intake items and 3 pile-of-ideas items pending triage
 
 Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -30,7 +30,9 @@ By owner direction on 2026-11-25, delivered three `release-0.3.1` tasks to `comp
 - `2026-11-25-project-management-gcloud-cli-component.md` (`f8937ecd8833`) — implement `gcloud` (Google Cloud CLI) as an available component (separate from unselected Gemini CLI).
 - `2026-11-25-project-management-component-version-upgrades-sweep.md` (`3967e9e0264c`) — check all existing catalog components for version upgrades and deliver updated pins/outcome table for `release-0.3.1`.
 
-Three taken intake items (`2026-11-17-presentations-launcher-base-requirements.md`, `2026-11-18-component-catalog-localize-ide-additions.md`, `2026-11-24-maintenance-optimize-no-change-builds.md`) and three `pile-of-ideas/` items await triage/disposition.
+- Dispositioned `2026-11-17-presentations-launcher-base-requirements.md`: filed `engineering-docs/bugs/devcapsule/2026-11-25-launcher-lacks-base-image-compatibility-contract-and-enforcement.md` (`owner: maintenance`, `target: 0.3.1`), including documenting the utility-to-base-image running contract, and notified `maintenance` by mail.
+
+Two taken intake items (`2026-11-18-component-catalog-localize-ide-additions.md`, `2026-11-24-maintenance-optimize-no-change-builds.md`) and three `pile-of-ideas/` items await triage/disposition.
 
 ### Intake review complete; switch to rc3, 2026-11-17
 
