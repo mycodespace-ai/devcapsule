@@ -24,6 +24,7 @@ import time
 from typing import BinaryIO
 
 from devcapsule.github_transport import GitHubRequest, GitHubTransportError, decode_request
+from devcapsule.ssh_identity import AUTHORIZATION, SshIdentityError, selected_identity
 
 __all__ = ["GitHubBroker", "relay_git", "github_ssh_bridge", "SOCKET_ENV", "SOCKET_DESTINATION",
            "GIT_SSH_COMMAND", "MAX_REQUEST", "MAX_FRAME"]
@@ -48,15 +49,18 @@ def _read_exact(connection: socket.socket, length: int) -> bytes:
 class GitHubBroker:
     """One session's GitHub bridge. Close cancels active children and removes its socket.
 
-    ``ssh`` and ``environment`` come from the launcher, never from a request.
-    Explicit deadlines bound idle handshakes, blocked consumers and Git operations.
+    ``ssh``, ``environment`` and ``identity`` come from the launcher, never from
+    a request. ``identity`` is the one key file host SSH offers, or None when
+    host SSH chooses. Explicit deadlines bound idle handshakes, blocked
+    consumers and Git operations.
     """
 
-    def __init__(self, path: Path, *, ssh: str, environment: Mapping[str, str],
+    def __init__(self, path: Path, *, ssh: str, environment: Mapping[str, str], identity: Path | None,
                  operation_timeout: float = 3600, io_timeout: float = 10) -> None:
         self.path = path
         self.ssh = ssh
         self.environment = dict(environment)
+        self.identity = identity
         self.operation_timeout = operation_timeout
         self.io_timeout = io_timeout
         self._stop = threading.Event()
@@ -145,7 +149,7 @@ class GitHubBroker:
         # dup shares file flags, so restore blocking and use send timeouts via
         # a separate connection wrapper only while transmitting output below.
         connection.setblocking(True)
-        with subprocess.Popen(request.ssh_command(self.ssh), stdin=connection.fileno(),
+        with subprocess.Popen(request.ssh_command(self.ssh, self.identity), stdin=connection.fileno(),
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                               env=self.environment, cwd="/", start_new_session=True) as child:
             assert child.stdout is not None and child.stderr is not None
@@ -231,28 +235,53 @@ def relay_git(path: Path, request: GitHubRequest, *, stdin: BinaryIO,
 
 
 @contextmanager
-def github_ssh_bridge(environment: Mapping[str, str], *, enabled: bool,
+def github_ssh_bridge(environment: Mapping[str, str], *, selection: bool | str, home: Path,
                       containerized: bool, binds_unix_sockets: bool) -> Iterator[Path | None]:
     """Create an authorized physical-host broker, or reuse an inherited one.
 
+    ``selection`` is the ``ssh-proxy`` answer: False yields no proxy, and a
+    grant names the key the broker offers (``devcapsule.ssh_identity``).
+    ``home`` is the developer's home directory on this host. Inside a capsule
+    the outside launcher's broker is reused, with the key that launcher
+    selected: the grant only admits its use, and no key is looked for here.
+
     Docker Desktop needs a separate transport. An explicit enable there fails
     with an explanation instead of silently mounting keys or exposing an agent.
+    A named key that is not a file on this host fails here, before any capsule
+    starts.
     """
-    if not enabled:
+    if selection is False:
         yield None
         return
     if containerized:
         inherited = environment.get(SOCKET_ENV)
         if inherited != str(SOCKET_DESTINATION) or not SOCKET_DESTINATION.is_socket():
-            raise GitHubTransportError("GitHub proxy unavailable: authorize github-ssh on the outside launcher first.")
+            raise GitHubTransportError(f"GitHub proxy unavailable: authorize {AUTHORIZATION} on the outside launcher first.")
         yield SOCKET_DESTINATION
         return
     if not binds_unix_sockets:
-        raise GitHubTransportError("github-ssh currently requires Linux/WSL with native Docker; Docker Desktop transport is not implemented.")
+        raise GitHubTransportError(f"{AUTHORIZATION} currently requires Linux/WSL with native Docker; Docker Desktop transport is not implemented.")
     executable = shutil.which("ssh", path=environment.get("PATH", os.defpath))
     if executable is None:
-        raise GitHubTransportError("github-ssh requires OpenSSH on the host.")
+        raise GitHubTransportError(f"{AUTHORIZATION} requires OpenSSH on the host.")
+    try:
+        identity = selected_identity(selection, home=home, key_files=lambda: _regular_file_names(home / ".ssh"))
+    except SshIdentityError as error:
+        raise GitHubTransportError(f"{AUTHORIZATION}: {error}") from error
+    if identity is not None and not identity.is_file():
+        raise GitHubTransportError(
+            f"{AUTHORIZATION}: the key {identity} is not a file on this computer. "
+            f"Authorize {AUTHORIZATION} with the name of a key in {home / '.ssh'}, or with its path."
+        )
     with tempfile.TemporaryDirectory(prefix="devcapsule-github-", dir="/tmp") as directory:
         path = Path(directory) / "ssh.sock"
-        with GitHubBroker(path, ssh=executable, environment=environment):
+        with GitHubBroker(path, ssh=executable, environment=environment, identity=identity):
             yield path
+
+
+def _regular_file_names(directory: Path) -> list[str]:
+    """The names of the regular files in ``directory``; none when it is absent or unreadable."""
+    try:
+        return [entry.name for entry in directory.iterdir() if entry.is_file()]
+    except OSError:
+        return []

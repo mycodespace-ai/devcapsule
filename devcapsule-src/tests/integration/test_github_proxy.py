@@ -6,6 +6,7 @@ its upload/receive services are real, as are the proxy, pipes and command line.
 from __future__ import annotations
 
 from contextlib import contextmanager
+import json
 import os
 from pathlib import Path
 import selectors
@@ -23,7 +24,7 @@ from typing import IO
 
 import pytest
 
-from devcapsule.github_proxy import GitHubBroker, MAX_REQUEST, SOCKET_ENV
+from devcapsule.github_proxy import GitHubBroker, MAX_REQUEST, SOCKET_ENV, github_ssh_bridge
 
 pytestmark = pytest.mark.integration
 SOURCE = Path(__file__).resolve().parents[2]
@@ -50,7 +51,7 @@ def _broker(root: Path, body: str, **kwargs: float) -> Iterator[tuple[Path, dict
     # A short explicit socket path works under either Unix sockaddr path limit.
     with tempfile.TemporaryDirectory(prefix='gh-test-', dir='/tmp') as temporary:
         path = Path(temporary) / 's'
-        with GitHubBroker(path, ssh=str(_program(root, body)), environment=env, **kwargs):
+        with GitHubBroker(path, ssh=str(_program(root, body)), environment=env, identity=None, **kwargs):
             yield path, env
         assert not path.exists()
 
@@ -281,10 +282,45 @@ def test_broker_shutdown_closes_incomplete_requests(tmp_path: Path) -> None:
             pass  # Closing with unread input may report reset instead of EOF.
 
 
-@pytest.mark.parametrize('enabled', [False, True])
+@pytest.mark.parametrize('selection,key', [(True, None), ('default', '.ssh/id_ed25519'),
+                                           ('work', '.ssh/work'), ('~/keys/deploy key', 'keys/deploy key')])
+def test_the_bridge_gives_host_ssh_the_key_the_grant_names(tmp_path: Path, selection: bool | str, key: str | None) -> None:
+    """A transfer through the bridge of a physical host starts the host's ``ssh`` with the selected key as
+    one ``-i`` argument and identities limited to it; with ``true`` it names no key at all. The socket is
+    private and is removed with its directory when the launch ends."""
+    home = tmp_path / 'home'
+    for name in ('.ssh/id_ed25519', '.ssh/id_ed25519.pub', '.ssh/work', '.ssh/known_hosts', 'keys/deploy key'):
+        (home / name).parent.mkdir(parents=True, exist_ok=True)
+        (home / name).touch()
+    programs = tmp_path / 'programs'
+    programs.mkdir()
+    seen = tmp_path / 'arguments'
+    ssh = programs / 'ssh'
+    ssh.write_text(f'#!{sys.executable}\nimport json, sys\nfrom pathlib import Path\nPath({str(seen)!r}).write_text(json.dumps(sys.argv[1:]))\n')
+    ssh.chmod(0o700)
+    env = _environment(tmp_path)
+
+    with github_ssh_bridge({**env, 'PATH': str(programs)}, selection=selection, home=home,
+                           containerized=False, binds_unix_sockets=True) as path:
+        assert path is not None and path.is_socket() and stat.S_IMODE(path.stat().st_mode) == 0o600
+        result = _client(path, env)
+
+    assert result.returncode == 0, result.stderr
+    assert not path.exists() and not path.parent.exists()
+    arguments = json.loads(seen.read_text())
+    assert arguments[-2:] == ['git@github.com', "git-upload-pack 'acme/repo.git'"]
+    if key is None:
+        assert '-i' not in arguments and '-oIdentitiesOnly=yes' not in arguments
+    else:
+        assert arguments[-5:-2] == ['-oIdentitiesOnly=yes', '-i', str(home / key)]
+
+
+@pytest.mark.parametrize('selection', [False, True, 'default', 'id_work'])
 @pytest.mark.parametrize('rootless', [False, True])
-def test_launcher_exposes_the_socket_only_with_the_grant(tmp_path: Path, enabled: bool, rootless: bool) -> None:
-    """Rootless and rootful plans carry the adapter/socket only with authorization and use the corresponding identity."""
+def test_launcher_exposes_the_socket_only_with_the_grant(tmp_path: Path, selection: bool | str, rootless: bool) -> None:
+    """Rootless and rootful plans carry the adapter/socket only with authorization, whatever key the grant
+    names, and use the corresponding identity. The key's name and path stay out of the capsule's arguments."""
+    enabled = selection is not False
     from devcapsule.launch.pycharm._launcher import PycharmRunOptions, DockerMode, TempRuntimeFiles, build_run_config, build_docker_args
     from devcapsule.platforms import Platform
     from devcapsule.github_proxy import GIT_SSH_COMMAND, SOCKET_DESTINATION
@@ -295,14 +331,14 @@ def test_launcher_exposes_the_socket_only_with_the_grant(tmp_path: Path, enabled
         env = {**env, 'DISPLAY': ':1', 'PYCHARM_GIT_IDENTITY_FROM_HOST': '0', SOCKET_ENV: str(path)}
         config = build_run_config(PycharmRunOptions(project=project, capsule_platform=Platform.LINUX_AMD64,
                                   docker_mode=DockerMode.none, enable_sudo=False, network_mode='bridge',
-                                  enable_github_ssh=enabled, rootless_docker=rootless), env)
+                                  ssh_proxy=selection, rootless_docker=rootless), env)
         files = TempRuntimeFiles(xauth_file=tmp_path / 'xauth', passwd_file=tmp_path / 'passwd', group_file=tmp_path / 'group')
         args = build_docker_args(config, files, env)
     assert (f'GIT_SSH_COMMAND={GIT_SSH_COMMAND}' in args) is enabled
     assert (f'{SOCKET_ENV}={SOCKET_DESTINATION}' in args) is enabled
     assert (f'type=bind,src={path},dst={SOCKET_DESTINATION},ro' in args) is enabled
     assert args[args.index('--user') + 1] == ('0:0' if rootless else f'{os.getuid()}:{os.getgid()}')
-    assert not any('.ssh' in arg or 'SSH_AUTH_SOCK=' in arg for arg in args)
+    assert not any('.ssh' in arg or 'SSH_AUTH_SOCK=' in arg or 'id_work' in arg for arg in args)
 
 
 def test_launcher_rejects_environment_conflicts_with_github_ssh(tmp_path: Path) -> None:
@@ -319,7 +355,7 @@ def test_launcher_rejects_environment_conflicts_with_github_ssh(tmp_path: Path) 
                 PycharmRunOptions(
                     project=project, capsule_platform=Platform.LINUX_AMD64,
                     docker_mode=DockerMode.none, enable_sudo=False, network_mode='bridge',
-                    enable_github_ssh=True, additional_environment={'GIT_SSH_COMMAND': 'ssh'},
+                    ssh_proxy=True, additional_environment={'GIT_SSH_COMMAND': 'ssh'},
                 ),
                 env,
             )

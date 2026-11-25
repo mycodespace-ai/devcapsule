@@ -38,23 +38,29 @@ def test_a_request_that_keeps_or_narrows_the_checkouts_choices_is_applied_at_onc
 @pytest.mark.parametrize("arguments", [
     ["authorize", "network", "bridge"], ["authorize", "network", "none"], ["authorize", "docker-daemon", "none"],
     ["authorize", "development-sudo", "false"], ["authorize", "host-browser", "false"], ["authorize", "host-x11", "none"],
+    ["authorize", "ssh-proxy", "false"], ["authorize", "ssh-proxy", "none"],
+    ["authorize", "github-ssh", "false"], ["authorize", "github-ssh", "none"],
 ])
 def test_an_authorization_of_the_secure_value_is_applied_at_once(arguments: list[str]) -> None:
     """``authorize`` with the value that grants nothing, a bridged or absent network, no Docker daemon, no
-    sudo, no host browser or display, narrows the launch and is applied like a denial."""
+    sudo, no host browser or display, no SSH proxy under its current name or its retired one, narrows the
+    launch and is applied like a denial."""
     assert classify(arguments) == (Disposition.APPLY, "")
 
 
 @pytest.mark.parametrize("arguments", [
     ["authorize", "network", "host"], ["authorize", "docker-daemon", "host-socket"], ["trust", "accept", "claude-code"],
+    ["authorize", "ssh-proxy", "true"], ["authorize", "ssh-proxy", "default"], ["authorize", "ssh-proxy", "id_work"],
+    ["authorize", "ssh-proxy", "/keys/of/another/account"], ["authorize", "github-ssh", "true"],
     ["bind", "home", "~/capsule-home"], ["docker-args", "set", "--privileged"], ["forget", "docker-daemon"],
     ["forget", "claude-code-download"],
     ["env", "set", "HOST_SECRET", "--from-host"], ["env", "set", "HOST_SECRET", "--from-h"], ["env", "set", "X"],
 ])
 def test_a_request_that_can_widen_what_the_launch_reaches_is_deferred(arguments: list[str]) -> None:
-    """A verb that can widen the next launch is kept for the host's confirmation: an authorization, a trusted
-    channel, a binding, Docker arguments, forgetting an answer, which can bring back a grant of the home, and an
-    environment variable taken from the host, however its option is abbreviated."""
+    """A verb that can widen the next launch is kept for the host's confirmation: an authorization, the SSH
+    proxy with whatever key the capsule names among them, a trusted channel, a binding, Docker arguments,
+    forgetting an answer, which can bring back a grant of the home, and an environment variable taken from
+    the host, however its option is abbreviated."""
     assert classify(arguments) == (Disposition.DEFER, "")
 
 

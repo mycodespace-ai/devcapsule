@@ -2,7 +2,7 @@
 description: What a capsule and its coding agents can reach on your computer by default, what stays isolated, and which permissions you can grant or withdraw.
 role: containment
 weight: 1
-updated: 2026-11-16
+updated: 2026-11-25
 ---
 # The boundary
 
@@ -59,7 +59,7 @@ access](granting-and-withdrawing.md) for the commands.
 | `network host` | Shares your host network namespace: host `localhost` services and capsule ports become one namespace | Your app needs direct access to host-bound services or dynamic local ports ([Services and ports](../your-project/services-and-ports.md)) |
 | `docker-daemon host-socket` | Mounts `/var/run/docker.sock` into the capsule | Your build or tests start containers; this grants broad control of the daemon and its host bind mounts |
 | `development-sudo true` | Grants passwordless `sudo` **inside the capsule container** | You need to install temporary OS packages inside a session |
-| `github-ssh true` | Lets capsule Git fetch and push through host OpenSSH to every GitHub repository the host identity can access; private keys stay outside | You want GitHub SSH remotes to work inside the capsule ([Git](../everyday-development/git.md)); Linux/WSL with native Docker only |
+| `ssh-proxy default`, a key name or path, or `true` | Lets capsule Git fetch and push through host OpenSSH to every GitHub repository the selected host key can access; private keys stay outside | You want GitHub SSH remotes to work inside the capsule ([Git](../everyday-development/git.md)); Linux/WSL with native Docker only |
 | `host-browser true` | Forwards `http://` and `https://` URLs opened inside the capsule to your host browser through a URL-only broker | OAuth sign-ins and external documentation links are more convenient on your host browser |
 | `host-x11 true` | Runs the IDE directly on your host X11 display instead of the contained desktop | Almost never—X11 lets clients read keystrokes, clipboard, and windows across your entire host display session; manifests cannot recommend it |
 | `vscode-download`, `claude-code-download`, `antigravity-download` (`true`) | Permits DevCapsule to download that vendor's pinned artifact under its license terms (when not already covered by home channel trust) | You selected that IDE or agent and accept its vendor terms ([Vendor software and trust](../configuration/software-approvals.md)) |

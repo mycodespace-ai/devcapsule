@@ -73,7 +73,7 @@ def example_lock() -> dict[str, Any]:
     ('codex/openai-api-key', CARRIER_FAMILY_BIND, False),
     ('base-image', CARRIER_FAMILY_AUTHORIZE, True),
     ('docker-daemon', CARRIER_FAMILY_AUTHORIZE, False),
-    ('github-ssh', CARRIER_FAMILY_AUTHORIZE, False),
+    ('ssh-proxy', CARRIER_FAMILY_AUTHORIZE, False),
 ])
 def test_each_declaration_has_its_carrier(name: str, family: str, required: bool) -> None:
     """The registry maps each declared value, binding and authorization to its input family."""
@@ -90,12 +90,13 @@ def test_registry_names_are_sorted() -> None:
     assert names == tuple(sorted(names))
 
 
-def test_authorization_family_includes_optional_github_access() -> None:
-    """The authorization family contains every default host boundary and the locked base."""
+def test_authorization_family_includes_the_optional_ssh_proxy_under_its_current_name_only() -> None:
+    """The authorization family contains every default host boundary and the locked base; the retired
+    name ``github-ssh`` is no node of its own."""
     registry = build_node_registry(example_manifest(), example_lock())
     nodes = registry.family(CARRIER_FAMILY_AUTHORIZE)
     assert {node.name for node in nodes} == {
-        'base-image', 'docker-daemon', 'network', 'development-sudo', 'host-browser', 'host-x11', 'github-ssh',
+        'base-image', 'docker-daemon', 'network', 'development-sudo', 'host-browser', 'host-x11', 'ssh-proxy',
     }
 
 

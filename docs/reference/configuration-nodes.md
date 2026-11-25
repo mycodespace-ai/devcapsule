@@ -1,7 +1,7 @@
 ---
 description: "Every configuration node a checkout can record: host and software authorizations, declared values, and directory or secret bindings."
 weight: 2
-updated: 2026-10-30
+updated: 2026-11-25
 ---
 # Configuration nodes
 
@@ -29,6 +29,7 @@ names below. See
 | `development-sudo` | `true`, `false` (default `false`) | `true` lets the capsule user run `sudo` inside the container via a launcher-generated policy; `false` disables elevation. |
 | `host-browser` | `true`, `false` (default `false`) | `true` lets `xdg-open` inside the capsule ask your host browser to open URLs. |
 | `host-x11` | `true`, `false` (default `false`) | `true` binds your host X11 display instead of starting the contained web desktop. Never recommended by a project. |
+| `ssh-proxy` | `default`, a key name, a key path, `true`, `false` (default `false`) | A grant lets Git inside the capsule fetch and push to GitHub through your host's OpenSSH with the key the value selects; see [Git](../everyday-development/git.md). `github-ssh` is its name in {{version}}-rc3, still accepted and to be removed. |
 | `vscode-download`, `claude-code-download`, `antigravity-download` | `true`, `false` | Per-checkout vendor download consent when the vendor's channel is not trusted in this home; setting `false` blocks that vendor on this checkout even if the home trusts the channel. |
 
 `config authorize --all-recommended` previews every open recommendation from

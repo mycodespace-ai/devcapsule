@@ -1,12 +1,14 @@
 """GitHub-only Git SSH requests: validate values before any host process starts.
 
 The capsule selects a Git service and repository, never a host command or SSH
-option. Host OpenSSH owns key selection, host verification and authentication.
+option. Host OpenSSH owns host verification and authentication, and key
+selection too unless the launcher names one key (``devcapsule.ssh_identity``).
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+from pathlib import Path
 import re
 import shlex
 from typing import Sequence
@@ -38,13 +40,23 @@ class GitHubRequest:
         return json.dumps({"version": 1, "service": self.service,
                            "repository": self.repository}, separators=(",", ":")).encode()
 
-    def ssh_command(self, executable: str) -> tuple[str, ...]:
-        """Use host SSH configuration with noninteractive, verified authentication."""
+    def ssh_command(self, executable: str, identity: Path | None) -> tuple[str, ...]:
+        """Use host SSH configuration with noninteractive, verified authentication.
+
+        ``identity`` is the one key file to offer, or None to let host OpenSSH
+        choose. With a key, OpenSSH offers it first and offers neither the
+        agent's other keys nor its default key files. It still offers, after
+        it, any ``IdentityFile`` the host's own SSH configuration gives
+        GitHub: no option withdraws those. The agent may hold the key
+        unlocked; ``BatchMode`` asks for no passphrase.
+        """
         self.validate()
+        # -i takes the path as it is; -oIdentityFile= would split it at a space.
+        selected = () if identity is None else ("-oIdentitiesOnly=yes", "-i", str(identity))
         return (executable, "-T", "-oBatchMode=yes", "-oStrictHostKeyChecking=yes",
                 "-oClearAllForwardings=yes", "-oForwardAgent=no", "-oPermitLocalCommand=no",
                 "-oControlMaster=no", "-oControlPath=none", "-oRemoteCommand=none",
-                "git@github.com", f"{self.service} '{self.repository}'")
+                *selected, "git@github.com", f"{self.service} '{self.repository}'")
 
 
 def decode_request(payload: bytes) -> GitHubRequest:

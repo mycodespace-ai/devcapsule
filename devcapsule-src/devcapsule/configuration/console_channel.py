@@ -71,9 +71,11 @@ APPLIED_VERBS = {"ide", "add", "omit", "restore", "use", "set", "deny", "unbind"
 APPLIED_SUBVERBS = {("env", "set"), ("env", "unset"), ("trust", "withdraw"), ("docker-args", "clear")}
 DEFERRED_VERBS = {"authorize", "bind", "forget"}
 DEFERRED_SUBVERBS = {("trust", "accept"), ("docker-args", "set")}
+# ``github-ssh`` is the retired name of ``ssh-proxy``; a console built into an
+# earlier image still asks with it.
 SECURE_AUTHORIZATIONS = {
     "network": {"bridge", "none"}, "docker-daemon": {"none"},
-    "github-ssh": {"false", "none"},
+    "ssh-proxy": {"false", "none"}, "github-ssh": {"false", "none"},
     "development-sudo": {"false", "none"}, "host-browser": {"false", "none"}, "host-x11": {"false", "none"},
 }
 READ_ONLY_VERBS = {"show", "check", "console"}

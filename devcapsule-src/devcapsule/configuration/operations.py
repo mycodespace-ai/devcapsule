@@ -34,6 +34,7 @@ from .trust import HomeTrust
 from .authorization import (
     AuthorizationDeclaration,
     CURATED_HOST_RECOMMENDATIONS,
+    RETIRED_AUTHORIZATION_NAMES,
     authorization_declarations,
     authorized_base_selection,
     immutable_registry_reference,
@@ -166,9 +167,12 @@ class CheckoutRecord:
         self.values[name] = value
 
     def authorize(self, declaration: AuthorizationDeclaration, value: str | bool, image_identity: str | None = None) -> None:
-        """Replace one logical decision, including its obsolete legacy spelling."""
+        """Replace one logical decision, including its obsolete legacy spelling and retired name."""
         name = declaration.name
         self.host.pop(name, None)
+        for retired, current in RETIRED_AUTHORIZATION_NAMES.items():
+            if current == name:
+                self.authorization.pop(retired, None)
         if name == "base-image":
             answer = {"reference": value, "lock-digest": declaration.recommendation_digest}
             if image_identity is not None:
