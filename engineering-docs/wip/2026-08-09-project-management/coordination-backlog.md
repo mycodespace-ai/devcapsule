@@ -7,6 +7,11 @@ its own release commitment. Older undecided entries gain no V1 commitment
 merely by appearing here. An assigned item is carried by its owning workstream;
 this list retains only the coordination obligation.
 
+## Decisions On 2026-11-25
+
+- **`gh` (GitHub CLI) and `gcloud` (Google Cloud CLI) components (`release-0.3.1`):** Owner directed adding `gh` and `gcloud` as available optional catalog components targeting `release-0.3.1` (superseding the 2026-11-17 item 9 manual-only deferral for `gh`). Delivered to `component-catalog` via `upstream/coordination` (`2026-11-25-project-management-gh-cli-component.md` at `4b79f034b446`, `2026-11-25-project-management-gcloud-cli-component.md` at `f8937ecd8833`).
+- **All-component version-upgrades check (`release-0.3.1`):** Owner assigned `component-catalog` to check every existing component for version upgrades, deliver pin-upgrade PRs targeting `release-0.3.1`, and provide the per-component sweep outcome table under the November 17 rule. Delivered to `component-catalog` (`2026-11-25-project-management-component-version-upgrades-sweep.md` at `3967e9e0264c`).
+
 ## Decisions From The November 17 Intake Review
 
 Accepted by the product owner through the console at 2026-11-17T00:48:36Z.
