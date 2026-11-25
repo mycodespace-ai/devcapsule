@@ -4,7 +4,7 @@ Mnemonic: `project-management`
 
 Start date: 2026-08-09
 
-State: active 2026-11-25; resumed on ws-project-management/coordination; 3 component-catalog tasks dispatched for 0.3.1; intake #1 filed as 0.3.1 maintenance bug; 2 intake items and 3 pile-of-ideas items pending triage
+State: paused 2026-11-25; dispatched gh, gcloud, and component version-upgrades sweep to component-catalog (0.3.1); filed intake #1 as 0.3.1 maintenance bug; switching to component-catalog
 
 Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
@@ -427,16 +427,13 @@ The owner's saved edits remain outside project-management commits:
 
 ## Open Threads
 
-- No unanswered intake decision remains; all original 18 items are dispositioned.
+- **Awaiting triage later (owner deferred):** two remaining intake items (`2026-11-18-component-catalog-localize-ide-additions.md` and `2026-11-24-maintenance-optimize-no-change-builds.md`) and three `pile-of-ideas/` items (`2026-11-10-dogfood-machinery-out-of-the-adopter-executable.md`, `2026-11-10-tiling-desktop-with-the-ide-on-the-side.md`, `2026-11-13-advertise-the-processes-we-proved-as-reusable-assets.md`).
+- **Dispatched 2026-11-25 (`0.3.1`):** `component-catalog` tasks for `gh`, `gcloud`, and the all-component version-upgrades sweep (`4b79f034b446`, `f8937ecd8833`, `3967e9e0264c`), plus `maintenance`-owned bug `engineering-docs/bugs/devcapsule/2026-11-25-launcher-lacks-base-image-compatibility-contract-and-enforcement.md` (`68f79193`, heads-up `2f32027378be`).
+- **Integration pending:** `ws-project-management/coordination` holds the new bug record (`68f79193`) and intake #1 disposition (`f0ca35ac`) to integrate into `main` on next `project-management` PR.
 - The successor upgrade commitment and all November 17 notes remain binding.
-- Future registrations, timing design and adopter planning wait for their
-  recorded triggers; detailed designs remain where the owner reserved them.
-- The sample release-check work is assigned, not implemented; its initial list,
-  pass criteria and first enforcing release remain to be designed.
-- Three ideas remain untriaged. No new service, container or environment started.
-- Two historical intake-link corrections were delivered to maintenance as a patch.
-- Deliberately not preserved in Git: questionnaire/answer JSON, tokened URLs or
-  a transcript. The decisions are retained in the normal backlog and logs.
+- Future registrations, timing design and adopter planning wait for their recorded triggers; detailed designs remain where the owner reserved them.
+- The sample release-check work is assigned, not implemented; its initial list, pass criteria and first enforcing release remain to be designed.
+- Deliberately not preserved in Git: questionnaire/answer JSON, tokened URLs or a transcript. The decisions are retained in the normal backlog and logs.
 
 ## Workstream Document Index
 
