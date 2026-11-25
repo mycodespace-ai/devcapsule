@@ -57,11 +57,11 @@ from .values import (
     normalize_configuration_value,
 )
 
-__all__ = ["Decision", "LISTING_SCHEMA_VERSION", "Listing", "ListingRow", "assess_checkout"]
+__all__ = ["Decision", "LISTING_SCHEMA_VERSION", "Listing", "ListingRow", "assess_checkout", "retired_name_note"]
 
 LISTING_SCHEMA_VERSION = 2
 
-HOST_ACCESS_NODES = ("network", "docker-daemon", "development-sudo", "host-browser", "host-x11", "github-ssh")
+HOST_ACCESS_NODES = ("network", "docker-daemon", "development-sudo", "host-browser", "host-x11", "ssh-proxy")
 
 
 @dataclass(frozen=True)
@@ -104,6 +104,9 @@ class ListingRow:
     decision: Decision | None = None
     provider: str = ""
     provider_source: str = ""
+    # For a host access: the retired name the checkout still records its
+    # answer under, when it does. ``retired_name_note`` says what to do.
+    retired_name: str = ""
 
     def document(self) -> dict[str, str]:
         return {"kind": self.kind, "name": self.name, "effective": self.effective, "source": self.source,
@@ -169,6 +172,19 @@ class Listing:
                                      provider=str(row.get("provider", "")), provider_source=str(row.get("provider-source", ""))))
         notes = document.get("notes", [])
         return cls(tuple(result), tuple(str(note) for note in notes) if isinstance(notes, list) else ())
+
+
+def retired_name_note(row: ListingRow, project: Path | None) -> str:
+    """What to tell the developer whose checkout records ``row``'s answer under a retired name.
+
+    The command records the same answer under the current name, which also
+    removes the old entry.
+    """
+    return (
+        f"This checkout records {row.retired_name!r}, which is {row.name!r} now. The old name still works "
+        "and will be removed in a later release. Record the answer again: "
+        f"{_command(project, 'authorize', row.name, row.effective)}"
+    )
 
 
 def _command(project: Path | None, *arguments: str) -> str:
@@ -241,8 +257,10 @@ def assess_checkout(
     rows = [replace(row, provider=capability_providers[row.name][0], provider_source=capability_providers[row.name][1])
             if capability_providers and row.name in capability_providers else row for row in rows]
     rows.extend(_launcher_value_rows(manifest, checkout, home, project))
-    rows.extend(_access_rows(manifest, composed_lock if access_lock is None else access_lock,
-                             checkout, project, base_display, home, home_path))
+    access_rows = _access_rows(manifest, composed_lock if access_lock is None else access_lock,
+                               checkout, project, base_display, home, home_path)
+    rows.extend(access_rows)
+    notes.extend(retired_name_note(row, project) for row in access_rows if row.retired_name)
     if host_environment is None:
         host_environment = os.environ
     rows.extend(_environment_rows(manifest, saved_environment or {}, project, host_environment))
@@ -358,6 +376,7 @@ def _access_rows(
             recommended = render_authorization_value(declaration.recommended_value)
             legacy = table(checkout, "host").get(name)
             decision: Decision | None = None
+            retired_name = ""
             if review.status in {"available", "missing-recommended"} and legacy is not None:
                 try:
                     from .review import HostAccess
@@ -371,6 +390,10 @@ def _access_rows(
             elif review.value is not None and review.status not in {"stale", "invalid"}:
                 effective = render_authorization_value(review.value)
                 source = "checkout"
+                if review.retired_name is not None:
+                    # The answer stands; a note of the listing says how to record it again.
+                    source += f" (recorded as {review.retired_name}, a name to be removed)"
+                    retired_name = review.retired_name
                 if review.superseded:
                     # D-0012, answer 23: the answer stands; the change is disclosed, never asked.
                     source += f" (kept; {review.superseded})"
@@ -412,7 +435,8 @@ def _access_rows(
                 command = _command(project, "forget", name)
                 decision = Decision("renew", name, f"{name} {recommended}", command, reason=str(review.problem or ""),
                                     value=recommended, deny=rendered_deny)
-            rows.append(ListingRow("access", name, effective, source, pending, command, decision))
+            rows.append(ListingRow("access", name, effective, source, pending, command, decision,
+                                   retired_name=retired_name))
             continue
         effective = review.recorded if review.recorded != "unanswered" else "-"
         source = "checkout" if review.recorded != "unanswered" else "lock (recommended)"

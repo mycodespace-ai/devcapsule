@@ -8,6 +8,10 @@ from pathlib import Path
 from typing import Any, Mapping
 from devcapsule.images.contract import LEGACY_RECIPE_SOURCE_PATH, Provenance
 from devcapsule.components.catalog import COMPONENTS
+from devcapsule.ssh_identity import (
+    AUTHORIZATION as SSH_PROXY, RETIRED_AUTHORIZATION as RETIRED_SSH_PROXY, SINGLE_KEY, SshIdentityError,
+    normalize_selection,
+)
 
 from .file_formats import AuthorizationScalar, ProjectConfigurationError, canonical_digest
 from .trust import BASE_CHANNEL, Channel, HomeTrust, channels_for
@@ -18,6 +22,8 @@ __all__ = [
     "authorization_declarations", "authorization_deny_value", "base_recovery_choices",
     "review_authorizations", "resolved_checkout_authorizations",
     "normalize_authorization_value", "render_authorization_value",
+    # Names that changed, and what to tell the developer who still uses one.
+    "RETIRED_AUTHORIZATION_NAMES", "current_authorization_name", "retired_authorization_notice",
     # What the platform lock says about the base, validated.
     "immutable_registry_reference", "locked_base_reference", "locked_base_contract", "locked_base_build_mnemonic",
     "authorized_base_selection", "authorized_base_reference",
@@ -80,10 +86,17 @@ HOME_CAPABILITY_DEFAULTS: dict[str, tuple[AuthorizationScalar, str]] = {
         True,
         "Enable the declared development-sudo behavior inside the capsule.",
     ),
-    "github-ssh": (
-        True,
-        "Allow GitHub Git fetch and push through the outside launcher using the host SSH identity. "
-        "All repositories accessible to that identity are accessible; private keys stay on the host.",
+    # The one node whose grant is open (owner ruling 2026-11-25): its value
+    # names the host key the proxy offers, see devcapsule.ssh_identity. Its
+    # grant of reference is 'default', the one ~/.ssh/id_* key, so the
+    # 'default' keyword records exactly that word and the launching host
+    # finds the key at each launch.
+    SSH_PROXY: (
+        SINGLE_KEY,
+        "Allow Git fetch and push to GitHub through the outside launcher with one host SSH key: "
+        "'default' is the one ~/.ssh/id_* key, a name is a key in ~/.ssh, a path is that key, "
+        "and 'true' lets host OpenSSH choose. Every GitHub repository the key can reach is "
+        "reachable; private keys stay on the host.",
     ),
     "host-browser": (
         True,
@@ -108,10 +121,39 @@ HOME_CAPABILITY_DEFAULTS: dict[str, tuple[AuthorizationScalar, str]] = {
 # developer's reduce-privilege decision (owner rulings 2026-09-03: denial is a
 # *value*, so a checkout's recorded denial outranks a home-level
 # allow); bool nodes deny with plain ``false`` and need no entry here.
-AUTHORIZATION_DENY_VALUES: dict[str, str] = {
+# ``ssh-proxy`` grants with a string and denies with ``false``, the denial
+# it had as the bool node ``github-ssh``.
+AUTHORIZATION_DENY_VALUES: dict[str, AuthorizationScalar] = {
     "docker-daemon": "none",
     "network": "bridge",
+    SSH_PROXY: False,
 }
+
+
+# Authorization names that changed, old to current (owner ruling 2026-11-25).
+# An answer under an old name is read as the current node's, on the command
+# line and in every record, so it keeps its meaning. The old name is reported
+# wherever it is found, because it will be removed: once it is, a record that
+# still holds it is an unsupported entry that stops the launch.
+RETIRED_AUTHORIZATION_NAMES: dict[str, str] = {RETIRED_SSH_PROXY: SSH_PROXY}
+
+
+def current_authorization_name(name: str) -> str:
+    """The node that ``name`` answers: itself, or the current name of a retired one."""
+
+    return RETIRED_AUTHORIZATION_NAMES.get(name, name)
+
+
+def retired_authorization_notice(name: str) -> str | None:
+    """What to tell the developer who gave ``name`` on a command line; None for a current name."""
+
+    current = RETIRED_AUTHORIZATION_NAMES.get(name)
+    if current is None:
+        return None
+    return (
+        f"Note: authorization {name!r} is {current!r} now. The old name still works "
+        "and will be removed in a later release."
+    )
 
 
 def authorization_deny_value(declaration: "AuthorizationDeclaration") -> AuthorizationScalar | None:
@@ -196,6 +238,9 @@ class AuthorizationReview:
     # The channel of the home trust record that answers this node
     # (D-0011), when the trust covers it; the checkout record is not consulted.
     trusted_channel: str | None = None
+    # The retired name the checkout still records for this node, when it
+    # does (``RETIRED_AUTHORIZATION_NAMES``); the answer is read all the same.
+    retired_name: str | None = None
 
     def render(self, project: Path | None = None) -> str:
         lines = [
@@ -333,19 +378,50 @@ def authorization_declarations(
     for name, (supported_value, description) in HOME_CAPABILITY_DEFAULTS.items():
         if name in declarations:
             continue
-        # The digest is a stable constant distinct from every recommendation
-        # digest, so a later project recommendation correctly stales the
-        # home-default answer: the question changed, so it is re-asked.
         declarations[name] = AuthorizationDeclaration(
             name=name,
             recommended_value=supported_value,
-            recommendation_digest=canonical_digest(
-                {"name": name, "recommendation": "home-default"}
-            ),
+            recommendation_digest=_home_default_digest(name),
             description=description,
             project_recommended=False,
         )
     return declarations
+
+
+def _home_default_digest(name: str) -> str:
+    """The digest an answer to the home default ``name`` is bound to.
+
+    It is a stable constant distinct from every recommendation digest, so a
+    later project recommendation correctly stales the home-default answer:
+    the question changed, so it is re-asked.
+    """
+
+    return canonical_digest({"name": name, "recommendation": "home-default"})
+
+
+def _current_records(records: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, str]]:
+    """The recorded answers under current names, and the retired name each was found under.
+
+    An answer under the current name outranks one under its retired name:
+    it is the later one, since recording the current name removes the old
+    entry. An answer moved from a retired name was bound to the home default
+    of that name; it is rebound to the current name's, because the rename
+    alone changed no question and must not mark the answer as superseded.
+    """
+
+    current = dict(records)
+    found_under: dict[str, str] = {}
+    for retired, name in RETIRED_AUTHORIZATION_NAMES.items():
+        if retired not in current:
+            continue
+        record = current.pop(retired)
+        found_under[name] = retired
+        if name in current:
+            continue
+        if isinstance(record, dict) and record.get("recommendation-digest") == _home_default_digest(retired):
+            record = {**record, "recommendation-digest": _home_default_digest(name)}
+        current[name] = record
+    return current, found_under
 
 
 def normalize_authorization_value(
@@ -372,6 +448,13 @@ def normalize_authorization_value(
                     "'default' or record a different selection."
                 )
             return deny
+    if declaration.name == SSH_PROXY:
+        # Any well-spelled key is an answer; the launching host says at
+        # launch whether the key exists.
+        try:
+            return normalize_selection(value)
+        except SshIdentityError as exc:
+            raise ProjectConfigurationError(f"Authorization {declaration.name!r}: {exc}") from exc
     if isinstance(expected, bool):
         if isinstance(value, str) and value.lower() in {"true", "false"}:
             normalized: AuthorizationScalar = value.lower() == "true"
@@ -496,6 +579,7 @@ def review_authorizations(
     records = checkout.get("authorization", {})
     if not isinstance(records, dict):
         raise ProjectConfigurationError("Checkout authorization must be a table.")
+    records, found_under = _current_records(records)
     reviews: list[AuthorizationReview] = []
     for name, declaration in sorted(declarations.items()):
         record = records.get(name)
@@ -591,7 +675,8 @@ def review_authorizations(
                 else _authorization_choices(declaration, value)
             )
         reviews.append(AuthorizationReview(
-            name, status, recorded, recommended, declaration.description, value, problem, choices, superseded
+            name, status, recorded, recommended, declaration.description, value, problem, choices, superseded,
+            retired_name=found_under.get(name),
         ))
     inactive_acquisitions = {
         contract.authorization for definition in COMPONENTS.values()

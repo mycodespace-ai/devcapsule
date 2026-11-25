@@ -28,6 +28,7 @@ from typing import Any, Callable, ClassVar, Mapping, Sequence
 from devcapsule.launch.command_output import preparation_diagnostics
 from devcapsule.commands.framework import (
     STABLE_JSON_HELP,
+    CarrierAnswer,
     Command,
     Group,
     add_carrier_options,
@@ -116,12 +117,15 @@ from devcapsule.recursive_successor import (
     launch_successor,
 )
 from devcapsule.configuration.authorization import (
+    RETIRED_AUTHORIZATION_NAMES,
     AuthorizationChoice,
     AuthorizationDeclaration,
     authorization_declarations,
+    current_authorization_name,
     immutable_registry_reference,
     normalize_authorization_value,
     render_authorization_value,
+    retired_authorization_notice,
 )
 from devcapsule.configuration.file_formats import (
     ProjectConfigurationError,
@@ -342,7 +346,7 @@ class ProjectInitCommand(Command):
                 value=answer.value,
                 justification=answer.justification,
             )
-            for answer in carrier_answers(arguments)
+            for answer in _carrier_answers(arguments)
         )
         require, offer, ide, agents = _init_selection(arguments)
         report = initialize_project(
@@ -419,7 +423,7 @@ class ProjectWrapCommand(Command):
         ide = matrix.canonical_name(arguments.ide) if arguments.ide is not None and arguments.ide.strip().lower() != "none" else None
         answers = tuple(
             ProvidedAnswer(family=answer.family, name=answer.name, value=answer.value, justification=answer.justification)
-            for answer in carrier_answers(arguments)
+            for answer in _carrier_answers(arguments)
         )
         report = wrap_project(
             WrapRequest(
@@ -1215,12 +1219,33 @@ class ConfigApproveCommand(Command):
         return 0
 
 
+def _current_authorization(name: str) -> str:
+    """The node ``name`` answers; a retired name is taken with a note on standard error."""
+    notice = retired_authorization_notice(name)
+    if notice is not None:
+        print(notice, file=sys.stderr)
+    return current_authorization_name(name)
+
+
+def _carrier_answers(arguments: argparse.Namespace, **selection: Any) -> tuple[CarrierAnswer, ...]:
+    """The command line's carrier answers, each ``--authorize`` under its current name."""
+    return tuple(
+        replace(answer, name=_current_authorization(answer.name)) if answer.family == "authorize" else answer
+        for answer in carrier_answers(arguments, **selection)
+    )
+
+
 def _forget_authorization(root: Path, manifest: dict[str, Any], name: str) -> Path:
-    """Remove the recorded answer for one host access or consent; the row returns to its default."""
+    """Remove the recorded answer for one host access or consent; the row returns to its default.
+
+    ``name`` is a current name. An answer recorded under its retired name
+    is the same answer and goes with it.
+    """
     record = CheckoutRecord(manifest, root)
-    legacy = record.host.pop(name, None)
-    removed = record.authorization.pop(name, legacy)
-    if removed is None:
+    removed = [record.host.pop(name, None), record.authorization.pop(name, None)]
+    removed.extend(record.authorization.pop(retired, None)
+                   for retired, current in RETIRED_AUTHORIZATION_NAMES.items() if current == name)
+    if all(answer is None for answer in removed):
         raise ProjectConfigurationError(f"{name!r} has no recorded answer for this checkout.")
     record.write()
     return record.input_path
@@ -1238,8 +1263,9 @@ class ConfigForgetCommand(Command):
     @classmethod
     def run(cls, arguments: argparse.Namespace, context: object | None) -> int:
         root, manifest = manifest_for(_project_context(context).start_path())
-        input_path = _forget_authorization(root, manifest, arguments.node_name)
-        print(f"Forgot {arguments.node_name} for this checkout.")
+        name = _current_authorization(arguments.node_name)
+        input_path = _forget_authorization(root, manifest, name)
+        print(f"Forgot {name} for this checkout.")
         print(f"Checkout record: {input_path}")
         print("The next 'devcapsule project run' uses it.")
         return 0
@@ -1248,7 +1274,7 @@ class ConfigForgetCommand(Command):
 class ConfigDenyCommand(Command):
     name = "deny"
     capsule_access: ClassVar[CapsuleAccess] = CapsuleAccess.MUTATES
-    help = "Deny a host access for this checkout, recorded: network, docker-daemon, development-sudo, host-browser, host-x11, github-ssh."
+    help = "Deny a host access for this checkout, recorded: network, docker-daemon, development-sudo, host-browser, host-x11, ssh-proxy."
 
     @classmethod
     def configure(cls, parser: argparse.ArgumentParser) -> None:
@@ -1256,7 +1282,7 @@ class ConfigDenyCommand(Command):
 
     @classmethod
     def run(cls, arguments: argparse.Namespace, context: object | None) -> int:
-        name = arguments.node_name
+        name = _current_authorization(arguments.node_name)
         root, manifest = manifest_for(_project_context(context).start_path())
         _lock_path, lock = _lock_for_answers(root, manifest)
         declarations = authorization_declarations(manifest, lock)
@@ -1451,7 +1477,7 @@ class ConfigAuthorizeCommand(Command):
 
     @classmethod
     def run(cls, arguments: argparse.Namespace, context: object | None) -> int:
-        name = arguments.node_name
+        name = None if arguments.node_name is None else _current_authorization(arguments.node_name)
         value = arguments.value
         root, manifest = manifest_for(_project_context(context).start_path())
         _lock_path, lock = _lock_for_answers(root, manifest)
@@ -2116,7 +2142,7 @@ class RecursiveE2EGroup(Group):
 
 # The authorization nodes whose run-once answers feed the launch plan; every
 # other authorization (base-image, acquisitions) is inherently persistent.
-_RUN_ONCE_AUTHORIZATIONS = ("docker-daemon", "network", "development-sudo", "host-browser", "host-x11", "github-ssh")
+_RUN_ONCE_AUTHORIZATIONS = ("docker-daemon", "network", "development-sudo", "host-browser", "host-x11", "ssh-proxy")
 
 
 class ProjectRunCommand(Command):
@@ -2430,7 +2456,7 @@ class ProjectRunCommand(Command):
                 extra_docker_args=["--pull=never", *saved_docker_args, *prepared.environment_tokens, *docker_options],
                 project_state=None,
                 enable_host_browser=selected_host_browser,
-                enable_github_ssh=host_access.github_ssh,
+                ssh_proxy=host_access.ssh_proxy,
                 display_transport=display_transport,
                 web_console=web_console,
                 capsule_platform=lock_platform(lock),
@@ -2484,7 +2510,7 @@ def _run_flags(arguments: argparse.Namespace, manifest: Mapping[str, Any]) -> Ru
     authorize: list[tuple[str, str]] = []
     memory = arguments.memory
     cpus = arguments.cpus
-    for answer in carrier_answers(arguments, families=("set", "authorize")):
+    for answer in _carrier_answers(arguments, families=("set", "authorize")):
         if answer.justification is not None:
             raise ProjectConfigurationError(
                 "A justification is recorded when the project owner recommends a host access; "

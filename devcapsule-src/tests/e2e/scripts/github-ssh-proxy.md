@@ -12,7 +12,7 @@ Use the host's existing GitHub SSH identity inside a fresh capsule without copyi
 
 - **Editor:** VSCodium in a fresh DevCapsule on rootless Linux Docker.
 - **Authentication:** The outside launcher owns the GitHub SSH proxy; host OpenSSH uses the host's identity.
-- **Permission:** The launcher has explicit `github-ssh` authorization. Host trust and noninteractive GitHub authentication are already configured.
+- **Permission:** The launcher has explicit `ssh-proxy` authorization (named `github-ssh` when this scenario was recorded, with 0.3.1-rc3). Host trust and noninteractive GitHub authentication are already configured.
 - **Recording:** The merged development PEX runs in both parent and child. The browser-automation component records the actual terminal.
 
 ## What It Illustrates

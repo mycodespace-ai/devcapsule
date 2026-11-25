@@ -42,7 +42,8 @@ names the project.
   reaches: `ide`, `add`, `omit`, `restore`, `use`, `set`, `deny`, literal `env set NAME VALUE`,
   `env unset`, `unbind`, `trust withdraw`, `docker-args clear`. Explicit
   secure authorizations also apply: `network bridge|none`, `docker-daemon
-  none`, and `development-sudo|host-browser|host-x11|github-ssh false|none`.
+  none`, and `development-sudo|host-browser|host-x11|ssh-proxy false|none`.
+  `github-ssh`, the retired name of `ssh-proxy`, is taken the same way.
 - **Deferred** when the verb widens what the next launch reaches:
   `authorize`, `trust accept`, `bind`, `forget`, `docker-args set`, and
   `env set` forms other than an explicit literal value. `forget` can restore

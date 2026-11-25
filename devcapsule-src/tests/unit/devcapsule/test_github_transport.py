@@ -1,5 +1,6 @@
 """Contracts of GitHub request admission, independent of host SSH or credentials."""
 import json
+from pathlib import Path
 
 import pytest
 
@@ -57,8 +58,8 @@ def test_wire_validation_does_not_trust_the_client_parser(document: object) -> N
 
 
 def test_host_command_keeps_verification_and_disables_forwarding() -> None:
-    """The host command preserves SSH identity selection but exposes no general SSH service."""
-    command = GitHubRequest('git-upload-pack', 'acme/repo.git').ssh_command('/usr/bin/ssh')
+    """With no key named, the host command leaves identity selection to SSH and exposes no general SSH service."""
+    command = GitHubRequest('git-upload-pack', 'acme/repo.git').ssh_command('/usr/bin/ssh', None)
     assert command[0] == '/usr/bin/ssh'
     assert command[-2:] == ('git@github.com', "git-upload-pack 'acme/repo.git'")
     assert '-oStrictHostKeyChecking=yes' in command
@@ -67,6 +68,20 @@ def test_host_command_keeps_verification_and_disables_forwarding() -> None:
     assert '-oClearAllForwardings=yes' in command
     assert '-oPermitLocalCommand=no' in command
     assert '-oControlPath=none' in command
+    assert '-i' not in command and '-oIdentitiesOnly=yes' not in command
+
+
+def test_host_command_offers_a_named_key_and_no_other_agent_or_default_key() -> None:
+    """With a key named, the command gives SSH that file as one argument, spaces and all, before the
+    destination, and tells it to offer configured identities only. Every hardening option stays."""
+    identity = Path('/homes/developer/.ssh/deploy key')
+    request = GitHubRequest('git-receive-pack', 'acme/repo.git')
+
+    command = request.ssh_command('/usr/bin/ssh', identity)
+
+    assert command[-6:] == ('-oIdentityFile=none', '-oIdentitiesOnly=yes', '-i', '/homes/developer/.ssh/deploy key',
+                            'git@github.com', "git-receive-pack 'acme/repo.git'")
+    assert set(request.ssh_command('/usr/bin/ssh', None)) < set(command)
 
 
 @pytest.mark.parametrize('payload', [
