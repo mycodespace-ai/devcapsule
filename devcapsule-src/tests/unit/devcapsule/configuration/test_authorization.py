@@ -71,6 +71,12 @@ def test_a_lock_without_a_base_declares_no_base_image_decision() -> None:
     assert "base-image" not in authorization_declarations({}, {"components": {}})
 
 
+def test_github_access_is_available_but_never_recommended_by_omission() -> None:
+    """A project without recommendations exposes the optional GitHub decision without granting it."""
+    declaration = authorization_declarations({}, {"components": {}})['github-ssh']
+    assert declaration.recommended_value is True
+    assert declaration.project_recommended is False
+    assert declaration.required is False
 def _lock_with_claude_code() -> dict[str, Any]:
     """A platform lock that pins Claude Code, downloaded from its vendor, on the base at ``REFERENCE``."""
     lock = _lock()

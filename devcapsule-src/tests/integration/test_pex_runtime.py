@@ -288,3 +288,44 @@ def test_built_pex_carries_force_for_a_required_ide_to_the_launch_review(
     saved = invoke("run", "--ide", "codium", "--force", "--save", "--print-command")
     assert saved.returncode == 2 and "cannot be combined with --save" in saved.stderr
     assert {path: path.read_bytes() for path in before} == before, "no refusal writes anything"
+
+
+def test_built_pex_exports_standalone_presentation_tools(
+    built_pex: Path, tmp_path: Path, environment: dict[str, str],
+) -> None:
+    """The built executable prints the guide and exports a standalone ``presentation_tools`` kit."""
+    guide = subprocess.run(
+        [str(built_pex), "presentations", "guide"],
+        cwd=tmp_path, env=environment, text=True, capture_output=True, check=False,
+    )
+    assert guide.returncode == 0, guide.stderr
+    assert "# Run an E2E scenario with recording and presentation" in guide.stdout
+
+    kit = tmp_path / "exported-kit"
+    exported = subprocess.run(
+        [str(built_pex), "presentations", "export", str(kit)],
+        cwd=tmp_path, env=environment, text=True, capture_output=True, check=False,
+    )
+    assert exported.returncode == 0, exported.stderr
+    package = kit / "presentation_tools"
+    assert (package / "README.md").read_text(encoding="utf-8") + "\n" == guide.stdout
+    assert {path.name for path in package.iterdir()} == {
+        "__init__.py", "README.md", "example.py", "producer.py", "recording.py",
+    }
+
+    isolated = subprocess.run(
+        [
+            sys.executable, "-I", "-c",
+            (
+                "import sys; sys.path.insert(0, sys.argv[1]); "
+                "from presentation_tools.producer import Script, ScriptStep; "
+                "from presentation_tools.recording import Recording; "
+                "import presentation_tools.example; "
+                "assert 'devcapsule' not in sys.modules and 'tests' not in sys.modules"
+            ),
+            str(kit),
+        ],
+        cwd=tmp_path, env={"PATH": os.defpath, "PYTHONDONTWRITEBYTECODE": "1"},
+        text=True, capture_output=True, check=False,
+    )
+    assert isolated.returncode == 0, isolated.stderr

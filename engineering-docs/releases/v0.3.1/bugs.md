@@ -3,7 +3,9 @@
 [Release overview](README.md)
 
 Initial review: 2026-11-07 at the cut, `31e8fec7`. Reconciled before
-`v0.3.1-rc2` at `be0140ca`; candidate 2 closures recorded 2026-11-10. The
+`v0.3.1-rc2` at `be0140ca`; candidate 2 closures recorded 2026-11-10. Reconciled again for rc3 preparation
+on 2026-11-17 at release source `a464088d`: nine records, five closed,
+four unresolved, one of them blocking. The
 linked records own status, severity, target, ownership and technical evidence;
 this table mirrors those fields for review and records the release's
 disposition and next action. Update the record and its row together; reconcile
@@ -20,10 +22,9 @@ before each candidate and record the reconciliation revision here.
 | [Web console changes in `v0.3.1-rc1` do not reach capsules: the PEX omits the console package and the self-hosting override shadows it](../../bugs/devcapsule/2026-11-08-webconsole-changes-do-not-ship-without-a-base-rebuild.md) | closed | blocking | maintenance | found 2026-11-08 validating `v0.3.1-rc1` (`accdec5b`): `/files`, `/filetree`, and `/api/project/tree` returned `404`; resolved under `D-0017` via stacked PRs #18 (`b84b06e9`) and #16 (`f2bae5cb`); closed 2026-11-10 on downloaded `v0.3.1-rc2` (`2c3ace0f…`) serving `/files` (`200`), `/filetree` (`307 -> /files`), and `/api/project/tree` (`200`) on pre-PR-#12 `/opt/devcapsule-webconsole/venv` without a DevCapsule checkout mount | none |
 | [Release-dependent test fixtures cause avoidable release PR churn](../../bugs/devcapsule/2026-10-31-release-dependent-test-fixtures.md) | confirmed | minor | maintenance | test-only; queued for 0.3.1 on 2026-10-31; not a gate of a candidate | the owner keeps it in the cycle or retargets it at planning |
 | [Unit tests read the developer's real launcher settings inside a capsule: the consent and trust tests fail or prove nothing there](../../bugs/devcapsule/2026-11-10-unit-tests-read-the-capsules-mounted-launcher-settings.md) | closed | blocking | maintenance | filed 2026-11-10 at the owner's direction, to be fixed before 0.3.1 ships: `nox -s tests` in the owner's capsule gives 17 failed on `v0.3.1-rc2`, all passing once the mounted settings are hidden; the hosted run passes; one expected-to-fail test downloads 1.5 GB of vendor artifacts there, most of the local gate's twelve minutes; test-only, the product behaves as designed; resolved in pull request #29, where the 17 pass and `nox -s tests` passes in the owner's capsule, by tests that name or hand in their home; the test that downloaded is rewritten in memory and `--print-command` no longer fetches; the shared fixture is fixed there too, so no unit test sees the capsule it runs in; since `8af31910` no mark depends on the capsule; closed 2026-11-13 on the owner's word after the merge of #29 (`82b9c07e`): `nox -s tests` on the merged tree in the owner's capsule gives the hosted run's counts, 3212 passed | none |
-| [Markdown-only changes run the whole Python unit suite: the hosted path filter lists too few non-inputs, and the local gate has no filter](../../bugs/devcapsule/2026-11-10-markdown-only-changes-run-the-python-unit-suite.md) | fixing | major | maintenance | reported by the owner 2026-11-10 and re-rated major; the Python route becomes a short list of inputs, `.github/ci-python-inputs.yml`, and the unit suite is held to it by a guard in `tests/conftest.py`, on `ws-maintenance/python-route-guard` | the owner's review of that branch; then the local gate, and `docs/**` off the list when the legacy scan of `docs/` is retired |
+| [Markdown-only changes run the whole Python unit suite: the hosted path filter lists too few non-inputs, and the local gate has no filter](../../bugs/devcapsule/2026-11-10-markdown-only-changes-run-the-python-unit-suite.md) | fixing | major | maintenance | reported by the owner 2026-11-10 and re-rated major; the Python route becomes a short list of inputs, `.github/ci-python-inputs.yml`, and the unit suite is held to it by a guard in `tests/conftest.py`, on `ws-maintenance/python-route-guard` | PR #25 is merged; finish local gate routing and remove `docs/**` from the input list when the legacy docs scan is retired |
+| [Console video opened from Files does not play](../../bugs/devcapsule/2026-11-10-console-video-opened-from-files-does-not-play.md) | fixed | untriaged | maintenance | fix merged through PR #35; source-preview Chromium evidence exists, but closure requires the shipped executable | verify playback, seeking, pasted Files URL and unchanged raw policy in Chrome on the candidate |
 
-Added after the `v0.3.1-rc2` reconciliation; the table is not reconciled
-again until the next candidate.
 
 ## Related work that is not a release gate
 

@@ -26,7 +26,7 @@ def test_command_leaves_the_command_alone_when_the_caller_is_not_root() -> None:
     assert PREPARED_BY_THE_USER.command(("ide", "--wait")) == ("ide", "--wait")
 
 
-@pytest.mark.parametrize("user", [PREPARED_BY_ROOT, PREPARED_BY_THE_USER])
+@pytest.mark.parametrize("user", [PREPARED_BY_ROOT, PREPARED_BY_THE_USER, ROOTLESS_ROOT])
 def test_command_refuses_an_empty_command(user: CapsuleUser) -> None:
     """An empty command raises ``ValueError``, whoever the caller is."""
     with pytest.raises(ValueError, match="must not be empty"):
@@ -57,3 +57,15 @@ def test_command_does_not_wrap_root_identity_in_gosu() -> None:
 def test_owner_changes_are_none_when_the_target_identity_is_root() -> None:
     """When the caller and target identity are both ``0:0``, ``owner_changes`` avoids redundant ``chown`` calls."""
     assert ROOTLESS_ROOT.owner_changes((Path("/home/devcapsule/.ssh"),)) == ()
+
+
+@pytest.mark.parametrize("uid,gid", [(0, 1001), (1000, 0)])
+def test_root_caller_switches_when_one_target_id_differs(uid: int, gid: int) -> None:
+    """A target with only one zero ID still requires gosu; only 0:0 bypasses it."""
+    user = CapsuleUser(Identity(uid, gid, "developer"), caller_uid=0)
+    assert user.command(("ide",)) == ("gosu", f"{uid}:{gid}", "ide")
+
+
+def test_non_root_caller_keeps_a_root_target_command() -> None:
+    """A non-root caller does not try to elevate itself even for a root target."""
+    assert CapsuleUser(ROOT, caller_uid=1000).command(("ide",)) == ("ide",)

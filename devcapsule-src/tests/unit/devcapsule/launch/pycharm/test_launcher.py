@@ -1967,4 +1967,3 @@ def test_rootless_sudoers_policy_ownership_accepts_host_user_file_without_chown(
         assert files.shadow_file.read_text(encoding="utf-8").startswith("root:*:")
     finally:
         cleanup_temp_runtime_files(files)
-

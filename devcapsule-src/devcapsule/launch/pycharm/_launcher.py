@@ -61,12 +61,18 @@ from ...display_client import (
 )
 from ...host_daemon import (
     current_container,
+    in_container,
     daemon_architecture,
     docker_socket,
     is_host_backed,
     requires_translation,
     translate_bind_sources,
 )
+from ...github_proxy import (
+    SOCKET_ENV as GITHUB_SOCKET_ENV, SOCKET_DESTINATION as GITHUB_SOCKET_DESTINATION,
+    GIT_SSH_COMMAND, github_ssh_bridge,
+)
+from ...github_transport import GitHubTransportError
 from ...host_open import (
     HOST_OPEN_BROWSER,
     HOST_OPEN_INTEGRATION,
@@ -228,6 +234,7 @@ class PycharmRunOptions:
     additional_environment: dict[str, str] = field(default_factory=dict)
     secret_environment: tuple[str, ...] = ()
     extra_docker_args: list[str] = field(default_factory=list)
+    enable_github_ssh: bool = False
     enable_host_browser: bool = False
     # How the surface gets a display. ``host-x11`` is the historical
     # passthrough (host X socket and session credential bound into the
@@ -286,6 +293,7 @@ class PycharmRunConfig:
     daemon_architecture: str
     cpus: int | None = None
     launch_configuration: LaunchConfiguration | None = None
+    github_socket: Path | None = None
     host_browser_socket: Path | None = None
     display_transport: str = HOST_X11_DISPLAY_TRANSPORT
     # Contained display only: the host loopback port Docker publishes (or the
@@ -334,11 +342,18 @@ def run_pycharm(options: PycharmRunOptions, env: Mapping[str, str] | None = None
         with host_open_bridge(
             runtime_env,
             enabled=options.enable_host_browser,
-        ) as browser_socket:
+        ) as browser_socket, github_ssh_bridge(
+            runtime_env, enabled=options.enable_github_ssh,
+            containerized=in_container(), binds_unix_sockets=HostOs.current().binds_unix_sockets,
+        ) as github_socket:
             if browser_socket is None:
                 runtime_env.pop(HOST_OPEN_SOCKET_ENV, None)
             else:
                 runtime_env[HOST_OPEN_SOCKET_ENV] = str(browser_socket)
+            if github_socket is None:
+                runtime_env.pop(GITHUB_SOCKET_ENV, None)
+            else:
+                runtime_env[GITHUB_SOCKET_ENV] = str(github_socket)
             config = build_run_config(options, runtime_env)
             begin_session_logs(config, runtime_env)
             prepare_home_mount_points(config)
@@ -430,7 +445,7 @@ def run_pycharm(options: PycharmRunOptions, env: Mapping[str, str] | None = None
             finally:
                 remove_sudoers_policy_volume(files.sudoers_volume, runtime_env)
                 cleanup_temp_runtime_files(files)
-    except HostOpenError as exc:
+    except (HostOpenError, GitHubTransportError) as exc:
         raise PycharmRunError(str(exc)) from exc
 
 
@@ -714,6 +729,8 @@ def describe_run_command(command: list[str], config: PycharmRunConfig,
         )
     if config.host_browser_socket is not None:
         comments.append("Host-browser socket requires a live broker; a broker owned by this invocation stops on return.")
+    if config.github_socket is not None:
+        comments.append("GitHub SSH socket requires a live broker; a broker owned by this invocation stops on return.")
     if config.display_transport == CONTAINED_DISPLAY_TRANSPORT:
         comments.append("Contained display needs its temporary token file; the chosen host port is not reserved for later use.")
     if config.console_host_port is not None:
@@ -1051,6 +1068,14 @@ def build_run_config(options: PycharmRunOptions, env: Mapping[str, str]) -> Pych
             raise PycharmRunError("The authorized host-browser socket is absent or unsafe.")
         host_browser_socket = candidate
 
+    github_socket: Path | None = None
+    configured_github_socket = env.get(GITHUB_SOCKET_ENV)
+    if options.enable_github_ssh and configured_github_socket:
+        candidate = Path(configured_github_socket)
+        if not candidate.is_absolute() or ".." in candidate.parts or not is_socket(candidate):
+            raise PycharmRunError("The authorized GitHub socket is absent or unsafe.")
+        github_socket = candidate
+
     selected_runtime_plan = options.runtime_plan
     if host_browser_socket is not None and selected_runtime_plan is not None:
         selected_runtime_plan = selected_runtime_plan.with_host_integration(
@@ -1126,6 +1151,9 @@ def build_run_config(options: PycharmRunOptions, env: Mapping[str, str]) -> Pych
         raise PycharmRunError(
             "Component runtime metadata conflicts with the host-browser integration."
         )
+    if github_socket is not None and any(name in fixed_environment or name in options.additional_environment
+                                         for name in (GITHUB_SOCKET_ENV, "GIT_SSH_COMMAND", "GIT_SSH_VARIANT")):
+        raise PycharmRunError("Component environment conflicts with the GitHub SSH integration.")
     additional_environment: list[tuple[str, str]] = []
     for name, value in sorted(options.additional_environment.items()):
         if not name.isascii() or not name.isidentifier() or name.upper() != name:
@@ -1193,6 +1221,7 @@ def build_run_config(options: PycharmRunOptions, env: Mapping[str, str]) -> Pych
         launch_configuration=options.launch_configuration,
         use_image_process=options.use_image_process,
         host_browser_socket=host_browser_socket,
+        github_socket=github_socket,
         display_transport=options.display_transport,
         display_host_port=display_host_port,
         display_token=display_token,
@@ -1428,6 +1457,10 @@ def build_docker_args(
                 ),
             ]
         )
+    if config.github_socket is not None:
+        args.extend(["--env", f"{GITHUB_SOCKET_ENV}={GITHUB_SOCKET_DESTINATION}",
+                     "--env", f"GIT_SSH_COMMAND={GIT_SSH_COMMAND}", "--env", "GIT_SSH_VARIANT=ssh",
+                     "--mount", f"type=bind,src={config.github_socket},dst={GITHUB_SOCKET_DESTINATION},ro"])
     for name, value in config.additional_environment:
         args.extend(["--env", f"{name}={value}"])
     for name in config.secret_environment:
@@ -2297,6 +2330,12 @@ Embedded browser security:
 Host browser integration:
   Enabled through a URL-only HTTP(S) broker. Any process running as the
   capsule user can ask the physical host to navigate its default browser."""
+    if config.github_socket is not None:
+        host_browser_disclosure += """
+
+GitHub SSH integration:
+  Host-authenticated Git fetch/push proxy (all repositories your host identity
+  can access); private keys stay on the host."""
     host_browser_disclosure += display_disclosure(config) + console_disclosure(config)
     if config.interactive_state_mounts:
         component_id = (

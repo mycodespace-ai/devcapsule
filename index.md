@@ -44,7 +44,10 @@ status file; internal WIP/archive documents use the local index in that status.
 - [Unit tests](engineering-docs/development/unit-tests.md)
 - [Integration tests](engineering-docs/development/integration-tests.md)
 - [End-to-end tests](engineering-docs/development/e2e-tests.md)
+- [Packaged agent instructions for E2E recording and presentation](devcapsule-src/devcapsule/presentation_tools/README.md)
 - [Running E2E scenario recordings from a shell with nox](engineering-docs/development/running-e2e-scenario-recordings.md)
+- [Web console presentations: discovery, storage and generation](devcapsule-webconsole/PRESENTATIONS.md)
+- [E2E scenario script: GitHub SSH through the host proxy](devcapsule-src/tests/e2e/scripts/github-ssh-proxy.md)
 - [E2E scenario script: FastAPI + PostgreSQL 17 + React Todo application](devcapsule-src/tests/e2e/scripts/todo-fastapi-postgres-react.md)
 - [E2E scenario script: Java 25 + Spring Boot + PostgreSQL 17 in IntelliJ IDEA](devcapsule-src/tests/e2e/scripts/springboot-postgres-java.md)
 - [Pair Review Loop](engineering-docs/development/review-partner-loop.md)
@@ -183,12 +186,15 @@ status file; internal WIP/archive documents use the local index in that status.
 
 ## Workstream Status
 
+- [Presentations](engineering-docs/wip/2026-11-16-presentations/CURRENT-STATUS.md): agent-driven E2E recordings and presentations in adopter projects.
+
 - [Multiple-stream workflow successful archive](engineering-docs/archive/2026-08-08-multi-workflow/CURRENT-STATUS.md)
 - [Recursive dogfood E2E successful archive](engineering-docs/archive/2026-08-06-recursive-e2e/CURRENT-STATUS.md)
 - [Eclipse interactive surface, concluded 2026-10-01 and folded into component-catalog](engineering-docs/archive/2026-09-09-eclipse-surface/CURRENT-STATUS.md)
 - [Project management current status](engineering-docs/wip/2026-08-09-project-management/CURRENT-STATUS.md)
 - [Workflow improvements current status](engineering-docs/wip/2026-08-09-workflow-improvements/CURRENT-STATUS.md)
 - [Component upgrades current status](engineering-docs/wip/2026-09-21-component-upgrades/CURRENT-STATUS.md)
+- [GitHub authentication current status](engineering-docs/wip/2026-11-16-github-auth/CURRENT-STATUS.md)
 - [Maintenance current status](engineering-docs/wip/2026-09-18-maintenance/CURRENT-STATUS.md)
 - [Capsule web console current status](engineering-docs/wip/2026-10-09-capsule-webconsole/CURRENT-STATUS.md)
 - [Wrapped projects current status](engineering-docs/wip/2026-11-02-wrapped-projects/CURRENT-STATUS.md)
@@ -247,6 +253,8 @@ status file; internal WIP/archive documents use the local index in that status.
 
 ## Development Blog
 
+- [Adventures in How not What: fourteen help screens to update Codex](engineering-docs/blog/2026-11-20-fourteen-help-screens-to-update-codex.md) — the undiscoverable component update path, its origin, how it passed review, and proposals to catch the next one.
+- [Choosing an agent environment, November 2026](engineering-docs/blog/2026-11-18-comparing-agent-environments.md)
 - [Thirteen hours, thirty-five tests. Part 1: the AI's audit](engineering-docs/blog/2026-11-13-thirteen-hours-thirty-five-tests.md) — Claude's unedited audit of its own pull request against stricter test standards: the ledger, what got worse, where the rules are wrong, and why LLMs wrote tests the other way; Part 2 to follow.
 - [Diagnosing a capsule from both sides](engineering-docs/blog/2026-10-28-diagnosing-a-capsule-from-both-sides.md) — probing a live browser desktop from outside and inside a nested PyCharm capsule, with embedded recording; draft for owner review.
 - [An AI takes our IDEs for a test drive](engineering-docs/blog/2026-10-04-an-ai-takes-intellij-for-a-test-drive.md) — shared AI graphical tests across IntelliJ, Rider and Eclipse, the .NET build, and three original recordings; draft for owner review.

@@ -1,4 +1,4 @@
-"""Unit tests for ``tests.e2e.scenario_presentation``."""
+"""Unit tests for ``devcapsule.presentation_tools.producer``."""
 from __future__ import annotations
 
 import json
@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from tests.e2e.scenario_presentation import (
+from devcapsule.presentation_tools.producer import (
     PresentationError,
     Script,
     ScriptStep,
@@ -214,6 +214,24 @@ def test_plan_presentation_refuses_a_scenario_that_does_not_join_its_script(docu
     """``plan_presentation`` raises ``PresentationError`` naming a missing id or description, missing or malformed actions, an unnumbered, unknown, backward or absent step, an empty caption, and a captioned step whose first action has none."""
     with pytest.raises(PresentationError, match=re.escape(message)):
         plan_presentation(document, SCRIPT)
+
+
+@pytest.mark.parametrize(
+    ("bad_script", "message"),
+    [
+        (Script("", (), (), SCRIPT.steps), "the script has no goal"),
+        (Script("Goal", (), (), ()), "the script has no steps"),
+        (Script("Goal", (), (), (ScriptStep(" ", "Open", "Visible"),)), "script step 1 has no title"),
+        (Script("Goal", (), (), (ScriptStep("Open", " ", "Visible"),)), "script step 1 has no action"),
+        (Script("Goal", (), (), (ScriptStep("Open", "Open", ""),)), "script step 1 has no expected"),
+        (Script("Goal", (), (" ",), SCRIPT.steps[:1]), "script illustrations must be non-empty texts"),
+        (Script("Goal", (("Editor", ""),), (), SCRIPT.steps[:1]), "script stack entries must have non-empty name and detail"),
+    ],
+)
+def test_plan_presentation_refuses_incomplete_python_script(bad_script: Script, message: str) -> None:
+    """``plan_presentation`` refuses Python-constructed scripts with missing goal, steps, step fields, stack or illustrations."""
+    with pytest.raises(PresentationError, match=re.escape(message)):
+        plan_presentation(scenario(action("1. One")), bad_script)
 
 
 def test_plan_for_scenario_reads_the_named_script_below_the_root(tmp_path: Path) -> None:

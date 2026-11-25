@@ -51,6 +51,26 @@
       "date": "2026-11-10",
       "result": "passed: 40 passed, 3 skipped in 54.14s",
       "evidence": "https://github.com/mycodespace-ai/devcapsule/actions/runs/42734994462"
+    },
+    {
+      "kind": "integration",
+      "source-revision": "579d0e6a32aeb2e22284b1a99dc0527e0aebd598",
+      "tests": "nox -s integration; 168 collected, 154 passed, 2 failed, 12 skipped",
+      "environment": "Linux x86-64 development capsule, Python 3.12.3, uid/gid 0 in a restricted user namespace; short basetemp /var/tmp/rc3i; locally rebuilt PEX, not published candidate bytes",
+      "operator": "Codex for maintenance",
+      "date": "2026-11-17",
+      "result": "failed: 154 passed, 2 failed, 12 skipped in 68.28s",
+      "evidence": "Scratch log /var/tmp/rc3-preflight/integration.log. test_print_command_names_a_base_image_that_is_not_here_and_pulls_nothing rejects the read-only docker info --format {{json .SecurityOptions}} query added by the rootless fix. test_filesystem_applies_distinct_user_and_group_ids_to_new_directories assumes uid 0 can chown to gid 1; this namespace returns EPERM. Both reproduce the received November 16 release-merge validation report. No Docker container launched; no candidate acceptance claimed."
+    },
+    {
+      "kind": "integration",
+      "source-revision": "87c35bab6fb01151437ac40778d4a092d40e4e69",
+      "tests": "nox -s integration; 168 collected, 155 passed, 13 skipped",
+      "environment": "Linux x86-64 development capsule, Python 3.12.3, restricted user namespace; basetemp /var/tmp/rc3c; locally rebuilt PEX, not published candidate bytes",
+      "operator": "Codex for maintenance",
+      "date": "2026-11-17",
+      "result": "passed: 155 passed, 13 skipped in 61.68s",
+      "evidence": "Scratch log /var/tmp/rc3-preflight/correction-integration.log. Print-command fixture permits the exact read-only daemon security-options query while refusing Docker writes. The ownership case independently probes permission to chown to a distinct group and skips when the environment lacks it; other skips are unchanged. No product code changed. Full local build separately reaches 3320 passing unit tests and the same two inherited gid-0 failures, so it is not reported as a passing full gate."
     }
   ]
 }

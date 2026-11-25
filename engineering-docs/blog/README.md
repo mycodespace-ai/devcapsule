@@ -35,6 +35,8 @@ lines of provenance:
 
 ## Entries
 
+- [Adventures in How not What: fourteen help screens to update Codex](2026-11-20-fourteen-help-screens-to-update-codex.md) — a developer and their agent could not find how to update one component from `--help`; where the gap came from on 2026-09-21, why three reviews never saw it, and six proposals starting with a cold read by a fresh agent.
+- [Choosing an agent environment, November 2026](2026-11-18-comparing-agent-environments.md)
 - [Thirteen hours, thirty-five tests. Part 1: the AI's audit](2026-11-13-thirteen-hours-thirty-five-tests.md) — Claude's unedited audit of its own pull request: what moving a test suite toward stricter standards bought, what it cost, where the rules are wrong, and why LLMs wrote tests the other way; Part 2 to follow.
 - [Diagnosing a capsule from both sides](2026-10-28-diagnosing-a-capsule-from-both-sides.md) — why a port check misses a frozen browser desktop, how `devcapsule project diagnose` probes a live session from outside and inside a nested PyCharm capsule, and a 29-second recording; draft for owner review.
 - [Where DevCapsule sits: a competitive comparison, October 2026](2026-10-18-where-devcapsule-sits.md) — the time-boxed, best-effort comparison with agent sandboxes, dev containers and cloud agents, each shortcoming linked to its roadmap item.
