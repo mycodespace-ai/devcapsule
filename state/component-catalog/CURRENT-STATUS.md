@@ -4,11 +4,11 @@ Mnemonic: `component-catalog`
 
 Start date: 2026-08-30
 
-State: integrating the Xfce Terminal component into release 0.3.1, 2026-11-18
+State: active 2026-11-25; checking all existing components for version upgrades on `ws-component-catalog/version-upgrades` targeting `release-0.3.1`; `gh` and `gcloud` queued next for `release-0.3.1`
 
-Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5b0f27c04de1
+Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5787d0e0395f
 
-Branch association: `ws-component-catalog/xfce4-terminal-031`
+Branch association: `ws-component-catalog/version-upgrades`, forked from `origin/release-0.3.1` (`82a83b9a`)
 
 Integration target: `release-0.3.1`
 
@@ -34,6 +34,11 @@ workstream-specific capability profiles. New/changed code coverage must exceed
 No release or website publishing.
 
 ## Current State
+
+- 2026-11-25. Resumed `component-catalog` on `ws-component-catalog/version-upgrades` off `origin/release-0.3.1` (`82a83b9a`, after Xfce Terminal PR #62 and PR #72 merged). Acknowledged three `project-management` items targeting `release-0.3.1`:
+  1. All-component version-upgrades sweep (active first slice).
+  2. `gh` (GitHub CLI) optional component (queued next).
+  3. `gcloud` (Google Cloud CLI) optional component (queued after `gh`).
 
 - 2026-11-18. At the owner's request, the terminal addition from
   [PR #60](https://github.com/mycodespace-ai/devcapsule/pull/60) now targets
@@ -268,8 +273,9 @@ No release or website publishing.
 
 ## Planned Next Step
 
-Review and integrate the terminal pull request against `release-0.3.1`. The existing rollback,
-pin recovery and proposal-export questions remain in Open Threads.
+1. Check all existing catalog components for version upgrades on `ws-component-catalog/version-upgrades` targeting `release-0.3.1`, deliver verified pin upgrades, and record per-component outcomes.
+2. Implement `gh` (GitHub CLI) and `gcloud` (Google Cloud CLI) as available optional components targeting `release-0.3.1`.
+3. Existing rollback, pin recovery, and proposal-export questions remain in Open Threads.
 
 ## Validation And External State
 
