@@ -4,7 +4,7 @@ Mnemonic: `project-management`
 
 Start date: 2026-08-09
 
-State: paused 2026-11-17; all 18 reviewed intake items decided; owner switches to maintenance to cut 0.3.1 rc3
+State: active 2026-11-25; resumed on ws-project-management/coordination; 3 intake items taken and 3 pile-of-ideas items pending triage
 
 Definition read: WORKFLOW.md@781c9e39df58, WORKFLOW-LOCAL.md@94a29cb6eedb
 
