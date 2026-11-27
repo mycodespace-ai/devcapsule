@@ -4,18 +4,34 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: paused 2026-11-18; Graphviz PR56 revised and accepted by Claude after one round; merged gate and native amd64/arm64 checks pass. PR56 and concurrent accepted PR57 await owner merge.
+State: blocked 2026-11-27 on the RC4 Docker integration failure. Component-catalog has the corrective work. Maintenance awaits the integration decision for main.
 
-Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5b0f27c04de1
+Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5787d0e0395f
 
 Integration target: `main`
 
 Delivery method: ordinary maintenance PRs to `main`; owner merges. No records-only PR. The 0.3.0 release is published; website production promotion remains owner-operated.
 
+
+
 Branch association: `ws-maintenance/graphviz-031`, Graphviz PR56 synchronized with release `5fcd1684`;  `ws-maintenance/recursive-test-fixture`, from release `5fcd1684`; `ws-maintenance/cli-docs`, documentation follow-up from release `3a5aea22`; `ws-maintenance/cli-syntax`, created from presentations handoff db9721dd, carrying final CLI decisions af0d3616; `ws-maintenance/0.3.1-rc3-preflight`, merged through PR #48; `4PR-6-release-0.3.1`, merged through PR #49; `release-0.3.1` from main 31e8fec7, the workstream's selection from the cut to the final tag; `ws-maintenance/website-gitlink-actions` from release-0.3.1 2a3d6f61, recursive fetch of the `website` raw gitlink in GitHub Actions, awaiting owner pull request and merge; `ws-maintenance/0.3.1-blocking-bugs` from release-0.3.1 82b9c07e, records of the two blocking bugs, the owner merges; `ws-maintenance/launch-phases` merged through #29 and closed; `ws-maintenance/host-inputs-at-source` merged through #26 and closed; `ws-maintenance/python-route-guard` merged through #25 and closed; `ws-maintenance/pile-of-ideas` merged through #23 and closed; `ws-maintenance/0.3.1-agent-freshness` merged through #21 and closed; `ws-maintenance/codex-npm-metadata` merged through #20 and closed; `ws-maintenance/webconsole-legacy-tests` merged through #18 and closed; `ws-maintenance/webconsole-delivery` merged through #16 and closed; `ws-maintenance/move-to-organization` merged through #1 and closed; `ws-maintenance/base-consent-test` from main 445469f1; `ws-maintenance/coverage-in-pr` merged through #336 and closed; `ws-maintenance/test-conventions` merged through #335 and closed; `ws-maintenance/0.3.1-preparation` from main 31d44fa4; `release-0.3.0` closed after final publication and retained with its tags; `ws-maintenance/0.3.0-acceptance` merged through #332 and closed; earlier slice branches are historical
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
+
+## RC4 preflight result — 2026-11-27
+
+The full build passed at `17f31669`, including 3,380 unit tests and 474 web-console tests. Integration had 459 passes, 13 skips and one failure. With the fixture consent corrected, project initialization passed and the pinned .NET SDK archive prevented formation. Component-catalog received the patch and the [blocking bug](../../bugs/devcapsule/2026-11-27-dotnet-sdk-archive-blocks-rc4.md) at coordination `cc15c87befd5`. The scratch change was removed after delivery. RC4 remains untagged.
+
+## RC4 preparation — 2026-11-27
+
+Requirements: R-PRODUCT-006, R-COMPAT-001, R-RUNTIME-001, R-CONSOLE-001.
+
+The remote release tip at the start of preflight was `19e677c7`. PRs #56 and #57 have merged. The last published candidate is RC3 at `918f9fc7`. The [release overview](../../releases/v0.3.1/README.md) records the delta. Keep the release branch on its own history.
+
+Next task: validate the release tip, deliver its fixes and integration evidence to main, verify the owner merge and then tag RC4. Main at `f47c1627` conflicts in six documentation files. A decision is pending on a reconciliation commit on the temporary PR branch under Release Policy rule 8.
+
+Maintenance acknowledges project-management's November 25 notice. Before final 0.3.1, triage the launcher/base compatibility bug, document the contract and validate enforcement and optional degradation. The filing workstream retains the original bug record until integration.
 
 ## Graphviz CI correction and Pair Review — 2026-11-18
 
@@ -5074,6 +5090,8 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
+Await component-catalog’s RC4 fix and the owner’s decision on the temporary integration branch. Validate the corrected release SHA with the full integration suite, record a passing run on main, verify the owner merge and publish RC4. Earlier plans below are historical.
+
 Owner review and merge of revised, Claude-reviewed Graphviz PR56 into the
 release. Concurrent recursive-test fix PR57 is independently accepted and awaits
 owner merge; no fixture question remains.
@@ -5930,6 +5948,8 @@ asset downloads verify publication; no credentialed Actions-run inspection is
 claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
+
+RC4 awaits the owner’s merge-resolution decision and a verified correction from component-catalog. The unmerged host IDE PR was outside the tested revision. Diagnostic logs remain local. The bug and test-run record preserve the two failure points. The previous requests to merge #56 and #57 below are historical.
 
 Graphviz review follow-ups: consider a public operation for ancillary stages
 and environment when another build component needs it; clarify migrated matrix
