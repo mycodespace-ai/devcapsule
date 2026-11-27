@@ -4,9 +4,9 @@ Mnemonic: `component-catalog`
 
 Start date: 2026-08-30
 
-State: active 2026-11-27 on the owner-requested RC4 SDK archive fix and live component validation.
+State: integrating 2026-11-27. The SDK fix and live component validation passed on the fix branch. Owner release merge is next.
 
-Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94286a92761d
+Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5787d0e0395f
 
 Branch association: `ws-component-catalog/rc4-sdk-links` from release `85b2e078`. Previous `ws-component-catalog/version-upgrades` integrated through PR #74.
 
@@ -294,7 +294,7 @@ No release or website publishing.
 
 ## Planned Next Step
 
-Deliver the RC4 extractor and live fixture fix to the release branch. The owner selected component-catalog to take the blocking SDK correction on November 27. After that correction, resume the optional component work. Earlier sequence follows.
+Owner merges `ws-component-catalog/rc4-sdk-links` into `release-0.3.1`. Maintenance then validates the release revision and propagates it to main for RC4. The owner selected component-catalog to take the blocking SDK correction on November 27. After that correction, resume the optional component work. Earlier sequence follows.
 
 1. Open and merge the `ws-component-catalog/version-upgrades` → `release-0.3.1` pull request for the `linux-amd64` version-upgrades sweep (`embedded-36`) and all-components instantiation integration test.
 2. Implement `gh` (GitHub CLI) and `gcloud` (Google Cloud CLI) as available optional components targeting `release-0.3.1`.
@@ -442,6 +442,8 @@ Deliver the RC4 extractor and live fixture fix to the release branch. The owner 
   and the successful final-gate follow-up by mail. No unrelated fix was committed.
 
 ## Open Threads
+
+The linux-amd64 SDK and all-components live test passed at `b1275f87`. The [release run record](../../releases/v0.3.1/test-runs.json) contains the full integration result. Release merge, candidate-revision validation and RC4 publication remain outstanding. The original component-catalog checkout’s local edits were outside this fix.
 
 - The amd64 graphical smoke covers separate shell tabs, working directory
   and shutdown. ARM64 has pinned packages and awaits a native desktop smoke.
