@@ -19,3 +19,5 @@ The note is one line. The reasoning is in this workstream's
 | `2026-11-25-project-management-component-version-upgrades-sweep.md` | 2026-11-25 | acknowledged | Active first slice on `ws-component-catalog/version-upgrades` targeting `release-0.3.1`: check all existing catalog components and deliver updated pins and sweep outcomes. |
 | `2026-11-25-project-management-gh-cli-component.md` | 2026-11-25 | acknowledged | Activated for `release-0.3.1` after version-upgrades sweep: add `gh` optional component with checksum-pinned artifacts, channel probe, isolated auth persistence, smoke, and docs. |
 | `2026-11-25-project-management-gcloud-cli-component.md` | 2026-11-25 | acknowledged | Queued for `release-0.3.1` after `gh`: add `gcloud` optional component (separate from unselected Gemini CLI) with checksum-pinned artifacts, probe, auth persistence, smoke, and docs. |
+
+| `2026-11-27-maintenance-rc4-catalog-integration.md` | 2026-11-27 | acknowledged | Fix support for safe SDK archive file aliases and apply the proposed per-surface consent correction. Validate the live all-components launch on the release line. |

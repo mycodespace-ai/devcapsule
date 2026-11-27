@@ -4,11 +4,11 @@ Mnemonic: `component-catalog`
 
 Start date: 2026-08-30
 
-State: active 2026-11-25; completed 0.3.1 `linux-amd64` all-component version-upgrades sweep (`embedded-36`), legacy pin-test retirement, and all-components instantiation integration test on `ws-component-catalog/version-upgrades` targeting `release-0.3.1`; `gh` and `gcloud` queued next for `release-0.3.1`
+State: active 2026-11-27 on the owner-requested RC4 SDK archive fix and live component validation.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94286a92761d
 
-Branch association: `ws-component-catalog/version-upgrades`, forked from `origin/release-0.3.1` (`82a83b9a`)
+Branch association: `ws-component-catalog/rc4-sdk-links` from release `85b2e078`. Previous `ws-component-catalog/version-upgrades` integrated through PR #74.
 
 Integration target: `release-0.3.1`
 
@@ -293,6 +293,8 @@ No release or website publishing.
   No workflow declaration/version was changed.
 
 ## Planned Next Step
+
+Deliver the RC4 extractor and live fixture fix to the release branch. The owner selected component-catalog to take the blocking SDK correction on November 27. After that correction, resume the optional component work. Earlier sequence follows.
 
 1. Open and merge the `ws-component-catalog/version-upgrades` → `release-0.3.1` pull request for the `linux-amd64` version-upgrades sweep (`embedded-36`) and all-components instantiation integration test.
 2. Implement `gh` (GitHub CLI) and `gcloud` (Google Cloud CLI) as available optional components targeting `release-0.3.1`.
