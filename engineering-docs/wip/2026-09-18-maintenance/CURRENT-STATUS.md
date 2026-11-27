@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: blocked 2026-11-27 on the RC4 Docker integration failure. Component-catalog has the corrective work. Maintenance awaits the integration decision for main.
+State: blocked 2026-11-27 on the RC4 Docker integration failure. Component-catalog has the corrective work. The owner authorized a reconciliation commit on the RC4 PR copy.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5787d0e0395f
 
@@ -29,7 +29,7 @@ Requirements: R-PRODUCT-006, R-COMPAT-001, R-RUNTIME-001, R-CONSOLE-001.
 
 The remote release tip at the start of preflight was `19e677c7`. PRs #56 and #57 have merged. The last published candidate is RC3 at `918f9fc7`. The [release overview](../../releases/v0.3.1/README.md) records the delta. Keep the release branch on its own history.
 
-Next task: validate the release tip, deliver its fixes and integration evidence to main, verify the owner merge and then tag RC4. Main at `f47c1627` conflicts in six documentation files. A decision is pending on a reconciliation commit on the temporary PR branch under Release Policy rule 8.
+Next task: validate the release tip, deliver its fixes and integration evidence to main, verify the owner merge and then tag RC4. Main at `f47c1627` conflicts in six documentation files. On 2026-11-27 the owner authorized one reconciliation commit on the temporary RC4 integration branch as an exception to Release Policy rule 8. Preserve main’s development version and documentation, carry the recorded preflight outcome, and leave the final merge to the owner.
 
 Maintenance acknowledges project-management's November 25 notice. Before final 0.3.1, triage the launcher/base compatibility bug, document the contract and validate enforcement and optional degradation. The filing workstream retains the original bug record until integration.
 
@@ -5090,7 +5090,7 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Await component-catalog’s RC4 fix and the owner’s decision on the temporary integration branch. Validate the corrected release SHA with the full integration suite, record a passing run on main, verify the owner merge and publish RC4. Earlier plans below are historical.
+Deliver the approved reconciliation on `4PR-7-release-0.3.1`. Await component-catalog’s RC4 fix. Validate the corrected release SHA with the full integration suite, record a passing run on main, verify the owner merge and publish RC4. Earlier plans below are historical.
 
 Owner review and merge of revised, Claude-reviewed Graphviz PR56 into the
 release. Concurrent recursive-test fix PR57 is independently accepted and awaits
@@ -5949,7 +5949,7 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-RC4 awaits the owner’s merge-resolution decision and a verified correction from component-catalog. The unmerged host IDE PR was outside the tested revision. Diagnostic logs remain local. The bug and test-run record preserve the two failure points. The previous requests to merge #56 and #57 below are historical.
+RC4 awaits a verified correction from component-catalog and owner integration into main. The PR-copy exception is approved. The unmerged host IDE PR was outside the tested revision. Diagnostic logs remain local. The bug and test-run record preserve the two failure points. The previous requests to merge #56 and #57 below are historical.
 
 Graphviz review follow-ups: consider a public operation for ancillary stages
 and environment when another build component needs it; clarify migrated matrix

@@ -20,7 +20,7 @@ for resumption.
 
 Release source through `19e677c7` includes the recording kit and CLI changes (#50–52, #55), Graphviz and recursive Docker-group correction (#56–57), Xfce Terminal (#62), the Snap Docker guide and project configuration refresh (#69–70), updated website pointer (#73), amd64 catalog upgrades (#74) and host key selection for the SSH proxy (#75). The open host IDE PR #65 is outside this source.
 
-RC4 requires integration on main and a Docker integration run on the candidate revision. The remote main at preflight is `f47c1627`. Release-to-main integration has conflicts in the root README, workstream list, index, maintenance status, release overview and changelog. The owner decides whether to allow a resolution commit on the temporary PR branch. RC3 remains the most recent published candidate until the tag workflow publishes RC4.
+RC4 requires integration on main and a Docker integration run on the candidate revision. The remote main at preflight is `f47c1627`. Release-to-main integration has conflicts in the root README, workstream list, index, maintenance status, release overview and changelog. On November 27 the owner authorized the reconciliation commit on the temporary RC4 PR branch. RC3 remains the most recent published candidate until the tag workflow publishes RC4.
 
 ## RC3 preflight and remaining work — 2026-11-17
 
