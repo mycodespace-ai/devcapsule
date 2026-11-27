@@ -4,9 +4,9 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: preparing 0.3.1 RC4 from the release branch. The owner requested the cut on 2026-11-27.
+State: blocked 2026-11-27 on the RC4 Docker integration failure. Component-catalog has the corrective work. Maintenance awaits the integration decision for main.
 
-Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5b0f27c04de1
+Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5787d0e0395f
 
 Integration target: `main`
 
@@ -18,6 +18,10 @@ Branch association: `ws-maintenance/graphviz-031`, Graphviz PR56 synchronized wi
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
+
+## RC4 preflight result — 2026-11-27
+
+The full build passed at `17f31669`, including 3,380 unit tests and 474 web-console tests. Integration had 459 passes, 13 skips and one failure. With the fixture consent corrected, project initialization passed and the pinned .NET SDK archive prevented formation. Component-catalog received the patch and the [blocking bug](../../bugs/devcapsule/2026-11-27-dotnet-sdk-archive-blocks-rc4.md) at coordination `cc15c87befd5`. The scratch change was removed after delivery. RC4 remains untagged.
 
 ## RC4 preparation — 2026-11-27
 
@@ -5086,6 +5090,8 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
+Await component-catalog’s RC4 fix and the owner’s decision on the temporary integration branch. Validate the corrected release SHA with the full integration suite, record a passing run on main, verify the owner merge and publish RC4. Earlier plans below are historical.
+
 Owner review and merge of revised, Claude-reviewed Graphviz PR56 into the
 release. Concurrent recursive-test fix PR57 is independently accepted and awaits
 owner merge; no fixture question remains.
@@ -5943,7 +5949,7 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-RC4 awaits the merge-resolution decision and passing candidate checks. The previous requests to merge #56 and #57 below are historical.
+RC4 awaits the owner’s merge-resolution decision and a verified correction from component-catalog. The unmerged host IDE PR was outside the tested revision. Diagnostic logs remain local. The bug and test-run record preserve the two failure points. The previous requests to merge #56 and #57 below are historical.
 
 Graphviz review follow-ups: consider a public operation for ancillary stages
 and environment when another build component needs it; clarify migrated matrix
