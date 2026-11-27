@@ -10,12 +10,14 @@ from devcapsule.components.claude_code import DEFINITION as CLAUDE_CODE
 from devcapsule.components.codex import DEFINITION as CODEX
 from devcapsule.components.codium import DEFINITION as CODIUM
 from devcapsule.components.dotnet_sdk import DEFINITION as DOTNET_SDK
+from devcapsule.components.graphviz import DEFINITION as GRAPHVIZ
 from devcapsule.components.rider import DEFINITION as RIDER
 from devcapsule.components.intellij import DEFINITION as INTELLIJ
 from devcapsule.components.eclipse import DEFINITION as ECLIPSE
 from devcapsule.components.playwright import DEFINITION as PLAYWRIGHT
 from devcapsule.components.postgresql_client import DEFINITION as POSTGRESQL_CLIENT
 from devcapsule.components.pycharm import DEFINITION as PYCHARM
+from devcapsule.components.xfce_terminal import DEFINITION as XFCE_TERMINAL
 from devcapsule.components.vscode import DEFINITION as VSCODE
 from devcapsule.container_runtime.contract import ComponentRuntimeTemplate
 
@@ -27,6 +29,7 @@ class ComponentCatalogError(ValueError):
 # Components a lock may name as its one interactive-surface. Every other
 # catalog component is ancillary; a definition never appears in both roles.
 INTERACTIVE_SURFACES: dict[str, ComponentDefinition] = {
+    XFCE_TERMINAL.id: XFCE_TERMINAL,
     ECLIPSE.id: ECLIPSE,
     PYCHARM.id: PYCHARM,
     CODIUM.id: CODIUM,
@@ -36,6 +39,7 @@ INTERACTIVE_SURFACES: dict[str, ComponentDefinition] = {
 }
 
 COMPONENTS: dict[str, ComponentDefinition] = {
+    XFCE_TERMINAL.id: XFCE_TERMINAL,
     ECLIPSE.id: ECLIPSE,
     PYCHARM.id: PYCHARM,
     CODIUM.id: CODIUM,
@@ -48,6 +52,7 @@ COMPONENTS: dict[str, ComponentDefinition] = {
     POSTGRESQL_CLIENT.id: POSTGRESQL_CLIENT,
     PLAYWRIGHT.id: PLAYWRIGHT,
     DOTNET_SDK.id: DOTNET_SDK,
+    GRAPHVIZ.id: GRAPHVIZ,
 }
 
 

@@ -13,6 +13,7 @@ import pytest
 
 from devcapsule.compat import CliError
 from devcapsule.components import LockedArtifactDeclaration
+from devcapsule.components.graphviz import GraphvizComponent
 from devcapsule.images.build import ExecStep, ImageBuildSpec
 from devcapsule.materialization import (
     ENTRYPOINT_CONTRACT,
@@ -676,6 +677,96 @@ def test_materialization_installs_locked_raw_executable_and_image_environment(tm
         "destination": "/opt/claude/bin/claude",
         "format": "file",
     }
+
+
+def test_materialization_builds_a_recipe_component_in_its_own_stage_and_exports_only_its_installation(
+    tmp_path: Path,
+) -> None:
+    """A component with a build recipe stages its pinned inputs in one copy, runs the recipe after it,
+    exports the recipe's paths rather than the staged inputs, and adds its ``PATH`` prefix once beside another component's."""
+    pycharm_source = tmp_path / "pycharm.tar.gz"
+    pycharm_spec = artifact(pycharm_source, hashlib.sha256(fixture_archive(pycharm_source)).hexdigest())
+    inputs = {"source": b"graphviz-source-fixture", "libexample-dev": b"dependency-fixture"}
+    artifacts = {}
+    for name, content in inputs.items():
+        (tmp_path / name).write_bytes(content)
+        artifacts[name] = {"url": (tmp_path / name).as_uri(), "sha256": hashlib.sha256(content).hexdigest()}
+    graphviz = GraphvizComponent().locked_artifacts({
+        "version": "1.2.3", "platform": "linux-amd64", "delivery-policy": "local-materialization",
+        "build-recipe": "graphviz-autotools-v1", "artifacts": artifacts,
+    }, "linux-amd64")
+    recipe = GraphvizComponent().build_recipe("1.2.3", "linux-amd64")
+    claude_source = tmp_path / "claude"
+    claude_source.write_bytes(b"claude")
+    claude = LockedArtifactDeclaration(
+        component_id="claude-code", version="1", url=claude_source.as_uri(),
+        sha256=hashlib.sha256(claude_source.read_bytes()).hexdigest(),
+        destination="/opt/claude/bin/claude", artifact_format="file",
+        environment=(("PATH", "/opt/claude/bin:${PATH}"),),
+    )
+    plans = []
+    staged: dict[str, bytes] = {}
+    built: dict[str, ImageDetails] = {}
+
+    def build(build_spec: ImageBuildSpec) -> None:
+        # The staged inputs live in a work directory that the materializer removes after the build.
+        plan = build_spec.build_plan()
+        plans.append(plan)
+        for stage in plan.stages:
+            for group in stage.plan.file_groups:
+                staged.update({item.destination: item.source.read_bytes() for item in group})
+        built[plan.image] = image_details(plan.image, dict(plan.labels))
+
+    ensure_materialized_surface(
+        base_reference="base:debug",
+        base_identity="sha256:base",
+        platform="linux-amd64",
+        artifact=pycharm_spec,
+        ancillary_artifacts=(claude, *graphviz),
+        cache_root=tmp_path / "cache",
+        inspect_image=built.get,
+        build=build,
+    )
+
+    plan, = plans
+    stage, = (item for item in plan.stages if item.name == "graphviz")
+    assert len(stage.plan.file_groups) == 1
+    assert staged == {
+        "/opt/graphviz/.build/source.tar.gz": inputs["source"],
+        "/opt/graphviz/.build/libexample-dev.deb": inputs["libexample-dev"],
+    }
+    assert stage.plan.files == ()
+    assert stage.plan.exec_steps == tuple(ExecStep(command) for command in recipe.commands)
+    assert stage.exports == recipe.exports == ("/opt/graphviz",)
+    assert [value for name, value in plan.env if name == "PATH"][0] == "/opt/claude/bin:/opt/graphviz/bin:${PATH}"
+
+
+def test_deb_surface_installs_the_pinned_main_package_and_dependency_together(tmp_path: Path) -> None:
+    """A native surface passes both verified package files intact to one offline dpkg installation."""
+    terminal, dependency = tmp_path / "terminal.deb", tmp_path / "dependency.deb"
+    terminal.write_bytes(b"surface bytes")
+    dependency.write_bytes(b"dependency bytes")
+    surface = ArtifactSpec("1.0", terminal.as_uri(), sha256_file(terminal), None)
+    dep = LockedArtifactDeclaration("xfce4-terminal", "2.0", dependency.as_uri(), sha256_file(dependency),
+                                    "/tmp/dependency.deb", artifact_format="deb-package")
+    built: dict[str, ImageDetails] = {}
+
+    def build(spec: ImageBuildSpec) -> None:
+        plan = spec.build_plan()
+        staging, = (item for item in plan.directories if item.destination == "/tmp/devcapsule-native-debs")
+        install, = (step.args[-1] for step in plan.exec_steps if "dpkg --install" in step.args[-1])
+        for digest, source in ((surface.sha256, terminal), (dep.sha256, dependency)):
+            assert (staging.source / f"{digest}.deb").read_bytes() == source.read_bytes()
+            assert f"{staging.destination}/{digest}.deb" in install.split(";")[0]
+        built[plan.image] = image_details(plan.image, dict(plan.labels))
+
+    _, created = ensure_materialized_surface(
+        base_reference="base:test", base_identity="sha256:base", platform="linux-amd64",
+        component_id="xfce4-terminal", recipe_id="xfce4-terminal-deb", recipe_version="1",
+        artifact=surface, ancillary_artifacts=(dep,), cache_root=tmp_path / "cache",
+        inspect_image=built.get, build=build,
+    )
+    assert created
 
 
 def test_surface_materialization_spec_stamps_complete_formation_labels(tmp_path: Path) -> None:

@@ -1,7 +1,7 @@
 ---
 description: "The web console: inspect your running capsule, answer agent decisions, read records, browse project files, and queue configuration changes for the next launch."
 weight: 5
-updated: 2026-11-14
+updated: 2026-11-18
 ---
 # The web console
 
@@ -28,7 +28,7 @@ under host X11 passthrough), the console opens automatically instead.
 ## What is on each page
 
 Opening the link shows the capsule's identity at **Home**, with navigation to
-eight pages:
+these pages:
 
 - **Configuration**: the launch-time listing from `devcapsule project config
   show`, forms to send `config` changes to the launcher for the **next**
@@ -79,6 +79,38 @@ eight pages:
 When an agent hands off a decision in chat using `devcapsule project checkout
 decisions hand-off`, its message ends with a tokened console link straight to
 that decision page so you can answer either in the browser or in chat.
+
+## Link to project content
+
+Inside the capsule, use the current run's CLI to obtain a link:
+
+```bash
+devcapsule instance --get-link README.md
+devcapsule instance --get-link tests/e2e/evidence/login
+```
+
+Paths are relative to your terminal's current directory, or absolute inside
+the mounted project. They always produce Files URLs, including paths to Markdown
+or presentation folders. To select another viewer directly, supply its absolute
+URL on the current console origin instead:
+
+```bash
+devcapsule instance --get-link "$DEVCAPSULE_CONSOLE_URL/records/README.md"
+devcapsule instance --get-link "$DEVCAPSULE_CONSOLE_URL/presentations/tests/e2e/evidence/login"
+```
+
+Those URL paths are relative to the project root. The target must already exist;
+for a presentation, use the folder containing `presentation.json`. Percent-encode
+spaces in a URL path. Files outside the project, hidden paths, `node_modules`,
+and URLs on other origins are refused. The command formats the link without
+opening or verifying the content. It uses the current capsule's console address
+and token; it has no host-side target or token override.
+
+Keep the printed tokened link in chat, outside Git and saved reports. If the
+run token is unreadable, the command prints a notice and a tokenless link;
+open the launcher's console link first to establish a browser session.
+See [recording with an agent](../working-with-ai/instructions-for-agents.md#record-a-scenario)
+for the automatically installed helpers and instructions.
 
 ## Changing configuration for the next launch
 

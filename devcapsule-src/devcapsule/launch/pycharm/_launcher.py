@@ -234,7 +234,9 @@ class PycharmRunOptions:
     additional_environment: dict[str, str] = field(default_factory=dict)
     secret_environment: tuple[str, ...] = ()
     extra_docker_args: list[str] = field(default_factory=list)
-    enable_github_ssh: bool = False
+    # The ``ssh-proxy`` answer: False for no proxy, or the grant that names
+    # the host key the proxy offers (see devcapsule.ssh_identity).
+    ssh_proxy: bool | str = False
     enable_host_browser: bool = False
     # How the surface gets a display. ``host-x11`` is the historical
     # passthrough (host X socket and session credential bound into the
@@ -343,7 +345,8 @@ def run_pycharm(options: PycharmRunOptions, env: Mapping[str, str] | None = None
             runtime_env,
             enabled=options.enable_host_browser,
         ) as browser_socket, github_ssh_bridge(
-            runtime_env, enabled=options.enable_github_ssh,
+            runtime_env, selection=options.ssh_proxy,
+            home=Path(runtime_env.get("HOME", "~")).expanduser(),
             containerized=in_container(), binds_unix_sockets=HostOs.current().binds_unix_sockets,
         ) as github_socket:
             if browser_socket is None:
@@ -1070,7 +1073,7 @@ def build_run_config(options: PycharmRunOptions, env: Mapping[str, str]) -> Pych
 
     github_socket: Path | None = None
     configured_github_socket = env.get(GITHUB_SOCKET_ENV)
-    if options.enable_github_ssh and configured_github_socket:
+    if options.ssh_proxy is not False and configured_github_socket:
         candidate = Path(configured_github_socket)
         if not candidate.is_absolute() or ".." in candidate.parts or not is_socket(candidate):
             raise PycharmRunError("The authorized GitHub socket is absent or unsafe.")

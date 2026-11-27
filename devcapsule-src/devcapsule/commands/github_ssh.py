@@ -35,7 +35,7 @@ class GitHubSshCommand(Command):
         try:
             path = os.environ.get(SOCKET_ENV)
             if not path:
-                raise GitHubTransportError("No authorized GitHub proxy. Enable github-ssh on the host launcher.")
+                raise GitHubTransportError("No authorized GitHub proxy. Authorize ssh-proxy on the host launcher.")
             return relay_git(Path(path), request, stdin=sys.stdin.buffer,
                              stdout=sys.stdout.buffer, stderr=sys.stderr.buffer)
         except (OSError, GitHubTransportError) as error:

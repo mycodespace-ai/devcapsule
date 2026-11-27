@@ -50,6 +50,7 @@ class IdeSurface:
 
 
 SURFACES: tuple[IdeSurface, ...] = (
+    IdeSurface("xfce4-terminal", ("xfce4-terminal",), "xfce4-terminal", ready_timeout=90.0),
     IdeSurface("eclipse", ("eclipse-ide", "java", "browser-automation"), "eclipse", ready_timeout=420.0),
     IdeSurface("codium", ("frontend-ide", "node"), "codium", ready_timeout=180.0),
     IdeSurface("vscode", ("vscode-ide", "node"), "code", ready_timeout=180.0,
@@ -184,7 +185,7 @@ def initialize_project(executable: Path, surface: IdeSurface, workspace: Path, e
     platform = os.environ.get("DEVCAPSULE_SMOKE_PLATFORM")
     init = subprocess.run(
         [str(executable), "project", "init", *(["--platform", platform] if platform else []),
-         *(flag for need in surface.needs for flag in ("--ide" if need.endswith("-ide") else "--require", need)),
+         "--ide", surface.needs[0], *(flag for need in surface.needs[1:] for flag in ("--require", need)),
          "--creator", CREATOR, "--slug", slug,
          "--authorize", "base-image", "default",
          "--authorize", "network", "host", "Local graphical smoke requires host networking.",

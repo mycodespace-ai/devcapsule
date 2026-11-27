@@ -1,7 +1,7 @@
 ---
 description: Committing, pushing and pulling from inside the capsule, and how credentials reach Git without your host keys entering the capsule.
 weight: 2
-updated: 2026-11-16
+updated: 2026-11-25
 ---
 # Git
 
@@ -59,19 +59,37 @@ Git history.
 
 ### 2. Use the launcher’s GitHub SSH proxy
 
-On Linux or WSL with native Docker, authorize the proxy once from your host:
+On Linux or WSL with native Docker, authorize the proxy once from your host
+and say which of your SSH keys it offers to GitHub:
 
 ```bash
-devcapsule project config authorize github-ssh true
+devcapsule project config authorize ssh-proxy default
 devcapsule project run
 ```
 
-For a single run, use `devcapsule project run --authorize github-ssh true`.
+For a single run, use `devcapsule project run --authorize ssh-proxy default`.
+The value selects the key:
+
+| Value | The key the proxy offers |
+|---|---|
+| `default` | The one private key named `id_*` in your `~/.ssh`, such as `id_ed25519`. If there is none, or more than one, the launch stops and asks you to name one. |
+| A name without `/`, such as `id_work` | That file in your `~/.ssh`. |
+| A path, such as `~/keys/deploy` or `/keys/deploy` | That file. The path is absolute or begins with `~/`. |
+| `true` | Whatever your host's OpenSSH chooses from its configuration, its agent, and its default key files, as for your own `ssh`. Use it when your key lives only in an agent or on a hardware token. |
+| `false` | None: the proxy is off. This is the default. |
+
+A named key is checked when you launch, on your host: if the file is not
+there, the launch stops before the capsule starts. OpenSSH uses the named key and skips unrelated
+agent keys and implicit default key files. Your SSH configuration can also
+name keys or certificates for GitHub. One of those can authenticate you.
+A key file called `true`, `false`, `none`,
+or `default` needs its path.
+
 Inside the capsule, ordinary `git clone`, `git fetch`, `git pull`, and `git push`
 with `git@github.com:OWNER/REPO.git` or `ssh://git@github.com/OWNER/REPO.git` use
-OpenSSH on your host. The host's SSH configuration selects the identity and
-verifies GitHub's host key. Neither private keys nor the host's agent socket are
-mounted into the capsule. Other Git SSH hosts use the capsule's own SSH.
+OpenSSH on your host. The host's SSH configuration verifies GitHub's host key.
+Neither private keys nor the host's agent socket are mounted into the capsule.
+The proxy carries GitHub only: other Git SSH hosts use the capsule's own SSH.
 
 The host must already trust GitHub's host key and be able to authenticate
 without a prompt. Unlock encrypted keys on the host with `ssh-add` before
@@ -80,20 +98,29 @@ asks the capsule for a host key passphrase. GitHub connection failures and SSH
 diagnostics appear in the capsule's Git output.
 
 The grant lets every process in this capsule fetch and push **all GitHub
-repositories accessible to that host identity**. It is not a per-repository
-grant. The proxy accepts only Git transfer commands, not general host commands.
-It lives with the outside launcher; stopping that launcher closes the proxy
-and cancels active transfers. A later launch creates a new proxy.
+repositories accessible to that key**. It is not a per-repository grant; to
+narrow it, name a key that GitHub accepts for fewer repositories, such as a
+deploy key. The proxy accepts only Git transfer commands, not general host
+commands. It lives with the outside launcher; stopping that launcher closes
+the proxy and cancels active transfers. A later launch creates a new proxy.
 
-Withdraw the saved grant with `devcapsule project config deny github-ssh` and
+Withdraw the saved grant with `devcapsule project config deny ssh-proxy` and
 relaunch. Configuration changes apply to the next launch, not the running one.
+
+The release candidate {{version}}-rc3 called this authorization `github-ssh`, and it
+took only `true` or `false`. The old name still works, with the same meaning,
+on the command line and in a checkout that already records it; DevCapsule
+tells you each time it meets it, because a later release removes it.
+`devcapsule project config show` gives the command that records your answer
+under the new name.
 
 This first implementation does not provide HTTPS credentials, `gh` API login,
 SSH commit signing, arbitrary GitHub SSH aliases, or a general `ssh -T` command.
 Git LFS's separate authentication protocol is not supported. Docker Desktop on
 macOS needs another transport and reports that limitation when enabled.
-An inner capsule launch can reuse an authorized outer proxy; it cannot create
-one that reads credentials on the physical host.
+An inner capsule launch can reuse an authorized outer proxy, with the key the
+outside launcher selected; it cannot create one that reads credentials on the
+physical host.
 
 ### 3. Forward your host SSH agent for a session
 

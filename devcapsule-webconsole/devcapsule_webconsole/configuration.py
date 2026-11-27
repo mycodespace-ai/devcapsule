@@ -44,9 +44,11 @@ MAXIMUM_COMMAND_BYTES = 16 * 1024
 MAXIMUM_TOKENS = 64
 # The launcher's config vocabulary a request may name; anything else is a typo or not the console's to ask.
 VERBS = ("ide", "add", "omit", "restore", "use", "set", "deny", "forget", "unbind", "env", "trust", "docker-args", "authorize", "bind")
+# ``github-ssh`` is the retired name of ``ssh-proxy``; a launcher earlier than
+# the rename knows only that one.
 SECURE_AUTHORIZATIONS = {
     "network": {"bridge", "none"}, "docker-daemon": {"none"},
-    "github-ssh": {"false", "none"},
+    "ssh-proxy": {"false", "none"}, "github-ssh": {"false", "none"},
     "development-sudo": {"false", "none"}, "host-browser": {"false", "none"}, "host-x11": {"false", "none"},
 }
 WIDENING = ("authorize", "bind", "forget", "trust accept", "docker-args set")

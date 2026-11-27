@@ -82,8 +82,12 @@ of the `devcapsule` package. See its [README](devcapsule-webconsole/README.md).
 | The capsule web console, `devcapsule-webconsole/`: types and tests in its own environment | `nox -s webconsole`, queued by `build` | [Web console README](devcapsule-webconsole/README.md) |
 | A change to the web console, seen in a browser before anything is built | `nox -s webconsole-preview`, which serves this checkout's console on loopback and prints its links | [Trying a change](devcapsule-webconsole/PRESENTATIONS.md#trying-a-change) |
 
-The hosted runner runs no Docker; the end-to-end suites run locally and
-against downloaded candidates during release acceptance.
+The automatic hosted gate runs no Docker. End-to-end suites run locally and
+against downloaded candidates during release acceptance. The manual
+[Graphviz component check](.github/workflows/graphviz-component.yml) uses Docker
+on native amd64 and arm64 runners to verify pinned source builds and rendering.
+Select the ref to verify when dispatching it; it is outside the automatic gate
+and does not replace downloaded-candidate acceptance.
 
 ## Releasing
 

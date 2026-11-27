@@ -1,7 +1,7 @@
 ---
 description: What DevCapsule needs from a Linux computer, and which distributions and Docker setups are supported.
 weight: 1
-updated: 2026-10-30
+updated: 2026-11-24
 ---
 # Linux
 
@@ -26,3 +26,35 @@ Buildx setup are expected to work without special flags; if yours hits a
 platform-specific failure, please [open an issue](https://github.com/mycodespace-ai/devcapsule/issues/new)
 with your distribution, Docker version, and error output (omitting private
 session URLs and tokens).
+
+## Docker installed as a snap
+
+DevCapsule {{tag}} does not run on Docker installed with
+`sudo snap install docker`, on Ubuntu or on any other distribution. To check
+yours:
+
+```bash
+command -v docker
+```
+
+`/snap/bin/docker` means the snap. It confines Docker in two ways that
+DevCapsule cannot work around:
+
+- Docker cannot see the computer's `/tmp` or the hidden directories in your
+  home, where DevCapsule keeps its build files, cache, and data. Image builds
+  fail with `path ... not found` or `failed to read dockerfile`.
+- Docker cannot start a container with the `no-new-privileges` hardening that
+  every capsule uses. The launch ends with `exec ...: operation not permitted`.
+
+We recommend one of two routes:
+
+1. **Replace the snap** with Docker Engine from
+   [Docker's official repository](https://docs.docker.com/engine/install/).
+   Before it removes anything, `sudo snap remove docker` saves a copy of all
+   of Docker's data, which can take a long time and look stuck.
+   `sudo snap remove --purge docker` skips that copy and permanently deletes
+   every image, container, and volume the snap holds. DevCapsule needs none of
+   that data, but only you know what else is in it: using `--purge` is your
+   decision and at your own risk.
+2. **Keep the snap and install a second Docker Engine beside it** for
+   DevCapsule to use. Instructions for this setup are still to come.

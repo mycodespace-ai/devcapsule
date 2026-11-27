@@ -12,7 +12,11 @@ from pathlib import Path
 import shlex
 from typing import Any, Mapping
 
-from .authorization import AuthorizationChoice, AuthorizationReview, review_authorizations
+from devcapsule.ssh_identity import AUTHORIZATION as SSH_PROXY, SshIdentityError, normalize_selection
+
+from .authorization import (
+    AuthorizationChoice, AuthorizationReview, current_authorization_name, review_authorizations,
+)
 from .bindings import DirectoryLookup, resolve_configuration_bindings, resolve_secret_bindings
 from .file_formats import AuthorizationScalar, ConfigurationScalar, ProjectConfigurationError, table
 from .nodes import build_node_registry
@@ -29,33 +33,59 @@ class HostAccess:
     docker_daemon: str = "none"
     network: str = "bridge"
     development_sudo: bool = False
-    github_ssh: bool = False
+    # False, or the grant that names the host key the SSH proxy offers
+    # (devcapsule.ssh_identity).
+    ssh_proxy: bool | str = False
     host_browser: bool = False
     host_x11: bool | None = None
 
     def overlay(self, answers: Mapping[str, Any]) -> HostAccess:
+        """These decisions with ``answers`` laid over them.
+
+        An answer under a retired name is its current node's, and yields to
+        an answer under the current name in the same ``answers``.
+        """
         fields = {
             "docker-daemon": ("docker_daemon", ("none", "host-socket")),
             "network": ("network", ("bridge", "host")),
             "development-sudo": ("development_sudo", (False, True)),
-            "github-ssh": ("github_ssh", (False, True)),
             "host-browser": ("host_browser", (False, True)),
             "host-x11": ("host_x11", (False, True)),
         }
         changes: dict[str, Any] = {}
         problems: list[str] = []
-        for name, value in answers.items():
+        for given, value in answers.items():
+            name = current_authorization_name(given)
+            if name != given and name in answers:
+                continue
+            if name == SSH_PROXY:
+                if _is_ssh_proxy_selection(value):
+                    changes["ssh_proxy"] = value
+                else:
+                    problems.append(
+                        f"Host decision {given!r} must be false, true, 'default', a key name or a key path; found {value!r}."
+                    )
+                continue
             if name not in fields:
-                problems.append(f"Unknown legacy host decision {name!r}.")
+                problems.append(f"Unknown legacy host decision {given!r}.")
                 continue
             attribute, domain = fields[name]
             if not any(type(value) is type(item) and value == item for item in domain):
-                problems.append(f"Host decision {name!r} must be one of {domain!r}; found {value!r}.")
+                problems.append(f"Host decision {given!r} must be one of {domain!r}; found {value!r}.")
             else:
                 changes[attribute] = value
         if problems:
             raise ProjectConfigurationError("\n".join(problems))
         return replace(self, **changes)
+
+
+def _is_ssh_proxy_selection(value: object) -> bool:
+    """Whether ``value`` is an ``ssh-proxy`` answer in its recorded form."""
+    try:
+        normalized = normalize_selection(value)
+    except SshIdentityError:
+        return False
+    return type(normalized) is type(value) and normalized == value
 
 
 @dataclass(frozen=True)
@@ -131,7 +161,7 @@ class ConfigurationReview:
     def effective_host(self, overrides: Mapping[str, Any] | None = None) -> HostAccess:
         answers = {
             name: value for name, value in self.resolved_authorizations().items()
-            if name in {"docker-daemon", "network", "development-sudo", "host-browser", "host-x11", "github-ssh"}
+            if name in {"docker-daemon", "network", "development-sudo", "host-browser", "host-x11", SSH_PROXY}
         }
         return self.legacy_host.overlay(answers).overlay(overrides or {})
 

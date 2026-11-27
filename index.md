@@ -45,6 +45,7 @@ status file; internal WIP/archive documents use the local index in that status.
 - [Integration tests](engineering-docs/development/integration-tests.md)
 - [End-to-end tests](engineering-docs/development/e2e-tests.md)
 - [Packaged agent instructions for E2E recording and presentation](devcapsule-src/devcapsule/presentation_tools/README.md)
+- [Recorded-E2E agent skill](devcapsule-src/devcapsule/presentation_tools/SKILL.md)
 - [Running E2E scenario recordings from a shell with nox](engineering-docs/development/running-e2e-scenario-recordings.md)
 - [Web console presentations: discovery, storage and generation](devcapsule-webconsole/PRESENTATIONS.md)
 - [E2E scenario script: GitHub SSH through the host proxy](devcapsule-src/tests/e2e/scripts/github-ssh-proxy.md)
@@ -81,6 +82,8 @@ status file; internal WIP/archive documents use the local index in that status.
 - [How the website is published, and what it still lacks](engineering-docs/implementation-notes/website/2026-09-22-website-publishing-contract.md)
 
 ## Root Requirement Records
+
+- [R-TOOLS-001 Graphviz as a selectable capsule component](engineering-docs/requirements/product/r-tools-001-graphviz-component.md)
 
 - [Conservative configuration writers and tolerant readers](engineering-docs/requirements/product/r-config-001-conservative-writers-tolerant-readers.md) — R-CONFIG-001, accepted 0.3 direction.
 - [R-WRAP-001 Wrapped projects](engineering-docs/requirements/product/r-wrap-001-wrapped-projects.md)
@@ -150,6 +153,7 @@ status file; internal WIP/archive documents use the local index in that status.
 
 ## Work Orders
 
+- [CLI syntax and help discovery — owner decisions and review](engineering-docs/work-orders/2026-11-17-cli-syntax-and-discovery.md)
 - [Test improvements: declared public surfaces, no patching of project modules, the discovery module first](engineering-docs/work-orders/2026-11-08-test-improvements.md)
 - [Wrapped projects: a foreign repository as a submodule, three commands](engineering-docs/work-orders/2026-11-02-wrapped-projects.md)
 - [0.3.0 user documentation CLI alignment, full stub authoring, and prose review — maintenance, 0.3.0](engineering-docs/work-orders/2026-10-30-user-docs-0-3-0-cli-alignment.md)
@@ -222,6 +226,7 @@ status file; internal WIP/archive documents use the local index in that status.
 
 - [DevCapsule Python CLI](devcapsule-src/README.md)
 - [DevCapsule test suites](devcapsule-src/tests/README.md)
+- [Golden platform lock test fixtures](devcapsule-src/tests/resources/golden_locks/README.md)
 - [DevCapsule implementation requirements overview](devcapsule-src/REQUIREMENTS.md)
 - [R-ENV-001 Dockerized PyCharm Runtime](engineering-docs/requirements/devcapsule/r-env-001-dockerized-pycharm-runtime.md)
 - [R-RUNTIME-001 Identical Launcher And Container Runtime By Default](engineering-docs/requirements/devcapsule/r-runtime-001-launcher-runtime-identity.md)
@@ -331,6 +336,9 @@ history; record current decisions in the active documents above.
 - [Release-dependent test fixtures cause avoidable release PR churn](engineering-docs/bugs/devcapsule/2026-10-31-release-dependent-test-fixtures.md)
 
 - [Concurrent web consoles on `127.0.0.1` overwrite one another's authentication cookie across ports](engineering-docs/bugs/devcapsule/2026-10-31-webconsole-cookie-collides-across-ports.md)
+- [Recursive dry-run staging rejects a valid Docker socket group](engineering-docs/bugs/devcapsule/2026-11-18-recursive-dry-run-rejects-docker-group-zero.md)
+- [The pinned linux-amd64 .NET SDK prevents capsule creation](engineering-docs/bugs/devcapsule/2026-11-27-dotnet-sdk-archive-blocks-rc4.md)
+- [Bootstrap help names an unused project-directory default](engineering-docs/bugs/devcapsule/2026-11-18-bootstrap-help-wrong-default-project.md)
 - [`project config show --help` advertises JSON schema 1 while emitting schema 2, and retired `project config default|trust` spellings print no replacement hint](engineering-docs/bugs/devcapsule/2026-10-30-config-show-json-help-and-retired-home-command-hints.md)
 - [An old lock keeps the replaced IDE beside an ordinary IDE override](engineering-docs/bugs/devcapsule/2026-10-29-legacy-lock-keeps-the-replaced-ide.md)
 - [Workstation-scoped commands live under `project config` and need a project](engineering-docs/bugs/devcapsule/2026-10-25-workstation-commands-live-under-project-config.md)

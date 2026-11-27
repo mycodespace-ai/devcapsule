@@ -1,0 +1,47 @@
+{
+  "checked-at": "2026-11-18T07:22:07.899726+00:00",
+  "platform": "linux-arm64",
+  "base": "docker.io/mycodespaceai/devcapsule-base@sha256:7d32268065b60b6ad75139d23c1e6fbb2daa43b3f2c53d2856c5e2e39891652b",
+  "graphviz": "16.1.1",
+  "identity": "dot - graphviz version 16.1.1 (20261108.1752)",
+  "source-sha256": "42806c79271e286028b9422c7016b0368ad86beb381aa46d1d8c720f69ce3fc7",
+  "offline-build": true,
+  "runtime-user": "1000:1000",
+  "image-checks": [
+    "build inputs are absent",
+    "dot comes from the component through the declared PATH",
+    "license notices are present",
+    "bundled runtime libraries are present",
+    "every tool and plugin finds its shared libraries",
+    "build-only packages did not reach the image"
+  ],
+  "renders": [
+    {
+      "engine": "dot",
+      "format": "svg",
+      "bytes": 1454
+    },
+    {
+      "engine": "dot",
+      "format": "png",
+      "bytes": 4167
+    },
+    {
+      "engine": "dot",
+      "format": "pdf",
+      "bytes": 6499
+    },
+    {
+      "engine": "neato",
+      "format": "svg",
+      "bytes": 1499
+    },
+    {
+      "engine": "sfdp",
+      "format": "svg",
+      "bytes": 1461
+    }
+  ],
+  "source-revision": "9df832f917a93d08d5808a6122fc9c8a5e877b9d",
+  "ci-run": "https://github.com/mycodespace-ai/devcapsule/actions/runs/44257920433"
+}

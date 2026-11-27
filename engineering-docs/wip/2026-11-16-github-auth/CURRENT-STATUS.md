@@ -4,11 +4,11 @@ Mnemonic: `github-auth`
 
 Start date: 2026-11-16
 
-State: paused; Pair Review complete; PR #47 targets release-0.3.1; two inherited unit-gate failures remain.
+State: resumed 2026-11-25 for one 0.3.1 fix: the authorization is renamed `ssh-proxy` and selects the host key. Delivered on `ws-github-auth/ssh-proxy-fix` as [PR #75](https://github.com/mycodespace-ai/devcapsule/pull/75) into `release-0.3.1`; the owner tests it with a locally built executable and merges.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@94a29cb6eedb
 
-Branch association: `ws-github-auth/ssh-proxy`, from canonical `upstream/main` at `1942f396`.
+Branch association: `ws-github-auth/ssh-proxy-fix`, from `release-0.3.1` at `82a83b9a` (owner direction, 2026-11-25). The first branch, `ws-github-auth/ssh-proxy`, was merged by PR #47 at `a464088d` on 2026-11-16 and deleted.
 
 Integration target: `release-0.3.1` (owner direction, 2026-11-16)
 
@@ -23,6 +23,60 @@ through a proxy owned by the outside launcher. Private keys remain on the host.
 The owner selected the new `github-auth` workstream and Git over SSH first on
 2026-11-16 through the console decision. HTTPS and `gh` API authentication are
 outside this slice. Review partner: Antigravity, `gemini-4-hydrogen-high`.
+
+## SSH proxy key selection, 2026-11-25
+
+Owner rulings of 2026-11-25, in the session that resumed this workstream:
+
+1. The authorization is `ssh-proxy`, not `github-ssh`. The proxy still carries
+   GitHub only in 0.3.1; other Git hosts are a later slice.
+2. Its value selects the host key. `default` is the one private key named
+   `id_*` in `~/.ssh`. A value without `/` is a file in `~/.ssh`. A value with
+   `/` is a path, absolute or beginning with `~/`. `true` lets host OpenSSH
+   choose, as rc3 did. `false` denies.
+3. The old name and its old values keep working. Wherever the old name is
+   found, the user is told to change it, because it will be removed. No
+   release for the removal is set.
+
+How the rulings were carried out, where they left a choice:
+
+- `default` is the node's own grant value and is recorded as that word. The
+  launching host looks for the key at each launch. So the existing keyword
+  `default`, "accept the node's reference value", keeps its meaning, and a
+  second `id_*` key that appears later stops the launch with a request for a
+  name. With `github-ssh` in rc3, `default` recorded `true`. The owner
+  confirmed this on 2026-11-25: the key is found when the user runs
+  DevCapsule, because she may change her keys, and a launch that fails and
+  says what changed in `~/.ssh` is acceptable.
+- A named key is offered first, and the agent's other keys and the default key
+  files are not offered. `IdentityFile` lines that the host's own
+  `~/.ssh/config` gives GitHub are still offered after it: OpenSSH has no
+  option that withdraws them. The user documentation says so.
+- A named key must be a file on the launching host, or the launch stops before
+  the capsule starts. Inside a capsule the outside launcher's proxy and key
+  are reused and no key is looked for.
+- A checkout that records `github-ssh` is read as `ssh-proxy`, is not
+  rewritten, and gets a note at each launch and in `config show` with the
+  command that records the answer again. Recording or forgetting `ssh-proxy`
+  removes the old entry.
+- The capsule-side command `github-ssh`, the socket variable and the socket
+  path are unchanged: an image built with rc3 holds them.
+
+Facts found on the way:
+
+- `github-ssh` shipped in one pre-release only, 0.3.1-rc3. No final release
+  has it.
+- A launcher that does not know a recorded authorization name refuses the
+  launch and asks for the entry's removal. So a checkout that records
+  `ssh-proxy` cannot be launched by rc3, and once `github-ssh` is removed a
+  checkout that still records it is refused in the same way.
+
+Checks on the working tree, 2026-11-25: the gate, `nox -s build`, passed, with
+3550 unit tests, the type check, the documentation contract and 474 web
+console tests; `nox -s integration` passed, 265 passed and 3 skipped. Twelve
+planted faults in the new code were each caught by a test. No capsule was
+launched and no real key or GitHub connection was used: the end-to-end
+scenario was not rerun.
 
 ## Current state
 
@@ -99,13 +153,15 @@ checkout remains untouched. Review evidence and prepared PR text are indexed bel
 
 ## Planned next step
 
-Review the two disclosed inherited gate failures with maintenance before release
-acceptance. The human merges PR #47 into release-0.3.1; consult live hosted checks
-at that time. After the owner reports the merge, fetch and verify the release
-contains this tree. Maintenance owns carrying the release to main. Do not conclude
-this workstream until remote main contains the finished tree.
-Pair Review is complete; do not restart it or repeat the recorded E2E without a
-new change or unresolved concern. The review branch remains pushed.
+The owner tests the `ssh-proxy` change with `devcapsule-src/dist/devcapsule-local.pex`,
+built from the code of commit `0979c31d`, and merges PR #75 into
+`release-0.3.1`. Decide with the owner whether it takes a Pair Review round
+and a rerun of the recorded end-to-end scenario with a named key.
+Maintenance owns carrying the release to main. Do not conclude this workstream
+until remote main contains the finished tree.
+
+PR #47 was merged into `release-0.3.1` at `a464088d` on 2026-11-16; the
+earlier text of this section that waited for that merge is superseded.
 
 ## Rootless Docker fix propagation
 
@@ -461,8 +517,29 @@ remote PR existence remains unverified.
 
 ## Open Threads
 
-- Awaiting the human: release acceptance and merge of PR #47 into release-0.3.1;
-  the two inherited recursive Docker gid-zero test failures remain unresolved.
+- Awaiting the human, 2026-11-25: the owner's own test and the merge of the
+  `ssh-proxy` pull request; the release that removes `github-ssh`; whether a
+  launch should refuse, or warn, when the host's SSH configuration adds its
+  own `IdentityFile` for GitHub beside a named key.
+- The published state on the coordination branch still says paused, as of
+  2026-11-16; it was not republished on 2026-11-25.
+- Pair Review of PR #75, asked by the owner on 2026-11-25 with Codex,
+  gpt-6.2-astra: not started. Codex 0.163.0 refused that model for this
+  account, and its catalogue listed no 6.2 model. The owner suspended the
+  Claude Code session and runs the review from inside Codex. No review
+  commit, review pull request or assessment exists. Left ready for it: the
+  committed brief, and the worktree `~/worktrees/github-auth-review` on the
+  local branch `ws-github-auth/ssh-proxy-fix-review`, not pushed, with its
+  own `.venv` and the website cloned at the recorded commit. Remove the
+  worktree when the loop ends. Its scratch is pytest's default under `/tmp`:
+  `/opt/devcapsule-gate` is absent and `/opt` is not writable in this capsule.
+- `devcapsule-src/dist/devcapsule-local.pex` was built from the code of
+  `0979c31d`. Rebuild it after any code change from the review.
+- Not done for the `ssh-proxy` change: a decision record and a rerun of the
+  end-to-end scenario.
+- PR #47 was merged into release-0.3.1 on 2026-11-16. Whether the two inherited
+  recursive Docker gid-zero test failures still stand was not rechecked on
+  2026-11-25; the unit session passed in full.
 - Maintenance subsequently carries the release to main; preserve main's version,
   three main-only documents and index entries listed in the final review record.
 - Pair Review #44 is merged; no reviewer correction remains pending.
@@ -477,6 +554,7 @@ remote PR existence remains unverified.
 
 ## Workstream document index
 
+- [Review brief for PR #75, the `ssh-proxy` authorization, Codex gpt-6.2-astra](evidence/2026-11-25-ssh-proxy/review-brief.md)
 - [Final Pair Review and release-target validation](evidence/2026-11-16-final-review.md)
 - [Round 2 brief](evidence/round-2.md)
 

@@ -4,13 +4,13 @@ Mnemonic: `component-catalog`
 
 Start date: 2026-08-30
 
-State: paused 2026-10-08; PR #171 merged into the workstream branch and PR #170 merged into `main` (`6ae1a01`); the IntelliJ slice is on `main` and nothing is in flight; the pair moves to project-management
+State: integrating 2026-11-27. The SDK fix and live component validation passed on the fix branch. Owner release merge is next.
 
-Definition read: WORKFLOW.md@a8062953ba89, WORKFLOW-LOCAL.md@9bc049624f48
+Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5787d0e0395f
 
-Branch association: `ws-component-catalog/intellij-idea`
+Branch association: `ws-component-catalog/rc4-sdk-links` from release `85b2e078`. Previous `ws-component-catalog/version-upgrades` integrated through PR #74.
 
-Integration target: `main`
+Integration target: `release-0.3.1`
 
 Delivery method: pull request, merge commit; owner operates the GitHub UI
 
@@ -34,6 +34,50 @@ workstream-specific capability profiles. New/changed code coverage must exceed
 No release or website publishing.
 
 ## Current State
+
+- 2026-11-25. Completed the `release-0.3.1` `linux-amd64` all-component version-upgrades sweep (`embedded-35` → `embedded-36`) on `ws-component-catalog/version-upgrades` off `origin/release-0.3.1` (`82a83b9a`):
+  - **10 components upgraded on `linux-amd64` (with `linux-arm64` pins intentionally left untouched per owner direction because no `linux-arm64` test environment is available here):**
+    - `codex`: `0.167.0` → **`0.172.0`**
+    - `claude-code`: `2.1.321` → **`2.1.332`**
+    - `antigravity-cli`: `1.4.12` → **`1.5.17`**
+    - `vscode`: `1.144.0` → **`1.148.0`**
+    - `pycharm`: `2026.2.4` → **`2026.3.0.2`**
+    - `intellij`: `2026.2.4` → **`2026.3.0.1`**
+    - `rider`: `2026.2.4` → **`2026.3.0.2`**
+    - `dotnet-sdk`: `10.0.401` → **`11.0.100`**
+    - `graphviz`: `16.1.1` → **`16.1.2`**
+    - `playwright`: `1.63.0` → **`1.65.2`** (Chromium `159.0.8154.6` / revision `1255`, `ffmpeg-1013`)
+  - **4 components already at latest upstream version (`no update needed`):**
+    - `xfce4-terminal` (`1.1.3`, latest Ubuntu Noble package)
+    - `eclipse` (`2026-09-R`, latest Eclipse Java quarterly release)
+    - `codium` (`1.143.17232`, latest VSCodium stable release)
+    - `postgresql-client` (`16`, base-supplied Ubuntu 24.04 major)
+  - Regenerated all 12 golden lock files under `devcapsule-src/tests/resources/golden_locks/`.
+  - Retired the 3 legacy test files that hardcoded previous default component versions (`tests/test_capability_minimums.py`, `tests/test_capability_policy.py`, `tests/test_project_init.py`) into convention-compliant unit/integration test files (`tests/unit/devcapsule/configuration/test_capabilities.py` and `tests/integration/test_{capability_minimums,capability_policy,project_init}.py`).
+  - Added `devcapsule-src/tests/integration/test_all_components_instantiation.py` with both offline full-catalog initialization/launch-preparation verification across all 12 non-IDE capabilities and 7 IDE surfaces and an opt-in `@pytest.mark.docker` live capsule instantiation smoke test (not executed inside this rootless `uid=0` capsule).
+
+- 2026-11-25. Resumed `component-catalog` on `ws-component-catalog/version-upgrades` off `origin/release-0.3.1` (`82a83b9a`, after Xfce Terminal PR #62 and PR #72 merged). Acknowledged three `project-management` items targeting `release-0.3.1`:
+  1. All-component version-upgrades sweep (active first slice).
+  2. `gh` (GitHub CLI) optional component (queued next).
+  3. `gcloud` (Google Cloud CLI) optional component (queued after `gh`).
+
+- 2026-11-18. At the owner's request, the terminal addition from
+  [PR #60](https://github.com/mycodespace-ai/devcapsule/pull/60) now targets
+  0.3.1. The release branch at `5c222388` includes Graphviz and its own
+  resolution test layout. Matrix `embedded-35` resolves the terminal with
+  Graphviz and Codex on amd64. The release driver owns the merge.
+
+- 2026-11-18. The owner selected Xfce Terminal as a tabbed desktop IDE with
+  the exact configuration value `xfce4-terminal`. The fresh branch started
+  at `deffc8fe`, the accepted mainline, so it needed no synchronization.
+- Accepted project-management's GitHub CLI component for the backlog after
+  the terminal. Its scope includes pinned acquisition, persistence and secret
+  binding for authentication, and a read-only API smoke.
+- Accepted the V1 assignments. Support component-upgrades with the bounded
+  validation inventory and its init/config review. Maintain the plain-language
+  catalogue terminology audit. The release driver owns the per-release component
+  sweep. Continue manual evidence curation through the successor to 0.3.1.
+  Component-upgrades owns the later evidence submission and automation work.
 
 - 2026-10-08, after the pause: the owner merged
   [PR #171](https://github.com/ccozianu/devcapsule/pull/171) into
@@ -250,15 +294,28 @@ No release or website publishing.
 
 ## Planned Next Step
 
-The IntelliJ slice is integrated and nothing is in flight. On resumption, start
-the next slice on a fresh sub-branch from `main`, and first bring the owner the
-product questions the #171 review deferred: rollback composition (`versions
-rollback` re-persists an execution snapshot), command-only recovery from a
-corrupt local pins document, and `versions proposal` exporting the effective
-lock. The Playwright record closes only on the owner's confirmed `project run`.
-Do not migrate self-hosting configuration or replace the launcher.
+Owner merges `ws-component-catalog/rc4-sdk-links` into `release-0.3.1`. Maintenance then validates the release revision and propagates it to main for RC4. The owner selected component-catalog to take the blocking SDK correction on November 27. After that correction, resume the optional component work. Earlier sequence follows.
+
+1. Open and merge the `ws-component-catalog/version-upgrades` → `release-0.3.1` pull request for the `linux-amd64` version-upgrades sweep (`embedded-36`) and all-components instantiation integration test.
+2. Implement `gh` (GitHub CLI) and `gcloud` (Google Cloud CLI) as available optional components targeting `release-0.3.1`.
+3. Existing rollback, pin recovery, and proposal-export questions remain in Open Threads.
 
 ## Validation And External State
+
+- The rebased `v0.3.1-local-linux-x86_64` executable passed the amd64 browser
+  smoke on the published base: two independent tab shells in the checkout,
+  a saved Vim edit, and clean exit after closing the last shell. All 25
+  release matrix integration cases passed, including the new terminal lock.
+
+- Xfce Terminal, 2026-11-18. The packaged CLI initialized and ran a fresh
+  amd64 checkout against the published recipe-11 base. Playwright opened a
+  second tab, checked separate shell PIDs and the project path in both,
+  saved a file with Vim and closed both shells. The launcher returned zero.
+  The recording and screenshot are under
+  `devcapsule-src/tests/e2e/evidence/xfce4-terminal-tabs/`. Switching an
+  existing PyCharm checkout to the terminal retained its Codex capability.
+  The build and web console suites, docs contract and resolution-loader
+  integration check passed. The release owner has the PR for review.
 
 - Codex acceptance recheck at `522f239`: the three independent PR-review
   counterexamples pass. Full `nox -s build` passed with 1,257 passing unit
@@ -385,6 +442,11 @@ Do not migrate self-hosting configuration or replace the launcher.
   and the successful final-gate follow-up by mail. No unrelated fix was committed.
 
 ## Open Threads
+
+The linux-amd64 SDK and all-components live test passed at `b1275f87`. The [release run record](../../releases/v0.3.1/test-runs.json) contains the full integration result. Release merge, candidate-revision validation and RC4 publication remain outstanding. The original component-catalog checkout’s local edits were outside this fix.
+
+- The amd64 graphical smoke covers separate shell tabs, working directory
+  and shutdown. ARM64 has pinned packages and awaits a native desktop smoke.
 
 - #171 and #170 are merged, checked on 2026-10-08 after the pause; the GitHub
   merge records are the integration evidence. No request to Fable or Codex is

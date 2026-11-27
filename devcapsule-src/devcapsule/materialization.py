@@ -30,6 +30,7 @@ from devcapsule.webconsole_bundle import (
 from devcapsule.platforms import XdgHomes
 from devcapsule.components.catalog import (
     ComponentCatalogError,
+    COMPONENTS,
     selected_component_definitions,
 )
 from devcapsule.components import LockedArtifactDeclaration
@@ -44,6 +45,7 @@ from devcapsule.images.build import (
     EnvComponent,
     ExecComponent,
     FileComponent,
+    FileGroupComponent,
     ImageBuildSpec,
     LabelComponent,
     normalize_archive_directory,
@@ -175,9 +177,15 @@ class SurfaceMaterialization:
     requires_variant: bool
     # Root-run build steps after the installation directory is copied in.
     post_install: tuple[ExecComponent, ...]
+    deb_package: bool = False
 
 
 SURFACE_MATERIALIZATIONS: dict[str, SurfaceMaterialization] = {
+    "xfce4-terminal": SurfaceMaterialization(
+        component_id="xfce4-terminal", family="xfce4-terminal",
+        recipe_id="xfce4-terminal-deb", recipe_version="1", installation_path="/usr/bin/xfce4-terminal",
+        archive_probes=(), requires_variant=False, post_install=(), deb_package=True,
+    ),
     "eclipse": SurfaceMaterialization(
         component_id="eclipse", family="eclipse",
         recipe_id="eclipse-local-materialization", recipe_version="3",
@@ -673,18 +681,22 @@ def surface_materialization_spec(
             ("org.opencontainers.image.revision", info.source_revision),
             ("org.opencontainers.image.version", info.build_mnemonic),
         )
+    surface_components = () if profile.deb_package else (
+        ContributionComponent(
+            component_id,
+            (DirectoryComponent(surface_root, profile.installation_path), *profile.post_install),
+            (profile.installation_path,),
+        ),
+    )
+    native_inputs = _native_package_inputs(ancillary_files, profile, surface_root, artifact)
     return ImageBuildSpec(
         image=image,
         base_image=base_reference,
         components=(
-            ContributionComponent(
-                component_id,
-                (DirectoryComponent(surface_root, profile.installation_path), *profile.post_install),
-                (profile.installation_path,),
-            ),
+            *surface_components,
             FileComponent(component_template, COMPONENT_TEMPLATE_PATH, permissions=0o644),
-            *_native_package_components(ancillary_files, native_package_directory),
-            *_ancillary_contributions(ancillary_files, npm_projects),
+            *_native_package_components(native_inputs, native_package_directory),
+            *_ancillary_contributions(ancillary_files, npm_projects, platform=platform),
             # The image supplies the alias; the runtime creates its writable
             # target in the persistent home as the capsule user. Never replace
             # pre-existing content in a custom base to establish this mapping.
@@ -870,21 +882,24 @@ def ensure_materialized_surface(
         work_root.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix="devcapsule-materialize-", dir=work_root) as temporary_value:
             temporary = Path(temporary_value)
-            try:
-                surface_root = unpacked_tree(
-                    cache_root, artifact.sha256,
-                    lambda destination: normalize_archive_directory(acquisition.path, destination),
-                )
-            except OSError as exc:
-                raise CliError(
-                    f"Cannot unpack the verified {component_id} archive beneath "
-                    f"{cache_root / UNPACKED_DIRECTORY}: {exc}"
-                ) from exc
-            for probe in profile.archive_probes:
-                if not (surface_root / probe).is_file():
-                    raise CliError(
-                        f"The verified {component_id} archive does not contain {probe}."
+            if profile.deb_package:
+                surface_root = acquisition.path
+            else:
+                try:
+                    surface_root = unpacked_tree(
+                        cache_root, artifact.sha256,
+                        lambda destination: normalize_archive_directory(acquisition.path, destination),
                     )
+                except OSError as exc:
+                    raise CliError(
+                        f"Cannot unpack the verified {component_id} archive beneath "
+                        f"{cache_root / UNPACKED_DIRECTORY}: {exc}"
+                    ) from exc
+                for probe in profile.archive_probes:
+                    if not (surface_root / probe).is_file():
+                        raise CliError(
+                            f"The verified {component_id} archive does not contain {probe}."
+                        )
             template_path = temporary / "component-runtime-template.json"
             template_path.write_text(
                 canonical_json(component_runtime_template(component_id)) + "\n", encoding="utf-8"
@@ -902,7 +917,8 @@ def ensure_materialized_surface(
                 for index, (acquired, declaration) in enumerate(ancillary_acquisitions)
             )
             npm_projects = _npm_projects(ancillary_files, temporary)
-            native_packages = _prepare_native_packages(ancillary_files, temporary / "native-packages")
+            native_inputs = _native_package_inputs(ancillary_files, profile, surface_root, artifact)
+            native_packages = _prepare_native_packages(native_inputs, temporary / "native-packages")
             webconsole_root: Path | None = None
             if runtime_pex is not None:
                 try:
@@ -1102,6 +1118,7 @@ class NpmProject:
 def _ancillary_contributions(
     files: tuple[tuple[Path, LockedArtifactDeclaration], ...],
     projects: tuple[NpmProject, ...],
+    *, platform: str,
 ) -> tuple[ContributionComponent, ...]:
     files = tuple((path, item) for path, item in files if item.artifact_format != "deb-package")
     contributions = []
@@ -1115,26 +1132,47 @@ def _ancillary_contributions(
         exports = tuple(destination for destination in destinations
                         if not any(destination != parent and Path(destination).is_relative_to(parent)
                                    for parent in destinations))
+        definition = COMPONENTS.get(component_id)
+        recipe = None if definition is None else definition.build_recipe(selected[0][1].version, platform)
+        if recipe is not None:
+            exports = recipe.exports
+        copies: tuple[DirectoryComponent | FileComponent | FileGroupComponent, ...] = tuple((DirectoryComponent(path, item.destination)
+                        if item.artifact_format in {"zip-directory", "tar-gz-directory"}
+                        else FileComponent(path, _artifact_image_path(item), permissions=item.permissions))
+                       for path, item in selected)
+        if recipe is not None:
+            if not all(isinstance(item, FileComponent) for item in copies):
+                raise CliError("A component build recipe requires file-shaped pinned inputs.")
+            copies = (FileGroupComponent(tuple(item for item in copies if isinstance(item, FileComponent))),)
         contributions.append(ContributionComponent(
             component_id,
             (
-                *((DirectoryComponent(path, item.destination) if item.artifact_format in {"zip-directory", "tar-gz-directory"}
-                   else FileComponent(path, _artifact_image_path(item), permissions=item.permissions))
-                  for path, item in selected),
+                *copies,
                 *(ExecComponent(wheel_install_step(destination, tuple(wheel_name(item.url)
                     for _path, item in selected if item.artifact_format == "python-wheel" and item.destination == destination)))
                   for destination in wheel_destinations),
                 *(FileComponent(project.package_json, f"{project.destination}/package.json", permissions=0o644)
                   for project in npm),
                 *(ExecComponent(npm_install_step(project.destination)) for project in npm),
+                *(ExecComponent(command) for command in (() if recipe is None else recipe.commands)),
             ),
             exports,
         ))
     return tuple(contributions)
 
 
+def _native_package_inputs(
+    files: tuple[tuple[Path, LockedArtifactDeclaration], ...], profile: SurfaceMaterialization,
+    surface_root: Path, artifact: ArtifactSpec,
+) -> tuple[tuple[Path, str], ...]:
+    packages = [(path, item.sha256) for path, item in files if item.artifact_format == "deb-package"]
+    if profile.deb_package:
+        packages.append((surface_root, artifact.sha256))
+    return tuple(packages)
+
+
 def _native_package_components(
-    files: tuple[tuple[Path, LockedArtifactDeclaration], ...],
+    packages: tuple[tuple[Path, str], ...],
     directory: Path | None,
 ) -> tuple[DirectoryComponent | ExecComponent, ...]:
     """Install checksummed distribution packages in the final image, offline.
@@ -1143,12 +1181,11 @@ def _native_package_components(
     would. Dependencies must all be pinned or already supplied by the base;
     missing dependencies fail the build rather than downloading anything.
     """
-    packages = [(path, item) for path, item in files if item.artifact_format == "deb-package"]
     if not packages:
         return ()
     if directory is None:
         raise CliError("Native packages must be staged before image construction.")
-    paths = [f"/tmp/devcapsule-native-debs/{item.sha256}.deb" for _path, item in packages]
+    paths = [f"/tmp/devcapsule-native-debs/{digest}.deb" for _path, digest in packages]
     quoted = " ".join(shell_quote(path) for path in paths)
     return (
         DirectoryComponent(directory, "/tmp/devcapsule-native-debs"),
@@ -1157,14 +1194,13 @@ def _native_package_components(
 
 
 def _prepare_native_packages(
-    files: tuple[tuple[Path, LockedArtifactDeclaration], ...], directory: Path,
+    packages: tuple[tuple[Path, str], ...], directory: Path,
 ) -> Path | None:
-    packages = [(path, item) for path, item in files if item.artifact_format == "deb-package"]
     if not packages:
         return None
     directory.mkdir()
-    for path, item in packages:
-        target = directory / f"{_validated_sha256(item.sha256, 'Native package SHA-256')}.deb"
+    for path, digest in packages:
+        target = directory / f"{_validated_sha256(digest, 'Native package SHA-256')}.deb"
         shutil.copyfile(path, target)
         target.chmod(0o644)
     return directory

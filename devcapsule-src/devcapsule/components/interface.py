@@ -63,6 +63,18 @@ class AcquisitionContract:
 
 
 @dataclass(frozen=True)
+class ComponentBuildRecipe:
+    """Trusted offline installation commands and the paths exported from their build stage.
+
+    Inputs are checksum-pinned artifacts. Build-only sources and dependencies
+    remain in the isolated contribution stage, outside the exported paths.
+    """
+
+    commands: tuple[tuple[str, ...], ...]
+    exports: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class LockedArtifactDeclaration:
     """One lock-pinned artifact contribution to a local environment image.
 
@@ -76,8 +88,9 @@ class LockedArtifactDeclaration:
       extracted from the tarball and copied to ``destination``.
     - ``python-wheel``: verified wheels sharing a destination install offline
       into its ``venv/``, with the original wheels retained in ``wheels/``.
-    - ``tar-gz-directory``: bounded regular files and directories from a tar.gz,
-      preserving executable permissions without stripping a top-level directory.
+    - ``tar-gz-directory``: bounded regular files, directories and relative symlinks
+      to regular files within the same tar.gz. Preserves executable permissions
+      without stripping a top-level directory.
     - ``zip-directory``: bounded, regular-file-only extraction copied to the
       destination directory, preserving executable permissions.
     - ``npm-package``: the download is an npm tarball, installed with npm's
@@ -134,6 +147,14 @@ class ComponentDefinition(ABC):
         """Other catalog components required for this component to function."""
         return ()
 
+    def build_recipe(self, version: str, platform: str) -> ComponentBuildRecipe | None:
+        """Optional trusted offline build after this component's artifacts are copied.
+
+        The recipe runs in this component's contribution stage. Only its
+        explicit exports enter the final environment image.
+        """
+        return None
+
     def acquisition(self) -> AcquisitionContract | None:
         """The vendor acquisition this component requires, if any.
 
@@ -156,7 +177,7 @@ class ComponentDefinition(ABC):
     def secret_inputs(self) -> tuple[SecretInputDeclaration, ...]:
         """Declare secret inputs that a developer may explicitly bind."""
 
-    def state_seeds(self) -> tuple[StateSeedDeclaration, ...]:
+    def state_seeds(self, version: str | None = None) -> tuple[StateSeedDeclaration, ...]:
         """Default files to place in this component's state slots when absent.
 
         Most components need none (the default).  A component whose tool

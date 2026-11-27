@@ -47,7 +47,7 @@ where = ["."]
 include = ["devcapsule*"]
 
 [tool.setuptools.package-data]
-"devcapsule.presentation_tools" = ["README.md"]
+"devcapsule.presentation_tools" = ["README.md", "SKILL.md"]
 "devcapsule" = [
   "_build_info.json",
   "_compatibility-v1.json",

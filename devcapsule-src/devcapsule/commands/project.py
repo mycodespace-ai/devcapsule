@@ -28,6 +28,7 @@ from typing import Any, Callable, ClassVar, Mapping, Sequence
 from devcapsule.launch.command_output import preparation_diagnostics
 from devcapsule.commands.framework import (
     STABLE_JSON_HELP,
+    CarrierAnswer,
     Command,
     Group,
     add_carrier_options,
@@ -116,12 +117,15 @@ from devcapsule.recursive_successor import (
     launch_successor,
 )
 from devcapsule.configuration.authorization import (
+    RETIRED_AUTHORIZATION_NAMES,
     AuthorizationChoice,
     AuthorizationDeclaration,
     authorization_declarations,
+    current_authorization_name,
     immutable_registry_reference,
     normalize_authorization_value,
     render_authorization_value,
+    retired_authorization_notice,
 )
 from devcapsule.configuration.file_formats import (
     ProjectConfigurationError,
@@ -342,7 +346,7 @@ class ProjectInitCommand(Command):
                 value=answer.value,
                 justification=answer.justification,
             )
-            for answer in carrier_answers(arguments)
+            for answer in _carrier_answers(arguments)
         )
         require, offer, ide, agents = _init_selection(arguments)
         report = initialize_project(
@@ -368,7 +372,7 @@ class ProjectInitCommand(Command):
 
 def _add_owner_options(parser: argparse.ArgumentParser) -> None:
     """The options ``init`` and ``wrap`` share: the owner's own checkout, the project's identity, the matrix escape."""
-    parser.add_argument("--ide", metavar="IDE", help="Your IDE for this checkout: python-ide, frontend-ide, vscode-ide, java-ide, eclipse-ide or dotnet-ide; component names such as pycharm or vscode also work.")
+    parser.add_argument("--ide", metavar="IDE", help="Your IDE for this checkout: python-ide, frontend-ide, vscode-ide, java-ide, eclipse-ide, dotnet-ide or xfce4-terminal; component names such as pycharm or vscode also work.")
     parser.add_argument("--with", dest="capabilities", action="append", default=[], metavar="CAPABILITY",
                         help="Add a capability for your checkout. Repeatable.")
     parser.add_argument("--name", dest="project_name", help="Project display name.")
@@ -410,13 +414,16 @@ class ProjectWrapCommand(Command):
     @classmethod
     def run(cls, arguments: argparse.Namespace, context: object | None) -> int:
         from devcapsule.wrap import WrapRequest, wrap_project
+        from importlib.resources import files
+        from importlib.metadata import version
+        from devcapsule.presentation_authoring import KIT_ASSETS, install_project_skills
         from devcapsule.platforms import Platform
         from devcapsule.resolution_matrix import MATRICES
         matrix = MATRICES[Platform.current()]
         ide = matrix.canonical_name(arguments.ide) if arguments.ide is not None and arguments.ide.strip().lower() != "none" else None
         answers = tuple(
             ProvidedAnswer(family=answer.family, name=answer.name, value=answer.value, justification=answer.justification)
-            for answer in carrier_answers(arguments)
+            for answer in _carrier_answers(arguments)
         )
         report = wrap_project(
             WrapRequest(
@@ -436,6 +443,15 @@ class ProjectWrapCommand(Command):
                 allow_unverified=arguments.allow_unverified,
             )
         )
+        skills = install_project_skills(
+            _project_context(context).target_path().expanduser().resolve(),
+            {name: files("devcapsule.presentation_tools").joinpath(name).read_bytes() for name in KIT_ASSETS},
+            version=version("devcapsule"),
+        )
+        for path in skills.created:
+            print(f"Installed skill: {path}; include it in the wrapper commit.")
+        for path in skills.preserved:
+            print(f"Kept existing skill location: {path}")
         print(report.render())
         return 0
 
@@ -1203,12 +1219,33 @@ class ConfigApproveCommand(Command):
         return 0
 
 
+def _current_authorization(name: str) -> str:
+    """The node ``name`` answers; a retired name is taken with a note on standard error."""
+    notice = retired_authorization_notice(name)
+    if notice is not None:
+        print(notice, file=sys.stderr)
+    return current_authorization_name(name)
+
+
+def _carrier_answers(arguments: argparse.Namespace, **selection: Any) -> tuple[CarrierAnswer, ...]:
+    """The command line's carrier answers, each ``--authorize`` under its current name."""
+    return tuple(
+        replace(answer, name=_current_authorization(answer.name)) if answer.family == "authorize" else answer
+        for answer in carrier_answers(arguments, **selection)
+    )
+
+
 def _forget_authorization(root: Path, manifest: dict[str, Any], name: str) -> Path:
-    """Remove the recorded answer for one host access or consent; the row returns to its default."""
+    """Remove the recorded answer for one host access or consent; the row returns to its default.
+
+    ``name`` is a current name. An answer recorded under its retired name
+    is the same answer and goes with it.
+    """
     record = CheckoutRecord(manifest, root)
-    legacy = record.host.pop(name, None)
-    removed = record.authorization.pop(name, legacy)
-    if removed is None:
+    removed = [record.host.pop(name, None), record.authorization.pop(name, None)]
+    removed.extend(record.authorization.pop(retired, None)
+                   for retired, current in RETIRED_AUTHORIZATION_NAMES.items() if current == name)
+    if all(answer is None for answer in removed):
         raise ProjectConfigurationError(f"{name!r} has no recorded answer for this checkout.")
     record.write()
     return record.input_path
@@ -1226,8 +1263,9 @@ class ConfigForgetCommand(Command):
     @classmethod
     def run(cls, arguments: argparse.Namespace, context: object | None) -> int:
         root, manifest = manifest_for(_project_context(context).start_path())
-        input_path = _forget_authorization(root, manifest, arguments.node_name)
-        print(f"Forgot {arguments.node_name} for this checkout.")
+        name = _current_authorization(arguments.node_name)
+        input_path = _forget_authorization(root, manifest, name)
+        print(f"Forgot {name} for this checkout.")
         print(f"Checkout record: {input_path}")
         print("The next 'devcapsule project run' uses it.")
         return 0
@@ -1236,7 +1274,7 @@ class ConfigForgetCommand(Command):
 class ConfigDenyCommand(Command):
     name = "deny"
     capsule_access: ClassVar[CapsuleAccess] = CapsuleAccess.MUTATES
-    help = "Deny a host access for this checkout, recorded: network, docker-daemon, development-sudo, host-browser, host-x11, github-ssh."
+    help = "Deny a host access for this checkout, recorded: network, docker-daemon, development-sudo, host-browser, host-x11, ssh-proxy."
 
     @classmethod
     def configure(cls, parser: argparse.ArgumentParser) -> None:
@@ -1244,7 +1282,7 @@ class ConfigDenyCommand(Command):
 
     @classmethod
     def run(cls, arguments: argparse.Namespace, context: object | None) -> int:
-        name = arguments.node_name
+        name = _current_authorization(arguments.node_name)
         root, manifest = manifest_for(_project_context(context).start_path())
         _lock_path, lock = _lock_for_answers(root, manifest)
         declarations = authorization_declarations(manifest, lock)
@@ -1439,7 +1477,7 @@ class ConfigAuthorizeCommand(Command):
 
     @classmethod
     def run(cls, arguments: argparse.Namespace, context: object | None) -> int:
-        name = arguments.node_name
+        name = None if arguments.node_name is None else _current_authorization(arguments.node_name)
         value = arguments.value
         root, manifest = manifest_for(_project_context(context).start_path())
         _lock_path, lock = _lock_for_answers(root, manifest)
@@ -1704,7 +1742,7 @@ def _replace_selection(root: Path, selected: tuple[str, ...], without: tuple[str
 class ConfigIdeCommand(Command):
     name = "ide"
     capsule_access: ClassVar[CapsuleAccess] = CapsuleAccess.MUTATES
-    help = "Choose this checkout's IDE: python-ide, frontend-ide, vscode-ide, java-ide, eclipse-ide or dotnet-ide."
+    help = "Choose this checkout's IDE: python-ide, frontend-ide, vscode-ide, java-ide, eclipse-ide, dotnet-ide or xfce4-terminal."
 
     @classmethod
     def configure(cls, parser: argparse.ArgumentParser) -> None:
@@ -2104,7 +2142,7 @@ class RecursiveE2EGroup(Group):
 
 # The authorization nodes whose run-once answers feed the launch plan; every
 # other authorization (base-image, acquisitions) is inherently persistent.
-_RUN_ONCE_AUTHORIZATIONS = ("docker-daemon", "network", "development-sudo", "host-browser", "host-x11", "github-ssh")
+_RUN_ONCE_AUTHORIZATIONS = ("docker-daemon", "network", "development-sudo", "host-browser", "host-x11", "ssh-proxy")
 
 
 class ProjectRunCommand(Command):
@@ -2123,7 +2161,7 @@ class ProjectRunCommand(Command):
 
     @classmethod
     def configure(cls, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("--ide", metavar="IDE", help="The IDE for this launch: python-ide, frontend-ide, vscode-ide, java-ide, eclipse-ide or dotnet-ide.")
+        parser.add_argument("--ide", metavar="IDE", help="The IDE for this launch: python-ide, frontend-ide, vscode-ide, java-ide, eclipse-ide, dotnet-ide or xfce4-terminal.")
         parser.add_argument("--with", dest="with_capabilities", action="append", default=[], metavar="CAPABILITY", help="Add a capability for this launch; repeatable.")
         parser.add_argument("--use", action="append", default=[], metavar="CAPABILITY=COMPONENT", help="Choose a provider for this launch; repeatable.")
         _retired_option(parser, "--agent", "devcapsule project run --with CAPABILITY")
@@ -2418,7 +2456,7 @@ class ProjectRunCommand(Command):
                 extra_docker_args=["--pull=never", *saved_docker_args, *prepared.environment_tokens, *docker_options],
                 project_state=None,
                 enable_host_browser=selected_host_browser,
-                enable_github_ssh=host_access.github_ssh,
+                ssh_proxy=host_access.ssh_proxy,
                 display_transport=display_transport,
                 web_console=web_console,
                 capsule_platform=lock_platform(lock),
@@ -2472,7 +2510,7 @@ def _run_flags(arguments: argparse.Namespace, manifest: Mapping[str, Any]) -> Ru
     authorize: list[tuple[str, str]] = []
     memory = arguments.memory
     cpus = arguments.cpus
-    for answer in carrier_answers(arguments, families=("set", "authorize")):
+    for answer in _carrier_answers(arguments, families=("set", "authorize")):
         if answer.justification is not None:
             raise ProjectConfigurationError(
                 "A justification is recorded when the project owner recommends a host access; "
@@ -2690,12 +2728,20 @@ def _component_state_mounts(
         source.mkdir(parents=True, exist_ok=True, mode=0o700)
         if configured is None:
             source.chmod(0o700)
-            _seed_component_state(source, declaration)
+            component_meta = lock.get("components", {}).get(declaration.component_id)
+            version = component_meta.get("version") if isinstance(component_meta, Mapping) else None
+            _seed_component_state(
+                source,
+                declaration,
+                version=version if isinstance(version, str) else None,
+            )
         mounts[name] = (source, declaration.container_path)
     return mounts
 
 
-def _seed_component_state(source: Path, declaration: Any) -> None:
+def _seed_component_state(
+    source: Path, declaration: Any, *, version: str | None = None
+) -> None:
     """Place a component's declared default files into its managed slot.
 
     Written as the invoking user before the daemon mounts the slot. JSON
@@ -2706,7 +2752,7 @@ def _seed_component_state(source: Path, declaration: Any) -> None:
     definition = COMPONENTS.get(str(declaration.component_id))
     if definition is None:
         return
-    for seed in definition.state_seeds():
+    for seed in definition.state_seeds(version=version):
         if seed.slot != declaration.slot_name:
             continue
         target = source / seed.relative_path

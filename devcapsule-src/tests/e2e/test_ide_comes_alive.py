@@ -20,7 +20,7 @@ import pytest
 
 from devcapsule.platforms import HostOs
 from devcapsule.runtime_artifact import RUNTIME_PEX_ENV, executable_platform
-from tests.e2e.ide_session import SURFACES, IdeSurface, capture_desktop, command, desktop_page_answers, ide_session, launched_ide, stop_session, wait_for_console_url, wait_for_ide_window
+from tests.e2e.ide_session import SURFACES, IdeSurface, SessionFacts, capture_desktop, command, desktop_page_answers, ide_session, launched_ide, stop_session, wait_for_console_url, wait_for_ide_window
 
 pytestmark = pytest.mark.e2e
 
@@ -104,7 +104,7 @@ def test_ide_comes_alive(surface: IdeSurface, built_pex: Path, tmp_path: Path, e
             sdk = command("docker", "exec", "--user", f"{os.getuid()}:{os.getgid()}", "--workdir", str(session.project_path),
                           session.container, "dotnet", "--info")
             (evidence / "dotnet-info.txt").write_text(sdk.stdout, encoding="utf-8")
-            assert "10.0.401" in sdk.stdout
+            assert "11.0.100" in sdk.stdout or "10.0.401" in sdk.stdout
             build = command("docker", "exec", "--user", f"{os.getuid()}:{os.getgid()}", "--workdir", str(session.project_path),
                             session.container, "dotnet", "build", "Smoke.csproj", "--nologo")
             (evidence / "dotnet-build.txt").write_text(build.stdout + build.stderr, encoding="utf-8")
@@ -157,6 +157,66 @@ def test_ide_comes_alive(surface: IdeSurface, built_pex: Path, tmp_path: Path, e
                         "editor_font_before": before, "editor_font_after": after,
                         "saved_marker_retained": True, "window": resumed_window,
                     }, indent=2) + "\n", encoding="utf-8")
+        if surface.name == "xfce4-terminal" and os.environ.get("DEVCAPSULE_SMOKE_DISPLAY") == "1":
+            check_terminal_tabs(session, evidence)
+
+
+def check_terminal_tabs(session: SessionFacts, evidence: Path) -> None:
+    """Type into two tabs through noVNC and close them as a user would."""
+    from playwright.sync_api import sync_playwright  # type: ignore[import-not-found,unused-ignore]
+    from tests.e2e.browser_session import smoke_browser
+
+    recording = Path(__file__).resolve().parent / "evidence" / "xfce4-terminal-tabs"
+    recording.mkdir(parents=True, exist_ok=True)
+    with sync_playwright() as playwright, smoke_browser(playwright, session, evidence) as browser:
+        viewport = {"width": 1600, "height": 1000}
+        context = browser.new_context(viewport=viewport, record_video_dir=str(evidence), record_video_size=viewport)
+        page = context.new_page()
+        page.goto(session.desktop_url)
+        canvas = page.locator("canvas").first
+        canvas.click()
+
+        def identify_shell(marker: str) -> str:
+            page.keyboard.type(f"echo $$ $PWD > {marker}", delay=35)
+            page.keyboard.press("Enter")
+            result = session.workspace / marker
+            deadline = time.monotonic() + 10
+            while time.monotonic() < deadline:
+                if result.is_file() and result.stat().st_size:
+                    pid, cwd = result.read_text().strip().split(" ", 1)
+                    assert cwd == session.project_path
+                    return pid
+                time.sleep(0.1)
+            canvas.screenshot(path=str(evidence / "tab-failure.png"))
+            raise AssertionError(f"The terminal shell did not write {marker} in the checkout")
+
+        first = identify_shell("first.txt")
+        page.keyboard.press("Control+Shift+T")
+        page.wait_for_timeout(500)
+        second = identify_shell("second.txt")
+        assert second != first
+        page.keyboard.type("vi note.txt")
+        page.keyboard.press("Enter")
+        page.wait_for_timeout(500)
+        page.keyboard.type("iEdited in the second tab", delay=35)
+        canvas.screenshot(path=str(recording / "two-tabs.png"))
+        page.keyboard.press("Escape")
+        page.keyboard.type(":wq")
+        page.keyboard.press("Enter")
+        assert identify_shell("after-editor.txt") == second
+        assert (session.workspace / "note.txt").read_text().strip() == "Edited in the second tab"
+        page.keyboard.type("exit")
+        page.keyboard.press("Enter")
+        page.wait_for_timeout(500)
+        assert identify_shell("resumed.txt") == first
+        page.keyboard.type("exit")
+        page.keyboard.press("Enter")
+        assert session.launcher is not None and session.launcher.wait(timeout=60) == 0
+        video = page.video
+        context.close()
+        assert video is not None
+        video.save_as(str(recording / "scenario-video.webm"))
+        video.delete()
 
 
 def delivered_runtime(executable: Path, workspace: Path) -> Path:

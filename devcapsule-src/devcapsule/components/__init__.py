@@ -2,6 +2,7 @@
 
 from devcapsule.components.interface import (
     AcquisitionContract,
+    ComponentBuildRecipe,
     ComponentDefinition,
     LockedArtifactDeclaration,
     SecretInputDeclaration,
@@ -10,6 +11,7 @@ from devcapsule.components.interface import (
 
 __all__ = (
     "AcquisitionContract",
+    "ComponentBuildRecipe",
     "ComponentDefinition",
     "LockedArtifactDeclaration",
     "SecretInputDeclaration",

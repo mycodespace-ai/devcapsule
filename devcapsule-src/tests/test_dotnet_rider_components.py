@@ -54,7 +54,7 @@ def test_sdk_is_additive_to_another_ide_and_installs_a_complete_directory(tmp_pa
     assert root.is_relative_to(tmp_path / 'cache' / 'unpacked' / artifact.sha256)  # unpacked once, by digest
     assert (root / 'sdk/10.0.401/MSBuild.dll').read_bytes() == b'sdk'
     assert (root / 'dotnet').stat().st_mode & 0o7777 == 0o755
-    contribution, = _ancillary_contributions(((root, artifact),), ())
+    contribution, = _ancillary_contributions(((root, artifact),), (), platform="linux-amd64")
     assert contribution.exports == ('/opt/dotnet',)
     assert ('PATH', '/opt/dotnet:${PATH}') in artifact.environment
     # PATH is expanded by Docker, never overwritten with a literal ${PATH} at runtime.

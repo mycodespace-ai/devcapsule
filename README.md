@@ -40,8 +40,11 @@ on Linux x86-64. You can try it without an AI account. On Windows, [read the WSL
 Eclipse inside a capsule, stopped at a breakpoint, recorded as it ran.
 
 Ask your agent to run a scenario from a Markdown file or describe the steps in
-plain English. It can record the session so you can replay it step by step in
-the capsule's web console. See the [agent recording guide](devcapsule-src/devcapsule/presentation_tools/README.md).
+plain English. It can record the session for replay in the capsule's web console.
+Workflow bootstrap and project wrapping install the versioned
+`devcapsule-recorded-e2e` kit for Codex, Antigravity and Claude Code, preserving
+existing customizations. Use `devcapsule instance --get-link` inside the
+capsule to get a content link. See the [agent recording guide](devcapsule-src/devcapsule/presentation_tools/README.md).
 
 <!-- website:benefits -->
 ## What you get

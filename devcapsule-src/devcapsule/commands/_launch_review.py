@@ -41,7 +41,7 @@ from devcapsule.configuration.capabilities import (
 from devcapsule.configuration.derivation import CheckoutState, Selection, derive_plan
 from devcapsule.configuration.docker_arguments import validate_name, validate_value
 from devcapsule.configuration.file_formats import ProjectConfigurationError
-from devcapsule.configuration.listing import Decision
+from devcapsule.configuration.listing import Decision, retired_name_note
 from devcapsule.configuration.manifest_document import Recommendations
 from devcapsule.configuration.operations import CheckoutRecord
 from devcapsule.configuration.storage import ResolvedProject
@@ -314,6 +314,8 @@ def review_launch(
     for row in state.listing(checkout, check_display=check_display).rows:
         if row.kind == "access" and "(kept;" in row.source:
             notes.append(f"Host access {row.name}: {row.effective}; {row.source}.")
+        if row.retired_name:
+            notes.append(retired_name_note(row, state.root))
     return LaunchReview(
         state=state, record=record, original=original, environment=environment, accepted=accepted,
         selected=selected, host_overrides=host_overrides, memory_override=memory_override,

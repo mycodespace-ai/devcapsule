@@ -39,6 +39,8 @@ ANTIGRAVITY_BIN = f"{ANTIGRAVITY_PREFIX}/bin"
 ANTIGRAVITY_EXECUTABLE = f"{ANTIGRAVITY_BIN}/antigravity"
 ANTIGRAVITY_AUTHORIZATION = "antigravity-download"
 ANTIGRAVITY_TERMS_URL = "https://antigravity.google/terms/"
+ANTIGRAVITY_AUTO_MODE_MIN_VERSION = "1.4.12"
+"""Minimum Antigravity CLI version for which DevCapsule seeds ``agentMode = "auto"``."""
 
 
 class AntigravityCliComponent(ComponentDefinition):
@@ -69,12 +71,20 @@ class AntigravityCliComponent(ComponentDefinition):
     def state_environment(self) -> tuple[StateEnvironmentDeclaration, ...]:
         return ()
 
-    def state_seeds(self) -> tuple[StateSeedDeclaration, ...]:
+    def state_seeds(self, version: str | None = None) -> tuple[StateSeedDeclaration, ...]:
+        include_auto_mode = version is not None and _version_at_least(
+            version, ANTIGRAVITY_AUTO_MODE_MIN_VERSION
+        )
+        content = (
+            '{"agentMode": "auto", "toolPermission": "always-proceed"}\n'
+            if include_auto_mode
+            else '{"toolPermission": "always-proceed"}\n'
+        )
         return (
             StateSeedDeclaration(
                 slot="home",
                 relative_path="antigravity-cli/settings.json",
-                content='{"toolPermission": "always-proceed"}\n',
+                content=content,
                 description="Run tools without approval prompts inside the capsule.",
                 merge_missing_json=True,
             ),
@@ -177,6 +187,24 @@ def _runtime_template_mapping() -> dict[str, Any]:
             },
         },
     }
+
+
+def _version_at_least(actual: str, minimum: str) -> bool:
+    def _parts(text: str) -> tuple[int, ...] | None:
+        head = text.split("-", 1)[0].split("+", 1)[0].strip()
+        tokens = head.split(".")
+        if not tokens or any(not token.isascii() or not token.isdigit() for token in tokens):
+            return None
+        return tuple(int(token) for token in tokens)
+
+    actual_parts = _parts(actual)
+    minimum_parts = _parts(minimum)
+    if actual_parts is None or minimum_parts is None:
+        return False
+    width = max(len(actual_parts), len(minimum_parts))
+    padded_actual = actual_parts + (0,) * (width - len(actual_parts))
+    padded_minimum = minimum_parts + (0,) * (width - len(minimum_parts))
+    return padded_actual >= padded_minimum
 
 
 def _string(value: object, field: str) -> str:

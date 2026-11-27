@@ -51,6 +51,7 @@ installers:
 | PostgreSQL client | [PostgreSQL version JSON](https://www.postgresql.org/versions.json) | Latest upstream minor version and major-version end-of-life dates. |
 | .NET SDK | [Microsoft release index](https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json) | Latest stable SDK from active or maintenance channels; selection needs a reviewed lock update. |
 | Playwright | [PyPI package metadata](https://pypi.org/pypi/playwright/json) | Latest release with a non-yanked wheel; selection needs matching wheel and browser pins. |
+| Graphviz | [Official GitLab release metadata](https://gitlab.com/api/v4/projects/4207231/releases/permalink/latest) | Latest stable source release for either Linux capsule architecture; an update needs reviewed source/dependency pins and rendering acceptance. |
 
 PostgreSQL client comes from the base image, whose lock records only the major
 version. Because the lock cannot tell which Ubuntu package revision or security

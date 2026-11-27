@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from importlib.resources import files
+from importlib.metadata import version
 from pathlib import Path
 import re
 import tomllib
@@ -13,6 +14,7 @@ from typing import Mapping
 from devcapsule.configuration.storage import (
     atomic_write,
 )
+from devcapsule.presentation_authoring import KIT_ASSETS, install_project_skills
 
 
 WORKFLOW_TYPES = frozenset({"single-stream", "multiple-streams"})
@@ -129,6 +131,14 @@ def bootstrap_project(
     updated: list[Path] = []
     refreshed: list[Path] = []
     preserved: list[Path] = []
+
+    skills = install_project_skills(
+        root,
+        {name: files("devcapsule.presentation_tools").joinpath(name).read_bytes() for name in KIT_ASSETS},
+        version=version("devcapsule"),
+    )
+    created.extend(skills.created)
+    preserved.extend(skills.preserved)
 
     definition_written = False
     for relative, asset in DEFINITION_ASSETS.items():

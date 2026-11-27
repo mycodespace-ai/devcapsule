@@ -13,7 +13,7 @@ from devcapsule.project import ProjectMountError, normalize_project_mount
 from devcapsule.runtime_command import RuntimeCommand
 
 from .capabilities import RequirementDeparture
-from .authorization import authorized_base_selection
+from .authorization import authorized_base_selection, current_authorization_name
 from .file_formats import (
     ConfigurationFileKind,
     ProjectConfigurationError,
@@ -210,7 +210,9 @@ class Resolution:
     @property
     def host_access(self) -> HostAccess:
         authorizations = self._document.get("authorization", {})
-        host_names = {"docker-daemon", "network", "development-sudo", "host-browser", "host-x11", "github-ssh"}
+        host_names = {"docker-daemon", "network", "development-sudo", "host-browser", "host-x11", "ssh-proxy"}
+        # A resolution written before a rename holds the retired name; the overlay reads it.
         return HostAccess().overlay(self._document.get("host", {})).overlay({
-            name: value for name, value in authorizations.items() if name in host_names
+            name: value for name, value in authorizations.items()
+            if current_authorization_name(name) in host_names
         })

@@ -293,6 +293,87 @@ def test_a_run_once_authorization_is_announced_and_overrides_this_launch_only() 
     assert review.record.document == review.original
 
 
+def recording_github_ssh(state: CheckoutState, value: bool) -> CheckoutState:
+    """``state`` with ``github-ssh`` recorded as a launcher before the rename to ``ssh-proxy`` wrote it."""
+    state.checkout.setdefault("authorization", {})["github-ssh"] = {
+        "value": value, "recommendation-digest": canonical_digest({"name": "github-ssh", "recommendation": "home-default"}),
+    }
+    return state
+
+
+def retired_name_note(value: str) -> str:
+    """The note a launch gives for a checkout that records ``github-ssh`` as ``value``."""
+    return (
+        "This checkout records 'github-ssh', which is 'ssh-proxy' now. The old name still works and will be "
+        f"removed in a later release. Record the answer again: devcapsule project --path {ROOT} config authorize ssh-proxy {value}"
+    )
+
+
+@pytest.mark.parametrize("given,granted", [("id_work", "id_work"), ("~/keys/deploy", "~/keys/deploy"), ("default", "default"), ("true", True)])
+def test_the_ssh_proxy_is_granted_for_one_launch_with_the_key_it_names(given: str, granted: Any) -> None:
+    """``--authorize ssh-proxy`` with a key name, a key path, ``default`` or ``true`` is announced, overrides
+    this launch with that grant, reaches the plan, and is not staged on the record."""
+    announced: list[str] = []
+
+    review = review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(authorize=(("ssh-proxy", given),)),
+                           ask=None, announce=announced.append)
+
+    assert announced == [f"Run-once authorization: ssh-proxy = {given}"]
+    assert review.host_overrides == {"ssh-proxy": granted}
+    assert review.selected.resolution["authorization"]["ssh-proxy"] == granted
+    assert review.record.document == review.original
+    assert review.notes == []
+
+
+def test_a_misspelled_ssh_proxy_key_refuses_the_launch() -> None:
+    """A relative key path on the command line is refused before anything is planned."""
+    with pytest.raises(ProjectConfigurationError, match="Authorization 'ssh-proxy': a key path is absolute or begins with '~/'"):
+        review_launch(checkout_of(REQUIRING_PYCHARM), RunFlags(authorize=(("ssh-proxy", "keys/deploy"),)),
+                      ask=None, announce=never_announced)
+
+
+@pytest.mark.parametrize("recorded", [True, False])
+def test_a_checkout_that_still_records_github_ssh_is_planned_by_that_answer_and_told_to_record_it_again(recorded: bool) -> None:
+    """A checkout whose record holds ``github-ssh`` launches with ``ssh-proxy`` at the same value. The
+    launch's note names both names and gives the command that records the answer again. The record is
+    not rewritten."""
+    state = recording_github_ssh(checkout_of(REQUIRING_PYCHARM), recorded)
+
+    review = review_launch(state, RunFlags(), ask=None, announce=never_announced)
+
+    authorization = review.selected.resolution["authorization"]
+    assert authorization["ssh-proxy"] is recorded and "github-ssh" not in authorization
+    assert review.notes == [retired_name_note(str(recorded).lower())]
+    assert review.record.document == review.original
+    assert "github-ssh" in review.record.authorization and "ssh-proxy" not in review.record.authorization
+
+
+def test_saving_the_ssh_proxy_replaces_the_entry_under_the_retired_name() -> None:
+    """``--save --authorize ssh-proxy default`` on a checkout that records ``github-ssh`` stages the new
+    answer under ``ssh-proxy`` and drops the old entry, so the launch has nothing left to report."""
+    state = recording_github_ssh(checkout_of(REQUIRING_PYCHARM), True)
+
+    review = review_launch(state, RunFlags(authorize=(("ssh-proxy", "default"),), save=True), ask=None, announce=never_announced)
+
+    assert review.record.authorization["ssh-proxy"]["value"] == "default"
+    assert "github-ssh" not in review.record.authorization
+    assert review.selected.resolution["authorization"]["ssh-proxy"] == "default"
+    assert review.notes == []
+
+
+def test_a_run_once_ssh_proxy_outranks_the_recorded_github_ssh_for_that_launch_only() -> None:
+    """A run-once denial over a recorded ``github-ssh`` grant denies this launch and leaves the record,
+    retired entry included, as it was."""
+    state = recording_github_ssh(checkout_of(REQUIRING_PYCHARM), True)
+    announced: list[str] = []
+
+    review = review_launch(state, RunFlags(authorize=(("ssh-proxy", "false"),)), ask=None, announce=announced.append)
+
+    assert announced == ["Run-once authorization: ssh-proxy = false"]
+    assert review.selected.resolution["authorization"]["ssh-proxy"] is False
+    assert review.record.document == review.original and "github-ssh" in review.record.authorization
+
+
 def test_a_local_base_image_is_looked_up_on_the_host_by_its_reference() -> None:
     """A checkout whose base authorization names a local image has that reference looked up through the host;
     when the host has no such image, the review ends with the host's refusal."""

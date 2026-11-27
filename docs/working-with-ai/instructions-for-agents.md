@@ -1,7 +1,7 @@
 ---
 description: Give every agent the same durable context with an instructions file at the project root, and what belongs in it.
 weight: 3
-updated: 2026-10-30
+updated: 2026-11-18
 ---
 # Instructions for agents
 
@@ -19,6 +19,50 @@ pointer beside it instead of maintaining a second copy of the rules:
 Read and follow AGENTS.md at the repository root. This project keeps shared
 agent instructions in AGENTS.md rather than duplicating them per tool.
 ```
+
+## Record a scenario
+
+From the project root, install the workflow and its recording skill:
+
+```bash
+devcapsule bootstrap project
+```
+
+`devcapsule project wrap` also installs the kit in the wrapper repository.
+Setup creates `.agents/skills/devcapsule-recorded-e2e/` for Codex and Antigravity
+and `.claude/skills/devcapsule-recorded-e2e/` for Claude Code. Each folder contains
+`SKILL.md`, `kit-version.json`, and `presentation_tools/` with the guide,
+Python helpers, and example. No DevCapsule source checkout or export command
+is needed. Setup installs resources; it does not install browsers or run tests.
+
+Start a new agent session, then ask:
+
+> Run the end-user scenario in tests/e2e/login.md and record a presentation
+> with videos of what happened.
+
+If the agent does not discover the skill, tell it to read the installed
+`SKILL.md` directly. It should follow the adjacent `presentation_tools/README.md`,
+use the project's actual test driver, and report passed, failed, or incomplete
+with the evidence. A recording alone does not prove the test passed.
+Use [console content links](../sessions/web-console.md#link-to-project-content)
+to hand off the result.
+
+### Keep or update an existing kit
+
+Bootstrap and wrap preserve existing skill folders, including customizations
+and symlinked locations. Re-running setup does not upgrade a preserved kit.
+Check `kit-version.json` for its version. An older installation might contain
+only `SKILL.md` or refer to removed commands.
+
+To migrate it, review and move that skill folder to a backup outside the agent
+skill directories. Rerun `devcapsule bootstrap project`, then reconcile your
+custom instructions with the new kit. Repeat for each discovery location you
+use. Existing workflow definitions stay unchanged unless you explicitly pass
+`--refresh-workflow-definition`; that flag does not refresh preserved skills.
+Keep the chosen kit under your project's normal commit policy.
+
+After upgrading the host executable, launch a new capsule to get its runtime
+CLI. Replacing the host executable does not change a capsule already running.
 
 ## What belongs in `AGENTS.md`
 

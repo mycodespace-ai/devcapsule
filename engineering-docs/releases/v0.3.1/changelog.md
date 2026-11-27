@@ -6,14 +6,33 @@ new and what is fixed since 0.3.0. Records, workflow rules and the
 project's own housekeeping are left out on purpose. The adopter notes for
 the final release, `notes.md`, are written from this file.
 
-RC2 is published. RC3 preparation on 2026-11-17 includes the merged fixes
-below; no rc3 tag exists yet. Presentations PR #43 is merged.
+RC3 was published on 2026-11-17 at `918f9fc7`; downloaded assets are verified.
+It includes the merged SSH proxy and initial presentations support.
+The recording-kit, link-command and runtime-help changes below merged after RC3, through
+PRs #50–#52, for the next candidate; they are not in the RC3 executable.
+Graphviz is also added after RC3 through PR #56 for the next candidate.
+
+The RC4 source also adds Xfce Terminal as a selectable desktop, updates the linux-amd64 component pins to embedded-36, and lets the `ssh-proxy` authorization select a host key. Existing `github-ssh` authorizations remain readable.
 
 ## New
 
-- **Presentation and recording tools for adopter agents.** The launcher packages
-  the authoring kit so agents in other repositories can create and export
-  narrated scenario presentations. Merged through PR #43.
+- **Graphviz diagrams.** Require or offer the `graphviz` capability to supply
+  Graphviz 16.1.1 under `/opt/graphviz`, independently of the selected IDE.
+  Its pinned source and platform dependencies build offline; `dot`, `neato`,
+  `sfdp` and the other packaged tools are on PATH. SVG, PNG and PDF output are
+  included. See [Graphviz setup](../../../docs/configuration/capabilities.md#graphviz-diagrams).
+
+- **Recorded scenarios with an agent.** `devcapsule bootstrap project` and
+  `devcapsule project wrap` install the complete versioned recording kit in
+  project skill directories. Existing kits and customizations are preserved.
+  Ask the agent to run a scenario and record a presentation; it reads the
+  installed instructions and Python helpers. The initial `presentations`
+  commands from RC3 are removed without aliases. For older installed skills,
+  follow the [migration procedure](../../../docs/working-with-ai/instructions-for-agents.md#keep-or-update-an-existing-kit).
+- **Console content links.** Inside a capsule, `devcapsule instance --get-link
+  PATH-OR-URL` prints a current-run link. Filesystem paths always select Files;
+  absolute URLs on the current console can select Records or Presentations.
+  The command does not create or verify the content.
 
 - **GitHub SSH through the host agent.** An authorized capsule can use GitHub
   SSH through a narrow host-side proxy without copying the host's private keys
@@ -85,6 +104,9 @@ below; no rc3 tag exists yet. Presentations PR #43 is merged.
   retaining all prior pins so existing locks remain valid.
 
 ## Fixed
+
+- **Runtime-check help.** `devcapsule pycharm check-runtime --help` and `-h`
+  now print usage without running diagnostics, including outside a project.
 
 - **Rootless Docker launch identity.** The launcher uses the container's root
   identity when Docker reports rootless mode, avoiding inaccessible mounted
