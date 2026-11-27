@@ -439,6 +439,45 @@ Main PR final hosted checks passed. Local integration after presentations:
 158 passed, 13 skipped; the two local gid-0 unit failures remain disclosed.
 See the release overview for final acceptance obligations and the bug tally.
 
+## Main propagation with version preservation — historical RC3 pre-merge checkpoint, 2026-11-17
+
+The owner approved the requested exception to Release Policy rule 8:
+"Yes, please prepare the push of changes to main without changing main's
+version." The integration copy may carry the preservation commit; this does
+not authorize an agent merge into main or a change to release version 0.3.1.
+
+Fetched canonical refs: main `dac6b9d4`, release `918f9fc7`. Both presentations
+PR #43 (`c8b56a07`) and integration correction PR #48 (`918f9fc7`) are merged.
+The release tip is the parent of `4PR-6-release-0.3.1`; no main synchronization
+is performed on the release branch. Main's workflow text differs only in its
+version; retain the existing definition, not a workflow refresh.
+
+The integration copy preserves `0.3.2.dev0` with the supported bump command,
+including both workflow stamps, while retaining the presentation package-data
+addition to pyproject.toml. It preserves main's docs manifest, the three
+main-only documents and their blog/index entries. Release source and runtime
+changes, including SSH proxy and presentation tools, otherwise stay intact.
+[PR #49](https://github.com/mycodespace-ai/devcapsule/pull/49) targets main;
+inspect its hosted checks before the human merge.
+Then fetch, verify main ancestry and contents, return to the release branch,
+and tag the release commit as rc3 under the owner's existing authorization.
+Never tag the integration copy or main's merge tip.
+
+Pre-push validation of the integration copy: clean prospective main merge
+produces exactly the branch tree; main version/stamps, manifest and all three
+preserved documents match main, and presentation package data and index entries
+are present. Required local build: version and syntax pass, mypy 360 files,
+conventions 0 breaches; unit suite 3367 passed, two inherited gid-0 failures,
+1 skipped, 194 deselected, 1 xfailed, 1 xpassed. Full local build is not green.
+The remaining sessions pass: CLI/PEX smoke, docs contract 251 pages (devel
+0.3.2.dev0), console 474 tests. Integration retry against the rebuilt PEX:
+158 passed, 13 skipped in 62.11 s. The first integration attempt exhausted
+/var/tmp; /opt was read-only; neither failed setup run counts as validation.
+The successful run used verified writable disk-backed /home/devcapsule/rc3i.
+Logs are disposable scratch under /var/tmp/rc3-main. No containers launched.
+The main PR's hosted checks must pass; the two local failures stay disclosed.
+
+
 ## RC3 preparation and accepted intake — 2026-11-17
 
 Preflight correction slice, based on release `bf4fa1f0`: the print-command
@@ -453,8 +492,8 @@ build passes version/syntax, mypy (351 files), conventions (0 breaches), then
 stops with 3320 passing unit tests and the same two inherited gid-0 failures
 (1 skipped, 191 deselected, 1 xfailed, 1 xpassed, 87.12 s). Later build steps
 were not reached in this run. No product behavior or legacy unit test is changed. This does not waive the
-two rootless-local legacy unit failures. Deliver through a PR into the release;
-the human merges before main propagation and the candidate tag.
+two rootless-local legacy unit failures. Delivered through PR #48, now merged
+into the release at `918f9fc7`; its hosted checks passed.
 
 The owner completed all 18 project-management intake decisions, then selected
 maintenance to cut rc3 and tally the work left for 0.3.1. Project-management is
@@ -471,18 +510,13 @@ Current release facts and remaining work are maintained in
 `tests/test_recursive_orchestrator.py`; 1 skipped, 191 deselected, 1 xfailed,
 1 xpassed. The full output is reproducible scratch at
 `/var/tmp/rc3-preflight/unit.log`, not release acceptance evidence. PR #47's
-hosted checks passed; PR #43 is open, clean and its hosted checks passed.
+hosted checks passed; PR #43 also passed hosted checks and is now merged.
 
-An automatic merge into main would reset its three version declarations,
-add the release-only `docs/versions.yaml` override and delete three main-only
-documents. A nine-file preservation patch is prepared outside Git at
-`/var/tmp/rc3-preflight/main-preservation.patch`; no ref or tag points at it.
-It restores main's `0.3.2.dev0`, documentation manifest, blog audit, Mac testing
-note, test-improvements work order, and their index entries, retaining the
-SSH proxy additions. The owner was asked whether the main PR copy may carry
-this preservation commit: Release Policy rule 8 otherwise says to commit
-nothing to that copy. No exception has been presumed. The human still merges.
-Regenerate the patch against current refs if either moves.
+The main-preservation constraint is implemented on the integration copy under
+the explicit owner exception recorded above. The earlier scratch patch is
+superseded: presentations added package-data settings since it was prepared,
+so restoring the old whole pyproject.toml would discard shipped functionality.
+Only its authored version was changed by the bump command.
 
 Eight mails were received at `579d0e6a`; their full bodies remain in that
 commit. All are acknowledged in the disposition log with these obligations:
@@ -491,7 +525,7 @@ commit. All are acknowledged in the disposition log with these obligations:
   release. The earlier rootless propagation request is satisfied by PR #42
   on main and PR #38/#39 on the release; preserve the owner's closure.
 - Presentations PR #43 is an owner-directed 0.3.1 dependency, reviewed and
-  awaiting the human merge. Maintenance integrates the delivered slice;
+  merged at `c8b56a07`. Maintenance integrates the delivered slice;
   it does not duplicate presentations implementation.
 - The upgrade experience is mandatory in the first release after 0.3.1,
   whether called 0.3.2 or 0.4.0. Carry this obligation into the next cut;

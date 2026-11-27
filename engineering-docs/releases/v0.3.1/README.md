@@ -48,7 +48,8 @@ and the final release remain outstanding.
 
 | Work | Current evidence / next action |
 |---|---|
-| Graphviz component, owner-added to 0.3.1 | PR #56 adds pinned Graphviz 16.1.1 under `/opt/graphviz` on amd64 and arm64. Native offline builds and unprivileged rendering pass on both platforms (Actions `44207529778`); the owner's release merge remains pending. See maintenance's Graphviz implementation record. |
+| Graphviz component, owner-added to 0.3.1 | PR #56 adds pinned Graphviz 16.1.1 under `/opt/graphviz` on amd64 and arm64. Native offline builds and unprivileged rendering pass on both platforms (Actions `44207529778`); the release merge is recorded at `5c222388`. See maintenance's Graphviz implementation record. |
+| Presentations authoring delivery | **Done:** [PR #43](https://github.com/mycodespace-ai/devcapsule/pull/43) merged at `c8b56a07` with hosted checks green; included in release `918f9fc7` and the main propagation PR. |
 | One blocking bug: this repository's project configuration | Host-side `project init --regenerate` and `config check`, then commit the refreshed manifest/lock before final. The capsule cannot perform the supported host-only write. |
 | All-component freshness review | The owner's November 17 decision extends the review from three agent CLIs to every existing component, for this release too. Record upgraded with evidence, no update needed with reason, or a deferred-update bug targeted at the next release. The old Antigravity hold remains unresolved; the November 9 agent table is not the full sweep. |
 | Two release rulings | Published Mac/ARM executable scope; and compatibility-feed hosting. The configured website URL returned HTTP 404 again on November 17. Cache/built-in fallback works by contract, but it does not supply a live feed. Development draft binaries do not settle release scope. |
