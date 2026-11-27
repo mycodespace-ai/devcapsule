@@ -74,10 +74,9 @@ EXPECTED_NON_IDE_COMPONENTS: tuple[str, ...] = (
     "postgresql-client",
 )
 
-ALL_VENDOR_CONSENTS: tuple[tuple[str, str], ...] = (
+AGENT_DOWNLOAD_CONSENTS: tuple[tuple[str, str], ...] = (
     ("antigravity-download", "true"),
     ("claude-code-download", "true"),
-    ("vscode-download", "true"),
 )
 
 
@@ -204,7 +203,7 @@ def test_all_supported_components_instantiate_live_capsule(built_pex: Path, tmp_
         needs=(base_surface.needs[0], *non_ide),
         window_class=base_surface.window_class,
         ready_timeout=base_surface.ready_timeout,
-        consents=tuple(dict((*base_surface.consents, *ALL_VENDOR_CONSENTS)).items()),
+        consents=(*base_surface.consents, *AGENT_DOWNLOAD_CONSENTS),
     )
 
     run_id = uuid.uuid4().hex[:8]

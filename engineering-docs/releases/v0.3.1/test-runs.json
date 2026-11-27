@@ -91,6 +91,26 @@
       "date": "2026-11-27",
       "result": "failed: 459 passed, 13 skipped, 1 failed in 84.78s",
       "evidence": "The Xfce Terminal fixture supplied undeclared vscode-download consent. In a diagnostic rerun with corrected fixture consents, initialization passed and launcher formation failed on a symbolic link in the checksum-verified .NET SDK 11.0.100 archive. See engineering-docs/bugs/devcapsule/2026-11-27-dotnet-sdk-archive-blocks-rc4.md. Scratch logs: /var/tmp/rc4-validation/{build,integration,live-recheck}.log."
+    },
+    {
+      "kind": "integration",
+      "source-revision": "b1275f878cc557657ba4bb250e3979378ad49448",
+      "tests": "nox -s integration, including test_all_supported_components_instantiate_live_capsule with Xfce Terminal",
+      "environment": "Linux x86-64 development capsule, Python 3.12.3, Docker server 29.9.3, locally rebuilt executable, host networking",
+      "operator": "Codex for component-catalog",
+      "date": "2026-11-27",
+      "result": "passed: 460 passed, 13 skipped in 212.81s",
+      "evidence": "The live case built and launched an embedded-36 all-components capsule, checked the desktop, console, component versions including .NET 11.0.100 and the Playwright browser probe, and removed the test container. An independent extraction of the pinned SDK resolved all 1,830 symbolic links inside the extracted SDK tree. Logs in /var/tmp/rc4-validation/sdk-integration.log and the test basetemp /var/tmp/r4s. This run used the fix branch before release integration."
+    },
+    {
+      "kind": "integration",
+      "source-revision": "b32ab2fad7e56717143c980c05016ccadf66d9c5",
+      "tests": "nox -s integration, including the live all-components Xfce Terminal Docker test",
+      "environment": "Maintenance development capsule on Linux x86-64, Python 3.12.3, local Docker daemon, host networking, executable built from the clean release merge",
+      "operator": "Codex for maintenance",
+      "date": "2026-11-27",
+      "result": "passed: 460 passed, 13 skipped in 112.20s",
+      "evidence": "Ran on the merged PR #78 release commit. The live capsule reached its desktop and console, verified .NET 11.0.100 and the other pinned tools, exercised Chromium and removed the test container. The full Nox build passed on the same revision. Local logs: /var/tmp/rc4-validation/release-b32ab2fa-{integration,build}.log."
     }
   ]
 }

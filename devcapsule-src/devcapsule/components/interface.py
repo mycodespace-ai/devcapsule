@@ -88,8 +88,9 @@ class LockedArtifactDeclaration:
       extracted from the tarball and copied to ``destination``.
     - ``python-wheel``: verified wheels sharing a destination install offline
       into its ``venv/``, with the original wheels retained in ``wheels/``.
-    - ``tar-gz-directory``: bounded regular files and directories from a tar.gz,
-      preserving executable permissions without stripping a top-level directory.
+    - ``tar-gz-directory``: bounded regular files, directories and relative symlinks
+      to regular files within the same tar.gz. Preserves executable permissions
+      without stripping a top-level directory.
     - ``zip-directory``: bounded, regular-file-only extraction copied to the
       destination directory, preserving executable permissions.
     - ``npm-package``: the download is an npm tarball, installed with npm's

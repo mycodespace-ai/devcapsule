@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: blocked 2026-11-27 on the RC4 Docker integration failure. Component-catalog has the corrective work. The owner authorized a reconciliation commit on the RC4 PR copy.
+State: integrating RC4 source `b32ab2fa` and its passing Docker evidence into main through PR #77. Owner merge pending.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5787d0e0395f
 
@@ -18,6 +18,16 @@ Branch association: `ws-maintenance/graphviz-031`, Graphviz PR56 synchronized wi
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
+
+## RC4 release merge verified — 2026-11-27
+
+The owner merged PR #78 into the release at `b32ab2fad7e56717143c980c05016ccadf66d9c5`. Maintenance validated that exact revision in a clean checkout. The full build passed, including 3,386 unit tests and 474 web-console tests. Integration passed with 460 passed and 13 skipped, including the live all-components Docker case. The [test-run record](../../releases/v0.3.1/test-runs.json) carries the evidence.
+
+[PR #77](https://github.com/mycodespace-ai/devcapsule/pull/77) is the owner’s release-to-main merge. After it merges, fetch canonical main, verify candidate ancestry and the matching test-run record, and tag the release commit above as `v0.3.1-rc4`. Subsequent release records document the run.
+
+## RC4 main integration — 2026-11-27
+
+[Draft PR #77](https://github.com/mycodespace-ai/devcapsule/pull/77) carries release `1c111155` and main `f47c1627` in reconciliation commit `a6269335`. Six documentation conflicts are resolved. The merged tree keeps main’s `0.3.2.dev0`, both workflow stamps, the documentation manifest and all additions from both branches since RC3. The local build passed with 3,380 unit tests, 474 web-console tests, executable smoke checks and the 258-page documentation contract. GitHub reports the PR mergeable. It remains draft pending the SDK correction. Read the PR for live hosted-check status.
 
 ## RC4 preflight result — 2026-11-27
 
@@ -5124,7 +5134,7 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Deliver the approved reconciliation on `4PR-7-release-0.3.1`. Await component-catalog’s RC4 fix. Validate the corrected release SHA with the full integration suite, record a passing run on main, verify the owner merge and publish RC4. Earlier plans below are historical.
+Await the owner merge of updated PR #77, verify the candidate and passing test record on remote main, and publish RC4 from `b32ab2fa`. Earlier plans below are historical.
 
 Owner review and merge of revised, Claude-reviewed Graphviz PR56 into the
 release. Concurrent recursive-test fix PR57 is independently accepted and awaits
@@ -5983,7 +5993,7 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-RC4 awaits a verified correction from component-catalog and owner integration into main. The PR-copy exception is approved. The unmerged host IDE PR was outside the tested revision. Diagnostic logs remain local. The bug and test-run record preserve the two failure points. The previous requests to merge #56 and #57 below are historical.
+The SDK fix was merged and verified on release. The remaining dependency for tagging is the owner merge of #77 and verification on remote main. The unmerged host IDE PR was outside the tested revision. Diagnostic logs remain local. The bug and test-run record preserve the two failure points. The previous requests to merge #56 and #57 below are historical.
 
 Graphviz review follow-ups: consider a public operation for ancillary stages
 and environment when another build component needs it; clarify migrated matrix
