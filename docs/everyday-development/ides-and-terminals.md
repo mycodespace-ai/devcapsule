@@ -88,7 +88,8 @@ IDE](../configuration/capabilities.md#a-required-ide).
 - **`.NET` with another editor:** Add or require the `dotnet` capability (for
   example, `devcapsule project config add dotnet` alongside `vscode-ide`) to
   include the pinned `.NET` SDK, runtime, and MSBuild (`DOTNET_CLI_TELEMETRY_OPTOUT=1`
-  by default) without switching to Rider.
+  by default) without switching to Rider. DevCapsule preserves the SDK’s relative
+  links to resource files within the downloaded archive.
 
 ## The terminal inside the capsule
 
