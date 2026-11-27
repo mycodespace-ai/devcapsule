@@ -12,6 +12,8 @@ The recording-kit, link-command and runtime-help changes below merged after RC3,
 PRs #50–#52, for the next candidate; they are not in the RC3 executable.
 Graphviz is also added after RC3 through PR #56 for the next candidate.
 
+The RC4 source also adds Xfce Terminal as a selectable desktop, updates the linux-amd64 component pins to embedded-36, and lets the `ssh-proxy` authorization select a host key. Existing `github-ssh` authorizations remain readable.
+
 ## New
 
 - **Graphviz diagrams.** Require or offer the `graphviz` capability to supply

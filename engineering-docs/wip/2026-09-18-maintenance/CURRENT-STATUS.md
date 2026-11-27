@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: paused 2026-11-18; Graphviz PR56 revised and accepted by Claude after one round; merged gate and native amd64/arm64 checks pass. PR56 and concurrent accepted PR57 await owner merge.
+State: preparing 0.3.1 RC4 from the release branch. The owner requested the cut on 2026-11-27.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5b0f27c04de1
 
@@ -18,6 +18,16 @@ Branch association: `ws-maintenance/graphviz-031`, Graphviz PR56 synchronized wi
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
+
+## RC4 preparation — 2026-11-27
+
+Requirements: R-PRODUCT-006, R-COMPAT-001, R-RUNTIME-001, R-CONSOLE-001.
+
+The remote release tip at the start of preflight was `19e677c7`. PRs #56 and #57 have merged. The last published candidate is RC3 at `918f9fc7`. The [release overview](../../releases/v0.3.1/README.md) records the delta. Keep the release branch on its own history.
+
+Next task: validate the release tip, deliver its fixes and integration evidence to main, verify the owner merge and then tag RC4. Main at `f47c1627` conflicts in six documentation files. A decision is pending on a reconciliation commit on the temporary PR branch under Release Policy rule 8.
+
+Maintenance acknowledges project-management's November 25 notice. Before final 0.3.1, triage the launcher/base compatibility bug, document the contract and validate enforcement and optional degradation. The filing workstream retains the original bug record until integration.
 
 ## Graphviz CI correction and Pair Review — 2026-11-18
 
@@ -5932,6 +5942,8 @@ asset downloads verify publication; no credentialed Actions-run inspection is
 claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
+
+RC4 awaits the merge-resolution decision and passing candidate checks. The previous requests to merge #56 and #57 below are historical.
 
 Graphviz review follow-ups: consider a public operation for ancillary stages
 and environment when another build component needs it; clarify migrated matrix

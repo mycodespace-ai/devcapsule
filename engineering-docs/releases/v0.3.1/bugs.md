@@ -11,6 +11,8 @@ this table mirrors those fields for review and records the release's
 disposition and next action. Update the record and its row together; reconcile
 before each candidate and record the reconciliation revision here.
 
+RC4 preflight, 2026-11-27, release source `19e677c7`: the project configuration refresh merged in #70. Its bug record still requires verification. The [recursive Docker group zero bug](../../bugs/devcapsule/2026-11-18-recursive-dry-run-rejects-docker-group-zero.md) is fixed on release through #57 and awaits main propagation. Maintenance also received the November 25 launcher/base compatibility notice from project-management. Triage and contract verification are pending.
+
 ## Records targeted at 0.3.1
 
 | Record | Status | Severity | Owner | Disposition | Next action |
