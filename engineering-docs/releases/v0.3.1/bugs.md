@@ -13,7 +13,7 @@ before each candidate and record the reconciliation revision here.
 
 RC4 preflight, 2026-11-27, release source `19e677c7`: the project configuration refresh merged in #70. Its bug record still requires verification. The [recursive Docker group zero bug](../../bugs/devcapsule/2026-11-18-recursive-dry-run-rejects-docker-group-zero.md) is fixed on release through #57 and awaits main propagation. Maintenance also received the November 25 launcher/base compatibility notice from project-management. Triage and contract verification are pending.
 
-The [pinned .NET SDK archive](../../bugs/devcapsule/2026-11-27-dotnet-sdk-archive-blocks-rc4.md) blocks RC4. Component-catalog owns the correction and the live fixture consent patch.
+The [pinned .NET SDK archive](../../bugs/devcapsule/2026-11-27-dotnet-sdk-archive-blocks-rc4.md) was fixed in #78. The live Docker test passed on release merge `b32ab2fa`. Main propagation is pending in #77.
 
 ## Records targeted at 0.3.1
 

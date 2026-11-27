@@ -16,7 +16,9 @@ for resumption.
 
 ## RC4 preflight — 2026-11-27
 
-**Blocked before tagging.** The build at `17f31669` passed, including the documentation contract. Integration had one failure in the live all-components test. Correcting its IDE consent exposed an incompatible symbolic link in the official .NET SDK archive. Component-catalog received the fixture patch and evidence. See the [bug](../../bugs/devcapsule/2026-11-27-dotnet-sdk-archive-blocks-rc4.md) and [test-run record](test-runs.json).
+**Ready for main integration.** PR #78 merged into `release-0.3.1` at `b32ab2fad7e56717143c980c05016ccadf66d9c5`. The full build and 460 integration tests passed on that revision, including the live Docker test. Thirteen integration tests skipped. [PR #77](https://github.com/mycodespace-ai/devcapsule/pull/77) carries the candidate and its evidence into main. After the owner merge, verify main and tag the tested release commit.
+
+**Initial preflight.** The build at `17f31669` passed, including the documentation contract. Integration had one failure in the live all-components test. Correcting its IDE consent exposed an incompatible symbolic link in the official .NET SDK archive. Component-catalog received the fixture patch and evidence. See the [bug](../../bugs/devcapsule/2026-11-27-dotnet-sdk-archive-blocks-rc4.md) and [test-run record](test-runs.json).
 
 Release source through `19e677c7` includes the recording kit and CLI changes (#50–52, #55), Graphviz and recursive Docker-group correction (#56–57), Xfce Terminal (#62), the Snap Docker guide and project configuration refresh (#69–70), updated website pointer (#73), amd64 catalog upgrades (#74) and host key selection for the SSH proxy (#75). The open host IDE PR #65 is outside this source.
 
