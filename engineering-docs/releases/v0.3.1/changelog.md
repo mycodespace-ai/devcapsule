@@ -6,6 +6,8 @@ new and what is fixed since 0.3.0. Records, workflow rules and the
 project's own housekeeping are left out on purpose. The adopter notes for
 the final release, `notes.md`, are written from this file.
 
+RC4 was published on 2026-11-28 at `b32ab2fa`. The downloaded executable passed the live .NET SDK integration test.
+
 RC3 was published on 2026-11-17 at `918f9fc7`; downloaded assets are verified.
 It includes the merged SSH proxy and initial presentations support.
 The recording-kit, link-command and runtime-help changes below merged after RC3, through

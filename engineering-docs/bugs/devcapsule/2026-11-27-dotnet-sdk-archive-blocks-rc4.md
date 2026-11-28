@@ -1,5 +1,6 @@
 ---
-status: fixed
+status: closed
+closed: 2026-11-28
 severity: blocking
 target: 0.3.1
 owner: component-catalog
@@ -22,3 +23,5 @@ To close, deliver a compatible SDK installation and corrected surface consents. 
 The pinned SDK contains 1,830 relative symlinks. All 1,830 name regular files in the same archive. The extractor checks each target against the archive’s regular files, extracts data into a fresh directory, and creates relative links last. Direct extraction of the pinned archive on linux-amd64 verified that all 1,830 links resolve to files within the installed SDK. A regression test failed before this correction and passed afterwards. The live fixture takes the IDE download consent from the selected surface. On fix revision `b1275f87`, the full integration suite passed (460 passed, 13 skipped), including launching the live Xfce Terminal capsule and probing .NET, the other components and the browser. The [test-run record](../../releases/v0.3.1/test-runs.json) records the environment and exact revision. The owner merges the fix into the release branch. Maintenance verifies the release revision, propagates it to main and closes the bug after that verification.
 
 Maintenance repeated the full build and integration suite on release merge `b32ab2fa`. The live component probes passed. Main propagation and final verification are tracked in [PR #77](https://github.com/mycodespace-ai/devcapsule/pull/77).
+
+Closed 2026-11-28. Main contains the fix through #77 at `86008370`. The live all-components test passed using the checksum-verified [RC4 executable](https://github.com/mycodespace-ai/devcapsule/releases/tag/v0.3.1-rc4). Reopen if a supported SDK fails safe materialization or its live probe fails.

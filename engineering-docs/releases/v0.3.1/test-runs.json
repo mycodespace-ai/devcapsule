@@ -111,6 +111,18 @@
       "date": "2026-11-27",
       "result": "passed: 460 passed, 13 skipped in 112.20s",
       "evidence": "Ran on the merged PR #78 release commit. The live capsule reached its desktop and console, verified .NET 11.0.100 and the other pinned tools, exercised Chromium and removed the test container. The full Nox build passed on the same revision. Local logs: /var/tmp/rc4-validation/release-b32ab2fa-{integration,build}.log."
+    },
+    {
+      "kind": "integration",
+      "source-revision": "b32ab2fad7e56717143c980c05016ccadf66d9c5",
+      "candidate-tag": "v0.3.1-rc4",
+      "candidate-sha256": "18984595fb64ca4966046104dec66575c1526275690ac47ac99795e96065241e",
+      "tests": "test_all_supported_components_instantiate_live_capsule, linux-amd64 Xfce Terminal, DEVCAPSULE_PEX_UNDER_TEST set to the public download",
+      "environment": "Linux x86-64 maintenance capsule, host networking and Docker, Python 3.12 test driver",
+      "operator": "Codex for maintenance",
+      "date": "2026-11-28",
+      "result": "passed: 1 passed",
+      "evidence": "Public prerelease https://github.com/mycodespace-ai/devcapsule/releases/tag/v0.3.1-rc4. Checksum file, manifest and executable identity verified locally. Live Docker test reached the desktop and console, verified SDK 11.0.100 and the other component probes, exercised Chromium and cleaned up. Local log /var/tmp/rc4-validation/rc4-published-live.log."
     }
   ]
 }

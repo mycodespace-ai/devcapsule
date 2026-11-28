@@ -1,6 +1,6 @@
 # DevCapsule 0.3.1 — Release Work
 
-Updated: 2026-11-27. RC3 is the latest verified prerelease. The owner requested RC4 from the current release line.
+Updated 2026-11-28. RC4 is published. The downloaded executable passed the live SDK check. Release acceptance remains open.
 Driver: **maintenance**. Product owner: Costin Cozianu.
 
 [Changelog since 0.3.0](changelog.md) ·
@@ -16,13 +16,13 @@ for resumption.
 
 ## RC4 preflight — 2026-11-27
 
-**Ready for main integration.** PR #78 merged into `release-0.3.1` at `b32ab2fad7e56717143c980c05016ccadf66d9c5`. The full build and 460 integration tests passed on that revision, including the live Docker test. Thirteen integration tests skipped. [PR #77](https://github.com/mycodespace-ai/devcapsule/pull/77) carries the candidate and its evidence into main. After the owner merge, verify main and tag the tested release commit.
+**Pre-publication verification.** PR #78 merged into `release-0.3.1` at `b32ab2fad7e56717143c980c05016ccadf66d9c5`. The full build and 460 integration tests passed on that revision, including the live Docker test. Thirteen integration tests skipped. [PR #77](https://github.com/mycodespace-ai/devcapsule/pull/77) carries the candidate and its evidence into main. The owner merged #77 at `86008370`. The candidate history below records publication.
 
 **Initial preflight.** The build at `17f31669` passed, including the documentation contract. Integration had one failure in the live all-components test. Correcting its IDE consent exposed an incompatible symbolic link in the official .NET SDK archive. Component-catalog received the fixture patch and evidence. See the [bug](../../bugs/devcapsule/2026-11-27-dotnet-sdk-archive-blocks-rc4.md) and [test-run record](test-runs.json).
 
 Release source through `19e677c7` includes the recording kit and CLI changes (#50–52, #55), Graphviz and recursive Docker-group correction (#56–57), Xfce Terminal (#62), the Snap Docker guide and project configuration refresh (#69–70), updated website pointer (#73), amd64 catalog upgrades (#74) and host key selection for the SSH proxy (#75). The open host IDE PR #65 is outside this source.
 
-RC4 requires integration on main and a Docker integration run on the candidate revision. The remote main at preflight is `f47c1627`. Release-to-main integration has conflicts in the root README, workstream list, index, maintenance status, release overview and changelog. On November 27 the owner authorized the reconciliation commit on the temporary RC4 PR branch. RC3 remains the most recent published candidate until the tag workflow publishes RC4.
+RC4 requires integration on main and a Docker integration run on the candidate revision. The remote main at preflight is `f47c1627`. Release-to-main integration has conflicts in the root README, workstream list, index, maintenance status, release overview and changelog. On November 27 the owner authorized the reconciliation commit on the temporary RC4 PR branch. The conflicts were resolved on the PR copy before #77 merged.
 
 ## RC3 preflight and remaining work — 2026-11-17
 
@@ -240,6 +240,14 @@ decision here, never a silent replacement.
   final tag; delivery verified.
 
 ## Candidates
+
+### RC4 — published 2026-11-28
+
+[RC4 prerelease](https://github.com/mycodespace-ai/devcapsule/releases/tag/v0.3.1-rc4) · [Publication workflow](https://github.com/mycodespace-ai/devcapsule/actions/runs/46090756293).
+
+The annotated tag points to `b32ab2fad7e56717143c980c05016ccadf66d9c5`, the release commit validated with 460 integration passes and 13 skips. Remote main at `86008370` contains the candidate and the matching passing run. The release gate reported zero unintegrated commits.
+
+All three public assets were downloaded. The checksum file and manifest agree on executable SHA-256 `18984595fb64ca4966046104dec66575c1526275690ac47ac99795e96065241e`. In an empty directory the executable reported `0.3.1rc4`, build `v0.3.1-rc4` and the tagged source revision. The CLI help smoke passed. The downloaded executable also launched the all-components Xfce Terminal capsule, including the .NET 11.0.100 and Chromium probes. The [test-run record](test-runs.json) identifies the exact artifact. Final acceptance and promotion remain open.
 
 ### RC3 — tagged 2026-11-17
 

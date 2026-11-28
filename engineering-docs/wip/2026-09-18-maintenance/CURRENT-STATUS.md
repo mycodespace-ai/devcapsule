@@ -4,7 +4,7 @@ Mnemonic: `maintenance`
 
 Start date: 2026-09-18
 
-State: integrating RC4 source `b32ab2fa` and its passing Docker evidence into main through PR #77. Owner merge pending.
+State: RC4 published and downloaded-artifact verification passed. Maintenance is paused at release acceptance.
 
 Definition read: WORKFLOW.md@196d3760f99e, WORKFLOW-LOCAL.md@5787d0e0395f
 
@@ -18,6 +18,10 @@ Branch association: `ws-maintenance/graphviz-031`, Graphviz PR56 synchronized wi
 
 Requirements: `R-PRODUCT-006`, `R-COMPAT-001`, `R-PRODUCT-002`, `R-CONSOLE-001`
 
+
+## RC4 published — 2026-11-28
+
+PR #77 merged at `86008370`. Maintenance verified release ancestry and the exact integration record on remote main, then tagged `b32ab2fa` as `v0.3.1-rc4`. The [publication run](https://github.com/mycodespace-ai/devcapsule/actions/runs/46090756293) passed. The [candidate history](../../releases/v0.3.1/README.md) and [test-run record](../../releases/v0.3.1/test-runs.json) contain the download checksum, identity and successful live SDK verification. The blocking SDK bug is closed.
 
 ## RC4 release merge verified — 2026-11-27
 
@@ -5100,7 +5104,7 @@ launch was taken into intake and committed. No source was changed.
 
 ## Planned Next Step
 
-Await the owner merge of updated PR #77, verify the candidate and passing test record on remote main, and publish RC4 from `b32ab2fa`. Earlier plans below are historical.
+Continue release acceptance on the exact RC4 download. The release overview lists the remaining validation, documentation and owner decisions before final promotion. Earlier plans below are historical.
 
 Owner review and merge of revised, Claude-reviewed Graphviz PR56 into the
 release. Concurrent recursive-test fix PR57 is independently accepted and awaits
@@ -5959,7 +5963,7 @@ claimed. No final release or graphical/end-user acceptance is claimed yet.
 
 ## Open Threads
 
-The SDK fix was merged and verified on release. The remaining dependency for tagging is the owner merge of #77 and verification on remote main. The unmerged host IDE PR was outside the tested revision. Diagnostic logs remain local. The bug and test-run record preserve the two failure points. The previous requests to merge #56 and #57 below are historical.
+RC4 publication and the SDK verification are complete. Final acceptance remains open. The unmerged host IDE PR was outside the tested revision. Diagnostic logs remain local. The bug and test-run record preserve the two failure points. The previous requests to merge #56 and #57 below are historical.
 
 Graphviz review follow-ups: consider a public operation for ancillary stages
 and environment when another build component needs it; clarify migrated matrix
